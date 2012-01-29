@@ -181,7 +181,7 @@ class Query:
 class RasterQuery(Query):
 
   def __init__(self, raster):
-    Query.__init__(self)
+    super(RasterQuery, self).__init__()
 
     self.raster = raster
 
@@ -387,7 +387,8 @@ class Stroke(Base):
     '''
 
     def __init__(self):
-        Base.__init__(self)
+        super(Stroke,self).__init__()
+
         self.set_table_name('strokes')
 
     def insert(self, stroke):
@@ -478,7 +479,7 @@ class Location(Base):
   '''
 
   def __init__(self):
-    Base.__init__(self)
+    super(Location,self).__init__()
     self.set_schema_name('geo')
     self.set_table_name('geonames')
 
