@@ -3,11 +3,11 @@ Priority: extra
 Maintainer: Andreas Würl <blitzortung@tryb.de>
 Build-Depends: debhelper (>= 7.0.50~), python, python-setuptools, python-tz, python-pyproj
 Standards-Version: 3.8.4
-Section: libs
+Section: python
 Homepage: http://launchpad.net/blitzortung-python
 
 Package: python-blitzortung
-Section: libs
+Section: python
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: <insert up to 60 chars description>
