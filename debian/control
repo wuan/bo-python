@@ -1,0 +1,16 @@
+Source: python-blitzortung
+Priority: extra
+Maintainer: Andreas Würl <blitzortung@tryb.de>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Section: libs
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://git.debian.org/collab-maint/python-blitzortung.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/python-blitzortung.git;a=summary
+
+Package: python-blitzortung
+Section: libs
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
