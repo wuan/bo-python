@@ -400,7 +400,7 @@ class Stroke(Base):
     def select_query(self, args, query = Query()):
         ' build up query object for select statement '
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
         query.add_condition('the_geom IS NOT NULL')
