@@ -26,6 +26,21 @@ GeoTypes.initialisePsycopgTypes(psycopg_module=psycopg2, psycopg_extensions_modu
 
 from abc import ABCMeta, abstractmethod
 
+class IdInterval:
+
+  def __init__(self, start = None, end = None):
+    self.start = start
+    self.end = end
+
+  def get_start(self):
+    return self.start
+
+  def get_end(self):
+    return self.end
+
+  def __str__(self):
+    return '[' + str(self.start) + ' - ' + str(self.end) + ']'
+
 class TimeInterval:
 
   def __init__(self, start = None, end = None):
@@ -124,6 +139,14 @@ class Query:
 
 	  if arg.get_end() != None:
 	    self.add_condition('timestamp < %(endtime)s', {'endtime': arg.get_end()})
+
+	elif isinstance(arg, IdInterval):
+
+	  if arg.get_start() != None:
+	    self.add_condition('id >= %(startid)s', {'startid': arg.get_start()})
+
+	  if arg.get_end() != None:
+	    self.add_condition('id < %(endid)s', {'endid': arg.get_end()})
 
 	elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
@@ -387,6 +410,7 @@ class Stroke(Base):
     def create(self, result):
         stroke = data.Stroke()
 
+	stroke.set_id(result['id'])
         stroke.set_time(result['timestamp'])
 	stroke.set_nanoseconds(result['nanoseconds'])
         stroke.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))

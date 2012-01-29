@@ -224,6 +224,12 @@ class Stroke(Event):
   def set_type(self, typeVal):
     self.typeVal = typeVal
 
+  def set_id(self, id):
+    self.id = id
+ 
+  def get_id(self):
+    return self.id
+
   def get_lateral_error(self):
     return self.error2d
 
