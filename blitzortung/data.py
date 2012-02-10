@@ -11,9 +11,12 @@ import math
 import urllib
 #import shapely.geometry
 import pyproj
+import HTMLParser
 
 import geom
 import files
+
+html_parser = HTMLParser.HTMLParser()
 
 class TimeRange(object):
 
@@ -114,41 +117,58 @@ class Point(object):
 
   def azimuth(self, other):
     return self.__invgeod(other)[0]
+  
+  def __str__(self):
+    return "(%.4f, %.4f)" %(self.x, self.y)
 
-class Event(Point):
-
+class Timestamp(object):
   timeformat = '%Y-%m-%d %H:%M:%S.%f'
-
-  def __init__(self, x, y, time):
-    Point.__init__(self, x, y)
+  timestamp_string_length = 23
+  
+  def __init__(self, time_value):
     if isinstance(time, datetime.datetime):
       self.time = time
-      self.nanoseconds = 0
     elif isinstance(time, str):
-      self.set_time_from_string(time)
-      
-  def set_time_from_string(self, time):
-    self.nanoseconds = int(time[-3:])
-    time = datetime.datetime.strptime(time[:-3], Event.timeformat)
+      self.__set_time_from_string(time) 
+  
+  def __set_time_from_string(self, time):
+    time = datetime.datetime.strptime(time[:self.timestamp_string_length], Timestamp.timeformat)
     self.time = time.replace(tzinfo=pytz.UTC)
-
+    
   def set_time(self, time):
     self.time = time
 
   def get_time(self):
     return self.time
 
+  def difference(self, other):
+    return self.time - other.time
+
+class NanosecondTimestamp(Timestamp):
+  
+  def __init__(self, time):
+    super(NanosecondTimestamp, self).__init__(time)
+    
+    if isinstance(time, datetime.datetime):
+      self.nanoseconds = 0
+    elif isinstance(time, str):
+      self.nanoseconds = int(time[self.timestamp_string_length:self.timestamp_string_length + 3])
+      
   def set_nanoseconds(self, nanoseconds):
     self.nanoseconds = nanoseconds
 
   def get_nanoseconds(self):
     return self.nanoseconds
 
-  def difference(self, other):
-    return self.time - other.time
-
   def nanoseconds_difference(self, other):
-    return self.nanoseconds - other.nanoseconds
+    return self.nanoseconds - other.nanoseconds  
+      
+class Event(Point, NanosecondTimestamp):
+
+  def __init__(self, x, y, time):
+    super(Event, self).__init__(self, x, y)
+    super(Event, self).__init__(self, time)
+
 
 class RawEvent(Event):
 #2011-02-20 15:16:26.723987041 11.5436 48.1355 521 8 3125 -0.12 0.20 14
@@ -175,6 +195,24 @@ class RawEvent(Event):
   def getYAmplitude(self):
     return self.amplitudeY
 
+class Station(Point):
+  
+  def __init__(self, data = None):
+    if data != None:
+      # 1 EgonWank Egon&nbsp;Wanke&nbsp;(Region&nbsp;1) D&uuml;sseldorf Germany 51.199284 6.784764 2012-02-10&nbsp;10:30:59.125646032 A LT&nbsp;25 116
+      fields = data.split(' ')
+      self.number = int(fields[0])
+      self.short_name = fields[1]
+      self.name = urllib.unquote(fields[2])
+      self.location_name = urllib.unquote(fields[3])
+      self.country = urllib.unquote(fields[4])
+      super(Station,self).__init__(float(fields[6]), float(fields[5]))
+      self.last
+      
+  def __str__(self):
+    return "%d %s %s %s" %(self.number, self.short_name, self.location_name, super(Station, self).__str__())
+      
+      
 class Stroke(Event):
   '''
   classdocs
@@ -187,15 +225,15 @@ class Stroke(Event):
       Event.__init__(self, float(fields[3]), float(fields[2]), ' '.join(fields[0:2]))
       if len(fields) >= 5:
         self.amplitude = float(fields[4][:-2])
-	self.typeVal = int(fields[5])
-	self.error2d = int(fields[6][:-1])
-	if self.error2d < 0:
-	  self.error2d = 0
-	self.stationcount = int(fields[7])
-	self.participants = []
-	if (len(fields) >=9):
-	  for index in range(8,len(fields)):
-	    self.participants.append(fields[index])
+        self.typeVal = int(fields[5])
+        self.error2d = int(fields[6][:-1])
+        if self.error2d < 0:
+          self.error2d = 0
+        self.stationcount = int(fields[7])
+        self.participants = []
+        if (len(fields) >=9):
+          for index in range(8,len(fields)):
+            self.participants.append(fields[index])
       else:
         raise Error("not enough data fields from stroke data line '%s'" %(data))
     self.height = 0.0
@@ -226,7 +264,7 @@ class Stroke(Event):
 
   def set_id(self, id):
     self.id = id
- 
+
   def get_id(self):
     return self.id
 
@@ -273,35 +311,3 @@ class AmplitudeHistogram(object):
     data = files.HistogramData(fileNames, time)
 
     data.list()
-
-class StrokesUrl:
-
-  def __init__(self, baseurl):
-    self.url = baseurl
-
-  def add(self, name, value):
-    self.url += '&' + str(name).strip() + '=' + str(value).strip()
-
-  def readData(self):
-    urlconnection = urllib.urlopen(self.url)
-    data = urlconnection.read().strip()
-    urlconnection.close()
-    return data
-
-  def get(self, timeInterval=None):
-    strokes = []
-    for line in self.readData().split('\n'):
-      stroke = Stroke(line)
-      if timeInterval==None or timeInterval.contains(stroke.get_time()):
-        strokes.append(stroke)
-    return strokes
-
-class Strokes(StrokesUrl):
-
-  def __init__(self, config):
-    StrokesUrl.__init__(self, 'http://'+config.get('username')+':'+config.get('password')+'@blitzortung.tmt.de/Data/Protected/strikes.txt')
-
-class ParticipantStrokes(StrokesUrl):
-
-  def __init__(self, config):
-    StrokesUrl.__init__(self, 'http://'+config.get('username')+':'+config.get('password')+'@blitzortung.tmt.de/Data/Protected/participants.txt')

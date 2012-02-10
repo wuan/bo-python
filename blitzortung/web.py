@@ -34,13 +34,19 @@ class Url:
 class Strokes(Url):
 
     def __init__(self, config):
-        Url.__init__(self, 'blitzortung.tmt.de/Data/Protected/strikes.txt')
+        Url.__init__(self, 'blitzortung.net/Data/Protected/strikes.txt')
         self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))
 
 
 class Participants(Url):
 
     def __init__(self, config):
-        Url.__init__(self, 'blitzortung.tmt.de/Data/Protected/participants.txt')
+        Url.__init__(self, 'blitzortung.net/Data/Protected/participants.txt')
         self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))
 
+
+class Stations(Url):
+
+    def __init__(self, config):
+        Url.__init__(self, 'blitzortung.net/Data/Protected/stations.txt')
+        self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))

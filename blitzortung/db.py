@@ -17,12 +17,12 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
 
-import GeoTypes
+#import GeoTypes
 
 import data
 import geom
 
-GeoTypes.initialisePsycopgTypes(psycopg_module=psycopg2, psycopg_extensions_module=psycopg2.extensions)
+#GeoTypes.initialisePsycopgTypes(psycopg_module=psycopg2, psycopg_extensions_module=psycopg2.extensions)
 
 from abc import ABCMeta, abstractmethod
 
@@ -459,6 +459,14 @@ class Stroke(Base):
     ' collect and return data '   
     return query.get_results(self)
 
+class Station(Base):
+  '''
+  CREATE TABLE stations (id bigserial, "name" character varying, PRIMARY_KEY(id))
+  SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
+  ALTER TABLE stations ADD COLUMN last_data_recevied timestamptzs;
+  
+  '''
+  
 class Location(Base):
   '''
   geonames db access class
