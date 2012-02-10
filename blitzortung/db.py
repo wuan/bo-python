@@ -98,28 +98,28 @@ class Query:
 
     if self.columns:
       for index, column in enumerate(self.columns):
-	if index != 0:
-	  sql += ', '
-	sql += column
+        if index != 0:
+          sql += ', '
+        sql += column
       sql += ' '
 
     sql += 'FROM ' + self.table_name + ' '
 
     for index, condition in enumerate(self.conditions):
       if index == 0:
-	sql += 'WHERE '
+        sql += 'WHERE '
       else:
-	sql += 'AND '
+        sql += 'AND '
       sql += condition + ' '
 
     if len(self.order) > 0:
       sql += 'ORDER BY '
       for index, order in enumerate(self.order):
-	if index != 0:
-	  sql += ', '
-	sql += order.get_column() + ' '
-	if order.is_desc():
-	  sql += 'DESC '
+        if index != 0:
+          sql += ', '
+        sql += order.get_column() + ' '
+        if order.is_desc():
+          sql += 'DESC '
 
     if self.limit:
       sql += 'LIMIT ' + str(self.limit.get_number()) + ' '
@@ -127,54 +127,54 @@ class Query:
     return sql
 
   def get_parameters(self):
-      return self.parameters
+    return self.parameters
 
   def parse_args(self, args):
     for arg in args:
       if arg:
-	if isinstance(arg, TimeInterval):
+        if isinstance(arg, TimeInterval):
 
-	  if arg.get_start() != None:
-	    self.add_condition('timestamp >= %(starttime)s', {'starttime': arg.get_start()})
+          if arg.get_start() != None:
+            self.add_condition('timestamp >= %(starttime)s', {'starttime': arg.get_start()})
 
-	  if arg.get_end() != None:
-	    self.add_condition('timestamp < %(endtime)s', {'endtime': arg.get_end()})
+          if arg.get_end() != None:
+            self.add_condition('timestamp < %(endtime)s', {'endtime': arg.get_end()})
 
-	elif isinstance(arg, IdInterval):
+        elif isinstance(arg, IdInterval):
 
-	  if arg.get_start() != None:
-	    self.add_condition('id >= %(startid)s', {'startid': arg.get_start()})
+          if arg.get_start() != None:
+            self.add_condition('id >= %(startid)s', {'startid': arg.get_start()})
 
-	  if arg.get_end() != None:
-	    self.add_condition('id < %(endid)s', {'endid': arg.get_end()})
+          if arg.get_end() != None:
+            self.add_condition('id < %(endid)s', {'endid': arg.get_end()})
 
-	elif isinstance(arg, shapely.geometry.base.BaseGeometry):
+        elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
-	  if arg.is_valid:
+          if arg.is_valid:
 
-	    self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+            self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
-	    if not arg.equals(arg.envelope):
-	      self.add_condition('Intersects(SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+            if not arg.equals(arg.envelope):
+              self.add_condition('Intersects(SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
-	  else:
-	      raise Error("invalid geometry in db.Stroke.select()")
+          else:
+            raise Error("invalid geometry in db.Stroke.select()")
 
-	elif isinstance(arg, Order):
-	    self.add_order(arg)
+        elif isinstance(arg, Order):
+          self.add_order(arg)
 
-	elif isinstance(arg, Limit):
-	    self.setLimit(arg)
+        elif isinstance(arg, Limit):
+          self.setLimit(arg)
 
-	else:
-	    print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
+        else:
+          print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
 
   def get_results(self, db):
 
     resulting_strokes = []
     if db.cur.rowcount > 0:
       for result in db.cur.fetchall():
-	resulting_strokes.append(db.create(result))
+        resulting_strokes.append(db.create(result))
 
     return resulting_strokes
 
@@ -209,255 +209,255 @@ class RasterQuery(Query):
 
     if db.cur.rowcount > 0:
       for result in db.cur.fetchall():
-	self.raster.set(result['rx'], result['ry'], result['count'])
+        self.raster.set(result['rx'], result['ry'], result['count'])
     return self.raster
 
 class Order(object):
-    '''
-    definition for query search order
-    '''
+  '''
+  definition for query search order
+  '''
 
-    def __init__(self, column, desc = False):
-        self.column = column
-        self.desc = desc
+  def __init__(self, column, desc = False):
+    self.column = column
+    self.desc = desc
 
-    def get_column(self):
-        return self.column
+  def get_column(self):
+    return self.column
 
-    def is_desc(self):
-        return self.desc
+  def is_desc(self):
+    return self.desc
 
 
 class Limit(object):
-    '''
-    definition of query result limit
-    '''
+  '''
+  definition of query result limit
+  '''
 
-    def __init__(self, limit):
-        self.limit = limit
+  def __init__(self, limit):
+    self.limit = limit
 
-    def get_number(self):
-        return self.limit
+  def get_number(self):
+    return self.limit
 
 
 class Center(object):
-    '''
-    definition of query center point
-    '''
+  '''
+  definition of query center point
+  '''
 
-    def __init__(self, center):
-        self.center = center
+  def __init__(self, center):
+    self.center = center
 
-    def get_point(self):
-        return self.center
+  def get_point(self):
+    return self.center
 
 
 class Base(object):
+  '''
+  abstract base class for database access objects
+
+  creation of database 
+
+  psql as user postgres:
+
+  CREATE USER blitzortung PASSWORD 'blitzortung' INHERIT;
+
+  createdb -T postgistemplate -E utf8 -O blitzortung blitzortung
+
+  psql blitzortung
+
+  GRANT SELECT ON spatial_ref_sys TO blitzortung;
+  GRANT SELECT ON geometry_columns TO blitzortung;
+  GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
+
+  '''
+  __metaclass__ = ABCMeta
+
+  DefaultTimezone = pytz.UTC
+
+  def __init__(self):
     '''
-    abstract base class for database access objects
-
-    creation of database 
-
-    psql as user postgres:
-
-    CREATE USER blitzortung PASSWORD 'blitzortung' INHERIT;
-
-    createdb -T postgistemplate -E utf8 -O blitzortung blitzortung
-
-    psql blitzortung
-
-    GRANT SELECT ON spatial_ref_sys TO blitzortung;
-    GRANT SELECT ON geometry_columns TO blitzortung;
-    GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
-
+    create PostgreSQL db access object
     '''
-    __metaclass__ = ABCMeta
 
-    DefaultTimezone = pytz.UTC
+    connection = "host='localhost' dbname='blitzortung' user='blitzortung' password='blitzortung'"
+    self.schema_name = None
+    self.cur = None
+    self.conn = None
 
-    def __init__(self):
-        '''
-        create PostgreSQL db access object
-        '''
+    self.srid = geom.Geometry.DefaultSrid
+    self.tz = Base.DefaultTimezone
 
-        connection = "host='localhost' dbname='blitzortung' user='blitzortung' password='blitzortung'"
-        self.schema_name = None
-        self.cur = None
-        self.conn = None
+    try:
+      self.conn = psycopg2.connect(connection)
+      self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    except Exception, e:
+      print e
 
-        self.srid = geom.Geometry.DefaultSrid
-        self.tz = Base.DefaultTimezone
-
+      if self.cur != None:
         try:
-            self.conn = psycopg2.connect(connection)
-            self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        except Exception, e:
-            print e
+          self.cur.close()
+        except NameError:
+          pass
 
-            if self.cur != None:
-                try:
-                    self.cur.close()
-                except NameError:
-                    pass
+      if self.conn != None:
+        try:
+          self.conn.close()
+        except NameError:
+          pass
 
-            if self.conn != None:
-                try:
-                    self.conn.close()
-                except NameError:
-                    pass
+  def is_connected(self):
+    if self.conn != None:
+      return not self.conn.closed
+    else:
+      return False
 
-    def is_connected(self):
-        if self.conn != None:
-            return not self.conn.closed
-        else:
-            return False
+  def set_table_name(self, table_name):
+    self.table_name = table_name
 
-    def set_table_name(self, table_name):
-        self.table_name = table_name
+  def get_table_name(self):
+    return self.table_name
 
-    def get_table_name(self):
-        return self.table_name
+  def get_full_table_name(self):
+    if self.get_schema_name() != None:
+      return '"' + self.get_schema_name() + '"."' + self.get_table_name() + '"'
+    else:
+      return self.get_table_name()
 
-    def get_full_table_name(self):
-        if self.get_schema_name() != None:
-            return '"' + self.get_schema_name() + '"."' + self.get_table_name() + '"'
-        else:
-            return self.get_table_name()
+  def set_schema_name(self, schema_name):
+    self.schema_name = schema_name
 
-    def set_schema_name(self, schema_name):
-        self.schema_name = schema_name
+  def get_schema_name(self):
+    return self.schema_name
 
-    def get_schema_name(self):
-        return self.schema_name
+  def get_srid(self):
+    return self.srid
 
-    def get_srid(self):
-        return self.srid
+  def set_srid(self, srid):
+    self.srid = srid
 
-    def set_srid(self, srid):
-        self.srid = srid
+  def get_timezone(self):
+    return self.tz
 
-    def get_timezone(self):
-        return self.tz
+  def set_timezone(self, tz):
+    self.tz = tz
 
-    def set_timezone(self, tz):
-        self.tz = tz
+  def commit(self):
+    ''' commit pending database transaction '''
+    self.conn.commit()
 
-    def commit(self):
-        ''' commit pending database transaction '''
-        self.conn.commit()
+  def rollback(self):
+    ''' rollback pending database transaction '''
+    self.conn.rollback()
 
-    def rollback(self):
-        ''' rollback pending database transaction '''
-        self.conn.rollback()
+  @abstractmethod
+  def insert(self, object):
+    pass
 
-    @abstractmethod
-    def insert(self, object):
-        pass
-
-    @abstractmethod
-    def select(self, args):
-        pass
+  @abstractmethod
+  def select(self, args):
+    pass
 
 
 class Stroke(Base):
-    '''
-    stroke db access class
+  '''
+  stroke db access class
 
-    database table creation (as db user blitzortung, database blitzortung): 
+  database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, PRIMARY KEY(id));
-    SELECT AddGeometryColumn('public','strokes','the_geom','4326','POINT',2);
-    GRANT SELECT ON TABLE strokes TO bogroup_ro;
+  CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, PRIMARY KEY(id));
+  SELECT AddGeometryColumn('public','strokes','the_geom','4326','POINT',2);
+  GRANT SELECT ON TABLE strokes TO bogroup_ro;
 
-    ALTER TABLE strokes ADD COLUMN amplitude REAL;
-    ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
-    ALTER TABLE strokes ADD COLUMN type SMALLINT;
-    ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
+  ALTER TABLE strokes ADD COLUMN amplitude REAL;
+  ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
+  ALTER TABLE strokes ADD COLUMN type SMALLINT;
+  ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
 
-    CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
-    CREATE INDEX strokes_geom ON strokes USING gist(the_geom);
-    CREATE INDEX strokes_timestamp_geom ON strokes USING gist("timestamp", the_geom);
-    CREATE INDEX strokes_id_timestamp_geom ON strokes USING gist(id, "timestamp", the_geom);
+  CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
+  CREATE INDEX strokes_geom ON strokes USING gist(the_geom);
+  CREATE INDEX strokes_timestamp_geom ON strokes USING gist("timestamp", the_geom);
+  CREATE INDEX strokes_id_timestamp_geom ON strokes USING gist(id, "timestamp", the_geom);
 
-    empty the table with the following commands:
+  empty the table with the following commands:
 
-    DELETE FROM strokes;
-    ALTER SEQUENCE strokes_id_seq RESTART 1;
+  DELETE FROM strokes;
+  ALTER SEQUENCE strokes_id_seq RESTART 1;
 
-    '''
+  '''
 
-    def __init__(self):
-        super(Stroke,self).__init__()
+  def __init__(self):
+    super(Stroke,self).__init__()
 
-        self.set_table_name('strokes')
+    self.set_table_name('strokes')
 
-    def insert(self, stroke):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + \
-            ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
-            'VALUES (\'%s\', %d, st_setsrid(makepoint(%f, %f), 4326), %f, %d, %d, %d)' \
-            %(stroke.get_time(), stroke.get_nanoseconds(), stroke.get_location().x, stroke.get_location().y, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count())
-        self.cur.execute(sql)
+  def insert(self, stroke):
+    sql = 'INSERT INTO ' + self.get_full_table_name() + \
+      ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
+      'VALUES (\'%s\', %d, st_setsrid(makepoint(%f, %f), 4326), %f, %d, %d, %d)' \
+      %(stroke.get_time(), stroke.get_nanoseconds(), stroke.get_location().x, stroke.get_location().y, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count())
+    self.cur.execute(sql)
 
-    def get_latest_time(self):
-        sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
-            ' ORDER BY timestamp DESC LIMIT 1'
-        self.cur.execute(sql)
-        if self.cur.rowcount == 1:
-            result = self.cur.fetchone()
-            return result['timestamp']
-        else:
-            return None
+  def get_latest_time(self):
+    sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
+      ' ORDER BY timestamp DESC LIMIT 1'
+    self.cur.execute(sql)
+    if self.cur.rowcount == 1:
+      result = self.cur.fetchone()
+      return result['timestamp']
+    else:
+      return None
 
-    def create(self, result):
-        stroke = data.Stroke()
+  def create(self, result):
+    stroke = data.Stroke()
 
-	stroke.set_id(result['id'])
-        stroke.set_time(result['timestamp'])
-	stroke.set_nanoseconds(result['nanoseconds'])
-        stroke.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))
-        stroke.set_amplitude(result['amplitude'])
-        stroke.set_type(result['type'])
-        stroke.set_station_count(result['stationcount'])
-        stroke.set_lateral_error(result['error2d'])
+    stroke.set_id(result['id'])
+    stroke.set_time(result['timestamp'])
+    stroke.set_nanoseconds(result['nanoseconds'])
+    stroke.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))
+    stroke.set_amplitude(result['amplitude'])
+    stroke.set_type(result['type'])
+    stroke.set_station_count(result['stationcount'])
+    stroke.set_lateral_error(result['error2d'])
 
-        return stroke
+    return stroke
 
-    def select_query(self, args, query = None):
-        if not query:
-          query = Query()
+  def select_query(self, args, query = None):
+    if not query:
+      query = Query()
 
-        ' build up query object for select statement '
-        query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
-        query.add_parameters({'srid': self.srid})
+    ' build up query object for select statement '
+    query.set_table_name(self.get_full_table_name())
+    query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
+    query.add_parameters({'srid': self.srid})
 
 #query.add_condition('the_geom IS NOT NULL')
-        query.parse_args(args)
-        return query
+    query.parse_args(args)
+    return query
 
-    def select(self, *args):
+  def select(self, *args):
 
-        ' build up query '
-        query = self.select_query(args)
+    ' build up query '
+    query = self.select_query(args)
 
-        return self.select_execute(query)
+    return self.select_execute(query)
 
-    def select_raster(self, raster, *args):
+  def select_raster(self, raster, *args):
 
-        ' build up query '
-        query = self.select_query(args, RasterQuery(raster))
+    ' build up query '
+    query = self.select_query(args, RasterQuery(raster))
 
-        return self.select_execute(query)
+    return self.select_execute(query)
 
-    def select_execute(self, query):
-        ' set timezone for query '
-        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+  def select_execute(self, query):
+    ' set timezone for query '
+    self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
-        ' perform query '
-        self.cur.execute(str(query), query.get_parameters())
+    ' perform query '
+    self.cur.execute(str(query), query.get_parameters())
 
-        ' collect and return data '   
-        return query.get_results(self)
+    ' collect and return data '   
+    return query.get_results(self)
 
 class Location(Base):
   '''
@@ -516,7 +516,7 @@ class Location(Base):
 	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
 	GeomFromText('POINT(%f %f)', 4326), '%s', %d, '%s', '%s', '%s', '%s', '%s', %d, %d)'''
-		       % (longitude, latitude, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
+                       % (longitude, latitude, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
 
   def size_class(self, n):
     if n < 1:
@@ -536,12 +536,12 @@ class Location(Base):
 
     for arg in args:
       if arg != None:
-	if isinstance(arg, Center):
-	  ' center point information given '
-	  self.center = arg
-	elif isinstance(arg, Limit):
-	  ' limit information given '
-	  self.limit = arg
+        if isinstance(arg, Center):
+          ' center point information given '
+          self.center = arg
+        elif isinstance(arg, Limit):
+          ' limit information given '
+          self.limit = arg
 
     if self.is_connected():
       queryString = '''SELECT
@@ -577,12 +577,11 @@ class Location(Base):
 
       locations = []
       if self.cur.rowcount > 0:
-	for result in self.cur.fetchall():
-	  location = {}
-	  location['name'] = result['name']
-	  location['distance'] = result['distance']
-	  location['azimuth'] = result['azimuth']
-	  locations.append(location)
+        for result in self.cur.fetchall():
+          location = {}
+          location['name'] = result['name']
+          location['distance'] = result['distance']
+          location['azimuth'] = result['azimuth']
+          locations.append(location)
 
       return locations
-
