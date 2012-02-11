@@ -258,11 +258,14 @@ class Base(object):
 
   creation of database 
 
-  psql as user postgres:
+  as user postgres:
 
-  CREATE USER blitzortung PASSWORD 'blitzortung' INHERIT;
-
-  createdb -T postgistemplate -E utf8 -O blitzortung blitzortung
+  createuser -i -D -R -S -W blitzortung
+  createdb -E utf8 -O blitzortung blitzortung
+  createlang plpgsql blitzortung
+  psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/postgis.sql -d blitzortung
+  psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/spatial_ref_sys.sql -d blitzortung  
+  psql -f /usr/share/postgresql/8.4/contrib/btree_gist.sql blitzortung
 
   psql blitzortung
 
@@ -367,7 +370,6 @@ class Stroke(Base):
 
   CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, PRIMARY KEY(id));
   SELECT AddGeometryColumn('public','strokes','the_geom','4326','POINT',2);
-  GRANT SELECT ON TABLE strokes TO bogroup_ro;
 
   ALTER TABLE strokes ADD COLUMN amplitude REAL;
   ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
@@ -461,9 +463,9 @@ class Stroke(Base):
 
 class Station(Base):
   '''
-  CREATE TABLE stations (id bigserial, "name" character varying, PRIMARY_KEY(id))
+  CREATE TABLE stations (id bigserial, number int, short_name character varying, "name" character varying, PRIMARY KEY(id));
   SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
-  ALTER TABLE stations ADD COLUMN last_data_recevied timestamptzs;
+  ALTER TABLE stations ADD COLUMN last_data_recevied timestamptz;
   
   '''
   
