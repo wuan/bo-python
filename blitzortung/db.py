@@ -394,11 +394,10 @@ class Stroke(Base):
     self.set_table_name('strokes')
 
   def insert(self, stroke):
-    sql = 'INSERT INTO ' + self.get_full_table_name() + \
+    self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
       ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
-      'VALUES (\'%s\', %d, st_setsrid(makepoint(%f, %f), 4326), %f, %d, %d, %d)' \
-      %(stroke.get_time(), stroke.get_nanoseconds(), stroke.get_location().x, stroke.get_location().y, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count())
-    self.cur.execute(sql)
+      'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s)',
+      (stroke.get_timestamp(), stroke.get_nanoseconds(), stroke.get_x(), stroke.get_y(), stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
 
   def get_latest_time(self):
     sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
@@ -414,9 +413,11 @@ class Stroke(Base):
     stroke = data.Stroke()
 
     stroke.set_id(result['id'])
-    stroke.set_time(result['timestamp'])
+    stroke.set_timestamp(result['timestamp'])
     stroke.set_nanoseconds(result['nanoseconds'])
-    stroke.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))
+    location = shapely.wkb.loads(result['the_geom'].decode('hex'))
+    stroke.set_x(location.x)
+    stroke.set_y(location.y)
     stroke.set_amplitude(result['amplitude'])
     stroke.set_type(result['type'])
     stroke.set_station_count(result['stationcount'])
@@ -468,6 +469,25 @@ class Station(Base):
   ALTER TABLE stations ADD COLUMN last_data_recevied timestamptz;
   
   '''
+  def insert(self, station):
+    self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
+      ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
+      'VALUES (\'%s\', %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s)',
+    (stroke.get_time(), stroke.get_nanoseconds(), stroke.get_location().x, stroke.get_location().y, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
+    
+  def create(self, result):
+    station = data.Station()
+
+    station.set_number(result['number'])
+    station.set_short_name(result['short_name'])
+    station.set_name(result['name'])
+    station.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))
+    station.set_amplitude(result['amplitude'])
+    station.set_type(result['type'])
+    station.set_station_count(result['stationcount'])
+    station.set_lateral_error(result['error2d'])
+
+    return station  
   
 class Location(Base):
   '''
@@ -525,8 +545,8 @@ class Location(Base):
       self.cur.execute('INSERT INTO ' + self.get_full_table_name() + '''
 	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
-	GeomFromText('POINT(%f %f)', 4326), '%s', %d, '%s', '%s', '%s', '%s', '%s', %d, %d)'''
-                       % (longitude, latitude, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
+	GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        (longitude, latitude, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
 
   def size_class(self, n):
     if n < 1:
@@ -583,7 +603,7 @@ class Location(Base):
       params['max_distance'] = self.max_distance
       params['limit'] = self.limit
 
-      self.cur.execute(queryString % params)
+      self.cur.execute(queryString, params)
 
       locations = []
       if self.cur.rowcount > 0:

@@ -104,7 +104,7 @@ class TimeIntervals(TimeInterval):
 class Event(types.Point, types.NanosecondTimestamp):
 
   def __init__(self, x, y, timestamp_value):
-    super(Event, self).__init__(self, x, y)
+    super(Event, self).__init__(x, y)
     self.init_nanosecond_timestamp(timestamp_value)
 
 
@@ -125,7 +125,7 @@ class RawEvent(Event):
         raise Error("not enough data fields for raw event data '%s'" %(data))
 
   def __str__(self):
-    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.time.strftime(Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.x, self.y, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitudeX, self.amplitudeY)
+    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.time.strftime(types.Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.x_coord, self.y_coord, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitudeX, self.amplitudeY)
 
   def getXAmplitude(self):
     return self.amplitudeX
@@ -152,7 +152,7 @@ class Station(types.Point, types.Timestamp):
       self.samples_per_hour = int(fields[10])
       
   def __str__(self):
-    return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(Timestamp.timeformat))
+    return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(types.Timestamp.timeformat))
      
   def _unquote(self, html_coded_string):
     return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
@@ -255,7 +255,7 @@ class Stroke(Event):
     return False
 
   def __str__(self):
-    return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" %(self.time.strftime(Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.time.strftime('%z'), self.x, self.y, self.height, self.amplitude, self.typeVal, self.error2d, self.stationcount)
+    return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" %(self.timestamp.strftime(types.Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.timestamp.strftime('%z'), self.x_coord, self.y_coord, self.height, self.amplitude, self.typeVal, self.error2d, self.stationcount)
 
 class Histogram(object):
 
