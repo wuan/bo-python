@@ -133,30 +133,92 @@ class RawEvent(Event):
   def getYAmplitude(self):
     return self.amplitudeY
 
-class Station(types.Point, types.Timestamp):
+class Builder(object):
   
+  def parse_timestamp(self, timestamp_value):
+    if len(timestamp_value) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
+        timestamp_format = Timestamp.timeformat_fractional_seconds
+        if len(timestamp_value) > Timestamp.timestamp_string_microseconds_length:
+            timestamp_value = timestamp_value[:self.timestamp_string_microseconds_length]
+    else:
+        timestamp_format = Timestamp.timeformat
+
+    timestamp = datetime.datetime.strptime(timestamp_value, timestamp_format)
+    return timestamp.replace(tzinfo=pytz.UTC)
+
+
+class StationBuilder(Builder):
+
   html_parser = HTMLParser.HTMLParser()
   
-  def __init__(self, data = None):
-    if data != None:
-      fields = data.split(' ')
-      self.number = int(fields[0])
-      self.short_name = fields[1]
-      self.name = unicode(self._unquote(fields[2]))
-      self.location_name = unicode(self._unquote(fields[3]))
-      self.country = unicode(self._unquote(fields[4]))
-      super(Station, self).__init__(float(fields[6]), float(fields[5]))
-      super(Station, self).init_timestamp(self._unquote(fields[7]).encode('ascii'))
-      self.gps_status = fields[8]
-      self.tracker_version = self._unquote(fields[9])
-      self.samples_per_hour = int(fields[10])
+  def __init__(self):
+    self.number = -1
+    
+  def set_number(self, number):
+    self.number = number
+    
+  def set_short_name(self, short_name):
+    self.short_name = short_name
+    
+  def set_name(self, name):
+    self.name = name
+    
+  def set_location_name(self, location_name):
+    self.location_name = location_name
+    
+  def set_country(self, country):
+    self.country = country
+  
+  def set_longitude(self, longitude):
+    self.longitude = longitude
+  
+  def set_latitude(self, latitude):
+    self.latitude = latitude
+    
+  def set_last_data(self, last_data):
+    if isinstance(last_data, str):
+      self.last_data = self.parse_timestamp(last_data)
+    else:
+      self.last_data = last_data
+    
+  def set(self, data):
+    fields = data.split(' ')
+    self.number = int(fields[0])
+    self.short_name = fields[1]
+    self.name = unicode(self._unquote(fields[2]))
+    self.location_name = unicode(self._unquote(fields[3]))
+    self.country = unicode(self._unquote(fields[4]))
+    self.longitude = float(fields[6])
+    self.latitude = float(fields[5])
+    self.last_data = self._unquote(fields[7]).encode('ascii')
+    self.gps_status = fields[8]
+    self.tracker_version = self._unquote(fields[9])
+    self.samples_per_hour = int(fields[10])
+    
+  def build(self):
+    return Station(self.number, self.short_name, self.name, self.location_name, self.country, self.longitude, self.latitude, self.last_data)
+
+  def _unquote(self, html_coded_string):
+    return StationBuilder.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))  
+  
+class Station(types.Point, types.Timestamp):
+  
+  def __init__(self, number, short_name, name, location_name, country, longitude, latitude, last_data):
+    self.number = number
+    self.short_name = short_name
+    self.name = name
+    self.location_name = location_name
+    self.country = country
+    super(Station, self).__init__(longitude, latitude)
+    super(Station, self).init_timestamp(last_data)    
       
   def __str__(self):
     return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(types.Timestamp.timeformat))
-     
-  def _unquote(self, html_coded_string):
-    return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
-      
+   
+  def __eq__(self, other):
+    #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp   
+    return self.timestamp == other.timestamp   
+  
   def get_number(self):
     return self.number
   
@@ -180,6 +242,7 @@ class Station(types.Point, types.Timestamp):
   
   def get_samples_per_hour(self):
     return self.samples_per_hour
+  
   
 class Stroke(Event):
   '''

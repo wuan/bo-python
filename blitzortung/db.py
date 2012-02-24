@@ -464,30 +464,66 @@ class Stroke(Base):
 
 class Station(Base):
   '''
-  CREATE TABLE stations (id bigserial, number int, short_name character varying, "name" character varying, PRIMARY KEY(id));
+  CREATE TABLE stations (id bigserial, PRIMARY KEY(id));
+  ALTER TABLE stations ADD COLUMN number int;
+  ALTER TABLE stations ADD COLUMN short_name character varying;
+  ALTER TABLE stations ADD COLUMN "name" character varying;
+  ALTER TABLE stations ADD COLUMN location_name character varying;
+  ALTER TABLE stations ADD COLUMN country character varying;
   SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
-  ALTER TABLE stations ADD COLUMN last_data_recevied timestamptz;
+  ALTER TABLE stations ADD COLUMN last_data_received timestamptz;
+
   
   '''
+  
+  def __init__(self):
+    super(Station, self).__init__()
+
+    self.set_table_name('stations')
+    
   def insert(self, station):
     self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
-      ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
-      'VALUES (\'%s\', %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s)',
-    (stroke.get_time(), stroke.get_nanoseconds(), stroke.get_location().x, stroke.get_location().y, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
+      ' (number, short_name, "name", location_name, country, last_data_received, the_geom) ' + \
+      'VALUES (%s, %s, %s, %s, %s, %s, st_setsrid(makepoint(%s, %s), 4326))',
+    (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
+    
+  def select(self, timestamp=None):
+    ' set timezone for query '
+    self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+    
+    sql = '''select
+                 a.number, a.short_name, a.name, a.location_name, a.country, a.last_data_received, a.the_geom
+             from stations as a
+             inner join 
+                 (select b.number, max(b.last_data_received) as last_data_received
+                  from stations as b
+                  group by number
+                  order by number) as c
+             on a.number = c.number and a.last_data_received = c.last_data_received
+             order by a.number;'''
+    self.cur.execute(sql)
+    
+    resulting_stations = []
+    if self.cur.rowcount > 0:
+      for result in self.cur.fetchall():
+        resulting_stations.append(self.create(result))
+
+    return resulting_stations    
     
   def create(self, result):
-    station = data.Station()
+    stationBuilder = data.StationBuilder()
 
-    station.set_number(result['number'])
-    station.set_short_name(result['short_name'])
-    station.set_name(result['name'])
-    station.set_location(shapely.wkb.loads(result['the_geom'].decode('hex')))
-    station.set_amplitude(result['amplitude'])
-    station.set_type(result['type'])
-    station.set_station_count(result['stationcount'])
-    station.set_lateral_error(result['error2d'])
+    stationBuilder.set_number(result['number'])
+    stationBuilder.set_short_name(result['short_name'])
+    stationBuilder.set_name(result['name'])
+    stationBuilder.set_location_name(result['location_name'])
+    stationBuilder.set_country(result['country'])
+    location = shapely.wkb.loads(result['the_geom'].decode('hex'))
+    stationBuilder.set_longitude(location.x)
+    stationBuilder.set_latitude(location.y)
+    stationBuilder.set_last_data(result['last_data_received'])
 
-    return station  
+    return stationBuilder.build()  
   
 class Location(Base):
   '''
