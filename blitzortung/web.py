@@ -6,7 +6,9 @@
 
 import urllib
 
-class Url:
+class Url(object):
+
+    base = 'blitzortung.net/Data_1/Protected/'
 
     def __init__(self, baseurl):
         self.url = baseurl
@@ -34,19 +36,19 @@ class Url:
 class Strokes(Url):
 
     def __init__(self, config):
-        Url.__init__(self, 'blitzortung.net/Data/Protected/strikes.txt')
+        super(Strokes, self).__init__(Url.base + 'strikes.txt')
         self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))
 
 
 class Participants(Url):
 
     def __init__(self, config):
-        Url.__init__(self, 'blitzortung.net/Data/Protected/participants.txt')
+        super(Participants, self).__init__(Url.base + 'participants.txt')
         self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))
 
 
 class Stations(Url):
 
     def __init__(self, config):
-        Url.__init__(self, 'blitzortung.net/Data/Protected/stations.txt')
+        super(Stations, self).__init__(Url.base + 'stations.txt')
         self.setCredentials(config.get('USERNAME'), config.get('PASSWORD'))
