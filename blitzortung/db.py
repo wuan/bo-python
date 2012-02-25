@@ -17,12 +17,9 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
 
-#import GeoTypes
-
+import builder
 import data
 import geom
-
-#GeoTypes.initialisePsycopgTypes(psycopg_module=psycopg2, psycopg_extensions_module=psycopg2.extensions)
 
 from abc import ABCMeta, abstractmethod
 
@@ -410,7 +407,7 @@ class Stroke(Base):
       return None
 
   def create(self, result):
-    stroke_builder = data.StrokeBuilder()
+    stroke_builder = builder.Stroke()
 
     stroke_builder.set_id(result['id'])
     stroke_builder.set_timestamp(result['timestamp'])
@@ -502,7 +499,7 @@ class Station(Base):
     return resulting_stations    
     
   def create(self, result):
-    stationBuilder = data.StationBuilder()
+    stationBuilder = builder.Station()
 
     stationBuilder.set_number(result['number'])
     stationBuilder.set_short_name(result['short_name'])

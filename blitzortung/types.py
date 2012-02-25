@@ -6,7 +6,6 @@
 
 '''
 
-import datetime, pytz
 import pyproj
 
 class Point(object):
