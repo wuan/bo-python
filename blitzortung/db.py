@@ -397,7 +397,7 @@ class Stroke(Base):
     self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
       ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
       'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s)',
-      (stroke.get_timestamp(), stroke.get_nanoseconds(), stroke.get_x(), stroke.get_y(), stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
+      (stroke.get_timestamp(), stroke.get_timestamp_nanoseconds(), stroke.get_x(), stroke.get_y(), stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
 
   def get_latest_time(self):
     sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \

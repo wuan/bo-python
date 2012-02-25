@@ -359,7 +359,7 @@ class Stroke(Event):
     return self.lateral_error
 
   def get_station_count(self):
-    return self.stationcount
+    return self.station_count
 
   def has_participant(self, participant):
     return self.participants.count(participant) > 0
