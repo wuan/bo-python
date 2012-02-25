@@ -101,12 +101,18 @@ class TimeIntervals(TimeInterval):
     return self.startTime + self.deltaTime
 
       
-class Event(types.Point, types.NanosecondTimestamp):
+class Event(types.Point):
 
-  def __init__(self, x, y, timestamp_value):
+  def __init__(self, x, y, timestamp, timestamp_nanoseconds = 0):
     super(Event, self).__init__(x, y)
-    self.init_nanosecond_timestamp(timestamp_value)
-
+    self.timestamp = timestamp
+    self.timestamp_nanoseconds = timestamp_nanoseconds
+    
+  def get_timestamp(self):
+    return self.timestamp
+  
+  def get_timestamp_nanoseconds(self):
+    return self.timestamp_nanoseconds
 
 class RawEvent(Event):
 #2011-02-20 15:16:26.723987041 11.5436 48.1355 521 8 3125 -0.12 0.20 14
@@ -135,17 +141,30 @@ class RawEvent(Event):
 
 class Builder(object):
   
-  def parse_timestamp(self, timestamp_value):
-    if len(timestamp_value) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
-        timestamp_format = Timestamp.timeformat_fractional_seconds
-        if len(timestamp_value) > Timestamp.timestamp_string_microseconds_length:
-            timestamp_value = timestamp_value[:self.timestamp_string_microseconds_length]
+  timeformat = '%Y-%m-%d %H:%M:%S'
+  timeformat_fractional_seconds = timeformat + '.%f'
+  timestamp_string_minimal_fractional_seconds_length = 20
+  timestamp_string_microseconds_length = 26  
+
+  def parse_timestamp(self, timestamp_string):
+    if len(timestamp_string) > Builder.timestamp_string_minimal_fractional_seconds_length:
+        timestamp_format = Builder.timeformat_fractional_seconds
+        if len(timestamp_string) > Builder.timestamp_string_microseconds_length:
+            timestamp_string = timestamp_string[:self.timestamp_string_microseconds_length]
     else:
         timestamp_format = Timestamp.timeformat
 
-    timestamp = datetime.datetime.strptime(timestamp_value, timestamp_format)
+    timestamp = datetime.datetime.strptime(timestamp_string, timestamp_format)
     return timestamp.replace(tzinfo=pytz.UTC)
-
+  
+  def parse_timestamp_with_nanoseconds(self, timestamp_string):
+    timestamp = self.parse_timestamp(timestamp_string)
+    if len(timestamp_string) > Builder.timestamp_string_microseconds_length:
+      nanoseconds_string = timestamp_string[self.timestamp_string_microseconds_length:self.timestamp_string_microseconds_length + 3]
+      nanoseconds = int(nanoseconds_string.ljust(3).replace(' ', '0'))
+    else:
+      nanoseconds = 0 
+    return (timestamp, nanoseconds)
 
 class StationBuilder(Builder):
 
@@ -169,11 +188,11 @@ class StationBuilder(Builder):
   def set_country(self, country):
     self.country = country
   
-  def set_longitude(self, longitude):
-    self.longitude = longitude
+  def set_x(self, x):
+    self.x = x
   
-  def set_latitude(self, latitude):
-    self.latitude = latitude
+  def set_y(self, y):
+    self.y = y
     
   def set_last_data(self, last_data):
     if isinstance(last_data, str):
@@ -188,29 +207,29 @@ class StationBuilder(Builder):
     self.name = unicode(self._unquote(fields[2]))
     self.location_name = unicode(self._unquote(fields[3]))
     self.country = unicode(self._unquote(fields[4]))
-    self.longitude = float(fields[6])
-    self.latitude = float(fields[5])
+    self.x = float(fields[6])
+    self.y = float(fields[5])
     self.last_data = self._unquote(fields[7]).encode('ascii')
     self.gps_status = fields[8]
     self.tracker_version = self._unquote(fields[9])
     self.samples_per_hour = int(fields[10])
     
   def build(self):
-    return Station(self.number, self.short_name, self.name, self.location_name, self.country, self.longitude, self.latitude, self.last_data)
+    return Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.last_data)
 
   def _unquote(self, html_coded_string):
     return StationBuilder.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))  
+
+
+class Station(Event):
   
-class Station(types.Point, types.Timestamp):
-  
-  def __init__(self, number, short_name, name, location_name, country, longitude, latitude, last_data):
+  def __init__(self, number, short_name, name, location_name, country, x, y, last_data):
+    super(Station, self).__init__(x, y, last_data, 0)
     self.number = number
     self.short_name = short_name
     self.name = name
     self.location_name = location_name
     self.country = country
-    super(Station, self).__init__(longitude, latitude)
-    super(Station, self).init_timestamp(last_data)    
       
   def __str__(self):
     return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(types.Timestamp.timeformat))
@@ -243,34 +262,83 @@ class Station(types.Point, types.Timestamp):
   def get_samples_per_hour(self):
     return self.samples_per_hour
   
+class StrokeBuilder(Builder):
   
-class Stroke(Event):
-  '''
-  classdocs
-  '''
-
-  def __init__(self, data = None):
-    if data != None:
+  def __init__(self):
+    self.id = -1
+    self.height = -1.0
+    self.participants = []
+    
+  def set_id(self, id):
+    self.id = id
+  
+  def set_timestamp(self, timestamp):
+    self.timestamp = timestamp
+    
+  def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
+    self.timestamp_nanoseconds = timestamp_nanoseconds
+    
+  def set_x(self, x):
+    self.x = x
+    
+  def set_y(self, y):
+    self.y = y
+    
+  def set_amplitude(self, amplitude):
+    self.amplitude = amplitude
+    
+  def set_type(self, type_val):
+    self.type_val = type_val
+    
+  def set_lateral_error(self, lateral_error):
+    self.lateral_error = lateral_error
+    
+  def set_station_count(self, station_count):
+    self.station_count = station_count
+    
+  def set_participants(self, participants):
+    self.participants = participants
+    
+  def build(self):
+    return Stroke(self.id, self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.amplitude, self.height, self.lateral_error, self.type_val, self.station_count, self.participants)
+  
+  def from_string(self, string):
+    if string != None:
       ' Construct stroke from blitzortung text format data line '
-      fields = data.split(' ')
-      Event.__init__(self, float(fields[3]), float(fields[2]), ' '.join(fields[0:2]))
+      fields = string.split(' ')
+      self.x = float(fields[3])
+      self.y = float(fields[2])
+      (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+      
       if len(fields) >= 5:
         self.amplitude = float(fields[4][:-2])
-        self.typeVal = int(fields[5])
-        self.error2d = int(fields[6][:-1])
-        if self.error2d < 0:
-          self.error2d = 0
-        self.stationcount = int(fields[7])
+        self.type_val = int(fields[5])
+        self.lateral_error = int(fields[6][:-1])
+        if self.lateral_error < 0:
+          self.lateral_error = 0
+        self.station_count = int(fields[7])
         self.participants = []
         if (len(fields) >=9):
           for index in range(8,len(fields)):
             self.participants.append(fields[index])
       else:
-        raise Error("not enough data fields from stroke data line '%s'" %(data))
-    self.height = 0.0
+        raise Error("not enough data fields from stroke data line '%s'" %(string))
+    self.height = 0.0  
+    
+class Stroke(Event):
+  '''
+  classdocs
+  '''
 
-  def set_location(self, location):
-    Point.__init__(self, location.x, location.y)
+  def __init__(self, id, x, y, timestamp, timestamp_ns, amplitude, height, lateral_error, type_val, station_count, participants = []):
+    super(Stroke, self).__init__(x, y, timestamp, timestamp_ns)
+    self.id = id
+    self.amplitude = amplitude
+    self.height = height
+    self.lateral_error = lateral_error
+    self.type_val = type_val
+    self.station_count = station_count
+    self.participants = participants
 
   def get_location(self):
     return self
@@ -278,38 +346,20 @@ class Stroke(Event):
   def get_height(self):
     return self.height
 
-  def set_height(self, height):
-    self.height = height
-
   def get_amplitude(self):
     return self.amplitude
 
-  def set_amplitude(self, amplitude):
-    self.amplitude = amplitude
-
   def get_type(self):
-    return self.typeVal
-
-  def set_type(self, typeVal):
-    self.typeVal = typeVal
-
-  def set_id(self, id):
-    self.id = id
+    return self.type_val
 
   def get_id(self):
     return self.id
 
   def get_lateral_error(self):
-    return self.error2d
-
-  def set_lateral_error(self, error2d):
-    self.error2d = error2d
+    return self.lateral_error
 
   def get_station_count(self):
     return self.stationcount
-
-  def set_station_count(self, stationcount):
-    self.stationcount = stationcount
 
   def has_participant(self, participant):
     return self.participants.count(participant) > 0
@@ -318,7 +368,7 @@ class Stroke(Event):
     return False
 
   def __str__(self):
-    return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" %(self.timestamp.strftime(types.Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.timestamp.strftime('%z'), self.x_coord, self.y_coord, self.height, self.amplitude, self.typeVal, self.error2d, self.stationcount)
+    return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" %(self.timestamp.strftime(Builder.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), self.x_coord, self.y_coord, self.height, self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):
 

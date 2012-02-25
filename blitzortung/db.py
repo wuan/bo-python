@@ -410,20 +410,20 @@ class Stroke(Base):
       return None
 
   def create(self, result):
-    stroke = data.Stroke()
+    stroke_builder = data.StrokeBuilder()
 
-    stroke.set_id(result['id'])
-    stroke.set_timestamp(result['timestamp'])
-    stroke.set_nanoseconds(result['nanoseconds'])
+    stroke_builder.set_id(result['id'])
+    stroke_builder.set_timestamp(result['timestamp'])
+    stroke_builder.set_timestamp_nanoseconds(result['nanoseconds'])
     location = shapely.wkb.loads(result['the_geom'].decode('hex'))
-    stroke.set_x(location.x)
-    stroke.set_y(location.y)
-    stroke.set_amplitude(result['amplitude'])
-    stroke.set_type(result['type'])
-    stroke.set_station_count(result['stationcount'])
-    stroke.set_lateral_error(result['error2d'])
+    stroke_builder.set_x(location.x)
+    stroke_builder.set_y(location.y)
+    stroke_builder.set_amplitude(result['amplitude'])
+    stroke_builder.set_type(result['type'])
+    stroke_builder.set_station_count(result['stationcount'])
+    stroke_builder.set_lateral_error(result['error2d'])
 
-    return stroke
+    return stroke_builder.build()
 
   def select_query(self, args, query = None):
     if not query:
@@ -464,15 +464,6 @@ class Stroke(Base):
 
 class Station(Base):
   '''
-  CREATE TABLE stations (id bigserial, PRIMARY KEY(id));
-  ALTER TABLE stations ADD COLUMN number int;
-  ALTER TABLE stations ADD COLUMN short_name character varying;
-  ALTER TABLE stations ADD COLUMN "name" character varying;
-  ALTER TABLE stations ADD COLUMN location_name character varying;
-  ALTER TABLE stations ADD COLUMN country character varying;
-  SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
-  ALTER TABLE stations ADD COLUMN last_data_received timestamptz;
-
   
   '''
   
@@ -519,8 +510,8 @@ class Station(Base):
     stationBuilder.set_location_name(result['location_name'])
     stationBuilder.set_country(result['country'])
     location = shapely.wkb.loads(result['the_geom'].decode('hex'))
-    stationBuilder.set_longitude(location.x)
-    stationBuilder.set_latitude(location.y)
+    stationBuilder.set_x(location.x)
+    stationBuilder.set_y(location.y)
     stationBuilder.set_last_data(result['last_data_received'])
 
     return stationBuilder.build()  
@@ -558,8 +549,8 @@ class Location(Base):
   def insert(self, line):
     fields = line.strip().split('\t')
     name = fields[1]
-    latitude = float(fields[4])
-    longitude = float(fields[5])
+    y = float(fields[4])
+    x = float(fields[5])
     feature_class = fields[6]
     feature_code = fields[7]
     country_code = fields[8]
@@ -582,7 +573,7 @@ class Location(Base):
 	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
 	GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-        (longitude, latitude, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
+        (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
 
   def size_class(self, n):
     if n < 1:
