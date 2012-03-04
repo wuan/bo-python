@@ -262,13 +262,17 @@ class Base(object):
   createlang plpgsql blitzortung
   psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/postgis.sql -d blitzortung
   psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/spatial_ref_sys.sql -d blitzortung  
+  (< pg 9.0)
   psql -f /usr/share/postgresql/8.4/contrib/btree_gist.sql blitzortung
+
 
   psql blitzortung
 
   GRANT SELECT ON spatial_ref_sys TO blitzortung;
   GRANT SELECT ON geometry_columns TO blitzortung;
   GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
+  (>= pg 9.0)
+  CREATE EXTENSION "btree_gist";
 
   '''
   __metaclass__ = ABCMeta
@@ -462,6 +466,25 @@ class Stroke(Base):
 class Station(Base):
   '''
   
+  database table creation (as db user blitzortung, database blitzortung): 
+
+  CREATE TABLE stations (id bigserial, number int, PRIMARY KEY(id));
+  SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
+
+  ALTER TABLE stations ADD COLUMN short_name CHARACTER VARYING;
+  ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
+  ALTER TABLE stations ADD COLUMN location_name CHARACTER VARYING;
+  ALTER TABLE stations ADD COLUMN country CHARACTER VARYING;
+  ALTER TABLE stations ADD COLUMN timestamp TIMESTAMPTZ;
+
+  CREATE INDEX stations_timestamp ON stations USING btree("timestamp");
+  CREATE INDEX stations_number_timestamp ON stations USING btree(number, "timestamp");
+  CREATE INDEX stations_geom ON stations USING gist(the_geom);
+
+  empty the table with the following commands:
+
+  DELETE FROM strokes;
+  ALTER SEQUENCE strokes_id_seq RESTART 1;
   '''
   
   def __init__(self):
@@ -471,7 +494,7 @@ class Station(Base):
     
   def insert(self, station):
     self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
-      ' (number, short_name, "name", location_name, country, last_data_received, the_geom) ' + \
+      ' (number, short_name, "name", location_name, country, timestamp, the_geom) ' + \
       'VALUES (%s, %s, %s, %s, %s, %s, st_setsrid(makepoint(%s, %s), 4326))',
     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
     
@@ -480,14 +503,14 @@ class Station(Base):
     self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
     
     sql = '''select
-                 a.number, a.short_name, a.name, a.location_name, a.country, a.last_data_received, a.the_geom
+                 a.number, a.short_name, a.name, a.location_name, a.country, a.timestamp, a.the_geom
              from stations as a
              inner join 
-                 (select b.number, max(b.last_data_received) as last_data_received
+                 (select b.number, max(b.timestamp) as timestamp
                   from stations as b
                   group by number
                   order by number) as c
-             on a.number = c.number and a.last_data_received = c.last_data_received
+             on a.number = c.number and a.timestamp = c.timestamp
              order by a.number;'''
     self.cur.execute(sql)
     
@@ -509,7 +532,7 @@ class Station(Base):
     location = shapely.wkb.loads(result['the_geom'].decode('hex'))
     stationBuilder.set_x(location.x)
     stationBuilder.set_y(location.y)
-    stationBuilder.set_last_data(result['last_data_received'])
+    stationBuilder.set_last_data(result['timestamp'])
 
     return stationBuilder.build()  
   
