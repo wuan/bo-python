@@ -144,9 +144,9 @@ class Station(Base):
     fields = data.split(' ')
     self.number = int(fields[0])
     self.short_name = fields[1]
-    self.name = unicode(self._unquote(fields[2]))
-    self.location_name = unicode(self._unquote(fields[3]))
-    self.country = unicode(self._unquote(fields[4]))
+    self.name = self._unquote(fields[2])
+    self.location_name = self._unquote(fields[3])
+    self.country = self._unquote(fields[4])
     self.x = float(fields[6])
     self.y = float(fields[5])
     (self.last_data, dummy) = self.parse_timestamp_with_nanoseconds(self._unquote(fields[7]).encode('ascii'))
@@ -159,4 +159,27 @@ class Station(Base):
 
   def _unquote(self, html_coded_string):
     return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))  
+
+class StationOffline(Base):
+
+  def __init__(self):
+    self.id_number = -1
+    self.number = -1
+    self.begin = None
+    self.end = None
+    
+  def set_id(self, id_number):
+    self.id_number = id_number
+
+  def set_number(self, number):
+    self.number = number
+    
+  def set_begin(self, begin):
+    self.begin = begin
+    
+  def set_end(self, end):
+    self.end = end
+    
+  def build(self):
+    return data.StationOffline(self.id_number, self.number, self.begin, self.end)
 

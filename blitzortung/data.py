@@ -132,7 +132,7 @@ class RawEvent(Event):
         raise Error("not enough data fields for raw event data '%s'" %(data))
 
   def __str__(self):
-    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.time.strftime(types.Timestamp.timeformat_fractional_seconds), self.get_nanoseconds(), self.x_coord, self.y_coord, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitudeX, self.amplitudeY)
+    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.time.strftime(builder.Base.timeformat_fractional_seconds), self.get_nanoseconds(), self.x_coord, self.y_coord, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitudeX, self.amplitudeY)
 
   def getXAmplitude(self):
     return self.amplitudeX
@@ -154,11 +154,14 @@ class Station(Event):
     self.samples_per_hour = samples_per_hour
       
   def __str__(self):
-    return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(types.Timestamp.timeformat))
+    return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(builder.Base.timeformat))
    
   def __eq__(self, other):
     #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp   
-    return self.timestamp == other.timestamp   
+    return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country
+
+  def __neq__(self, other):
+    return not self == other
   
   def get_number(self):
     return self.number
@@ -184,7 +187,33 @@ class Station(Event):
   def get_samples_per_hour(self):
     return self.samples_per_hour
   
-    
+class StationOffline(object):
+
+  def __init__(self, id_number, number, begin, end=None):
+    self.id_number = id_number
+    self.number = number
+    self.begin = begin
+    self.end = end
+
+  def get_id(self):
+    return self.id_number
+
+  def get_number(self):
+    return self.number
+
+  def get_begin(self):
+    return self.begin
+
+  def get_end(self):
+    return self.end
+
+  def set_end(self, end):
+    if not self.end:
+      self.end = end
+    else:
+      raise ValueError('cannot overwrite end of StationOffline when already set')
+
+
 class Stroke(Event):
   '''
   classdocs

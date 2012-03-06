@@ -295,6 +295,7 @@ class Base(object):
     try:
       self.conn = psycopg2.connect(connection)
       self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+      psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.cur)
     except Exception, e:
       print e
 
@@ -483,8 +484,8 @@ class Station(Base):
 
   empty the table with the following commands:
 
-  DELETE FROM strokes;
-  ALTER SEQUENCE strokes_id_seq RESTART 1;
+  DELETE FROM stations;
+  ALTER SEQUENCE stations_id_seq RESTART 1;
   '''
   
   def __init__(self):
@@ -535,6 +536,60 @@ class Station(Base):
     stationBuilder.set_last_data(result['timestamp'])
 
     return stationBuilder.build()  
+
+class StationOffline(Base):
+  '''
+  
+  database table creation (as db user blitzortung, database blitzortung): 
+
+  CREATE TABLE stations_offline (id bigserial, number int, PRIMARY KEY(id));
+  ALTER TABLE stations_offline ADD COLUMN begin TIMESTAMPTZ;
+  ALTER TABLE stations_offline ADD COLUMN "end" TIMESTAMPTZ;
+
+  CREATE INDEX stations_offline_begin ON stations_offline USING btree(begin);
+  CREATE INDEX stations_offline_end ON stations_offline USING btree("end");
+  CREATE INDEX stations_offline_begin_end ON stations_offline USING btree(begin, "end");
+
+  empty the table with the following commands:
+
+  DELETE FROM stations_offline;
+  ALTER SEQUENCE stations_offline_id_seq RESTART 1;
+  '''
+  
+  def __init__(self):
+    super(StationOffline, self).__init__()
+
+    self.set_table_name('stations_offline')
+    
+  def insert(self, station_offline):
+    self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
+      ' (number, begin, "end") ' + \
+      'VALUES (%s, %s, %s)',
+    (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
+    
+  def select(self, timestamp=None):
+    ' set timezone for query '
+    self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+    
+    sql = '''select id, number, begin, "end" from stations_offline where "end" is null order by number;'''
+    self.cur.execute(sql)
+    
+    resulting_stations = []
+    if self.cur.rowcount > 0:
+      for result in self.cur.fetchall():
+        resulting_stations.append(self.create(result))
+
+    return resulting_stations    
+    
+  def create(self, result):
+    stationOfflineBuilder = builder.StationOffline()
+
+    stationOfflineBuilder.set_id(result['id'])
+    stationOfflineBuilder.set_number(result['number'])
+    stationOfflineBuilder.set_begin(result['begin'])
+    stationOfflineBuilder.set_end(result['end'])
+
+    return stationOfflineBuilder.build()  
   
 class Location(Base):
   '''

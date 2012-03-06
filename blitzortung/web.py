@@ -31,7 +31,7 @@ class Url(object):
 
         urlconnection.close()
 
-        return data
+        return unicode(data)
 
 class Strokes(Url):
 
