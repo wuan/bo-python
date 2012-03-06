@@ -567,6 +567,11 @@ class StationOffline(Base):
       'VALUES (%s, %s, %s)',
     (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
     
+  def update(self, station_offline):
+    self.cur.execute('UPDATE ' + self.get_full_table_name() + \
+      'SET "end"=%s WHERE id=%d',
+    (station_offline.get_id(), station_offline.get_end()))
+    
   def select(self, timestamp=None):
     ' set timezone for query '
     self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
