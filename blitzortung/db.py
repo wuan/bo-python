@@ -568,9 +568,8 @@ class StationOffline(Base):
     (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
     
   def update(self, station_offline):
-    self.cur.execute('UPDATE ' + self.get_full_table_name() + \
-      'SET "end"=%s WHERE id=%d',
-    (station_offline.get_id(), station_offline.get_end()))
+    self.cur.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s',
+    (station_offline.get_end(), station_offline.get_id()))
     
   def select(self, timestamp=None):
     ' set timezone for query '
