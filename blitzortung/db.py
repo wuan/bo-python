@@ -503,16 +503,18 @@ class Station(Base):
     ' set timezone for query '
     self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
     
-    sql = '''select
-                 a.number, a.short_name, a.name, a.location_name, a.country, a.timestamp, a.the_geom
-             from stations as a
-             inner join 
-                 (select b.number, max(b.timestamp) as timestamp
-                  from stations as b
-                  group by number
-                  order by number) as c
-             on a.number = c.number and a.timestamp = c.timestamp
-             order by a.number;'''
+    sql = ''' select
+        o.begin, a.number, a.short_name, a.name, a.location_name, a.country, a. timestamp, a.the_geom
+	from stations as a
+	inner join 
+	   (select b.number, max(b.timestamp) as timestamp
+	    from stations as b
+	    group by number
+            order by number) as c
+	on a.number = c.number and a.timestamp = c.timestamp
+	left join stations_offline as o
+	on o.number = a.number and o."end" is null
+	order by a.number'''
     self.cur.execute(sql)
     
     resulting_stations = []
@@ -534,6 +536,7 @@ class Station(Base):
     stationBuilder.set_x(location.x)
     stationBuilder.set_y(location.y)
     stationBuilder.set_last_data(result['timestamp'])
+    stationBuilder.set_offline_since(result['begin'])
 
     return stationBuilder.build()  
 
@@ -548,6 +551,7 @@ class StationOffline(Base):
 
   CREATE INDEX stations_offline_begin ON stations_offline USING btree(begin);
   CREATE INDEX stations_offline_end ON stations_offline USING btree("end");
+  CREATE INDEX stations_offline_end_number ON stations_offline USING btree("end", number);
   CREATE INDEX stations_offline_begin_end ON stations_offline USING btree(begin, "end");
 
   empty the table with the following commands:

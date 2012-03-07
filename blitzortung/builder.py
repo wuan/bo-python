@@ -112,6 +112,7 @@ class Station(Base):
     self.gps_status = 'n/a'
     self.samples_per_hour = -1
     self.tracker_version = 'n/a'
+    self.offline_since = None
     
   def set_number(self, number):
     self.number = number
@@ -127,7 +128,10 @@ class Station(Base):
     
   def set_country(self, country):
     self.country = country
-  
+ 
+  def set_offline_since(self, offline_since):
+    self.offline_since = offline_since
+
   def set_x(self, x):
     self.x = x
   
@@ -155,7 +159,7 @@ class Station(Base):
     self.samples_per_hour = int(fields[10])
     
   def build(self):
-    return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.last_data, self.gps_status, self.tracker_version, self.samples_per_hour)
+    return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.last_data, self.offline_since, self.gps_status, self.tracker_version, self.samples_per_hour)
 
   def _unquote(self, html_coded_string):
     return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))  

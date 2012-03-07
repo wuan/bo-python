@@ -142,25 +142,26 @@ class RawEvent(Event):
 
 class Station(Event):
   
-  def __init__(self, number, short_name, name, location_name, country, x, y, last_data, gps_status, tracker_version, samples_per_hour):
+  def __init__(self, number, short_name, name, location_name, country, x, y, last_data, offline_since, gps_status, tracker_version, samples_per_hour):
     super(Station, self).__init__(x, y, last_data, 0)
     self.number = number
     self.short_name = short_name
     self.name = name
     self.location_name = location_name
     self.country = country
+    self.offline_since = offline_since
     self.gps_status = gps_status
     self.tracker_version = tracker_version
     self.samples_per_hour = samples_per_hour
       
   def __str__(self):
-    return "%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(builder.Base.timeformat))
+    return u"%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(builder.Base.timeformat))
    
   def __eq__(self, other):
     #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp   
     return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country
 
-  def __neq__(self, other):
+  def __ne__(self, other):
     return not self == other
   
   def get_number(self):
@@ -168,7 +169,7 @@ class Station(Event):
   
   def get_short_name(self):
     return self.short_name
-  
+
   def get_name(self):
     return self.name
   
@@ -178,6 +179,9 @@ class Station(Event):
   def get_country(self):
     return self.country
   
+  def get_offline_since(self):
+    return self.offline_since
+
   def get_gps_status(self):
     return self.gps_status
   

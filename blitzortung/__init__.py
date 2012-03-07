@@ -49,7 +49,7 @@ __all__ = [
 
   'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
 
-  'db.Stroke', 'db.Location', # database access
+  'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
 
   'Error', # custom exceptions
 
