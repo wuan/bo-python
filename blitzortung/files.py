@@ -86,7 +86,7 @@ class Data(object):
       print event
 
   def list_long(self):
-    for line in self.getLong(True):
+    for line in self.get(True):
       print event
 
 class StatisticsData(Data):

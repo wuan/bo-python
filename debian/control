@@ -10,5 +10,5 @@ Package: python-blitzortung
 Section: python
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
+Description: blitzortung.org python modules
  <insert long description, indented with spaces>
