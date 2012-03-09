@@ -12,6 +12,7 @@ import math
 
 import pytz
 import shapely.wkb
+import shapely.geometry
 
 import psycopg2
 import psycopg2.extras
