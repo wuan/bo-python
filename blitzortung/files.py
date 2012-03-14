@@ -11,6 +11,7 @@ import glob
 import datetime
 
 import data
+import builder
 
 class Raw(object):
 
@@ -77,7 +78,9 @@ class Data(object):
     rawEvents = []
 
     for line in self.get_output(raw_file, starttime, endtime):
-      rawEvents.append(data.RawEvent(line))
+      raw_event_builder = builder.RawEvent()
+      raw_event_builder.from_string(line)
+      rawEvents.append(raw_event_builder.build())
 
     return rawEvents
 

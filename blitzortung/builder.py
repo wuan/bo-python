@@ -187,3 +187,36 @@ class StationOffline(Base):
   def build(self):
     return data.StationOffline(self.id_number, self.number, self.begin, self.end)
 
+class RawEvent(Base):
+
+  def __init__(self):
+    self.x = 0
+    self.y = 0
+    self.timestamp = None
+    self.timestamp_nanoseconds = 0
+    self.height = 0
+    self.numberOfSatellites = 0
+    self.samplePeriod = 0
+    self.amplitude_x = 0
+    self.amplitude_y = 0
+
+  def build(self):
+    return data.RawEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitude_x, self.amplitude_y)
+
+  def from_string(self, string):
+    if string != None:
+      ' Construct stroke from blitzortung text format data line '
+      fields = string.split(' ')
+      self.x = float(fields[2])
+      self.y = float(fields[3])
+      (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+      self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
+      if len(fields) >= 8:
+        self.height = int(fields[4])
+        self.numberOfSatellites = int(fields[5])
+        self.samplePeriod = int(fields[6])
+	self.amplitude_x = float(fields[7])
+	self.amplitude_y = float(fields[8])
+      else:
+        raise Error("not enough data fields for raw event data '%s'" %(data))
+      

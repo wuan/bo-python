@@ -115,30 +115,29 @@ class Event(types.Point):
   def get_timestamp_nanoseconds(self):
     return self.timestamp_nanoseconds
 
+  def difference(self, other):
+    return self.timestamp - other.timestamp
+
+  def difference_nanoseconds(self, other):
+    return self.timestamp_nanoseconds - other.timestamp_nanoseconds
+
 class RawEvent(Event):
-#2011-02-20 15:16:26.723987041 11.5436 48.1355 521 8 3125 -0.12 0.20 14
-  def __init__(self, data = None):
-    if data != None:
-      fields = data.split(' ')
-      Event.__init__(self, float(fields[2]), float(fields[3]), ' '.join(fields[0:2]))
-      self.time = self.time + datetime.timedelta(seconds=1)
-      if len(fields) >= 8:
-        self.height = int(fields[4])
-        self.numberOfSatellites = int(fields[5])
-        self.samplePeriod = int(fields[6])
-        self.amplitudeX = float(fields[7])
-        self.amplitudeY = float(fields[8])
-      else:
-        raise Error("not enough data fields for raw event data '%s'" %(data))
+  def __init__(self, x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y):
+    super(RawEvent, self).__init__(x, y, timestamp, timestamp_nanoseconds)
+    self.height = height
+    self.number_of_satellites = number_of_satellites
+    self.sample_period = sample_period
+    self.amplitude_x = amplitude_x
+    self.amplitude_y = amplitude_y
 
   def __str__(self):
-    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.time.strftime(builder.Base.timeformat_fractional_seconds), self.get_nanoseconds(), self.x_coord, self.y_coord, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitudeX, self.amplitudeY)
+    return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord, self.height, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
 
   def getXAmplitude(self):
-    return self.amplitudeX
+    return self.amplitude_x
 
   def getYAmplitude(self):
-    return self.amplitudeY
+    return self.amplitude_y
 
 class Station(Event):
   
