@@ -5,4 +5,4 @@ python-blitzortung (0.9.6) unstable; urgency=low
   * added Unittests
   * added StationsOffline Db-Table
 
- -- Andreas Würl <blitzortung@tryb.de>  Sun, 29 Jan 2012 15:20:33 +0000
+ -- Andreas Würl <blitzortung@tryb.de>  Fri, 23 Mar 2012 11:06:33 +0100

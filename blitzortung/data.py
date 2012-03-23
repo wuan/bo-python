@@ -27,17 +27,17 @@ class TimeRange(object):
   def __str__(self):
     return "['" + str(self.startTime) + "':'" + str(self.endTime) + "']"
 
-  def getStartTime(self):
+  def get_start_time(self):
     return self.startTime
 
-  def getEndTime(self):
+  def get_end_time(self):
     return self.endTime
 
-  def getEndMinute(self):
-    return self.getEndTime() - datetime.timedelta(minutes=1)
+  def get_end_minute(self):
+    return self.get_end_time() - datetime.timedelta(minutes=1)
 
   def contains(self, time):
-    return time >= self.getStartTime() and time <= self.getEndTime()
+    return time >= self.get_start_time() and time < self.get_end_time()
 
 class TimeInterval(TimeRange):
 
