@@ -49,11 +49,11 @@ class Data(object):
     self.error = False
 
   def get(self, long_format=False):
-    start = self.time.getStartTime()
+    start = self.time.get_start_time()
     starttime = start.strftime("%H%M")
     startdate = start.strftime("%Y%m%d")
 
-    end = self.time.getEndMinute()
+    end = self.time.get_end_minute()
     endtime = end.strftime("%H%M")
 
     self.error = False
