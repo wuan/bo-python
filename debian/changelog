@@ -1,5 +1,6 @@
 python-blitzortung (1.0.0SNAPSHOT201203231120) unstable; urgency=low
 
+  * replaced use of gnuplot with matplotlib calls
 
  -- Andreas Würl <blitzortung@tryb.de>  Fri, 23 Mar 2012 11:06:33 +0100
 

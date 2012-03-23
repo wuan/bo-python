@@ -1,6 +1,7 @@
 import StringIO
 import matplotlib
 matplotlib.use("Agg")
+matplotlib.rcParams["font.size"] = 8.0
 import matplotlib.pyplot as plt
 
 class Plot(object):
@@ -25,7 +26,7 @@ class Plot(object):
       
       self.plot(*self.args)
       png_data = StringIO.StringIO()
-      self.figure.savefig(png_data)
+      self.figure.savefig(png_data, transparent=True)
       
       self.output = png_data.getvalue()
 
