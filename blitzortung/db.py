@@ -14,9 +14,12 @@ import pytz
 import shapely.wkb
 import shapely.geometry
 
-import psycopg2
-import psycopg2.extras
-import psycopg2.extensions
+try:
+  import psycopg2
+  import psycopg2.extras
+  import psycopg2.extensions
+except ImportError:
+  pass
 
 import builder
 import data
