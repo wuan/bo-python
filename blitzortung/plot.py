@@ -1,25 +1,33 @@
-import subprocess
+import StringIO
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 class Plot(object):
-  def __init__(self, xsize=480, ysize=320, *args):
-    self.xsize = xsize
-    self.ysize = ysize
+  def __init__(self, *args):
+    self.xsize = 480
+    self.ysize = 320
     self.args = args
     self.output = None
 
+  def set_width(width):
+    self.xsize = width
+    
+  def set_height(height):
+    self.ysize = height
+    
   def plot(self, *args):
     pass
 
   def create(self):
     if self.output is None:
-      self.gnuplot = subprocess.Popen(['gnuplot'], stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-      self.write('set terminal png transparent enhanced size %d, %d font "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf" 8' %(self.xsize, self.ysize))
-      self.write('set output')
+      self.figure = plt.figure(dpi=100, figsize=(self.xsize/100.0, self.ysize/100.0))
       
       self.plot(*self.args)
+      png_data = StringIO.StringIO()
+      self.figure.savefig(png_data)
       
-      self.write('\nquit')
-      (self.output, self.error) = self.gnuplot.communicate()
+      self.output = png_data.getvalue()
 
   def read(self):
     self.create()
@@ -37,10 +45,8 @@ class Plot(object):
     self.gnuplot.stdin.write(cmd + '\n')
 
   def empty_page(self, message=""):
-    self.write('reset; unset xtics; unset ytics')
-    self.write('unset border; unset key')
-    self.write('set title "%s"' % message)
-    self.write('plot [][0:1] 2')
+    plot = self.figure.add_subplot()
+    plot.title(message)
 
 class Data(object):
   

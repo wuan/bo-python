@@ -8,7 +8,7 @@
 """
 blitzortung python modules
 """
-__version__ = '0.9.5'
+__version__ = '0.9.6'
 
 import struct as _struct
 
