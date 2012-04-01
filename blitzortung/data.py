@@ -120,6 +120,17 @@ class Event(types.Point):
 
   def difference_nanoseconds(self, other):
     return self.timestamp_nanoseconds - other.timestamp_nanoseconds
+  
+  def us_time_difference_to(self, other):
+    timedelta = self.timestamp - other.timestamp
+    if timedelta.days not in [-1, 0]:
+      raise ValueError("TimeDifference too big")
+    
+    seconds = timedelta.seconds
+    if timedelta.days == -1:
+      seconds -= 24 * 3600
+    return seconds * 1e6 + timedelta.microseconds + (self.timestamp_nanoseconds - other.timestamp_nanoseconds) / 1e3
+    
 
 class RawEvent(Event):
   def __init__(self, x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y):

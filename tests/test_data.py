@@ -28,4 +28,27 @@ class TestTimeRange(unittest.TestCase):
         self.assertFalse(self.time_range.contains(end_time))
         self.assertFalse(self.time_range.contains(start_time - self.microsecond_delta))
         self.assertTrue(self.time_range.contains(end_time - self.microsecond_delta))
+                                                 
+                                                 
+class TestEvent(unittest.TestCase):
+    
+    def test_us_time_difference(self):
+        
+        now = datetime.datetime.utcnow()
+        
+        event1 = blitzortung.data.Event(11, 49, now, 0)
+        event2 = blitzortung.data.Event(11, 49, now, 100)
+        
+        self.assertEqual(-0.1, event1.us_time_difference_to(event2))
+        self.assertEqual(0.1, event2.us_time_difference_to(event1))
+        
+        event3 = blitzortung.data.Event(11, 49, now + datetime.timedelta(microseconds=20), 100)
+        self.assertEqual(-20.1, event1.us_time_difference_to(event3))
+        self.assertEqual(20.1, event3.us_time_difference_to(event1))
+        
+        event4 = blitzortung.data.Event(11, 49, now + datetime.timedelta(seconds=20), 100)
+        self.assertEqual(-20000.1, event1.us_time_difference_to(event4))
+        self.assertEqual(20000.1, event4.us_time_difference_to(event1))
+        
+        
         
