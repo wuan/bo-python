@@ -32,23 +32,32 @@ class TestTimeRange(unittest.TestCase):
                                                  
 class TestEvent(unittest.TestCase):
     
-    def test_us_time_difference(self):
+    def test_time_difference(self):
         
         now = datetime.datetime.utcnow()
         
         event1 = blitzortung.data.Event(11, 49, now, 0)
         event2 = blitzortung.data.Event(11, 49, now, 100)
         
-        self.assertEqual(-0.1, event1.us_time_difference_to(event2))
-        self.assertEqual(0.1, event2.us_time_difference_to(event1))
+        self.assertEqual(datetime.timedelta(), event1.difference_to(event2))
+        self.assertEqual(datetime.timedelta(), event2.difference_to(event1))
+        self.assertEqual(-100, event1.difference_nanoseconds_to(event2))
+        self.assertEqual(100, event2.difference_nanoseconds_to(event1))
+        self.assertEqual(-0.1, event1.us_difference_to(event2))
+        self.assertEqual(0.1, event2.us_difference_to(event1))
         
-        event3 = blitzortung.data.Event(11, 49, now + datetime.timedelta(microseconds=20), 100)
-        self.assertEqual(-20.1, event1.us_time_difference_to(event3))
-        self.assertEqual(20.1, event3.us_time_difference_to(event1))
+        event3 = blitzortung.data.Event(11, 49, now + datetime.timedelta(microseconds=20), 150)
+        self.assertEqual(datetime.timedelta(days=-1,seconds=86399,microseconds=999980), event1.difference_to(event3))
+        self.assertEqual(datetime.timedelta(microseconds=20), event3.difference_to(event1))
+        self.assertEqual(-150, event1.difference_nanoseconds_to(event3))
+        self.assertEqual(150, event3.difference_nanoseconds_to(event1))
+        self.assertEqual(-20.15, event1.us_difference_to(event3))
+        self.assertEqual(20.15, event3.us_difference_to(event1))
         
-        event4 = blitzortung.data.Event(11, 49, now + datetime.timedelta(seconds=20), 100)
-        self.assertEqual(-20000.1, event1.us_time_difference_to(event4))
-        self.assertEqual(20000.1, event4.us_time_difference_to(event1))
-        
-        
-        
+        event4 = blitzortung.data.Event(11, 49, now + datetime.timedelta(seconds=3), 200)
+        self.assertEqual(datetime.timedelta(days=-1,seconds=86397,microseconds=0), event1.difference_to(event4))
+        self.assertEqual(datetime.timedelta(seconds=3), event4.difference_to(event1))
+        self.assertEqual(-200, event1.difference_nanoseconds_to(event4))
+        self.assertEqual(200, event4.difference_nanoseconds_to(event1))        
+        self.assertEqual(-3000000.2, event1.us_difference_to(event4))
+        self.assertEqual(3000000.2, event4.us_difference_to(event1))
