@@ -95,7 +95,8 @@ class Data(object):
 class StatisticsData(Data):
 
   def get_data(self, raw_file, starttime, endtime):
-    dataPipe = subprocess.Popen(['blitzortung-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics'], stdout=subprocess.PIPE)
+    args = ['blitzortung-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics']
+    dataPipe = subprocess.Popen(args, stdout=subprocess.PIPE)
     (output, error) = dataPipe.communicate()
 
     results = output.strip().split(" ")

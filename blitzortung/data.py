@@ -70,7 +70,7 @@ class TimeInterval(TimeRange):
         else:
             return datetime.timedelta(seconds=seconds)
 
-    def hasNext(self):
+    def has_next(self):
         return False
 
     def next(self):
@@ -88,17 +88,17 @@ class TimeIntervals(TimeInterval):
 
         self.startTime = self.endTime - self.totalDuration
 
-    def hasNext(self):
+    def has_next(self):
         return self.startTime + self.deltaTime < self.endTime
 
     def next(self):
-        if self.hasNext():
+        if self.has_next():
             self.startTime += self.deltaTime
             return self.startTime
         else:
             raise Exception('no more time intervals')
 
-    def getEndTime(self):
+    def get_end_time(self):
         return self.startTime + self.deltaTime
 
 
@@ -278,16 +278,27 @@ class Histogram(object):
     def __init__(self, fileNames, time):
         data = files.StatisticsData(fileNames, time)
 
+	self.histogram = []
         while True:
 
             data.get()
 
-            print time.getCenterTime(), data.getCount(), data.getMean(), data.getVariance()
+            entry = {}
 
-            if not time.hasNext():
+	    entry['center_time'] = time.getCenterTime()
+	    entry['count'] = data.getCount()
+	    entry['mean'] = data.getMean()
+	    entry['variance'] = data.getVariance()
+
+	    self.histogram.append(entry)
+
+            if not time.has_next():
                 break
 
             time.next()
+
+    def get(self):
+      return self.histogram
 
 class AmplitudeHistogram(object):
 
