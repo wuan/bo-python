@@ -30,7 +30,7 @@ class Raw(object):
         raise Exception("ERROR: double date! " + raw_file_name + " vs. " + self.raw_files[date])
 
   def get(self, date):
-    if self.raw_files.has_key(date):
+    if date in self.raw_files:
       return self.raw_files[date]
     else:
       raise Exception("no file for date "+date.strftime('%Y-%m-%d'))
