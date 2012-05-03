@@ -10,7 +10,7 @@ setup(
     description     = 'blitzortung.org python modules',
     download_url    = 'http://www.tryb.de/andi/blitzortung/',
     author          = 'Andreas Wuerl',
-    author_email    = 'awuerl@gmx.net',
+    author_email    = 'blitzortung@tryb.de',
     url             = 'http://www.blitzortung.org/',
     packages        = ['blitzortung'],
     scripts	    = [],
