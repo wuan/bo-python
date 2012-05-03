@@ -40,7 +40,7 @@ class Point(object):
   def azimuth(self, other):
     return self.__invgeod(other)[0]
 
-class Geometry:
+class Geometry(object):
   '''
   abstract base class for geometries
   '''
@@ -131,7 +131,13 @@ class Raster(Envelope):
 
   def getYBinCount(self):
     return int(math.ceil(1.0 * (self.ymax - self.ymin) / self.ydiv))
-  
+
+  def getXCenter(self, cellindex):
+    return self.xmin + (cellindex + 0.5) * self.xdiv
+
+  def getYCenter(self, rowindex):
+    return self.ymin + (rowindex + 0.5) * self.ydiv
+
   def set(self, x, y, data):
     self.data[y][x] = data
     
@@ -183,3 +189,18 @@ class Raster(Envelope):
     result += (self.getXBinCount() + 2) * '-' + '\n'
     result += 'total count: %d, max per area: %d' %(total, maximum)
     return result
+
+  def toReducedArray(self):
+
+    reduced_array = []
+
+    rowindex = 0
+    for row in self.data[::-1]:
+      cellindex = 0
+      for cell in row:
+        if cell > 0:
+	  reduced_array.append([self.getXCenter(cellindex), self.getYCenter(rowindex), int(cell)])
+        cellindex += 1
+      rowindex += 1
+
+    return reduced_array
