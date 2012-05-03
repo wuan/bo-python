@@ -27,7 +27,7 @@ import geom
 
 from abc import ABCMeta, abstractmethod
 
-class IdInterval:
+class IdInterval(object):
 
   def __init__(self, start = None, end = None):
     self.start = start
@@ -42,7 +42,7 @@ class IdInterval:
   def __str__(self):
     return '[' + str(self.start) + ' - ' + str(self.end) + ']'
 
-class TimeInterval:
+class TimeInterval(object):
 
   def __init__(self, start = None, end = None):
     self.start = start
@@ -58,7 +58,7 @@ class TimeInterval:
     return '[' + str(self.start) + ' - ' + str(self.end) + ']'
 
 
-class Query:
+class Query(object):
   '''
   simple class for building of complex queries
   '''
@@ -395,7 +395,7 @@ class Stroke(Base):
   '''
 
   def __init__(self):
-    super(Stroke,self).__init__()
+    super(Stroke, self).__init__()
 
     self.set_table_name('strokes')
 
@@ -626,7 +626,7 @@ class Location(Base):
   '''
 
   def __init__(self):
-    super(Location,self).__init__()
+    super(Location, self).__init__()
     self.set_schema_name('geo')
     self.set_table_name('geonames')
 
