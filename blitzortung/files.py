@@ -66,7 +66,7 @@ class Data(object):
       return self.get_data(raw_file, starttime, endtime)
 
   def get_output(self, raw_file, starttime, endtime, long_format=False):
-    cmd = ['blitzortung-data','-i', raw_file, '-s', starttime, '-e', endtime]
+    cmd = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime]
     if long_format:
       cmd.append('--long-data')
     dataPipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -95,7 +95,7 @@ class Data(object):
 class StatisticsData(Data):
 
   def get_data(self, raw_file, starttime, endtime):
-    args = ['blitzortung-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics']
+    args = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics']
     dataPipe = subprocess.Popen(args, stdout=subprocess.PIPE)
     (output, error) = dataPipe.communicate()
 
@@ -123,7 +123,7 @@ class StatisticsData(Data):
 class HistogramData(Data):
 
   def get_data(self, raw_file, starttime, endtime):
-    dataPipe = subprocess.Popen(['blitzortung-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'histogram'], stdout=subprocess.PIPE)
+    dataPipe = subprocess.Popen(['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'histogram'], stdout=subprocess.PIPE)
     (output, error) = dataPipe.communicate()
 
     return output.splitlines()

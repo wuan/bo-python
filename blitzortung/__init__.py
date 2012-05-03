@@ -38,7 +38,6 @@ import data
 import db
 import geom
 import files
-import plot
 import util
 import web
 
@@ -56,8 +55,6 @@ __all__ = [
   'files.Raw', 'files.Data',
 
   'geom.Point',
-
-  'plot.Plot', 'plot.Data', # gnuplot integration
 
   'util.Timer',
 
