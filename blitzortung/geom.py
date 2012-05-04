@@ -113,12 +113,12 @@ class Envelope(Geometry):
 class Raster(Envelope):
   ' class for raster characteristics and data '
   
-  def __init__(self, xmin, xmax, ymin, ymax, xdiv, ydiv, srid=Geometry.DefaultSrid, nodata = 0):
+  def __init__(self, xmin, xmax, ymin, ymax, xdiv, ydiv, srid=Geometry.DefaultSrid, nodata = None):
     Envelope.__init__(self, xmin, xmax, ymin, ymax, srid)
     self.xdiv = xdiv
     self.ydiv = ydiv
-    self.nodata = nodata
-    self.data = numpy.zeros((self.getYBinCount(), self.getXBinCount()), dtype=type(self.nodata))
+    self.nodata = nodata if nodata else RasterElement(0, None)
+    self.data = numpy.empty((self.getYBinCount(), self.getXBinCount()), dtype=type(self.nodata))
 
   def getXDiv(self):
     return self.xdiv
@@ -157,7 +157,7 @@ class Raster(Envelope):
     
     for row in self.data[::-1]:
       for cell in row:
-        result += str(cell) + ' '
+        result += str(cell.get_count()) if cell else 0 + ' '
       result += '\n'
       
     return result.strip()
@@ -169,9 +169,10 @@ class Raster(Envelope):
 
     for row in self.data[::-1]:
       for cell in row:
-        total += cell
-        if maximum < cell:
-	  maximum = cell
+        if cell:
+	  total += cell.get_count()
+	  if maximum < cell.get_count():
+	    maximum = cell.get_count()
 
     if maximum > len(chars):
       divider = float(maximum) / (len(chars) - 1)
@@ -182,7 +183,10 @@ class Raster(Envelope):
     for row in self.data[::-1]:
       result += "|"
       for cell in row:
-	index = int(math.floor((cell - 1) / divider + 1))
+        if cell:
+	  index = int(math.floor((cell.get_count() - 1) / divider + 1))
+        else:
+	  index = 0
 	result += chars[index]
       result += "|\n"
 
@@ -198,9 +202,30 @@ class Raster(Envelope):
     for row in self.data[::-1]:
       cellindex = 0
       for cell in row:
-        if cell > 0:
-	  reduced_array.append([self.getXCenter(cellindex), self.getYCenter(rowindex), int(cell)])
+        if cell:
+	  reduced_array.append([self.getXCenter(cellindex), self.getYCenter(rowindex),
+	      int(cell.get_count()),
+	      cell.get_timestamp().strftime("%Y%m%dT%H:%M:%S.%f")[:-3]])
         cellindex += 1
       rowindex += 1
 
     return reduced_array
+
+class RasterElement(object):
+
+  def __init__(self, count, timestamp):
+    self.count = count
+    self.timestamp = timestamp
+
+  def __gt__(self, other):
+    return self.count > other
+
+  def __str__(self):
+    return "RasterElement(%d, %s)" %(self.count, str(self.timestamp))
+
+  def get_count(self):
+    return self.count
+
+  def get_timestamp(self):
+    return self.timestamp
+

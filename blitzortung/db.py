@@ -198,7 +198,7 @@ class RasterQuery(Query):
 
     sql += 'TRUNC((ST_X(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getXMin()) + ') /' + str(self.raster.getXDiv()) + ') AS rx, '
     sql += 'TRUNC((ST_Y(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getYMin()) + ') /' + str(self.raster.getYDiv()) + ') AS ry, '
-    sql += 'count(*) AS count FROM ('
+    sql += 'count(*) AS count, max(timestamp) as timestamp FROM ('
 
     sql += Query.__str__(self)
 
@@ -210,7 +210,7 @@ class RasterQuery(Query):
 
     if db.cur.rowcount > 0:
       for result in db.cur.fetchall():
-        self.raster.set(result['rx'], result['ry'], result['count'])
+        self.raster.set(result['rx'], result['ry'], geom.RasterElement(result['count'], result['timestamp']))
     return self.raster
 
 class Order(object):
