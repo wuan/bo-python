@@ -194,7 +194,7 @@ class Raster(Envelope):
     result += 'total count: %d, max per area: %d' %(total, maximum)
     return result
 
-  def toReducedArray(self):
+  def to_reduced_array(self, reference_time):
 
     reduced_array = []
 
@@ -203,9 +203,9 @@ class Raster(Envelope):
       cellindex = 0
       for cell in row:
         if cell:
-	  reduced_array.append([self.getXCenter(cellindex), self.getYCenter(rowindex),
+	  reduced_array.append([cellindex, rowindex,
 	      int(cell.get_count()),
-	      cell.get_timestamp().strftime("%Y%m%dT%H:%M:%S.%f")[:-3]])
+	      -((reference_time - cell.get_timestamp()).seconds)])
         cellindex += 1
       rowindex += 1
 
