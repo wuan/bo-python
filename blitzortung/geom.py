@@ -157,7 +157,7 @@ class Raster(Envelope):
     
     for row in self.data[::-1]:
       for cell in row:
-        result += str(cell.get_count()) if cell else 0 + ' '
+        result += str(cell.get_count() if cell else 0) + ' '
       result += '\n'
       
     return result.strip()

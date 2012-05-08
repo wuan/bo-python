@@ -33,7 +33,7 @@ class Url(object):
 
         urlconnection.close()
 
-        return unicode(data)
+        return data.decode('ISO-8859-1')
     
 class StrokesBase(Url):
     
