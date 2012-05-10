@@ -701,8 +701,8 @@ class Location(Base):
 	  distance_sphere(the_geom, c.center) AS distance,
 	  st_azimuth(the_geom, c.center) AS azimuth
 	FROM
-	  (SELECT SetSRID(MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,
-	  %(table_name)s
+	  (SELECT SetSRID(MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' +
+	  self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
@@ -710,7 +710,6 @@ class Location(Base):
 
       params = {}
       params['srid'] = self.get_srid()
-      params['table_name'] = self.get_full_table_name()
       params['center_x'] = self.center.get_point().x
       params['center_y'] = self.center.get_point().y
       params['min_population'] = self.min_population
