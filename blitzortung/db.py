@@ -701,7 +701,7 @@ class Location(Base):
 	  distance_sphere(the_geom, c.center) AS distance,
 	  st_azimuth(the_geom, c.center) AS azimuth
 	FROM
-	  (SELECT SetSRID(MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' +
+	  (SELECT SetSRID(MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
 	  self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
