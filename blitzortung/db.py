@@ -383,6 +383,7 @@ class Stroke(Base):
   ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
 
   CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
+  CREATE INDEX strokes_id_timestamp ON strokes USING btree(id, "timestamp");
   CREATE INDEX strokes_geom ON strokes USING gist(the_geom);
   CREATE INDEX strokes_timestamp_geom ON strokes USING gist("timestamp", the_geom);
   CREATE INDEX strokes_id_timestamp_geom ON strokes USING gist(id, "timestamp", the_geom);
