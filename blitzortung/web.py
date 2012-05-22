@@ -10,7 +10,7 @@ import builder
 
 class Url(object):
 
-    base = 'blitzortung.net/Data/Protected/'
+    base = 'blitzortung.net/Data_%d/Protected/'
 
     def __init__(self, baseurl):
         self.url = baseurl
@@ -53,20 +53,18 @@ class StrokesBase(Url):
 
 class Strokes(StrokesBase):
 
-    def __init__(self, config):
-        super(Strokes, self).__init__(Url.base + 'strikes.txt')
+    def __init__(self, config, region=1):
+        super(Strokes, self).__init__(Url.base %(region) + 'strikes.txt')
         self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
 
 class Participants(StrokesBase):
 
-    def __init__(self, config):
-        super(Participants, self).__init__(Url.base + 'participants.txt')
+    def __init__(self, config, region=1):
+        super(Participants, self).__init__(Url.base %(region) + 'participants.txt')
         self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
-
-
 
 class Stations(Url):
 
-    def __init__(self, config):
-        super(Stations, self).__init__(Url.base + 'stations.txt')
+    def __init__(self, config, region=1):
+        super(Stations, self).__init__(Url.base %(region) + 'stations.txt')
         self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
