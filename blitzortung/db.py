@@ -377,12 +377,14 @@ class Stroke(Base):
   CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, PRIMARY KEY(id));
   SELECT AddGeometryColumn('public','strokes','the_geom','4326','POINT',2);
 
+  ALTER TABLE strokes ADD COLUMN region SMALLINT;
   ALTER TABLE strokes ADD COLUMN amplitude REAL;
   ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
   ALTER TABLE strokes ADD COLUMN type SMALLINT;
   ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
 
   CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
+  CREATE INDEX strokes_region_timestamp ON strokes USING btree(region, "timestamp");
   CREATE INDEX strokes_id_timestamp ON strokes USING btree(id, "timestamp");
   CREATE INDEX strokes_geom ON strokes USING gist(the_geom);
   CREATE INDEX strokes_timestamp_geom ON strokes USING gist("timestamp", the_geom);
@@ -400,16 +402,17 @@ class Stroke(Base):
 
     self.set_table_name('strokes')
 
-  def insert(self, stroke):
+  def insert(self, stroke, region=1):
     self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
-      ' ("timestamp", nanoseconds, the_geom, amplitude, error2d, type, stationcount) ' + \
-      'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s)',
-      (stroke.get_timestamp(), stroke.get_timestamp_nanoseconds(), stroke.get_x(), stroke.get_y(), stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
+      ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
+      'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s, %s)',
+      (stroke.get_timestamp(), stroke.get_timestamp_nanoseconds(), stroke.get_x(), stroke.get_y(), region, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
 
-  def get_latest_time(self):
+  def get_latest_time(self, region=1):
     sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
+      ' WHERE region=%s' + \
       ' ORDER BY timestamp DESC LIMIT 1'
-    self.cur.execute(sql)
+    self.cur.execute(sql, (region,))
     if self.cur.rowcount == 1:
       result = self.cur.fetchone()
       return result['timestamp']
