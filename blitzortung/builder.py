@@ -219,4 +219,53 @@ class RawEvent(Base):
 	self.amplitude_y = float(fields[8])
       else:
         raise Error("not enough data fields for raw event data '%s'" %(data))
-      
+     
+  def from_archive_string(self, string):
+    if string != None:
+      ' Construct stroke from blitzortung text format data line '
+      fields = string.split(' ')
+      self.y = float(fields[2])
+      self.x = float(fields[3])
+      (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+      self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
+      if len(fields) >= 8:
+        self.numberOfSatellites = int(fields[4])
+        self.samplePeriod = int(fields[8])
+        
+        number_of_channels = int(fields[5])
+        number_of_samples = int(fields[6])
+        chars_per_sample = int(fields[7])/4
+        data = fields[9]
+
+	maximum = 0.0
+	maximum_index = 0
+	maximum_values = [0] * number_of_channels;
+	current_values = [0] * number_of_channels;
+
+	for sample in range(0, number_of_samples):
+	  current_sum = 0.0
+	  for channel in range(0, number_of_channels):
+	    index = chars_per_sample * (number_of_channels * sample + channel)
+	    value_string = data[index : index+ chars_per_sample]
+	    value = int(value_string, 16)
+
+            current_values[channel] = value
+	    current_sum += value * value
+
+	  if math.sqrt(current_sum) > maximum:
+	    maximum = math.sqrt(current_sum)
+            maximum_index = sample
+            maximum_values = list(current_values)
+
+	self.amplitude_x = maximum_values[0]
+	if number_of_channels > 1:
+	  self.amplitude_y = maximum_values[1]
+
+	self.timestamp_nanoseconds += maximum_index * self.samplePeriod # add maximum offset to time
+	self.timestamp += datetime.timedelta(microseconds=self.timestamp_nanoseconds / 1000) # fix nanoseconds overflow
+        self.timestamp_nanoseconds %= 1000;
+
+
+      else:
+        raise Error("not enough data fields for raw event data '%s'" %(data))
+     
