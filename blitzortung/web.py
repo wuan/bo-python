@@ -32,7 +32,7 @@ class Url(object):
 
   	try:
 	    urlconnection = opener.open(self.url)
-        except urllib2.URLError, e:
+        except Error, e:
 	    sys.stderr.write("%s when opening '%s'\n" %(e, self.url))
 	    return None
 
