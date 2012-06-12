@@ -242,12 +242,13 @@ class RawEvent(Base):
 	maximum_values = [0] * number_of_channels;
 	current_values = [0] * number_of_channels;
 
+	value_offset = -(1 << (chars_per_sample * 4 - 1))
 	for sample in range(0, number_of_samples):
 	  current_sum = 0.0
 	  for channel in range(0, number_of_channels):
 	    index = chars_per_sample * (number_of_channels * sample + channel)
 	    value_string = data[index : index+ chars_per_sample]
-	    value = int(value_string, 16)
+	    value = int(value_string, 16) + value_offset
 
             current_values[channel] = value
 	    current_sum += value * value

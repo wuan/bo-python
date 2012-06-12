@@ -144,10 +144,10 @@ class RawEvent(Event):
     def __str__(self):
         return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord, self.height, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
 
-    def getXAmplitude(self):
+    def get_x_amplitude(self):
         return self.amplitude_x
 
-    def getYAmplitude(self):
+    def get_y_amplitude(self):
         return self.amplitude_y
 
 class Station(Event):
