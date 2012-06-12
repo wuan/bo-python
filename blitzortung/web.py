@@ -77,6 +77,6 @@ class Stations(Url):
 
 class Raw(Url):
 
-    def __init__(self, config, region, station_id, offset=0):
-        super(Raw, self).__init__(Url.base %(region) + 'raw_data/%s/%02d.log' %(station_id, offset))
+    def __init__(self, config, region, station_id, hour=0):
+        super(Raw, self).__init__(Url.base %(region) + 'raw_data/%s/%02d.log' %(station_id, hour))
         self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
