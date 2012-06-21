@@ -31,8 +31,8 @@ class Url(object):
 	opener = urllib2.build_opener(handler)
 
   	try:
-	    urlconnection = opener.open(self.url)
-        except Error, e:
+	    urlconnection = opener.open(self.url, timeout=60)
+        except urllib2.URLError, e:
 	    sys.stderr.write("%s when opening '%s'\n" %(e, self.url))
 	    return None
 
