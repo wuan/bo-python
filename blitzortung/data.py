@@ -150,6 +150,21 @@ class RawEvent(Event):
     def get_y_amplitude(self):
         return self.amplitude_y
 
+
+class ExtEvent(RawEvent):
+    def __init__(self, x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y, station_number):
+        super(ExtEvent, self).__init__(x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y)
+
+        self.station_number = station_number
+
+    def __str__(self):
+        return "%03d %s" %(self.station_number, super(ExtEvent, self).__str__())
+
+    def get_station_number(self):
+        return self.station_number
+
+
+
 class Station(Event):
 
     def __init__(self, number, short_name, name, location_name, country, x, y, last_data, offline_since, gps_status, tracker_version, samples_per_hour):
@@ -278,19 +293,19 @@ class Histogram(object):
     def __init__(self, fileNames, time):
         data = files.StatisticsData(fileNames, time)
 
-	self.histogram = []
+        self.histogram = []
         while True:
 
             data.get()
 
             entry = {}
 
-	    entry['center_time'] = time.getCenterTime()
-	    entry['count'] = data.getCount()
-	    entry['mean'] = data.getMean()
-	    entry['variance'] = data.getVariance()
+            entry['center_time'] = time.getCenterTime()
+            entry['count'] = data.getCount()
+            entry['mean'] = data.getMean()
+            entry['variance'] = data.getVariance()
 
-	    self.histogram.append(entry)
+            self.histogram.append(entry)
 
             if not time.has_next():
                 break
@@ -298,7 +313,7 @@ class Histogram(object):
             time.next()
 
     def get(self):
-      return self.histogram
+        return self.histogram
 
 class AmplitudeHistogram(object):
 
