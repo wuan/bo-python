@@ -23,7 +23,10 @@ class Raw(object):
     self.raw_files = {}
 
     for raw_file_name in raw_file_names:
-      date = datetime.datetime.strptime(raw_file_name[-12:-4], '%Y%m%d').date()
+      try:
+        date = datetime.datetime.strptime(raw_file_name[-12:-4], '%Y%m%d').date()
+      except ValueError:
+        continue
       if not self.raw_files.has_key(date):
         self.raw_files[date] = raw_file_name
       else:
