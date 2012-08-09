@@ -20,7 +20,6 @@ except ImportError:
     pass
 
 import builder
-import data
 import geom
 
 from abc import ABCMeta, abstractmethod
@@ -288,6 +287,7 @@ class Base(object):
 
         connection = "host='localhost' dbname='blitzortung' user='blitzortung' password='blitzortung'"
         self.schema_name = None
+        self.table_name = None
         self.cur = None
         self.conn = None
 
@@ -358,7 +358,7 @@ class Base(object):
         self.conn.rollback()
 
     @abstractmethod
-    def insert(self, object):
+    def insert(self, object_to_insert):
         pass
 
     @abstractmethod
@@ -461,13 +461,10 @@ class Stroke(Base):
         return self.select_execute(query)
 
     def select_execute(self, query):
-        ' set timezone for query '
         self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
-        ' perform query '
         self.cur.execute(str(query), query.get_parameters())
 
-        ' collect and return data '   
         return query.get_results(self)
 
 class Station(Base):
@@ -631,6 +628,10 @@ class Location(Base):
         super(Location, self).__init__()
         self.set_schema_name('geo')
         self.set_table_name('geonames')
+        self.center = None
+        self.min_population = None
+        self.lmit = None
+        self.max_distance = None
 
     def delete_all(self):
         self.cur.execute('DELETE FROM ' + self.get_full_table_name())
@@ -683,10 +684,8 @@ class Location(Base):
         for arg in args:
             if arg != None:
                 if isinstance(arg, Center):
-                    ' center point information given '
                     self.center = arg
                 elif isinstance(arg, Limit):
-                    ' limit information given '
                     self.limit = arg
 
         if self.is_connected():
@@ -708,7 +707,7 @@ class Location(Base):
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
-	  AND st_transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s''';
+	  AND st_transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
 
             params = {}
             params['srid'] = self.get_srid()
