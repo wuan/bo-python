@@ -20,18 +20,18 @@ from abc import ABCMeta, abstractmethod
 
 class TimeInterval:
 
-  def __init__(self, start = None, end = None):
-    self.start = start
-    self.end = end
+    def __init__(self, start = None, end = None):
+        self.start = start
+        self.end = end
 
-  def get_start(self):
-    return self.start
+    def get_start(self):
+        return self.start
 
-  def get_end(self):
-    return self.end
+    def get_end(self):
+        return self.end
 
-  def __str__(self):
-    return '[' + str(self.start) + ' - ' + str(self.end) + ']'
+    def __str__(self):
+        return '[' + str(self.start) + ' - ' + str(self.end) + ']'
 
 class Query:
     '''
@@ -159,8 +159,8 @@ class Query:
 
         if self.raster == None:
             strokes = []
-	    for result in db.cur.fetchall():
-		strokes.append(db.create(result))
+            for result in db.cur.fetchall():
+                strokes.append(db.create(result))
             return strokes
         else:
             if db.cur.rowcount > 0:
@@ -234,7 +234,7 @@ class Base(object):
             self.conn = db.connect(self.db_file, detect_types=db.PARSE_DECLTYPES)
             self.conn.enable_load_extension(True)
             self.conn.execute('SELECT load_extension("libspatialite.so");')
-  	    self.conn.row_factory = db.Row
+            self.conn.row_factory = db.Row
             self.cur = self.conn.cursor()
         except Exception, e:
             print e
@@ -252,12 +252,12 @@ class Base(object):
                     pass
 
         if not self.has_table('geometry_columns'):
-	    self.cur.execute('SELECT InitSpatialMetadata()')
-	    self.cur.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')");
+            self.cur.execute('SELECT InitSpatialMetadata()')
+            self.cur.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')");
 
     def has_table(self, table_name):
-      result = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
-      return result.fetchone() != None
+        result = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
+        return result.fetchone() != None
 
     def is_connected(self):
         if self.conn != None:
@@ -296,10 +296,10 @@ class Base(object):
         self.tz = tz
 
     def from_bare_utc_to_timezone(self, utc_time):
-      return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
+        return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
 
     def from_timezone_to_bare_utc(self, time_with_tz):
-      return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
+        return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
 
     def commit(self):
         ''' commit pending database transaction '''
@@ -336,12 +336,12 @@ class Stroke(Base):
         Base.__init__(self)
         self.set_table_name('strokes')
 
-	if not self.has_table(self.get_table_name()):
-    	    self.cur.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
-	    self.cur.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
-	    self.cur.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
-	    self.cur.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
-   	    self.cur.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
+        if not self.has_table(self.get_table_name()):
+            self.cur.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
+            self.cur.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
+            self.cur.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
+            self.cur.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
+            self.cur.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
             self.cur.execute("ALTER TABLE strokes ADD COLUMN stationcount INTEGER")
             self.cur.execute("ALTER TABLE strokes ADD COLUMN detected BOOLEAN")
 # create index strokes_timestamp on strokes (timestamp);
@@ -356,17 +356,17 @@ class Stroke(Base):
             ' (timestamp, nanoseconds, the_geom, amplitude, error2d, type, stationcount, detected) ' + \
             'VALUES (:timestamp, :nanoseconds, makepoint(:longitude, :latitude, 4326), :amplitude, :error2d, :type, :stationcount, :detected)'
 
-	parameters = {
-           'timestamp': self.from_timezone_to_bare_utc(stroke.get_time()),
-	   'nanoseconds': stroke.get_nanoseconds(),
-	   'longitude': stroke.x,
-	   'latitude': stroke.y,
-	   'amplitude': stroke.getAmplitude(),
-	   'error2d': stroke.getError2D(),
-	   'type': stroke.getType(),
-	   'stationcount': stroke.getStationCount(),
-	   'detected': stroke.isDetectedByUser(),
-	}
+        parameters = {
+            'timestamp': self.from_timezone_to_bare_utc(stroke.get_time()),
+            'nanoseconds': stroke.get_nanoseconds(),
+            'longitude': stroke.x,
+            'latitude': stroke.y,
+            'amplitude': stroke.getAmplitude(),
+            'error2d': stroke.getError2D(),
+            'type': stroke.getType(),
+            'stationcount': stroke.getStationCount(),
+            'detected': stroke.isDetectedByUser(),
+        }
         self.cur.execute(sql, parameters)
 
     def get_latest_time(self):
@@ -374,7 +374,7 @@ class Stroke(Base):
             ' ORDER BY timestamp DESC LIMIT 1'
         self.cur.execute(sql)
         result = self.cur.fetchone()
-	if result:
+        if result:
             return self.from_bare_utc_to_timezone(result['timestamp'])
         else:
             return None
@@ -382,7 +382,7 @@ class Stroke(Base):
     def create(self, result):
         stroke = data.Stroke()
         stroke.set_time(self.from_bare_utc_to_timezone(result['timestamp']))
-	stroke.set_nanoseconds(result['nanoseconds'])
+        stroke.set_nanoseconds(result['nanoseconds'])
         stroke.set_location(shapely.wkb.loads(str(result['the_geom'])))
         stroke.setAmplitude(result['amplitude'])
         stroke.setType(result['type'])
@@ -474,12 +474,12 @@ class Location(Base):
                          % (longitude, latitude, name, classification, feature, subfeature, country, admin1, admin2, population, elevation))
 
     def size_class(self, n):
-      base = math.floor(math.log(n)/math.log(10)) - 1
-      relative = n / math.pow(10, base)
-      order = min(2, math.floor(relative/25))
-      if base < 0:
-	base = 0
-      return min(15, base * 3 + order)
+        base = math.floor(math.log(n)/math.log(10)) - 1
+        relative = n / math.pow(10, base)
+        order = min(2, math.floor(relative/25))
+        if base < 0:
+            base = 0
+        return min(15, base * 3 + order)
 
     def select(self, *args):
         self.center = None
@@ -528,9 +528,8 @@ class Location(Base):
 
             self.cur.execute(queryString % params)
 
-  	    locations = []
+            locations = []
             if self.cur.rowcount > 0:
                 for result in self.cur.fetchall():
                     print result
             return None
-

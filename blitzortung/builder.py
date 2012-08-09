@@ -269,18 +269,17 @@ class RawEvent(Base):
 
             else:
                 raise Error("not enough data fields for raw event data '%s'" %(data))
-            
+
 class ExtEvent(RawEvent):
-    
+
     def __init__(self):
         super(ExtEvent, self).__init__()
         self.station_number = 0
-        
+
     def set_station_number(self, station_number):
         self.station_number = station_number
-        
+
     def build(self):
         return data.ExtEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitude_x, self.amplitude_y, self.station_number)
-    
-        
-        
+
+
