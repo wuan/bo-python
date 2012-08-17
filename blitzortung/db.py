@@ -80,7 +80,7 @@ class Query(object):
 
     def set_limit(self, limit):
         if self.limit != None:
-            raise Error("overriding Query.limit")
+            raise ValueError("overriding Query.limit")
         self.limit = limit
 
     def add_condition(self, condition, parameters = None):
@@ -156,13 +156,13 @@ class Query(object):
                             self.add_condition('Intersects(SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
-                        raise Error("invalid geometry in db.Stroke.select()")
+                        raise ValueError("invalid geometry in db.Stroke.select()")
 
                 elif isinstance(arg, Order):
                     self.add_order(arg)
 
                 elif isinstance(arg, Limit):
-                    self.setLimit(arg)
+                    self.set_limit(arg)
 
                 else:
                     print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
@@ -188,7 +188,7 @@ class RasterQuery(Query):
         if env.is_valid:
             self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
-            raise Error("invalid Raster geometry in db.Stroke.select()")
+            raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
     def __str__(self):
         sql = 'SELECT '
@@ -298,7 +298,7 @@ class Base(object):
             self.conn = psycopg2.connect(connection)
             self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.cur)
-        except Exception, e:
+        except psycopg2.DatabaseError, e:
             print e
 
             if self.cur != None:
@@ -424,6 +424,7 @@ class Stroke(Base):
         stroke_builder.set_timestamp(result['timestamp'])
         stroke_builder.set_timestamp_nanoseconds(result['nanoseconds'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
+        print location.geometryType
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
         stroke_builder.set_amplitude(result['amplitude'])
@@ -434,10 +435,11 @@ class Stroke(Base):
         return stroke_builder.build()
 
     def select_query(self, args, query = None):
+        ' build up query object for select statement '
+
         if not query:
             query = Query()
 
-        ' build up query object for select statement '
         query.set_table_name(self.get_full_table_name())
         query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
@@ -630,7 +632,7 @@ class Location(Base):
         self.set_table_name('geonames')
         self.center = None
         self.min_population = None
-        self.lmit = None
+        self.limit = None
         self.max_distance = None
 
     def delete_all(self):

@@ -6,32 +6,26 @@
 
 '''
 
-import datetime, pytz
-import math
-import urllib
-import pyproj
-
+import datetime
 
 import builder
-import geom
 import files
-import time
 import types
 
 class TimeRange(object):
 
-    def __init__(self, endTime, deltaTime=datetime.timedelta(hours=2)):
-        self.endTime = endTime
-        self.startTime = endTime - deltaTime
+    def __init__(self, end_time, time_delta=datetime.timedelta(hours=2)):
+        self.end_time = end_time
+        self.start_time = end_time - time_delta
 
     def __str__(self):
-        return "['" + str(self.startTime) + "':'" + str(self.endTime) + "']"
+        return "['" + str(self.start_time) + "':'" + str(self.end_time) + "']"
 
     def get_start_time(self):
-        return self.startTime
+        return self.start_time
 
     def get_end_time(self):
-        return self.endTime
+        return self.end_time
 
     def get_end_minute(self):
         return self.get_end_time() - datetime.timedelta(minutes=1)
@@ -41,14 +35,14 @@ class TimeRange(object):
 
 class TimeInterval(TimeRange):
 
-    def __init__(self, endTime, deltaTime=datetime.timedelta(hours=1)):
-        self.deltaTime = deltaTime
-        TimeRange.__init__(self, self.roundTime(endTime), deltaTime)
+    def __init__(self, end_time, time_delta=datetime.timedelta(hours=1)):
+        self.time_delta = time_delta
+        TimeRange.__init__(self, self.round_time(end_time), time_delta)
 
     def __str__(self):
-        return "['" + str(self.startTime) + "':'" + str(self.endTime) + "'," + str(self.deltaTime) + "]"
+        return "['" + str(self.start_time) + "':'" + str(self.end_time) + "'," + str(self.time_delta) + "]"
 
-    def totalSeconds(self, time):
+    def total_seconds(self, time):
         ' return the total seconds of the given time or datetime (relative to midnight) '
 
         if isinstance(time, datetime.datetime):
@@ -58,12 +52,12 @@ class TimeInterval(TimeRange):
         else:
             raise Exception("unhandled type " + type(time))
 
-    def roundTime(self, time):
-        deltaSeconds = self.totalSeconds(self.deltaTime)
+    def round_time(self, time):
+        delta_seconds = self.total_seconds(self.time_delta)
 
-        seconds =  self.totalSeconds(time)
-        seconds /= deltaSeconds
-        seconds *= deltaSeconds
+        seconds =  self.total_seconds(time)
+        seconds /= delta_seconds
+        seconds *= delta_seconds
 
         if isinstance(time, datetime.datetime):
             return time.replace(hour = seconds/3600, minute= seconds / 60 % 60, second= seconds % 60, microsecond=0)
@@ -76,30 +70,30 @@ class TimeInterval(TimeRange):
     def next(self):
         raise Exception(' no next interval ')
 
-    def getCenterTime(self):
-        return self.startTime + self.deltaTime / 2
+    def get_center_time(self):
+        return self.start_time + self.time_delta / 2
 
 class TimeIntervals(TimeInterval):
 
-    def __init__(self, endTime, deltaTime=datetime.timedelta(minutes=15), totalDuration=datetime.timedelta(days=1)):
-        TimeInterval.__init__(self, endTime, deltaTime)
+    def __init__(self, end_time, time_delta=datetime.timedelta(minutes=15), total_duration=datetime.timedelta(days=1)):
+        TimeInterval.__init__(self, end_time, time_delta)
 
-        self.totalDuration = self.roundTime(totalDuration)
+        self.total_duration = self.round_time(total_duration)
 
-        self.startTime = self.endTime - self.totalDuration
+        self.start_time = self.end_time - self.total_duration
 
     def has_next(self):
-        return self.startTime + self.deltaTime < self.endTime
+        return self.start_time + self.time_delta < self.end_time
 
     def next(self):
         if self.has_next():
-            self.startTime += self.deltaTime
-            return self.startTime
+            self.start_time += self.time_delta
+            return self.start_time
         else:
             raise Exception('no more time intervals')
 
     def get_end_time(self):
-        return self.startTime + self.deltaTime
+        return self.start_time + self.time_delta
 
 
 class Event(types.Point):
@@ -158,7 +152,7 @@ class ExtEvent(RawEvent):
         self.station_number = station_number
 
     def __str__(self):
-        return "%03d %s" %(self.station_number, super(ExtEvent, self).__str__())
+        return "%03d %s" %(self.station_number, super(ExtEvent, self).__str__() )
 
     def get_station_number(self):
         return self.station_number
@@ -167,8 +161,8 @@ class ExtEvent(RawEvent):
 
 class Station(Event):
 
-    def __init__(self, number, short_name, name, location_name, country, x, y, last_data, offline_since, gps_status, tracker_version, samples_per_hour):
-        super(Station, self).__init__(x, y, last_data, 0)
+    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, offline_since, gps_status, tracker_version, samples_per_hour):
+        super(Station, self).__init__(x_coord, y_coord, last_data, 0)
         self.number = number
         self.short_name = short_name
         self.name = name
@@ -248,15 +242,15 @@ class Stroke(Event):
     classdocs
     '''
 
-    def __init__(self, id, x, y, timestamp, timestamp_ns, amplitude, height, lateral_error, type_val, station_count, participants = []):
-        super(Stroke, self).__init__(x, y, timestamp, timestamp_ns)
-        self.id = id
+    def __init__(self, stroke_id, x_coord, y_coord, timestamp, timestamp_ns, amplitude, height, lateral_error, type_val, station_count, participants = None):
+        super(Stroke, self).__init__(x_coord, y_coord, timestamp, timestamp_ns)
+        self.stroke_id = stroke_id
         self.amplitude = amplitude
         self.height = height
         self.lateral_error = lateral_error
         self.type_val = type_val
         self.station_count = station_count
-        self.participants = participants
+        self.participants = [] if participants == None else participants
 
     def get_location(self):
         return self
@@ -271,7 +265,7 @@ class Stroke(Event):
         return self.type_val
 
     def get_id(self):
-        return self.id
+        return self.stroke_id
 
     def get_lateral_error(self):
         return self.lateral_error
@@ -286,12 +280,14 @@ class Stroke(Event):
         return False
 
     def __str__(self):
-        return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" %(self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), self.x_coord, self.y_coord, self.height, self.amplitude, self.type_val, self.lateral_error, self.station_count)
+        return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" \
+               %(self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), \
+                 self.x_coord, self.y_coord, self.height, self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):
 
-    def __init__(self, fileNames, time):
-        data = files.StatisticsData(fileNames, time)
+    def __init__(self, file_names, time):
+        data = files.StatisticsData(file_names, time)
 
         self.histogram = []
         while True:
@@ -300,7 +296,7 @@ class Histogram(object):
 
             entry = {}
 
-            entry['center_time'] = time.getCenterTime()
+            entry['center_time'] = time.get_center_time()
             entry['count'] = data.getCount()
             entry['mean'] = data.getMean()
             entry['variance'] = data.getVariance()
@@ -317,7 +313,7 @@ class Histogram(object):
 
 class AmplitudeHistogram(object):
 
-    def __init__(self, fileNames, time):
-        data = files.HistogramData(fileNames, time)
+    def __init__(self, file_names, time):
+        data = files.HistogramData(file_names, time)
 
         data.list()
