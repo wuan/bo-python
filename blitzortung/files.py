@@ -10,7 +10,6 @@ import os, subprocess
 import glob
 import datetime
 
-import data
 import builder
 
 class Raw(object):
@@ -53,27 +52,27 @@ class Data(object):
 
     def get(self, long_format=False):
         start = self.time.get_start_time()
-        starttime = start.strftime("%H%M")
-        startdate = start.strftime("%Y%m%d")
+        start_time = start.strftime("%H%M")
+        start_date = start.strftime("%Y%m%d")
 
         end = self.time.get_end_minute()
-        endtime = end.strftime("%H%M")
+        end_time = end.strftime("%H%M")
 
         self.error = False
 
         raw_file = self.raw_file_path.get(start.date())
 
         if long_format:
-            return self.get_output(raw_file, starttime, endtime, True)
+            return self.get_output(raw_file, start_time, endtime, True)
         else:
-            return self.get_data(raw_file, starttime, endtime)
+            return self.get_data(raw_file, start_time, endtime)
 
     def get_output(self, raw_file, starttime, endtime, long_format=False):
         cmd = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime]
         if long_format:
             cmd.append('--long-data')
         dataPipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        (output, error) = dataPipe.communicate()
+        (output, _) = dataPipe.communicate()
 
         return output.splitlines()
 
@@ -93,14 +92,14 @@ class Data(object):
 
     def list_long(self):
         for line in self.get(True):
-            print event
+            print line
 
 class StatisticsData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
         args = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics']
         dataPipe = subprocess.Popen(args, stdout=subprocess.PIPE)
-        (output, error) = dataPipe.communicate()
+        (output, _) = dataPipe.communicate()
 
         results = output.strip().split(" ")
 
@@ -127,6 +126,6 @@ class HistogramData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
         dataPipe = subprocess.Popen(['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'histogram'], stdout=subprocess.PIPE)
-        (output, error) = dataPipe.communicate()
+        (output, _) = dataPipe.communicate()
 
         return output.splitlines()

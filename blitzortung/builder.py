@@ -99,7 +99,7 @@ class Stroke(Base):
                     for index in range(8,len(fields)):
                         self.participants.append(fields[index])
             else:
-                raise Error("not enough data fields from stroke data line '%s'" %(string))
+                raise RuntimeError("not enough data fields from stroke data line '%s'" %(string))
         self.height = 0.0  
 
 
@@ -218,7 +218,7 @@ class RawEvent(Base):
                 self.amplitude_x = float(fields[7])
                 self.amplitude_y = float(fields[8])
             else:
-                raise Error("not enough data fields for raw event data '%s'" %(data))
+                raise RuntimeError("not enough data fields for raw event data '%s'" %(data))
 
     def from_archive_string(self, string):
         if string != None:
@@ -268,7 +268,7 @@ class RawEvent(Base):
 
 
             else:
-                raise Error("not enough data fields for raw event data '%s'" %(data))
+                raise RuntimeError("not enough data fields for raw event data '%s'" %(data))
 
 class ExtEvent(RawEvent):
 

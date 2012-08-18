@@ -59,7 +59,7 @@ class Query:
 
     def set_limit(self, limit):
         if self.limit != None:
-            raise Error("overriding Query.limit")
+            raise RuntimeError("overriding Query.limit")
         self.limit = limit
 
     def add_condition(self, condition, parameters = None):
@@ -135,7 +135,7 @@ class Query:
                             self.add_condition('Intersects(SetSRID(CAST(:geometry AS geometry), :srid), Transform(the_geom, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
-                        raise Error("invalid geometry in db.Stroke.select()")
+                        raise RuntimeError("invalid geometry in db.Stroke.select()")
 
                 elif isinstance(arg, geom.Raster):
                     self.raster = arg
@@ -144,13 +144,13 @@ class Query:
                     if env.is_valid:
                         self.add_condition('SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
                     else:
-                        raise Error("invalid Raster geometry in db.Stroke.select()")
+                        raise RuntimeError("invalid Raster geometry in db.Stroke.select()")
 
                 elif isinstance(arg, Order):
                     self.add_order(arg)
 
                 elif isinstance(arg, Limit):
-                    self.setLimit(arg)
+                    self.set_limit(arg)
 
                 else:
                     print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
@@ -310,7 +310,7 @@ class Base(object):
         self.conn.rollback()
 
     def getNextId(self):
-        return nextid
+        return self.nextid
 
     @abstractmethod
     def insert(self, object):

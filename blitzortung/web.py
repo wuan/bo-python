@@ -21,31 +21,31 @@ class Url(object):
 
     def set_credentials(self, username, password):
         self.username = username
-	self.password = password
+        self.password = password
 
     def read(self):
-	password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-	password_mgr.add_password("Blitzortung.org", "http://blitzortung.net", self.username, self.password)
-	handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_mgr.add_password("Blitzortung.org", "http://blitzortung.net", self.username, self.password)
+        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 
-	opener = urllib2.build_opener(handler)
+        opener = urllib2.build_opener(handler)
 
-  	try:
-	    urlconnection = opener.open(self.url, timeout=60)
+        try:
+            urlconnection = opener.open(self.url, timeout=60)
         except urllib2.URLError, e:
-	    sys.stderr.write("%s when opening '%s'\n" %(e, self.url))
-	    return None
+            sys.stderr.write("%s when opening '%s'\n" %(e, self.url))
+            return None
 
-	data = urlconnection.read().strip()
-	urlconnection.close()
+        data = urlconnection.read().strip()
+        urlconnection.close()
 
         return data.decode('ISO-8859-1')
-    
+
 class StrokesBase(Url):
-    
+
     def __init__(self, base_url):
         super(StrokesBase, self).__init__(base_url)
-        
+
     def get_strokes(self, time_interval=None):
         strokes = [] 
         for line in self.read().split('\n'): 

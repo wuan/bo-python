@@ -424,7 +424,6 @@ class Stroke(Base):
         stroke_builder.set_timestamp(result['timestamp'])
         stroke_builder.set_timestamp_nanoseconds(result['nanoseconds'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
-        print location.geometryType
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
         stroke_builder.set_amplitude(result['amplitude'])

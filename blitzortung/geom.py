@@ -6,7 +6,6 @@
 
 '''
 
-import subprocess
 import re
 import pyproj
 import numpy
@@ -21,18 +20,18 @@ class Point(object):
 
     __whitespaceRe = re.compile('\s+')
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, x_coord, y_coord):
+        self.x_coord = x_coord
+        self.y_coord = y_coord
 
     def get_x(self):
-        return self.x
+        return self.x_coord
 
     def get_y(self):
-        return self.y
+        return self.y_coord
 
     def __invgeod(self, other):
-        return Point.__geod.inv(self.x, self.y, other.x, other.y)
+        return Point.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord)
 
     def distance(self, other):
         return self.__invgeod(other)[2]
@@ -52,14 +51,14 @@ class Geometry(object):
     def __init__(self, srid = DefaultSrid):
         self.srid = srid
 
-    def getSrid(self):
+    def get_srid(self):
         return self.srid
 
-    def setSrid(self, srid):
+    def set_srid(self, srid):
         self.srid = srid
 
     @abstractmethod
-    def getEnv(self):
+    def get_env(self):
         pass
 
 
@@ -73,25 +72,22 @@ class Envelope(Geometry):
         self.ymin = ymin
         self.ymax = ymax
 
-    def getXMin(self):
+    def get_x_min(self):
         return self.xmin
 
-    def getXMax(self):
+    def get_x_max(self):
         return self.xmax
 
-    def getYMin(self):
+    def get_y_min(self):
         return self.ymin
 
-    def getYMax(self):
+    def get_y_max(self):
         return self.ymax
 
-    def getSrid(self):
-        return self.srid
-
-    def getDeltaY(self):
+    def get_y_delta(self):
         return abs(self.ymax - self.ymin)
 
-    def getDeltaX(self):
+    def get_x_delta(self):
         return abs(self.xmax - self.xmin)
 
     def contains(self, point):
@@ -103,7 +99,7 @@ class Envelope(Geometry):
         else:
             return False
 
-    def getEnv(self):
+    def get_env(self):
         return shapely.geometry.Polygon(((self.xmin, self.ymin), (self.xmin, self.ymax), (self.xmax, self.ymax), (self.xmax, self.ymin)))
 
     def __str__(self):
@@ -118,42 +114,42 @@ class Raster(Envelope):
         self.xdiv = xdiv
         self.ydiv = ydiv
         self.nodata = nodata if nodata else RasterElement(0, None)
-        self.data = numpy.empty((self.getYBinCount(), self.getXBinCount()), dtype=type(self.nodata))
+        self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.nodata))
 
-    def getXDiv(self):
+    def get_x_div(self):
         return self.xdiv
 
-    def getYDiv(self):
+    def get_y_div(self):
         return self.ydiv
 
-    def getXBinCount(self):
+    def get_x_bin_count(self):
         return int(math.ceil(1.0 * (self.xmax - self.xmin) / self.xdiv))
 
-    def getYBinCount(self):
+    def get_y_bin_count(self):
         return int(math.ceil(1.0 * (self.ymax - self.ymin) / self.ydiv))
 
-    def getXCenter(self, cellindex):
+    def get_x_center(self, cellindex):
         return self.xmin + (cellindex + 0.5) * self.xdiv
 
-    def getYCenter(self, rowindex):
+    def get_y_center(self, rowindex):
         return self.ymin + (rowindex + 0.5) * self.ydiv
 
-    def set(self, x, y, data):
-        self.data[y][x] = data
+    def set(self, x_index, y_index, value):
+        self.data[y_index][x_index] = value
 
-    def get(self, x, y):
-        return self.data[y][x]
+    def get(self, x_index, y_index):
+        return self.data[y_index][x_index]
 
-    def getNodataValue(self):
+    def get_nodata_value(self):
         return self.nodata
 
-    def toArcGrid(self):
-        result  = 'NCOLS %d\n' % self.getXBinCount()
-        result += 'NROWS %d\n' % self.getYBinCount()
-        result += 'XLLCORNER %.4f\n' % self.getXMin()
-        result += 'YLLCORNER %.4f\n' % self.getYMin()
-        result += 'CELLSIZE %.4f\n' % self.getXDiv()
-        result += 'NODATA_VALUE %s\n' % str(self.getNodataValue())
+    def to_arcgrid(self):
+        result  = 'NCOLS %d\n' % self.get_x_bin_count()
+        result += 'NROWS %d\n' % self.get_y_bin_count()
+        result += 'XLLCORNER %.4f\n' % self.get_x_min()
+        result += 'YLLCORNER %.4f\n' % self.get_y_min()
+        result += 'CELLSIZE %.4f\n' % self.get_x_div()
+        result += 'NODATA_VALUE %s\n' % str(self.get_nodata_value())
 
         for row in self.data[::-1]:
             for cell in row:
@@ -162,7 +158,7 @@ class Raster(Envelope):
 
         return result.strip()
 
-    def toMap(self):
+    def to_map(self):
         chars = " .-o*O8"
         maximum = 0
         total = 0
@@ -179,7 +175,7 @@ class Raster(Envelope):
         else:
             divider = 1
 
-        result = (self.getXBinCount() + 2) * '-' + '\n'
+        result = (self.get_x_bin_count() + 2) * '-' + '\n'
         for row in self.data[::-1]:
             result += "|"
             for cell in row:
@@ -190,7 +186,7 @@ class Raster(Envelope):
                 result += chars[index]
             result += "|\n"
 
-        result += (self.getXBinCount() + 2) * '-' + '\n'
+        result += (self.get_x_bin_count() + 2) * '-' + '\n'
         result += 'total count: %d, max per area: %d' %(total, maximum)
         return result
 
