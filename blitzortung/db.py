@@ -437,7 +437,7 @@ class Stroke(Base):
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
             ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
-            'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s, %s)'
+            'VALUES (%(timestamp)s, %(nanoseconds)s, st_setsrid(makepoint(%(longitude)s, %(latitude)s), 4326), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
@@ -455,9 +455,9 @@ class Stroke(Base):
 
     def get_latest_time(self, region=1):
         sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
-            ' WHERE region=%s' + \
+            ' WHERE region=%(region)s' + \
             ' ORDER BY timestamp DESC LIMIT 1'
-        self.cur.execute(sql, (region,))
+        self.cur.execute(sql, {'region', region})
         if self.cur.rowcount == 1:
             result = self.cur.fetchone()
             return result['timestamp']
@@ -487,7 +487,7 @@ class Stroke(Base):
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %i) AS the_geom' % self.srid, 'amplitude', 'type', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %(srid)s) AS the_geom', 'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
 #query.add_condition('the_geom IS NOT NULL')
@@ -757,13 +757,14 @@ class Location(Base):
 	  AND population >= %(min_population)s
 	  AND st_transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
 
-            params = {}
-            params['srid'] = self.get_srid()
-            params['center_x'] = self.center.get_point().x
-            params['center_y'] = self.center.get_point().y
-            params['min_population'] = self.min_population
-            params['max_distance'] = self.max_distance
-            params['limit'] = self.limit
+            params = {
+                'srid': self.get_srid(),
+                'center_x': self.center.get_point().x,
+                'center_y': self.center.get_point().y,
+                'min_population': self.min_population,
+                'max_distance': self.max_distance,
+                'limit': self.limit
+            }
 
             self.cur.execute(queryString, params)
 
