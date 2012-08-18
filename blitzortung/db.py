@@ -33,7 +33,7 @@ class BaseInterval(object):
 
     def __str__(self):
         return '[' + str(self.start) + ' - ' + str(self.end) + ']'
-    
+
 class IdInterval(BaseInterval):
 
     def __init__(self, start = None, end = None):
@@ -135,9 +135,11 @@ class Query(object):
 
                     if arg.get_start() != None:
                         self.add_condition('timestamp >= %(starttime)s', {'starttime': arg.get_start()})
+#self.add_condition('timestamp >= :starttime', {'starttime': arg.get_start().astimezone(pytz.UTC).replace(tzinfo=None)})
 
                     if arg.get_end() != None:
                         self.add_condition('timestamp < %(endtime)s', {'endtime': arg.get_end()})
+#self.add_condition('timestamp < :endtime', {'endtime': arg.get_end().astimezone(pytz.UTC).replace(tzinfo=None)})
 
                 elif isinstance(arg, IdInterval):
 
@@ -152,9 +154,11 @@ class Query(object):
                     if arg.is_valid:
 
                         self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+#self.add_condition('SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition('Intersects(SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+#self.add_condition('Intersects(SetSRID(CAST(:geometry AS geometry), :srid), Transform(the_geom, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -188,6 +192,7 @@ class RasterQuery(Query):
 
         if env.is_valid:
             self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+#self.add_condition('SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
@@ -295,6 +300,11 @@ class Base(object):
         self.srid = geom.Geometry.DefaultSrid
         self.tz = Base.DefaultTimezone
 
+#            self.db_file = "/tmp/blitzortung.sqlite"
+#            self.conn = db.connect(self.db_file, detect_types=db.PARSE_DECLTYPES)
+#            self.conn.enable_load_extension(True)
+#            self.conn.execute('SELECT load_extension("libspatialite.so");')
+#            self.conn.row_factory = db.Row
         try:
             self.conn = psycopg2.connect(connection)
             self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -313,6 +323,14 @@ class Base(object):
                     self.conn.close()
                 except NameError:
                     pass
+
+        #if not self.has_table('geometry_columns'):
+        #    self.cur.execute('SELECT InitSpatialMetadata()')
+        #    self.cur.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')")
+
+#    def has_table(self, table_name):
+#        result = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
+#        return result.fetchone() != None
 
     def is_connected(self):
         if self.conn != None:
@@ -349,6 +367,12 @@ class Base(object):
 
     def set_timezone(self, tz):
         self.tz = tz
+
+    def from_bare_utc_to_timezone(self, utc_time):
+        return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
+
+    def from_timezone_to_bare_utc(self, time_with_tz):
+        return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
 
     def commit(self):
         ''' commit pending database transaction '''
@@ -401,11 +425,33 @@ class Stroke(Base):
 
         self.set_table_name('strokes')
 
+#        if not self.has_table(self.get_table_name()):
+#            self.cur.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
+#            self.cur.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
+#            self.cur.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
+#            self.cur.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
+#            self.cur.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
+#            self.cur.execute("ALTER TABLE strokes ADD COLUMN stationcount INTEGER")
+#            self.cur.execute("ALTER TABLE strokes ADD COLUMN detected BOOLEAN")
+
     def insert(self, stroke, region=1):
-        self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
-                         ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
-                         'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s, %s)',
-                         (stroke.get_timestamp(), stroke.get_timestamp_nanoseconds(), stroke.get_x(), stroke.get_y(), region, stroke.get_amplitude(), stroke.get_lateral_error(), stroke.get_type(), stroke.get_station_count()))
+        sql = 'INSERT INTO ' + self.get_full_table_name() + \
+            ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
+            'VALUES (%s, %s, st_setsrid(makepoint(%s, %s), 4326), %s, %s, %s, %s, %s)'
+
+        parameters = {
+            'timestamp': stroke.get_timestamp(),
+            'nanoseconds': stroke.get_timestamp_nanoseconds(),
+            'longitude': stroke.get_x(),
+            'latitude': stroke.get_y(),
+            'region': region,
+            'ampitude': stroke.get_amplitude(),
+            'error2d': stroke.get_lateral_error(),
+            'type': stroke.get_type(),
+            'stationcount': stroke.get_station_count()
+        }
+
+        self.cur.execute(sql, parameters)
 
     def get_latest_time(self, region=1):
         sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
