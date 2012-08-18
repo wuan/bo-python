@@ -1,13 +1,8 @@
 # -*- coding: utf8 -*-
 
-'''
-
-@author: Andreas Würl
-
-'''
-
 import math
 
+import datetime
 import pytz
 import shapely.wkb
 import shapely.geometry
@@ -24,7 +19,7 @@ import geom
 
 from abc import ABCMeta, abstractmethod
 
-class IdInterval(object):
+class BaseInterval(object):
 
     def __init__(self, start = None, end = None):
         self.start = start
@@ -38,21 +33,26 @@ class IdInterval(object):
 
     def __str__(self):
         return '[' + str(self.start) + ' - ' + str(self.end) + ']'
-
-class TimeInterval(object):
+    
+class IdInterval(BaseInterval):
 
     def __init__(self, start = None, end = None):
-        self.start = start
-        self.end = end
+        if start and not isinstance(start, int):
+            raise ValueError("start should be an integer value")
+        if end and not isinstance(end, int):
+            raise ValueError("end should be an integer value")        
 
-    def get_start(self):
-        return self.start
+        super(IdInterval, self).__init__(start, end)
 
-    def get_end(self):
-        return self.end
+class TimeInterval(BaseInterval):
 
-    def __str__(self):
-        return '[' + str(self.start) + ' - ' + str(self.end) + ']'
+    def __init__(self, start = None, end = None):
+        if start and not isinstance(start, datetime.datetime):
+            raise ValueError("start should be a datetime value")
+        if end and not isinstance(end, datetime.datetime):
+            raise ValueError("end should be a datetime value")        
+
+        super(TimeInterval, self).__init__(start, end)
 
 
 class Query(object):
@@ -115,14 +115,15 @@ class Query(object):
             for index, order in enumerate(self.order):
                 if index != 0:
                     sql += ', '
-                sql += order.get_column() + ' '
+                sql += order.get_column()
                 if order.is_desc():
-                    sql += 'DESC '
+                    sql += ' DESC'
+            sql += ' '
 
         if self.limit:
             sql += 'LIMIT ' + str(self.limit.get_number()) + ' '
 
-        return sql
+        return sql.strip()
 
     def get_parameters(self):
         return self.parameters
