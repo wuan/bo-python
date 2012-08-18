@@ -457,7 +457,7 @@ class Stroke(Base):
         sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
             ' WHERE region=%(region)s' + \
             ' ORDER BY timestamp DESC LIMIT 1'
-        self.cur.execute(sql, {'region', region})
+        self.cur.execute(sql, {'region': region})
         if self.cur.rowcount == 1:
             result = self.cur.fetchone()
             return result['timestamp']
