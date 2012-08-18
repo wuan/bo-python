@@ -63,9 +63,9 @@ class Data(object):
         raw_file = self.raw_file_path.get(start.date())
 
         if long_format:
-            return self.get_output(raw_file, start_time, endtime, True)
+            return self.get_output(raw_file, start_time, end_time, True)
         else:
-            return self.get_data(raw_file, start_time, endtime)
+            return self.get_data(raw_file, start_time, end_time)
 
     def get_output(self, raw_file, starttime, endtime, long_format=False):
         cmd = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime]
