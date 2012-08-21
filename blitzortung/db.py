@@ -80,7 +80,7 @@ class Query(object):
 
     def set_limit(self, limit):
         if self.limit != None:
-            raise ValueError("overriding Query.limit")
+            raise RuntimeError("overriding Query.limit")
         self.limit = limit
 
     def add_condition(self, condition, parameters = None):
@@ -445,7 +445,7 @@ class Stroke(Base):
             'longitude': stroke.get_x(),
             'latitude': stroke.get_y(),
             'region': region,
-            'ampitude': stroke.get_amplitude(),
+            'amplitude': stroke.get_amplitude(),
             'error2d': stroke.get_lateral_error(),
             'type': stroke.get_type(),
             'stationcount': stroke.get_station_count()
