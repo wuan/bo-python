@@ -83,8 +83,8 @@ class Stroke(Base):
         return data.Stroke(self.id_value, self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
 
     def from_string(self, string):
+        ' Construct stroke from blitzortung text format data line '
         if string != None:
-            ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
             if len(fields) >= 8:
                 self.set_x(float(fields[3]))
@@ -179,13 +179,13 @@ class Station(Base):
 class StationOffline(Base):
 
     def __init__(self):
-        self.id_number = -1
+        self.id_value = -1
         self.number = -1
         self.begin = None
         self.end = None
 
-    def set_id(self, id_number):
-        self.id_number = id_number
+    def set_id(self, id_value):
+        self.id_value = id_value
 
     def set_number(self, number):
         self.number = number
@@ -197,36 +197,45 @@ class StationOffline(Base):
         self.end = end
 
     def build(self):
-        return data.StationOffline(self.id_number, self.number, self.begin, self.end)
+        return data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
 class RawEvent(Base):
 
     def __init__(self):
-        self.x = 0
-        self.y = 0
+        self.x_coord = 0
+        self.y_coord = 0
         self.timestamp = None
         self.timestamp_nanoseconds = 0
-        self.height = 0
-        self.numberOfSatellites = 0
-        self.samplePeriod = 0
+        self.altitude = 0
+        self.number_of_satellites = 0
+        self.sample_period = 0
         self.amplitude_x = 0
         self.amplitude_y = 0
 
     def build(self):
-        return data.RawEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitude_x, self.amplitude_y)
+        return data.RawEvent(self.x_coord, self.y_coord, self.timestamp, self.timestamp_nanoseconds, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
+
+    def set_x(self, x_coord):
+        self.x_coord = x_coord
+
+    def set_y(self, y_coord):
+        self.y_coord = y_coord
+
+    def set_altitude(self, altitude):
+        self.altitude = altitude
 
     def from_string(self, string):
         if string != None:
             ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
-            self.x = float(fields[2])
-            self.y = float(fields[3])
-            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
-            self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
             if len(fields) >= 8:
-                self.height = int(fields[4])
-                self.numberOfSatellites = int(fields[5])
-                self.samplePeriod = int(fields[6])
+                self.set_x(float(fields[2]))
+                self.set_y(float(fields[3]))
+                (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+                self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
+                self.set_altitude(int(fields[4]))
+                self.number_of_satellites = int(fields[5])
+                self.sample_period = int(fields[6])
                 self.amplitude_x = float(fields[7])
                 self.amplitude_y = float(fields[8])
             else:
@@ -241,8 +250,8 @@ class RawEvent(Base):
             (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
             self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
             if len(fields) >= 8:
-                self.numberOfSatellites = int(fields[4])
-                self.samplePeriod = int(fields[8])
+                self.number_of_satellites = int(fields[4])
+                self.sample_period = int(fields[8])
 
                 number_of_channels = int(fields[5])
                 number_of_samples = int(fields[6])
@@ -274,7 +283,7 @@ class RawEvent(Base):
                 if number_of_channels > 1:
                     self.amplitude_y = maximum_values[1]
 
-                self.timestamp_nanoseconds += maximum_index * self.samplePeriod # add maximum offset to time
+                self.timestamp_nanoseconds += maximum_index * self.sample_period # add maximum offset to time
                 self.timestamp += datetime.timedelta(microseconds=self.timestamp_nanoseconds / 1000) # fix nanoseconds overflow
                 self.timestamp_nanoseconds %= 1000;
 
@@ -292,6 +301,6 @@ class ExtEvent(RawEvent):
         self.station_number = station_number
 
     def build(self):
-        return data.ExtEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.height, self.numberOfSatellites, self.samplePeriod, self.amplitude_x, self.amplitude_y, self.station_number)
+        return data.ExtEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y, self.station_number)
 
 

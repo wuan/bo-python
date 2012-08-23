@@ -127,22 +127,25 @@ class Event(types.Point):
 
 
 class RawEvent(Event):
-    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y):
+    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, altitude, number_of_satellites, sample_period, amplitude_x, amplitude_y):
         super(RawEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds)
-        self.height = height
+        self.altitude = altitude
         self.number_of_satellites = number_of_satellites
         self.sample_period = sample_period
         self.amplitude_x = amplitude_x
         self.amplitude_y = amplitude_y
 
     def __str__(self):
-        return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord, self.height, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
+        return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
 
     def get_x_amplitude(self):
         return self.amplitude_x
 
     def get_y_amplitude(self):
         return self.amplitude_y
+
+    def get_altitude(self):
+        return self.altitude
 
 
 class ExtEvent(RawEvent):

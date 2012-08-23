@@ -187,7 +187,7 @@ class StationTest(unittest.TestCase):
     self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
     self.assertEqual(station.get_samples_per_hour(), 4)
 
-  def test_build_station(self):
+  def test_build_station_offline(self):
 
     self.builder.set_number(364)
     self.builder.set_short_name('MustermK')
@@ -212,3 +212,61 @@ class StationTest(unittest.TestCase):
     self.assertEqual(station.get_gps_status(), 'A')
     self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
     self.assertEqual(station.get_samples_per_hour(), 4)
+
+class StationOffline(unittest.TestCase):
+
+  def setUp(self):
+    self.builder = blitzortung.builder.StationOffline()
+
+  def test_default_values(self):
+    self.assertEqual(self.builder.id_value, -1)
+    self.assertEqual(self.builder.number, -1)
+    self.assertEqual(self.builder.begin, None)
+    self.assertEqual(self.builder.end, None)
+
+  def test_build_station_offline(self):
+
+    self.builder.set_id(364)
+    self.builder.set_number(123)
+
+    end = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+    begin = end - datetime.timedelta(hours=1)
+    self.builder.set_begin(begin)
+    self.builder.set_end(end)
+
+    station_offline = self.builder.build()
+
+    self.assertEqual(station_offline.get_id(), 364)
+    self.assertEqual(station_offline.get_number(), 123)
+    self.assertEqual(station_offline.get_begin(), begin)
+    self.assertEqual(station_offline.get_end(), end)
+
+class RawEvent(unittest.TestCase):
+
+  def setUp(self):
+    self.builder = blitzortung.builder.RawEvent()
+
+  def test_default_values(self):
+    self.assertEqual(self.builder.x_coord, 0)
+    self.assertEqual(self.builder.y_coord, 0)
+    self.assertEqual(self.builder.timestamp, None)
+    self.assertEqual(self.builder.timestamp_nanoseconds, 0)
+    self.assertEqual(self.builder.altitude, 0)
+    self.assertEqual(self.builder.number_of_satellites, 0)
+    self.assertEqual(self.builder.sample_period, 0)
+    self.assertEqual(self.builder.amplitude_x, 0.0)
+    self.assertEqual(self.builder.amplitude_y, 0.0)
+
+
+  def test_build_raw_event(self):
+
+    self.builder.set_x(11.0)
+    self.builder.set_y(49.0)
+    self.builder.set_altitude(530)
+
+    raw_event = self.builder.build()
+
+    self.assertEqual(raw_event.get_x(), 11.0)
+    self.assertEqual(raw_event.get_y(), 49.0)
+    self.assertEqual(raw_event.get_altitude(), 530)
+
