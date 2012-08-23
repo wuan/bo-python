@@ -43,7 +43,7 @@ class Stroke(Base):
 
     def __init__(self):
         self.id_value = -1
-        self.altitude = -1.0
+        self.altitude = None
         self.participants = []
 
     def set_id(self, id_value):
@@ -113,9 +113,9 @@ class Station(Base):
         self.number = -1
         self.location_name = None
         self.last_data = None
-        self.gps_status = 'n/a'
+        self.gps_status = None
         self.samples_per_hour = -1
-        self.tracker_version = 'n/a'
+        self.tracker_version = None
         self.offline_since = None
 
     def set_number(self, number):

@@ -177,7 +177,7 @@ class Station(Event):
         return u"%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(builder.Base.timeformat))
 
     def __eq__(self, other):
-        #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp   
+        #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp
         return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country
 
     def __ne__(self, other):
@@ -275,6 +275,9 @@ class Stroke(Event):
 
     def has_participant(self, participant):
         return self.participants.count(participant) > 0
+
+    def get_participants(self):
+        return self.participants
 
     def is_detected_by_user(self):
         return False
