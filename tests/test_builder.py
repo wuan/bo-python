@@ -19,36 +19,28 @@ class BaseTest(unittest.TestCase):
     self.assertEqual(timestamp.second, 18)
 
   def test_create_from_string(self):
-
-    self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18.096651423")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.096651423")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 96651)
     self.assertEqual(timestamp_nanoseconds, 423)
 
   def test_create_from_millisecond_string(self):
-
-    self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18.096")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.096")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 96000)
     self.assertEqual(timestamp_nanoseconds, 0)
 
   def test_create_from_string_wihtout_fractional_seconds(self):
-
-    self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 0)
     self.assertEqual(timestamp_nanoseconds, 0)
 
   def test_create_from_nanosecond_string(self):
-
-    self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18.123456789")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.123456789")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
@@ -56,7 +48,7 @@ class BaseTest(unittest.TestCase):
 
 
     self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18.12345678")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.12345678")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
@@ -64,11 +56,36 @@ class BaseTest(unittest.TestCase):
 
 
     self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp_with_nanoseconds("2012-02-10 12:56:18.1234567")
+    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.1234567")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
     self.assertEqual(timestamp_nanoseconds, 700)
+
+class TimestampTest(unittest.TestCase):
+
+  def setUp(self):
+    self.builder = blitzortung.builder.Timestamp()
+
+  def assert_correct_timestamp(self):
+    self.assertEqual(self.builder.timestamp.day, 10)
+    self.assertEqual(self.builder.timestamp.month, 2)
+    self.assertEqual(self.builder.timestamp.year, 2012)
+    self.assertEqual(self.builder.timestamp.hour, 12)
+    self.assertEqual(self.builder.timestamp.minute, 56)
+    self.assertEqual(self.builder.timestamp.second, 18)
+    self.assertEqual(self.builder.timestamp.microsecond, 96651)
+
+  def test_set_timestamp_from_string(self):
+    self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
+
+    self.assert_correct_timestamp()
+    self.assertEqual(self.builder.timestamp_nanoseconds, 423)
+
+  def test_set_timestamp_from_datetime(self):
+    self.builder.set_timestamp(datetime.datetime(2012,2,10,12,56,18,96651))
+
+    self.assert_correct_timestamp()
 
 class StrokeTest(unittest.TestCase):
 

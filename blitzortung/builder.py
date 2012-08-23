@@ -20,6 +20,15 @@ class Base(object):
     timestamp_string_microseconds_length = 26
 
     def parse_timestamp(self, timestamp_string):
+        timestamp = self.__parse_timestamp_value(timestamp_string)
+        if len(timestamp_string) > Base.timestamp_string_microseconds_length:
+            nanoseconds_string = timestamp_string[self.timestamp_string_microseconds_length:self.timestamp_string_microseconds_length + 3]
+            nanoseconds = int(nanoseconds_string.ljust(3).replace(' ', '0'))
+        else:
+            nanoseconds = 0
+        return (timestamp, nanoseconds)
+
+    def __parse_timestamp_value(self, timestamp_string):
         if len(timestamp_string) > Base.timestamp_string_minimal_fractional_seconds_length:
             timestamp_format = Base.timeformat_fractional_seconds
             if len(timestamp_string) > Base.timestamp_string_microseconds_length:
@@ -30,30 +39,33 @@ class Base(object):
         timestamp = datetime.datetime.strptime(timestamp_string, timestamp_format)
         return timestamp.replace(tzinfo=pytz.UTC)
 
-    def parse_timestamp_with_nanoseconds(self, timestamp_string):
-        timestamp = self.parse_timestamp(timestamp_string)
-        if len(timestamp_string) > Base.timestamp_string_microseconds_length:
-            nanoseconds_string = timestamp_string[self.timestamp_string_microseconds_length:self.timestamp_string_microseconds_length + 3]
-            nanoseconds = int(nanoseconds_string.ljust(3).replace(' ', '0'))
-        else:
-            nanoseconds = 0
-        return (timestamp, nanoseconds)
 
-class Stroke(Base):
+class Timestamp(Base):
 
     def __init__(self):
+        super(Timestamp, self).__init__()
+        self.timestamp = None
+        self.timestamp_nanoseconds = 0
+
+    def set_timestamp(self, timestamp):
+        if isinstance(timestamp, str):
+            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp(timestamp)
+        else:
+            self.timestamp = timestamp
+
+    def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
+        self.timestamp_nanoseconds = timestamp_nanoseconds
+
+class Stroke(Timestamp):
+
+    def __init__(self):
+        super(Stroke, self).__init__()
         self.id_value = -1
         self.altitude = None
         self.participants = []
 
     def set_id(self, id_value):
         self.id_value = id_value
-
-    def set_timestamp(self, timestamp):
-        self.timestamp = timestamp
-
-    def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
-        self.timestamp_nanoseconds = timestamp_nanoseconds
 
     def set_x(self, x):
         self.x = x
@@ -89,7 +101,7 @@ class Stroke(Base):
             if len(fields) >= 8:
                 self.set_x(float(fields[3]))
                 self.set_y(float(fields[2]))
-                (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+                self.set_timestamp(' '.join(fields[0:2]))
                 self.set_amplitude(float(fields[4][:-2]) * 1e3)
                 self.set_type(int(fields[5]))
                 self.set_lateral_error(int(fields[6][:-1]))
@@ -109,6 +121,7 @@ class Station(Base):
     html_parser = HTMLParser.HTMLParser()
 
     def __init__(self):
+        super(Station, self).__init__()
         self.number = -1
         self.location_name = None
         self.last_data = None
@@ -143,7 +156,7 @@ class Station(Base):
 
     def set_last_data(self, last_data):
         if isinstance(last_data, str):
-            (self.last_data, _) = self.parse_timestamp_with_nanoseconds(last_data)
+            (self.last_data, _) = self.parse_timestamp(last_data)
         else:
             self.last_data = last_data
 
@@ -179,6 +192,7 @@ class Station(Base):
 class StationOffline(Base):
 
     def __init__(self):
+        super(StationOffline, self).__init__()
         self.id_value = -1
         self.number = -1
         self.begin = None
@@ -199,13 +213,12 @@ class StationOffline(Base):
     def build(self):
         return data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
-class RawEvent(Base):
+class RawEvent(Timestamp):
 
     def __init__(self):
+        super(RawEvent, self).__init__()
         self.x_coord = 0
         self.y_coord = 0
-        self.timestamp = None
-        self.timestamp_nanoseconds = 0
         self.altitude = 0
         self.number_of_satellites = 0
         self.sample_period = 0
@@ -231,7 +244,7 @@ class RawEvent(Base):
             if len(fields) >= 8:
                 self.set_x(float(fields[2]))
                 self.set_y(float(fields[3]))
-                (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
+                self.set_timestamp(' '.join(fields[0:2]))
                 self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
                 self.set_altitude(int(fields[4]))
                 self.number_of_satellites = int(fields[5])
