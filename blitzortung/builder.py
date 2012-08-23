@@ -42,12 +42,12 @@ class Base(object):
 class Stroke(Base):
 
     def __init__(self):
-        self.id = -1
-        self.height = -1.0
+        self.id_value = -1
+        self.altitude = -1.0
         self.participants = []
 
-    def set_id(self, id):
-        self.id = id
+    def set_id(self, id_value):
+        self.id_value = id_value
 
     def set_timestamp(self, timestamp):
         self.timestamp = timestamp
@@ -60,6 +60,9 @@ class Stroke(Base):
 
     def set_y(self, y):
         self.y = y
+
+    def set_altitude(self, altitude):
+        self.altitude = altitude
 
     def set_amplitude(self, amplitude):
         self.amplitude = amplitude
@@ -77,7 +80,7 @@ class Stroke(Base):
         self.participants = participants
 
     def build(self):
-        return data.Stroke(self.id, self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.amplitude, self.height, self.lateral_error, self.type_val, self.station_count, self.participants)
+        return data.Stroke(self.id_value, self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
 
     def from_string(self, string):
         if string != None:
@@ -88,8 +91,8 @@ class Stroke(Base):
             (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
 
             if len(fields) >= 5:
-                self.set_amplitude(float(fields[4][:-2]))
-                self.set_type_val(int(fields[5]))
+                self.set_amplitude(float(fields[4][:-2]) * 1e3)
+                self.set_type(int(fields[5]))
                 self.set_lateral_error(int(fields[6][:-1]))
                 self.set_station_count(int(fields[7]))
                 participants = []
@@ -99,7 +102,7 @@ class Stroke(Base):
                 self.set_participants(participants)
             else:
                 raise RuntimeError("not enough data fields from stroke data line '%s'" %(string))
-        self.set_height(0.0)
+        self.set_altitude(0.0)
 
 
 class Station(Base):

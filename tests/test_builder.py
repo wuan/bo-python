@@ -4,6 +4,33 @@ import pytz
 
 import blitzortung
 
+class StrokeTest(unittest.TestCase):
+
+  def test_build_stroke_from_string(self):
+    line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12"
+    stroke_builder = blitzortung.builder.Stroke()
+    stroke_builder.from_string(line)
+
+    stroke = stroke_builder.build()
+
+    self.assertEqual(stroke.get_timestamp(), datetime.datetime(2012,8,23,13,18,15,504862).replace(tzinfo=pytz.UTC))
+    self.assertEqual(stroke.get_timestamp_nanoseconds(), 926)
+    self.assertEqual(stroke.get_x(), 17.583977)
+    self.assertEqual(stroke.get_y(), 44.254116)
+    self.assertEqual(stroke.get_amplitude(), 6340)
+    self.assertEqual(stroke.get_type(), -1)
+    self.assertEqual(stroke.get_lateral_error(), 3406)
+    self.assertEqual(stroke.get_station_count(), 12)
+
+  def test_build_stroke_from_participants_string(self):
+    line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12 User1 User2 User3 User4 User5 User6 User7 User8 User9 User10 User11"
+
+    stroke_builder = blitzortung.builder.Stroke()
+    stroke_builder.from_string(line)
+
+    stroke = stroke_builder.build()
+
+    self.assertThat(stroke.get_participants().size(), 11)
 
 class StationTest(unittest.TestCase):
 
