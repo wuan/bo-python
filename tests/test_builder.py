@@ -181,11 +181,9 @@ class StationTest(unittest.TestCase):
   def test_default_values(self):
     self.assertEqual(self.builder.number, -1)
     self.assertEqual(self.builder.location_name, None)
-    self.assertEqual(self.builder.last_data, None)
     self.assertEqual(self.builder.gps_status, None)
     self.assertEqual(self.builder.samples_per_hour, -1)
     self.assertEqual(self.builder.tracker_version, None)
-    self.assertEqual(self.builder.offline_since, None)
 
   def test_build_station_from_string(self):
     line = "364 MustermK Karl&nbsp;Mustermann Neustadt Germany 49.5435 9.7314 2012-02-10&nbsp;14:39:47.410492569 A WT&#32;5.20.3 4"
@@ -212,7 +210,7 @@ class StationTest(unittest.TestCase):
     self.builder.set_country('Germany')
     self.builder.set_x(9.7314)
     self.builder.set_y(49.5435)
-    self.builder.set_last_data("2012-02-10 14:39:47.410492123")
+    self.builder.set_timestamp("2012-02-10 14:39:47.410492123")
     self.builder.set_gps_status('A')
     self.builder.set_tracker_version('WT 5.20.3')
     self.builder.set_samples_per_hour(4)

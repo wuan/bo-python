@@ -116,7 +116,7 @@ class Stroke(Timestamp):
         self.set_altitude(0.0)
 
 
-class Station(Base):
+class Station(Timestamp):
 
     html_parser = HTMLParser.HTMLParser()
 
@@ -124,11 +124,9 @@ class Station(Base):
         super(Station, self).__init__()
         self.number = -1
         self.location_name = None
-        self.last_data = None
         self.gps_status = None
         self.samples_per_hour = -1
         self.tracker_version = None
-        self.offline_since = None
 
     def set_number(self, number):
         self.number = number
@@ -145,20 +143,11 @@ class Station(Base):
     def set_country(self, country):
         self.country = country
 
-    def set_offline_since(self, offline_since):
-        self.offline_since = offline_since
-
     def set_x(self, x):
         self.x = x
 
     def set_y(self, y):
         self.y = y
-
-    def set_last_data(self, last_data):
-        if isinstance(last_data, str):
-            (self.last_data, _) = self.parse_timestamp(last_data)
-        else:
-            self.last_data = last_data
 
     def set_gps_status(self, gps_status):
         self.gps_status = gps_status
@@ -178,13 +167,13 @@ class Station(Base):
         self.set_country(self._unquote(fields[4]))
         self.set_x(float(fields[6]))
         self.set_y(float(fields[5]))
-        self.set_last_data(self._unquote(fields[7]).encode('ascii'))
+        self.set_timestamp(self._unquote(fields[7]).encode('ascii'))
         self.set_gps_status(fields[8])
         self.set_tracker_version(self._unquote(fields[9]))
         self.set_samples_per_hour(int(fields[10]))
 
     def build(self):
-        return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.last_data, self.offline_since, self.gps_status, self.tracker_version, self.samples_per_hour)
+        return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
 
     def _unquote(self, html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))

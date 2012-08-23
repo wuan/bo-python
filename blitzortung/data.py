@@ -164,14 +164,13 @@ class ExtEvent(RawEvent):
 
 class Station(Event):
 
-    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, offline_since, gps_status, tracker_version, samples_per_hour):
+    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status, tracker_version, samples_per_hour):
         super(Station, self).__init__(x_coord, y_coord, last_data, 0)
         self.number = number
         self.short_name = short_name
         self.name = name
         self.location_name = location_name
         self.country = country
-        self.offline_since = offline_since
         self.gps_status = gps_status
         self.tracker_version = tracker_version
         self.samples_per_hour = samples_per_hour
@@ -200,9 +199,6 @@ class Station(Event):
 
     def get_country(self):
         return self.country
-
-    def get_offline_since(self):
-        return self.offline_since
 
     def get_gps_status(self):
         return self.gps_status

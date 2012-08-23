@@ -555,17 +555,17 @@ class Station(Base):
         self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
         sql = ''' select
-        o.begin, a.number, a.short_name, a.name, a.location_name, a.country, a. timestamp, a.the_geom
-	from stations as a
+        o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.the_geom
+	from stations as s
 	inner join 
 	   (select b.number, max(b.timestamp) as timestamp
 	    from stations as b
 	    group by number
             order by number) as c
-	on a.number = c.number and a.timestamp = c.timestamp
+	on s.number = c.number and s.timestamp = c.timestamp
 	left join stations_offline as o
-	on o.number = a.number and o."end" is null
-	order by a.number'''
+	on o.number = s.number and o."end" is null
+	order by s.number'''
         self.cur.execute(sql)
 
         resulting_stations = []
@@ -586,8 +586,7 @@ class Station(Base):
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         stationBuilder.set_x(location.x)
         stationBuilder.set_y(location.y)
-        stationBuilder.set_last_data(result['timestamp'])
-        stationBuilder.set_offline_since(result['begin'])
+        stationBuilder.set_last_data(result['begin'])
 
         return stationBuilder.build()  
 
