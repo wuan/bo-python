@@ -21,10 +21,10 @@ import struct as _struct
 #-----------------------------------------------------------------------------
 
 class Error(Exception):
-  """
-  General Blitzortung error class.
-  """
-  pass
+    """
+    General Blitzortung error class.
+    """
+    pass
 
 
 #-----------------------------------------------------------------------------
@@ -42,21 +42,21 @@ import util
 import web
 
 __all__ = [
-  'Config', # main classes
-  
-  'builder.Stroke', 'builder.Station'
+    'Config', # main classes
 
-  'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
+    'builder.Stroke', 'builder.Station'
 
-  'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
+    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
 
-  'Error', # custom exceptions
+    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
 
-  'files.Raw', 'files.Data',
+    'Error', # custom exceptions
 
-  'geom.Point',
+    'files.Raw', 'files.Data',
 
-  'util.Timer',
+    'geom.Point',
 
-  'web.Url',
+    'util.Timer',
+
+    'web.Url',
 ]

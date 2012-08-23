@@ -35,7 +35,7 @@ class Raw(object):
         if date in self.raw_files:
             return self.raw_files[date]
         else:
-            raise Exception("no file for date "+date.strftime('%Y-%m-%d'))
+            raise Exception("no file for date " + date.strftime('%Y-%m-%d'))
 
     def get_dates(self):
         dates = self.raw_files.keys()

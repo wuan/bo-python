@@ -1,9 +1,11 @@
-python-blitzortung (1.0.0SNAPSHOT201205032242) unstable; urgency=low
+python-blitzortung (1.0.0) unstable; urgency=low
 
   * use better error handling of urllib2
   * added reducedArray output format for raster data
   * adapted to tracker 1.0.2 renamed files
   * removed plotting stuff
+  * improved code style
+  * added tests
 
  -- Andreas Würl <blitzortung@tryb.de>  Fri, 23 Mar 2012 11:06:33 +0100
 

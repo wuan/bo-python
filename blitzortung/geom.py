@@ -91,7 +91,7 @@ class Envelope(Geometry):
         return abs(self.xmax - self.xmin)
 
     def contains(self, point):
-        if ((point.getX() >= self.xmin) and 
+        if ((point.getX() >= self.xmin) and
             (point.getX() <= self.xmax) and
             (point.getY() >= self.ymin) and
             (point.getY() <= self.ymax)):
@@ -217,7 +217,7 @@ class RasterElement(object):
         return self.count > other
 
     def __str__(self):
-        return "RasterElement(%d, %s)" %(self.count, str(self.timestamp))
+        return "RasterElement(%d, %s)" % (self.count, str(self.timestamp))
 
     def get_count(self):
         return self.count

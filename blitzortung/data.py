@@ -98,8 +98,8 @@ class TimeIntervals(TimeInterval):
 
 class Event(types.Point):
 
-    def __init__(self, x, y, timestamp, timestamp_nanoseconds = 0):
-        super(Event, self).__init__(x, y)
+    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds = 0):
+        super(Event, self).__init__(x_coord, y_coord)
         self.timestamp = timestamp
         self.timestamp_nanoseconds = timestamp_nanoseconds
 
@@ -127,8 +127,8 @@ class Event(types.Point):
 
 
 class RawEvent(Event):
-    def __init__(self, x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y):
-        super(RawEvent, self).__init__(x, y, timestamp, timestamp_nanoseconds)
+    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y):
+        super(RawEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds)
         self.height = height
         self.number_of_satellites = number_of_satellites
         self.sample_period = sample_period
@@ -146,8 +146,8 @@ class RawEvent(Event):
 
 
 class ExtEvent(RawEvent):
-    def __init__(self, x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y, station_number):
-        super(ExtEvent, self).__init__(x, y, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y)
+    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y, station_number):
+        super(ExtEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y)
 
         self.station_number = station_number
 
@@ -284,7 +284,7 @@ class Stroke(Event):
 
     def __str__(self):
         return "%s%03d%s %.4f %.4f %s %.1f %d %.1f %d" \
-               %(self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), \
+               % (self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), \
                  self.x_coord, self.y_coord, str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):

@@ -32,8 +32,8 @@ class Url(object):
 
         try:
             urlconnection = opener.open(self.url, timeout=60)
-        except urllib2.URLError, e:
-            sys.stderr.write("%s when opening '%s'\n" %(e, self.url))
+        except urllib2.URLError, error:
+            sys.stderr.write("%s when opening '%s'\n" % (error, self.url))
             return None
 
         data = urlconnection.read().strip()
@@ -47,10 +47,10 @@ class StrokesBase(Url):
         super(StrokesBase, self).__init__(base_url)
 
     def get_strokes(self, time_interval=None):
-        strokes = [] 
-        for line in self.read().split('\n'): 
-            if line.strip(): 
-                stroke_builder = builder.Stroke() 
+        strokes = []
+        for line in self.read().split('\n'):
+            if line.strip():
+                stroke_builder = builder.Stroke()
                 stroke_builder.from_string(line)
                 stroke = stroke_builder.build()
                 if not time_interval or time_interval.contains(stroke.get_timestamp()):
