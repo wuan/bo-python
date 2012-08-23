@@ -17,7 +17,7 @@ class Base(object):
     timeformat = '%Y-%m-%d %H:%M:%S'
     timeformat_fractional_seconds = timeformat + '.%f'
     timestamp_string_minimal_fractional_seconds_length = 20
-    timestamp_string_microseconds_length = 26  
+    timestamp_string_microseconds_length = 26
 
     def parse_timestamp(self, timestamp_string):
         if len(timestamp_string) > Base.timestamp_string_minimal_fractional_seconds_length:
@@ -36,7 +36,7 @@ class Base(object):
             nanoseconds_string = timestamp_string[self.timestamp_string_microseconds_length:self.timestamp_string_microseconds_length + 3]
             nanoseconds = int(nanoseconds_string.ljust(3).replace(' ', '0'))
         else:
-            nanoseconds = 0 
+            nanoseconds = 0
         return (timestamp, nanoseconds)
 
 class Stroke(Base):
@@ -68,7 +68,7 @@ class Stroke(Base):
         self.type_val = type_val
 
     def set_lateral_error(self, lateral_error):
-        self.lateral_error = lateral_error
+        self.lateral_error = lateral_error if lateral_error > 0 else 0
 
     def set_station_count(self, station_count):
         self.station_count = station_count
@@ -83,24 +83,23 @@ class Stroke(Base):
         if string != None:
             ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
-            self.x = float(fields[3])
-            self.y = float(fields[2])
+            self.set_x(float(fields[3]))
+            self.set_y(float(fields[2]))
             (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
 
             if len(fields) >= 5:
-                self.amplitude = float(fields[4][:-2])
-                self.type_val = int(fields[5])
-                self.lateral_error = int(fields[6][:-1])
-                if self.lateral_error < 0:
-                    self.lateral_error = 0
-                self.station_count = int(fields[7])
-                self.participants = []
+                self.set_amplitude(float(fields[4][:-2]))
+                self.set_type_val(int(fields[5]))
+                self.set_lateral_error(int(fields[6][:-1]))
+                self.set_station_count(int(fields[7]))
+                participants = []
                 if (len(fields) >=9):
                     for index in range(8,len(fields)):
-                        self.participants.append(fields[index])
+                        participants.append(fields[index])
+                self.set_participants(participants)
             else:
                 raise RuntimeError("not enough data fields from stroke data line '%s'" %(string))
-        self.height = 0.0  
+        self.set_height(0.0)
 
 
 class Station(Base):
@@ -109,6 +108,8 @@ class Station(Base):
 
     def __init__(self):
         self.number = -1
+        self.location_name = None
+        self.last_data = None
         self.gps_status = 'n/a'
         self.samples_per_hour = -1
         self.tracker_version = 'n/a'
@@ -140,29 +141,38 @@ class Station(Base):
 
     def set_last_data(self, last_data):
         if isinstance(last_data, str):
-            self.last_data = self.parse_timestamp(last_data)
+            (self.last_data, _) = self.parse_timestamp_with_nanoseconds(last_data)
         else:
             self.last_data = last_data
 
-    def set(self, data):
+    def set_gps_status(self, gps_status):
+        self.gps_status = gps_status
+
+    def set_tracker_version(self, tracker_version):
+        self.tracker_version = tracker_version
+
+    def set_samples_per_hour(self, samples_per_hour):
+        self.samples_per_hour = samples_per_hour
+
+    def from_string(self, data):
         fields = data.split(' ')
-        self.number = int(fields[0])
-        self.short_name = fields[1]
-        self.name = self._unquote(fields[2])
-        self.location_name = self._unquote(fields[3])
-        self.country = self._unquote(fields[4])
-        self.x = float(fields[6])
-        self.y = float(fields[5])
-        (self.last_data, dummy) = self.parse_timestamp_with_nanoseconds(self._unquote(fields[7]).encode('ascii'))
-        self.gps_status = fields[8]
-        self.tracker_version = self._unquote(fields[9])
-        self.samples_per_hour = int(fields[10])
+        self.set_number(int(fields[0]))
+        self.set_short_name(fields[1])
+        self.set_name(self._unquote(fields[2]))
+        self.set_location_name(self._unquote(fields[3]))
+        self.set_country(self._unquote(fields[4]))
+        self.set_x(float(fields[6]))
+        self.set_y(float(fields[5]))
+        self.set_last_data(self._unquote(fields[7]).encode('ascii'))
+        self.set_gps_status(fields[8])
+        self.set_tracker_version(self._unquote(fields[9]))
+        self.set_samples_per_hour(int(fields[10]))
 
     def build(self):
         return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.last_data, self.offline_since, self.gps_status, self.tracker_version, self.samples_per_hour)
 
     def _unquote(self, html_coded_string):
-        return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))  
+        return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
 
 class StationOffline(Base):
 
