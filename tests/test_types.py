@@ -27,3 +27,6 @@ class PointTest(unittest.TestCase):
     self.assertAlmostEqual(azimuth, 89.62264107)
     self.assertAlmostEqual(distance, 73171.2643568)
     
+  def test_to_string(self):
+    self.assertEqual(str(self.point1), "(11.0000, 49.0000)")
+    

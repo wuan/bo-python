@@ -21,16 +21,10 @@ class Point(object):
 
     def __invgeod(self, other):
         return Point.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord)
-
-    def set_x(self, x_coord):
-        self.x_coord = x_coord
         
     def get_x(self):
         ' returns x coordinate of point '
         return self.x_coord
-
-    def set_y(self, y_coord):
-        self.y_coord = y_coord
         
     def get_y(self):
         ' returns y coordinate of point '
