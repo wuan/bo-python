@@ -80,6 +80,52 @@ class StrokeTest(unittest.TestCase):
     self.assertEqual(self.builder.altitude, None)
     self.assertEqual(self.builder.participants, [])
 
+  def test_set_id(self):
+    self.builder.set_id(1234)
+    self.assertEqual(self.builder.id_value, 1234)
+
+    self.builder.set_x(0.0)
+    self.builder.set_y(0.0)
+    self.builder.set_timestamp(datetime.datetime.utcnow())
+    self.builder.set_timestamp_nanoseconds(0)
+    self.builder.set_amplitude(1.0)
+    self.builder.set_lateral_error(5.0)
+    self.builder.set_type(-1)
+    self.builder.set_station_count(10)
+
+    self.assertEqual(self.builder.build().get_id(), 1234)
+
+  def test_set_timestamp(self):
+    timestamp = datetime.datetime.utcnow()
+    self.builder.set_timestamp(timestamp)
+    self.assertEqual(self.builder.timestamp, timestamp)
+
+    self.builder.set_x(0.0)
+    self.builder.set_y(0.0)
+    self.builder.set_timestamp_nanoseconds(0)
+    self.builder.set_amplitude(1.0)
+    self.builder.set_lateral_error(5.0)
+    self.builder.set_type(-1)
+    self.builder.set_station_count(10)
+
+    self.assertEqual(self.builder.build().get_timestamp(), timestamp)
+
+
+  def test_set_timestamp_nanoseconds(self):
+    self.builder.set_timestamp_nanoseconds(567)
+    self.assertEqual(self.builder.timestamp_nanoseconds, 567)
+
+    self.builder.set_x(0.0)
+    self.builder.set_y(0.0)
+    self.builder.set_timestamp(datetime.datetime.utcnow())
+
+    self.builder.set_amplitude(1.0)
+    self.builder.set_lateral_error(5.0)
+    self.builder.set_type(-1)
+    self.builder.set_station_count(10)
+
+    self.assertEqual(self.builder.build().get_timestamp_nanoseconds(), 567)
+
   def test_build_stroke_from_string(self):
     line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12"
 
@@ -105,6 +151,10 @@ class StrokeTest(unittest.TestCase):
 
     self.assertEqual(len(stroke.get_participants()), 11)
     self.assertTrue(stroke.has_participant('User1'))
+
+  def test_build_stroke_from_string_throws_exception_with_too_short_string(self):
+    line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m"
+    self.assertRaises(ValueError, self.builder.from_string, line)
 
 class StationTest(unittest.TestCase):
 

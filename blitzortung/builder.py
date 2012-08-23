@@ -86,22 +86,21 @@ class Stroke(Base):
         if string != None:
             ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
-            self.set_x(float(fields[3]))
-            self.set_y(float(fields[2]))
-            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
-
-            if len(fields) >= 5:
+            if len(fields) >= 8:
+                self.set_x(float(fields[3]))
+                self.set_y(float(fields[2]))
+                (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
                 self.set_amplitude(float(fields[4][:-2]) * 1e3)
                 self.set_type(int(fields[5]))
                 self.set_lateral_error(int(fields[6][:-1]))
                 self.set_station_count(int(fields[7]))
+
                 participants = []
-                if (len(fields) >=9):
-                    for index in range(8,len(fields)):
-                        participants.append(fields[index])
+                for index in range(8,len(fields)):
+                    participants.append(fields[index])
                 self.set_participants(participants)
             else:
-                raise RuntimeError("not enough data fields from stroke data line '%s'" %(string))
+                raise ValueError("not enough data fields from stroke data line '%s'" %(string))
         self.set_altitude(0.0)
 
 
