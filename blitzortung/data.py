@@ -283,9 +283,9 @@ class Stroke(Event):
         return False
 
     def __str__(self):
-        return "%s%03d%s %.4f %.4f %d %.1f %d %.1f %d" \
+        return "%s%03d%s %.4f %.4f %s %.1f %d %.1f %d" \
                %(self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.timestamp.strftime('%z'), \
-                 self.x_coord, self.y_coord, self.height, self.amplitude, self.type_val, self.lateral_error, self.station_count)
+                 self.x_coord, self.y_coord, str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):
 
