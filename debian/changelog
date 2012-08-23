@@ -1,3 +1,9 @@
+python-blitzortung (1.0.1SNAPSHOT201208232238) unstable; urgency=low
+
+  * clean up of builder and data
+
+ -- Andreas Würl <blitzortung@tryb.de>  Thu, 23 Aug 2012 23:22:33 +0100
+
 python-blitzortung (1.0.0) unstable; urgency=low
 
   * use better error handling of urllib2
@@ -7,7 +13,7 @@ python-blitzortung (1.0.0) unstable; urgency=low
   * improved code style
   * added tests
 
- -- Andreas Würl <blitzortung@tryb.de>  Fri, 23 Mar 2012 11:06:33 +0100
+ -- Andreas Würl <blitzortung@tryb.de>  Thu, 23 Aug 2012 21:06:33 +0200
 
 python-blitzortung (0.9.6) unstable; urgency=low
 
