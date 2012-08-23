@@ -576,19 +576,19 @@ class Station(Base):
         return resulting_stations    
 
     def create(self, result):
-        stationBuilder = builder.Station()
+        station_builder = builder.Station()
 
-        stationBuilder.set_number(result['number'])
-        stationBuilder.set_short_name(result['short_name'])
-        stationBuilder.set_name(result['name'])
-        stationBuilder.set_location_name(result['location_name'])
-        stationBuilder.set_country(result['country'])
+        station_builder.set_number(result['number'])
+        station_builder.set_short_name(result['short_name'])
+        station_builder.set_name(result['name'])
+        station_builder.set_location_name(result['location_name'])
+        station_builder.set_country(result['country'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
-        stationBuilder.set_x(location.x)
-        stationBuilder.set_y(location.y)
-        stationBuilder.set_last_data(result['begin'])
+        station_builder.set_x(location.x)
+        station_builder.set_y(location.y)
+        station_builder.set_timestamp(result['begin'])
 
-        return stationBuilder.build()  
+        return station_builder.build()  
 
 class StationOffline(Base):
     '''

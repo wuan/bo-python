@@ -48,10 +48,10 @@ class Timestamp(Base):
         self.timestamp_nanoseconds = 0
 
     def set_timestamp(self, timestamp):
-        if isinstance(timestamp, str):
-            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp(timestamp)
-        else:
+        if not timestamp or isinstance(timestamp, datetime.datetime):
             self.timestamp = timestamp
+        else:
+            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp(timestamp)
 
     def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
         self.timestamp_nanoseconds = timestamp_nanoseconds
