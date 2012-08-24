@@ -6,6 +6,7 @@ import datetime
 import pytz
 import shapely.wkb
 import shapely.geometry
+import pandas as pd
 
 try:
     import psycopg2
@@ -368,6 +369,9 @@ class Base(object):
     def set_timezone(self, tz):
         self.tz = tz
 
+    def replace_timezone(self, timestamp):
+        return timestamp.replace(tzinfo=self.tz) if timestamp else None
+
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
 
@@ -425,6 +429,8 @@ class Stroke(Base):
 
         self.set_table_name('strokes')
 
+        self.update_timezone()
+
 #        if not self.has_table(self.get_table_name()):
 #            self.cur.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
 #            self.cur.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
@@ -441,7 +447,7 @@ class Stroke(Base):
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
-            'nanoseconds': stroke.get_timestamp_nanoseconds(),
+            'nanoseconds': stroke.get_timestamp().nanosecond,
             'longitude': stroke.get_x(),
             'latitude': stroke.get_y(),
             'region': region,
@@ -460,7 +466,7 @@ class Stroke(Base):
         self.cur.execute(sql, {'region': region})
         if self.cur.rowcount == 1:
             result = self.cur.fetchone()
-            return result['timestamp']
+            return pd.Timestamp(self.replace_timezone(result['timestamp']))
         else:
             return None
 
@@ -468,8 +474,7 @@ class Stroke(Base):
         stroke_builder = builder.Stroke()
 
         stroke_builder.set_id(result['id'])
-        stroke_builder.set_timestamp(result['timestamp'])
-        stroke_builder.set_timestamp_nanoseconds(result['nanoseconds'])
+        stroke_builder.set_timestamp(self.replace_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
@@ -495,25 +500,26 @@ class Stroke(Base):
         return query
 
     def select(self, *args):
-
         ' build up query '
+
         query = self.select_query(args)
 
         return self.select_execute(query)
 
     def select_raster(self, raster, *args):
-
         ' build up query '
+
         query = self.select_query(args, RasterQuery(raster))
 
         return self.select_execute(query)
 
     def select_execute(self, query):
-        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
-
         self.cur.execute(str(query), query.get_parameters())
 
         return query.get_results(self)
+
+    def update_timezone(self):
+        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
 class Station(Base):
     '''
@@ -586,7 +592,7 @@ class Station(Base):
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         station_builder.set_x(location.x)
         station_builder.set_y(location.y)
-        station_builder.set_timestamp(result['begin'])
+        station_builder.set_timestamp(self.replace_timezone(result['begin']))
 
         return station_builder.build()  
 

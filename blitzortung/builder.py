@@ -30,9 +30,12 @@ class Timestamp(Base):
         super(Timestamp, self).__init__()
         self.timestamp = None
 
-    def set_timestamp(self, timestamp):
-        if not timestamp or isinstance(timestamp, np.datetime64) or isinstance(timestamp, datetime.datetime):
-            self.timestamp = pd.Timestamp(timestamp)
+    def set_timestamp(self, timestamp, nanoseconds=0):
+        if not timestamp:
+	    self.timestamp = None
+	elif isinstance(timestamp, datetime.datetime):
+	    total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
+            self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         else:
             self.timestamp = self.parse_timestamp(timestamp)
 
