@@ -20,7 +20,7 @@ class PointTest(unittest.TestCase):
     
   def test_get_distance(self):
     self.assertAlmostEqual(self.point1.distance_to(self.point2), 73171.2643568)
-    self.assertAlmostEqual(self.point1.distance_to(self.point3), 111219.4092149)
+    self.assertAlmostEqual(self.point1.distance_to(self.point3), 111219.4094321)
     
   def test_get_geodesic_relation(self):
     distance, azimuth = self.point1.geodesic_relation_to(self.point2)
