@@ -209,6 +209,9 @@ class Station(Event):
     def get_samples_per_hour(self):
         return self.samples_per_hour
 
+    def __str__(self):
+        return self.get_number() + " " + self.get_short_name() + " " + self.get_location_name() + " " + self.get_country() + " " + self.get_timestamp()
+
 class StationOffline(object):
 
     def __init__(self, id_number, number, begin, end=None):
