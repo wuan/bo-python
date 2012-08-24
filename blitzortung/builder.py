@@ -9,7 +9,8 @@
 import datetime, pytz
 import math
 import HTMLParser
-
+import numpy as np
+import pandas as pd
 import data
 
 class Base(object):
@@ -20,24 +21,7 @@ class Base(object):
     timestamp_string_microseconds_length = 26
 
     def parse_timestamp(self, timestamp_string):
-        timestamp = self.__parse_timestamp_value(timestamp_string)
-        if len(timestamp_string) > Base.timestamp_string_microseconds_length:
-            nanoseconds_string = timestamp_string[self.timestamp_string_microseconds_length:self.timestamp_string_microseconds_length + 3]
-            nanoseconds = int(nanoseconds_string.ljust(3).replace(' ', '0'))
-        else:
-            nanoseconds = 0
-        return (timestamp, nanoseconds)
-
-    def __parse_timestamp_value(self, timestamp_string):
-        if len(timestamp_string) > Base.timestamp_string_minimal_fractional_seconds_length:
-            timestamp_format = Base.timeformat_fractional_seconds
-            if len(timestamp_string) > Base.timestamp_string_microseconds_length:
-                timestamp_string = timestamp_string[:self.timestamp_string_microseconds_length]
-        else:
-            timestamp_format = Base.timeformat
-
-        timestamp = datetime.datetime.strptime(timestamp_string, timestamp_format)
-        return timestamp.replace(tzinfo=pytz.UTC)
+        return pd.Timestamp(np.datetime64(timestamp_string + 'Z', 'ns'), tz=pytz.UTC)
 
 
 class Timestamp(Base):
@@ -45,13 +29,12 @@ class Timestamp(Base):
     def __init__(self):
         super(Timestamp, self).__init__()
         self.timestamp = None
-        self.timestamp_nanoseconds = 0
 
     def set_timestamp(self, timestamp):
-        if not timestamp or isinstance(timestamp, datetime.datetime):
-            self.timestamp = timestamp
+        if not timestamp or isinstance(timestamp, np.datetime64) or isinstance(timestamp, datetime.datetime):
+            self.timestamp = pd.Timestamp(timestamp)
         else:
-            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp(timestamp)
+            self.timestamp = self.parse_timestamp(timestamp)
 
     def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
         self.timestamp_nanoseconds = timestamp_nanoseconds
@@ -92,7 +75,7 @@ class Stroke(Timestamp):
         self.participants = participants
 
     def build(self):
-        return data.Stroke(self.id_value, self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
+        return data.Stroke(self.id_value, self.x, self.y, self.timestamp, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
 
     def from_string(self, string):
         ' Construct stroke from blitzortung text format data line '
@@ -215,7 +198,7 @@ class RawEvent(Timestamp):
         self.amplitude_y = 0
 
     def build(self):
-        return data.RawEvent(self.x_coord, self.y_coord, self.timestamp, self.timestamp_nanoseconds, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
+        return data.RawEvent(self.x_coord, self.y_coord, self.timestamp, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
 
     def set_x(self, x_coord):
         self.x_coord = x_coord

@@ -98,37 +98,22 @@ class TimeIntervals(TimeInterval):
 
 class Event(types.Point):
 
-    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds = 0):
+    def __init__(self, x_coord, y_coord, timestamp):
         super(Event, self).__init__(x_coord, y_coord)
         self.timestamp = timestamp
-        self.timestamp_nanoseconds = timestamp_nanoseconds
 
     def get_timestamp(self):
         return self.timestamp
 
-    def get_timestamp_nanoseconds(self):
-        return self.timestamp_nanoseconds
-
     def difference_to(self, other):
         return self.timestamp - other.timestamp
 
-    def difference_nanoseconds_to(self, other):
-        return self.timestamp_nanoseconds - other.timestamp_nanoseconds
-
-    def us_difference_to(self, other):
-        timedelta = self.timestamp - other.timestamp
-        if timedelta.days not in [-1, 0]:
-            raise ValueError("TimeDifference too big")
-
-        seconds = timedelta.seconds
-        if timedelta.days == -1:
-            seconds -= 24 * 3600
-        return seconds * 1e6 + timedelta.microseconds + (self.timestamp_nanoseconds - other.timestamp_nanoseconds) / 1e3
-
+    def ns_difference_to(self, other):
+        return self.timestamp.value - other.timestamp.value
 
 class RawEvent(Event):
-    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, altitude, number_of_satellites, sample_period, amplitude_x, amplitude_y):
-        super(RawEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds)
+    def __init__(self, x_coord, y_coord, timestamp, altitude, number_of_satellites, sample_period, amplitude_x, amplitude_y):
+        super(RawEvent, self).__init__(x_coord, y_coord, timestamp)
         self.altitude = altitude
         self.number_of_satellites = number_of_satellites
         self.sample_period = sample_period
@@ -165,7 +150,7 @@ class ExtEvent(RawEvent):
 class Station(Event):
 
     def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status, tracker_version, samples_per_hour):
-        super(Station, self).__init__(x_coord, y_coord, last_data, 0)
+        super(Station, self).__init__(x_coord, y_coord, last_data)
         self.number = number
         self.short_name = short_name
         self.name = name
@@ -244,8 +229,8 @@ class Stroke(Event):
     classdocs
     '''
 
-    def __init__(self, stroke_id, x_coord, y_coord, timestamp, timestamp_ns, amplitude, height, lateral_error, type_val, station_count, participants = None):
-        super(Stroke, self).__init__(x_coord, y_coord, timestamp, timestamp_ns)
+    def __init__(self, stroke_id, x_coord, y_coord, timestamp, amplitude, height, lateral_error, type_val, station_count, participants = None):
+        super(Stroke, self).__init__(x_coord, y_coord, timestamp)
         self.stroke_id = stroke_id
         self.amplitude = amplitude
         self.height = height

@@ -1,15 +1,23 @@
 import unittest
 import datetime
 import pytz
+import numpy as np
+import pandas as pd
 
 import blitzortung
 
+class TestBase(unittest.TestCase):
+  
+  def get_timestamp(self, time_string):
+    return pd.Timestamp(np.datetime64(time_string), tz=pytz.UTC)
+  
 
-class BaseTest(unittest.TestCase):
+class BaseTest(TestBase):
 
   def setUp(self):
     self.builder = blitzortung.builder.Base()
 
+  
   def assert_timestamp_base(self, timestamp):
     self.assertEqual(timestamp.day, 10)
     self.assertEqual(timestamp.month, 2)
@@ -19,48 +27,48 @@ class BaseTest(unittest.TestCase):
     self.assertEqual(timestamp.second, 18)
 
   def test_create_from_string(self):
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.096651423")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.096651423")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 96651)
-    self.assertEqual(timestamp_nanoseconds, 423)
+    self.assertEqual(timestamp.nanosecond, 423)
 
   def test_create_from_millisecond_string(self):
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.096")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.096")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 96000)
-    self.assertEqual(timestamp_nanoseconds, 0)
+    self.assertEqual(timestamp.nanosecond, 0)
 
   def test_create_from_string_wihtout_fractional_seconds(self):
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 0)
-    self.assertEqual(timestamp_nanoseconds, 0)
+    self.assertEqual(timestamp.nanosecond, 0)
 
   def test_create_from_nanosecond_string(self):
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.123456789")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.123456789")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
-    self.assertEqual(timestamp_nanoseconds, 789)
+    self.assertEqual(timestamp.nanosecond, 789)
 
 
     self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.12345678")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.12345678")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
-    self.assertEqual(timestamp_nanoseconds, 780)
+    self.assertEqual(timestamp.nanosecond, 780)
 
 
     self.builder = blitzortung.builder.Base()
-    (timestamp, timestamp_nanoseconds) = self.builder.parse_timestamp("2012-02-10 12:56:18.1234567")
+    timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.1234567")
 
     self.assert_timestamp_base(timestamp)
     self.assertEqual(timestamp.microsecond, 123456)
-    self.assertEqual(timestamp_nanoseconds, 700)
+    self.assertEqual(timestamp.nanosecond, 700)
 
 class TimestampTest(unittest.TestCase):
 
@@ -80,14 +88,14 @@ class TimestampTest(unittest.TestCase):
     self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
 
     self.assert_correct_timestamp()
-    self.assertEqual(self.builder.timestamp_nanoseconds, 423)
+    self.assertEqual(self.builder.timestamp.nanosecond, 423)
 
   def test_set_timestamp_from_datetime(self):
     self.builder.set_timestamp(datetime.datetime(2012,2,10,12,56,18,96651))
 
     self.assert_correct_timestamp()
 
-class StrokeTest(unittest.TestCase):
+class StrokeTest(TestBase):
 
   def setUp(self):
     self.builder = blitzortung.builder.Stroke()
@@ -104,7 +112,6 @@ class StrokeTest(unittest.TestCase):
     self.builder.set_x(0.0)
     self.builder.set_y(0.0)
     self.builder.set_timestamp(datetime.datetime.utcnow())
-    self.builder.set_timestamp_nanoseconds(0)
     self.builder.set_amplitude(1.0)
     self.builder.set_lateral_error(5.0)
     self.builder.set_type(-1)
@@ -127,22 +134,6 @@ class StrokeTest(unittest.TestCase):
 
     self.assertEqual(self.builder.build().get_timestamp(), timestamp)
 
-
-  def test_set_timestamp_nanoseconds(self):
-    self.builder.set_timestamp_nanoseconds(567)
-    self.assertEqual(self.builder.timestamp_nanoseconds, 567)
-
-    self.builder.set_x(0.0)
-    self.builder.set_y(0.0)
-    self.builder.set_timestamp(datetime.datetime.utcnow())
-
-    self.builder.set_amplitude(1.0)
-    self.builder.set_lateral_error(5.0)
-    self.builder.set_type(-1)
-    self.builder.set_station_count(10)
-
-    self.assertEqual(self.builder.build().get_timestamp_nanoseconds(), 567)
-
   def test_build_stroke_from_string(self):
     line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12"
 
@@ -150,8 +141,7 @@ class StrokeTest(unittest.TestCase):
 
     stroke = self.builder.build()
 
-    self.assertEqual(stroke.get_timestamp(), datetime.datetime(2012,8,23,13,18,15,504862).replace(tzinfo=pytz.UTC))
-    self.assertEqual(stroke.get_timestamp_nanoseconds(), 926)
+    self.assertEqual(stroke.get_timestamp(), self.get_timestamp("2012-08-23 13:18:15.504862926Z"))
     self.assertEqual(stroke.get_x(), 17.583977)
     self.assertEqual(stroke.get_y(), 44.254116)
     self.assertEqual(stroke.get_amplitude(), 6340)
@@ -173,7 +163,7 @@ class StrokeTest(unittest.TestCase):
     line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m"
     self.assertRaises(ValueError, self.builder.from_string, line)
 
-class StationTest(unittest.TestCase):
+class StationTest(TestBase):
 
   def setUp(self):
     self.builder = blitzortung.builder.Station()
@@ -197,7 +187,7 @@ class StationTest(unittest.TestCase):
     self.assertEqual(station.get_country(), 'Germany')
     self.assertEqual(station.get_x(), 9.7314)
     self.assertEqual(station.get_y(), 49.5435)
-    self.assertEqual(station.get_timestamp(), datetime.datetime(2012,2,10,14,39,47,410492).replace(tzinfo=pytz.UTC))
+    self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492569Z"))
     self.assertEqual(station.get_gps_status(), 'A')
     self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
     self.assertEqual(station.get_samples_per_hour(), 4)
@@ -223,7 +213,7 @@ class StationTest(unittest.TestCase):
     self.assertEqual(station.get_country(), 'Germany')
     self.assertEqual(station.get_x(), 9.7314)
     self.assertEqual(station.get_y(), 49.5435)
-    self.assertEqual(station.get_timestamp(), datetime.datetime(2012,2,10,14,39,47,410492).replace(tzinfo=pytz.UTC))
+    self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492123Z"))
     self.assertEqual(station.get_gps_status(), 'A')
     self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
     self.assertEqual(station.get_samples_per_hour(), 4)
@@ -265,7 +255,6 @@ class RawEvent(unittest.TestCase):
     self.assertEqual(self.builder.x_coord, 0)
     self.assertEqual(self.builder.y_coord, 0)
     self.assertEqual(self.builder.timestamp, None)
-    self.assertEqual(self.builder.timestamp_nanoseconds, 0)
     self.assertEqual(self.builder.altitude, 0)
     self.assertEqual(self.builder.number_of_satellites, 0)
     self.assertEqual(self.builder.sample_period, 0)
