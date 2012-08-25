@@ -32,9 +32,9 @@ class Timestamp(Base):
 
     def set_timestamp(self, timestamp, nanoseconds=0):
         if not timestamp:
-	    self.timestamp = None
-	elif isinstance(timestamp, datetime.datetime):
-	    total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
+            self.timestamp = None
+        elif isinstance(timestamp, datetime.datetime):
+            total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
             self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         else:
             self.timestamp = self.parse_timestamp(timestamp)
@@ -290,5 +290,4 @@ class ExtEvent(RawEvent):
 
     def build(self):
         return data.ExtEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y, self.station_number)
-
 

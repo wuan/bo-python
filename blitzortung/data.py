@@ -98,7 +98,7 @@ class TimeIntervals(TimeInterval):
 
 class Event(types.Point):
 
-    def __init__(self, x_coord, y_coord, timestamp):
+    def __init__(self, timestamp, x_coord, y_coord):
         super(Event, self).__init__(x_coord, y_coord)
         self.timestamp = timestamp
 
@@ -111,26 +111,49 @@ class Event(types.Point):
     def ns_difference_to(self, other):
         return self.timestamp.value - other.timestamp.value
 
+    def __str__(self):
+        return "%s%03d %.4f %.4f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord)
+
+
 class RawEvent(Event):
-    def __init__(self, x_coord, y_coord, timestamp, altitude, number_of_satellites, sample_period, amplitude_x, amplitude_y):
+    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude_x, amplitude_y):
         super(RawEvent, self).__init__(x_coord, y_coord, timestamp)
         self.altitude = altitude
-        self.number_of_satellites = number_of_satellites
-        self.sample_period = sample_period
         self.amplitude_x = amplitude_x
         self.amplitude_y = amplitude_y
 
-    def __str__(self):
-        return "%s%03d %.4f %.4f %d %d %d %.2f %.2f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
-
+    def get_altitude(self):
+        return self.altitude
+    
     def get_x_amplitude(self):
         return self.amplitude_x
 
     def get_y_amplitude(self):
         return self.amplitude_y
 
+    def __str__(self):
+        return super(RawEvent, self).__str__ + "%d %.2f %.2f" %(self.altitude, self.amplitude_x, self.amplitude_y)
+
+
+class RawWaveformEvent(Event):
+    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude_x, amplitude_y, sample_period):
+        super(RawEvent, self).__init__(timestamp, x_coord, y_coord)
+        self.altitude = altitude
+        self.amplitude_x = amplitude_x
+        self.amplitude_y = amplitude_y
+        self.sample_period = sample_period
+
+    def get_x_amplitude(self, index):
+        return self.amplitude_x[index]
+
+    def get_y_amplitude(self, index):
+        return self.amplitude_y[index]
+
     def get_altitude(self):
         return self.altitude
+
+    def __str__(self):
+        return super(RawEvent, self).__str__ + "%d %d %d %s %s" %(self.altitude, self.number_of_satellites, self.sample_period, str(self.amplitude_x), str(self.amplitude_y))
 
 
 class ExtEvent(RawEvent):

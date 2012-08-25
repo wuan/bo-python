@@ -9,12 +9,52 @@
 import os, subprocess
 import glob
 import datetime
+import json
+import pandas as pd
 
 import builder
 
 class Raw(object):
 
-    def __init__(self, rawPath):
+    BO_DATA_EXECUTABLE = 'bo-data'
+    
+    def __init__(self, file_path):
+        self.file_path = file_path
+        
+    def get_file_path(self):
+        return self.file_path
+    
+    def get_file_name(self):
+        return os.path.basename(self.file_path)
+    
+    def get_data(self, starttime=None, endtime=None):
+        return self.__execute(starttime, endtime)
+
+    def get_waveform_data(self, starttime=None, endtime=None):
+        return self.__execute(starttime, endtime, '-l')
+    
+    def get_info(self, starttime=None, endtime=None):
+        return self.__execute(starttime, endtime, '--mode', 'info')
+
+    def get_histogram(self, starttime=None, endtime=None):
+        return self.__execute(starttime, endtime, '--mode', 'histogram')
+        
+    def __repr__(self):
+        return "files.Raw(%s)" % (os.path.basename(self.file_path))
+    
+    def __execute(self, starttime, endtime, *additional_args):
+        args = [self.BO_DATA_EXECUTABLE, '-j', '-i', self.file_path]
+        if starttime:
+            args += ['-s', starttime]
+        if endtime:
+            args += ['-e', endtime]
+        dataPipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
+        (output, _) = dataPipe.communicate()
+        return json.loads(output)
+        
+class RawFile(object):
+
+    def __init__(self, config):        
         raw_file_names = glob.glob(os.path.join(rawPath, '*.bor'))
 
         raw_file_names.sort()
@@ -42,6 +82,53 @@ class Raw(object):
         dates.sort()
         return dates
 
+class Archive(object):
+
+    def __init__(self, config):
+        self.dates_filecount = {}
+
+        self.root_path = config.get_archive_path()
+        root_depth = self.__get_path_depth(self.root_path)
+
+        for current_path, dirs, files in os.walk(self.root_path):
+            depth = self.__get_path_depth(current_path) - root_depth
+
+            if depth == 3:
+                date_string = "-".join(self.__split_path_into_components(current_path)[-depth:])
+                self.dates_filecount[pd.Timestamp(date_string)] = len(files)                    
+
+    def get_dates_filecount(self):
+        return self.dates_filecount
+    
+    def get_files_for_date(self, date_string):
+        result = []
+        date = pd.Timestamp(date_string)
+        if date in self.dates_filecount:
+            
+            for file_path in glob.glob(os.path.join(self.__get_path_for_date(date),'*')):
+                result.append(Raw(file_path))
+                
+        return result
+                
+    def __get_path_for_date(self, date):
+        path = self.root_path
+        
+        for format_string in ['%Y', '%m', '%d']:
+            path = os.path.join(path, date.strftime(format_string))
+            
+        return path
+
+    def __get_path_depth(self, path):
+        return len(self.__split_path_into_components(path))
+
+    def __split_path_into_components(self, path):
+        (rest, last) = os.path.split(path)
+        if last == "":
+            return []
+        else:
+            components = self.__split_path_into_components(rest)
+            components.append(last)
+            return components
 
 class Data(object):
 
@@ -97,12 +184,7 @@ class Data(object):
 class StatisticsData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
-        args = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'statistics']
-        dataPipe = subprocess.Popen(args, stdout=subprocess.PIPE)
-        (output, _) = dataPipe.communicate()
-
-        results = output.strip().split(" ")
-
+        results = raw_file.get_statistical_data()
         self.count = int(results[0])
         self.mean = float(results[1])
         self.variance = float(results[2])
@@ -125,6 +207,7 @@ class StatisticsData(Data):
 class HistogramData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
+        return raw_file.get_histogram(starttime, endtime)
         dataPipe = subprocess.Popen(['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'histogram'], stdout=subprocess.PIPE)
         (output, _) = dataPipe.communicate()
 
