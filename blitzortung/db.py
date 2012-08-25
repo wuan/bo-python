@@ -369,8 +369,9 @@ class Base(object):
     def set_timezone(self, tz):
         self.tz = tz
 
-    def replace_timezone(self, timestamp):
-        return timestamp.replace(tzinfo=self.tz) if timestamp else None
+    def update_timezone(self, timestamp):
+        if timestamp:
+	    return timestamp.replace(tzinfo=pytz.UTC).astimezone(self.tz)
 
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
@@ -466,7 +467,7 @@ class Stroke(Base):
         self.cur.execute(sql, {'region': region})
         if self.cur.rowcount == 1:
             result = self.cur.fetchone()
-            return pd.Timestamp(self.replace_timezone(result['timestamp']))
+            return pd.Timestamp(self.update_timezone(result['timestamp']))
         else:
             return None
 
@@ -474,7 +475,7 @@ class Stroke(Base):
         stroke_builder = builder.Stroke()
 
         stroke_builder.set_id(result['id'])
-        stroke_builder.set_timestamp(self.replace_timezone(result['timestamp']), result['nanoseconds'])
+        stroke_builder.set_timestamp(self.update_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
@@ -592,7 +593,7 @@ class Station(Base):
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         station_builder.set_x(location.x)
         station_builder.set_y(location.y)
-        station_builder.set_timestamp(self.replace_timezone(result['begin']))
+        station_builder.set_timestamp(self.update_timezone(result['begin']))
 
         return station_builder.build()  
 
