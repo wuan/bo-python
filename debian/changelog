@@ -2,6 +2,7 @@ python-blitzortung (1.1.0SNAPSHOT201208232238) unstable; urgency=low
 
   * clean up of builder and data
   * replace timestamp handling by pandas.Timestamp which is aware of nanoseconds
+  * better builder and raw file integration
 
  -- Andreas Würl <blitzortung@tryb.de>  Thu, 23 Aug 2012 23:22:33 +0100
 
