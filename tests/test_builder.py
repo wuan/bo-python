@@ -256,10 +256,8 @@ class RawEvent(unittest.TestCase):
     self.assertEqual(self.builder.y_coord, 0)
     self.assertEqual(self.builder.timestamp, None)
     self.assertEqual(self.builder.altitude, 0)
-    self.assertEqual(self.builder.number_of_satellites, 0)
-    self.assertEqual(self.builder.sample_period, 0)
-    self.assertEqual(self.builder.amplitude_x, 0.0)
-    self.assertEqual(self.builder.amplitude_y, 0.0)
+    self.assertEqual(self.builder.amplitude, 0.0)
+    self.assertEqual(self.builder.angle, 0.0)
 
 
   def test_build_raw_event(self):

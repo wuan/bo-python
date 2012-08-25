@@ -28,10 +28,12 @@ class Raw(object):
         return os.path.basename(self.file_path)
     
     def get_data(self, starttime=None, endtime=None):
-        return self.__execute(starttime, endtime)
+        return [ builder.RawEvent().from_json(element).build()
+                 for element in self.__execute(starttime, endtime) ]
 
     def get_waveform_data(self, starttime=None, endtime=None):
-        return self.__execute(starttime, endtime, '-l')
+        return [ builder.RawWaveformEvent().from_json(element).build()
+                 for element in self.__execute(starttime, endtime, '--long-data') ]
     
     def get_info(self, starttime=None, endtime=None):
         return self.__execute(starttime, endtime, '--mode', 'info')

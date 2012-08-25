@@ -8,9 +8,11 @@
 
 import datetime, pytz
 import math
+import json
 import HTMLParser
 import numpy as np
 import pandas as pd
+
 import data
 
 class Base(object):
@@ -22,7 +24,6 @@ class Base(object):
 
     def parse_timestamp(self, timestamp_string):
         return pd.Timestamp(np.datetime64(timestamp_string + 'Z', 'ns'), tz=pytz.UTC)
-
 
 class Timestamp(Base):
 
@@ -42,7 +43,20 @@ class Timestamp(Base):
     def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
         self.timestamp_nanoseconds = timestamp_nanoseconds
 
-class Stroke(Timestamp):
+class Event(Timestamp):
+    
+    def __init__(self):
+        super(Event, self).__init__()
+        self.x_coord = 0
+        self.y_coord = 0
+
+    def set_x(self, x_coord):
+        self.x_coord = x_coord
+
+    def set_y(self, y_coord):
+        self.y_coord = y_coord    
+        
+class Stroke(Event):
 
     def __init__(self):
         super(Stroke, self).__init__()
@@ -52,12 +66,6 @@ class Stroke(Timestamp):
 
     def set_id(self, id_value):
         self.id_value = id_value
-
-    def set_x(self, x):
-        self.x = x
-
-    def set_y(self, y):
-        self.y = y
 
     def set_altitude(self, altitude):
         self.altitude = altitude
@@ -78,7 +86,7 @@ class Stroke(Timestamp):
         self.participants = participants
 
     def build(self):
-        return data.Stroke(self.id_value, self.x, self.y, self.timestamp, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
+        return data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
 
     def from_string(self, string):
         ' Construct stroke from blitzortung text format data line '
@@ -102,7 +110,7 @@ class Stroke(Timestamp):
         self.set_altitude(0.0)
 
 
-class Station(Timestamp):
+class Station(Event):
 
     html_parser = HTMLParser.HTMLParser()
 
@@ -129,12 +137,6 @@ class Station(Timestamp):
     def set_country(self, country):
         self.country = country
 
-    def set_x(self, x):
-        self.x = x
-
-    def set_y(self, y):
-        self.y = y
-
     def set_gps_status(self, gps_status):
         self.gps_status = gps_status
 
@@ -159,7 +161,7 @@ class Station(Timestamp):
         self.set_samples_per_hour(int(fields[10]))
 
     def build(self):
-        return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x, self.y, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
+        return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x_coord, self.y_coord, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
 
     def _unquote(self, html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
@@ -188,30 +190,36 @@ class StationOffline(Base):
     def build(self):
         return data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
-class RawEvent(Timestamp):
+class RawEvent(Event):
 
     def __init__(self):
         super(RawEvent, self).__init__()
-        self.x_coord = 0
-        self.y_coord = 0
         self.altitude = 0
-        self.number_of_satellites = 0
-        self.sample_period = 0
-        self.amplitude_x = 0
-        self.amplitude_y = 0
+        self.amplitude = 0
+        self.angle = 0
 
     def build(self):
-        return data.RawEvent(self.x_coord, self.y_coord, self.timestamp, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y)
-
-    def set_x(self, x_coord):
-        self.x_coord = x_coord
-
-    def set_y(self, y_coord):
-        self.y_coord = y_coord
+        return data.RawEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
+        
+    def set_amplitude(self, amplitude):
+        self.amplitude = amplitude
+    
+    def set_angle(self, angle):
+        self.angle = angle
 
+    def from_json(self, json_object):
+        self.set_timestamp(json_object[0])
+        self.set_x(json_object[1])
+        self.set_y(json_object[2])
+        self.set_altitude(json_object[3])
+        self.set_amplitude(json_object[6])
+        self.set_angle(json_object[7])
+        
+        return self
+        
     def from_string(self, string):
         if string != None:
             ' Construct stroke from blitzortung text format data line '
@@ -222,14 +230,53 @@ class RawEvent(Timestamp):
                 self.set_timestamp(' '.join(fields[0:2]))
                 self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
                 self.set_altitude(int(fields[4]))
-                self.number_of_satellites = int(fields[5])
-                self.sample_period = int(fields[6])
-                self.amplitude_x = float(fields[7])
-                self.amplitude_y = float(fields[8])
+                self.x_amplitude = float(fields[7])
+                self.y_amplitude = float(fields[8])
             else:
                 raise RuntimeError("not enough data fields for raw event data '%s'" %(data))
 
-    def from_archive_string(self, string):
+class RawWaveformEvent(Event):
+
+    def __init__(self):
+        super(RawWaveformEvent, self).__init__()
+        self.altitude = 0
+        self.sample_period = 0
+        self.x_values = None
+        self.y_values = None
+        self.angle_offset = 0
+
+    def build(self):
+        return data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.sample_period, self.x_values, self.y_values, self.angle_offset)
+
+    def set_altitude(self, altitude):
+        self.altitude = altitude
+        
+    def set_sample_period(self, sample_period):
+        self.sample_period = sample_period
+        
+    def set_x_values(self, x_values):
+        self.x_values = x_values
+    
+    def set_y_values(self, y_values):
+        self.y_values = y_values
+        
+    def set_angle_offset(self, angle_offset):
+        self.angle_offset = angle_offset
+
+    def from_json(self, json_object):
+        self.set_timestamp(json_object[0])
+        self.set_x(json_object[1])
+        self.set_y(json_object[2])
+        self.set_altitude(json_object[3])
+        self.set_sample_period(json_object[5])
+        self.set_angle_offset(json_object[7])
+        self.set_x_values(json_object[9][0])
+        if len(json_object[9]) > 1:
+            self.set_y_values(json_object[9][1])
+        
+        return self
+
+    def from_string(self, string):
         if string != None:
             ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
@@ -267,9 +314,9 @@ class RawEvent(Timestamp):
                         maximum_index = sample
                         maximum_values = list(current_values)
 
-                self.amplitude_x = maximum_values[0]
+                self.x_amplitude = maximum_values[0]
                 if number_of_channels > 1:
-                    self.amplitude_y = maximum_values[1]
+                    self.y_amplitude = maximum_values[1]
 
                 self.timestamp_nanoseconds += maximum_index * self.sample_period # add maximum offset to time
                 self.timestamp += datetime.timedelta(microseconds=self.timestamp_nanoseconds / 1000) # fix nanoseconds overflow
@@ -289,5 +336,5 @@ class ExtEvent(RawEvent):
         self.station_number = station_number
 
     def build(self):
-        return data.ExtEvent(self.x, self.y, self.timestamp, self.timestamp_nanoseconds, self.altitude, self.number_of_satellites, self.sample_period, self.amplitude_x, self.amplitude_y, self.station_number)
+        return data.ExtEvent(self.timestamp, self.x, self.y, self.altitude, self.amplitude, self.angle, self.station_number)
 

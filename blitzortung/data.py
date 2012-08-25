@@ -112,48 +112,57 @@ class Event(types.Point):
         return self.timestamp.value - other.timestamp.value
 
     def __str__(self):
-        return "%s%03d %.4f %.4f" %(self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp_nanoseconds(), self.x_coord, self.y_coord)
-
+        return "%s%03d%s %.4f %.4f " \
+               % (self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
+                  self.get_timestamp().nanosecond,
+                  self.timestamp.strftime('%z'), self.x_coord, self.y_coord)
 
 class RawEvent(Event):
-    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude_x, amplitude_y):
-        super(RawEvent, self).__init__(x_coord, y_coord, timestamp)
+    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude, angle):
+        super(RawEvent, self).__init__(timestamp, x_coord, y_coord)
         self.altitude = altitude
-        self.amplitude_x = amplitude_x
-        self.amplitude_y = amplitude_y
+        self.amplitude = amplitude
+        self.angle = angle
 
     def get_altitude(self):
         return self.altitude
     
-    def get_x_amplitude(self):
-        return self.amplitude_x
+    def get_amplitude(self):
+        return self.amplitude
 
-    def get_y_amplitude(self):
-        return self.amplitude_y
+    def get_angle(self):
+        return self.angle
 
     def __str__(self):
-        return super(RawEvent, self).__str__ + "%d %.2f %.2f" %(self.altitude, self.amplitude_x, self.amplitude_y)
+        return super(RawEvent, self).__str__() + "%d %.2f %.2f" %(self.altitude, self.amplitude, self.angle)
 
 
 class RawWaveformEvent(Event):
-    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude_x, amplitude_y, sample_period):
-        super(RawEvent, self).__init__(timestamp, x_coord, y_coord)
+    def __init__(self, timestamp, x_coord, y_coord, altitude, sample_period, amplitude_x, amplitude_y, angle_offset):
+        super(RawWaveformEvent, self).__init__(timestamp, x_coord, y_coord)
         self.altitude = altitude
+        self.sample_period = sample_period
         self.amplitude_x = amplitude_x
         self.amplitude_y = amplitude_y
-        self.sample_period = sample_period
+        self.angle_offset = angle_offset
 
+    def get_altitude(self):
+        return self.altitude
+    
+    def get_sample_period(self):
+        return self.sample_period
+    
     def get_x_amplitude(self, index):
         return self.amplitude_x[index]
 
     def get_y_amplitude(self, index):
         return self.amplitude_y[index]
-
-    def get_altitude(self):
-        return self.altitude
+    
+    def get_angle_offset(self):
+        return self.angle_offset
 
     def __str__(self):
-        return super(RawEvent, self).__str__ + "%d %d %d %s %s" %(self.altitude, self.number_of_satellites, self.sample_period, str(self.amplitude_x), str(self.amplitude_y))
+        return super(RawWaveformEvent, self).__str__() + "%d %d %s %s %.2f" %(self.altitude, self.sample_period, str(self.amplitude_x), str(self.amplitude_y), self.angle_offset)
 
 
 class ExtEvent(RawEvent):
@@ -173,7 +182,7 @@ class ExtEvent(RawEvent):
 class Station(Event):
 
     def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status, tracker_version, samples_per_hour):
-        super(Station, self).__init__(x_coord, y_coord, last_data)
+        super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
         self.short_name = short_name
         self.name = name
@@ -293,9 +302,8 @@ class Stroke(Event):
         return False
 
     def __str__(self):
-        return "%s%03d%s %.4f %.4f %s %.1f %d %.1f %d" \
-               % (self.timestamp.strftime(builder.Base.timeformat_fractional_seconds), self.get_timestamp().nanosecond, self.timestamp.strftime('%z'), \
-                 self.x_coord, self.y_coord, str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
+        return super(Stroke, self).__str__() + "%s %d %.1f %d" \
+               % (str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):
 
