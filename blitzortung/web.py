@@ -43,8 +43,9 @@ class Url(object):
 
 class StrokesBase(Url):
 
-    def __init__(self, base_url):
+    def __init__(self, base_url, config):
         super(StrokesBase, self).__init__(base_url)
+        self.set_credentials(config.get_username(), config.get_password())
 
     def get_strokes(self, time_interval=None):
         strokes = []
@@ -60,20 +61,18 @@ class StrokesBase(Url):
 class Strokes(StrokesBase):
 
     def __init__(self, config, region=1):
-        super(Strokes, self).__init__(Url.base %(region) + 'strikes.txt')
-        self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
+        super(Strokes, self).__init__(Url.base %(region) + 'strikes.txt', config)
 
 class Participants(StrokesBase):
 
     def __init__(self, config, region=1):
         super(Participants, self).__init__(Url.base %(region) + 'participants.txt')
-        self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
 
 class Stations(Url):
 
     def __init__(self, config, region=1):
         super(Stations, self).__init__(Url.base %(region) + 'stations.txt')
-        self.set_credentials(config.get('USERNAME'), config.get('PASSWORD'))
+        self.set_credentials(config.get_username(), config.get_password())
 
 class Raw(Url):
 

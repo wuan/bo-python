@@ -5,35 +5,22 @@
 @author Andreas Würl
 
 '''
+import ConfigParser
 
 class Config(object):
-    def __init__(self, configfilename=None):
+    def __init__(self, configfilename='/etc/blitzortung.conf'):
 
-        self.config = {}
-
-        if configfilename == None:
-            configfilename = '/etc/default/blitzortung-tracker'
-
-        configfile = open(configfilename, 'r')
-        for line in configfile:
-            line = line.strip()
-
-            if len(line) > 0 and line[0] != '#':
-
-                index = line.find('=')
-
-                variable = line[0:index]
-
-                basename = 'BLITZORTUNG_'
-
-                if variable.find(' ') < 0:
-                    if variable[:len(basename)] == basename:
-                        self.config[variable[len(basename):].upper()] = line[index+1:].replace('"', '')
-
-    def get(self, key):
-        key = key.upper()
-
-        if self.config.has_key(key):
-            return self.config[key]
-
-        raise Exception("Config.get() key '%s' not found" % key)
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(configfilename)
+        
+    def get_username(self):
+        return self.config.get('auth', 'username')
+    
+    def get_password(self):
+        return self.config.get('auth', 'password')
+    
+    def get_raw_path(self):
+        return self.config.get('path', 'raw')
+    
+    def get_archive_path(self):
+        return self.config.get('path', 'archive')
