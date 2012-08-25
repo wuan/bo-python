@@ -297,6 +297,7 @@ class Base(object):
         self.table_name = None
         self.cur = None
         self.conn = None
+	self.initialized = False
 
         self.srid = geom.Geometry.DefaultSrid
         self.tz = Base.DefaultTimezone
@@ -326,11 +327,11 @@ class Base(object):
                     pass
 
         #if not self.has_table('geometry_columns'):
-        #    self.cur.execute('SELECT InitSpatialMetadata()')
-        #    self.cur.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')")
+        #    self.execute('SELECT InitSpatialMetadata()')
+        #    self.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')")
 
 #    def has_table(self, table_name):
-#        result = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
+#        result = self.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
 #        return result.fetchone() != None
 
     def is_connected(self):
@@ -369,9 +370,8 @@ class Base(object):
     def set_timezone(self, tz):
         self.tz = tz
 
-    def update_timezone(self, timestamp):
-        if timestamp:
-	    return timestamp.replace(tzinfo=pytz.UTC).astimezone(self.tz)
+    def fix_timezone(self, timestamp):
+	return timestamp.astimezone(self.tz) if timestamp else None
 
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
@@ -394,6 +394,13 @@ class Base(object):
     @abstractmethod
     def select(self, args):
         pass
+  
+    def execute(self, sql_string, parameters=None):
+	if not self.initialized:
+	    self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+	    self.initialized = True
+
+	self.cur.execute(sql_string, parameters)
 
 
 class Stroke(Base):
@@ -430,16 +437,14 @@ class Stroke(Base):
 
         self.set_table_name('strokes')
 
-        self.update_timezone()
-
 #        if not self.has_table(self.get_table_name()):
-#            self.cur.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
-#            self.cur.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
-#            self.cur.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
-#            self.cur.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
-#            self.cur.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
-#            self.cur.execute("ALTER TABLE strokes ADD COLUMN stationcount INTEGER")
-#            self.cur.execute("ALTER TABLE strokes ADD COLUMN detected BOOLEAN")
+#            self.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
+#            self.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
+#            self.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
+#            self.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
+#            self.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
+#            self.execute("ALTER TABLE strokes ADD COLUMN stationcount INTEGER")
+#            self.execute("ALTER TABLE strokes ADD COLUMN detected BOOLEAN")
 
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
@@ -458,16 +463,16 @@ class Stroke(Base):
             'stationcount': stroke.get_station_count()
         }
 
-        self.cur.execute(sql, parameters)
+        self.execute(sql, parameters)
 
     def get_latest_time(self, region=1):
         sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
             ' WHERE region=%(region)s' + \
             ' ORDER BY timestamp DESC LIMIT 1'
-        self.cur.execute(sql, {'region': region})
+        self.execute(sql, {'region': region})
         if self.cur.rowcount == 1:
             result = self.cur.fetchone()
-            return pd.Timestamp(self.update_timezone(result['timestamp']))
+            return pd.Timestamp(self.fix_timezone(result['timestamp']))
         else:
             return None
 
@@ -475,7 +480,7 @@ class Stroke(Base):
         stroke_builder = builder.Stroke()
 
         stroke_builder.set_id(result['id'])
-        stroke_builder.set_timestamp(self.update_timezone(result['timestamp']), result['nanoseconds'])
+        stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
@@ -515,12 +520,9 @@ class Stroke(Base):
         return self.select_execute(query)
 
     def select_execute(self, query):
-        self.cur.execute(str(query), query.get_parameters())
+        self.execute(str(query), query.get_parameters())
 
         return query.get_results(self)
-
-    def update_timezone(self):
-        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
 class Station(Base):
     '''
@@ -552,15 +554,12 @@ class Station(Base):
         self.set_table_name('stations')
 
     def insert(self, station):
-        self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
+        self.execute('INSERT INTO ' + self.get_full_table_name() + \
                          ' (number, short_name, "name", location_name, country, timestamp, the_geom) ' + \
                          'VALUES (%s, %s, %s, %s, %s, %s, st_setsrid(makepoint(%s, %s), 4326))',
                          (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
 
     def select(self, timestamp=None):
-        ' set timezone for query '
-        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
-
         sql = ''' select
         o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.the_geom
 	from stations as s
@@ -573,7 +572,7 @@ class Station(Base):
 	left join stations_offline as o
 	on o.number = s.number and o."end" is null
 	order by s.number'''
-        self.cur.execute(sql)
+        self.execute(sql)
 
         resulting_stations = []
         if self.cur.rowcount > 0:
@@ -593,7 +592,7 @@ class Station(Base):
         location = shapely.wkb.loads(result['the_geom'].decode('hex'))
         station_builder.set_x(location.x)
         station_builder.set_y(location.y)
-        station_builder.set_timestamp(self.update_timezone(result['begin']))
+        station_builder.set_timestamp(self.fix_timezone(result['begin']))
 
         return station_builder.build()  
 
@@ -623,21 +622,18 @@ class StationOffline(Base):
         self.set_table_name('stations_offline')
 
     def insert(self, station_offline):
-        self.cur.execute('INSERT INTO ' + self.get_full_table_name() + \
+        self.execute('INSERT INTO ' + self.get_full_table_name() + \
                          ' (number, begin, "end") ' + \
                          'VALUES (%s, %s, %s)',
                          (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
 
     def update(self, station_offline):
-        self.cur.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s',
+        self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s',
                          (station_offline.get_end(), station_offline.get_id()))
 
     def select(self, timestamp=None):
-        ' set timezone for query '
-        self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
-
         sql = '''select id, number, begin, "end" from stations_offline where "end" is null order by number;'''
-        self.cur.execute(sql)
+        self.execute(sql)
 
         resulting_stations = []
         if self.cur.rowcount > 0:
@@ -688,7 +684,7 @@ class Location(Base):
         self.max_distance = None
 
     def delete_all(self):
-        self.cur.execute('DELETE FROM ' + self.get_full_table_name())
+        self.execute('DELETE FROM ' + self.get_full_table_name())
 
     def insert(self, line):
         fields = line.strip().split('\t')
@@ -713,7 +709,7 @@ class Location(Base):
         classification = self.size_class(population)
 
         if classification is not None:
-            self.cur.execute('INSERT INTO ' + self.get_full_table_name() + '''
+            self.execute('INSERT INTO ' + self.get_full_table_name() + '''
 	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
 	GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
@@ -772,7 +768,7 @@ class Location(Base):
                 'limit': self.limit
             }
 
-            self.cur.execute(queryString, params)
+            self.execute(queryString, params)
 
             locations = []
             if self.cur.rowcount > 0:
