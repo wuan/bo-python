@@ -154,12 +154,12 @@ class Query(object):
 
                     if arg.is_valid:
 
-                        self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
-#self.add_condition('SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
-                            self.add_condition('Intersects(SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
-#self.add_condition('Intersects(SetSRID(CAST(:geometry AS geometry), :srid), Transform(the_geom, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+#self.add_condition('Intersects(ST_SetSRID(CAST(:geometry AS geometry), :srid), Transform(the_geom, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -192,8 +192,8 @@ class RasterQuery(Query):
         env = self.raster.getEnv()
 
         if env.is_valid:
-            self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
-#self.add_condition('SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
@@ -712,7 +712,7 @@ class Location(Base):
             self.execute('INSERT INTO ' + self.get_full_table_name() + '''
 	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
-	GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+	ST_GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                                                                                   (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
 
     def size_class(self, n):
@@ -752,7 +752,7 @@ class Location(Base):
 	  distance_sphere(the_geom, c.center) AS distance,
 	  st_azimuth(the_geom, c.center) AS azimuth
 	FROM
-	  (SELECT SetSRID(MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
+	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
                                                                                                 self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
