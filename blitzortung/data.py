@@ -302,7 +302,7 @@ class Stroke(Event):
         return False
 
     def __str__(self):
-        return super(Stroke, self).__str__() + "%s %d %.1f %d" \
+        return super(Stroke, self).__str__() + "%s %d %d %.1f %d" \
                % (str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
 
 class Histogram(object):
