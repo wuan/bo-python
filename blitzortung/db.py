@@ -747,17 +747,17 @@ class Location(Base):
 	  feature_class,
 	  feature_code,
 	  elevation,
-	  st_transform(the_geom, %(srid)s) AS the_geom,
+	  ST_Transform(the_geom, %(srid)s) AS the_geom,
 	  population,
-	  distance_sphere(the_geom, c.center) AS distance,
-	  st_azimuth(the_geom, c.center) AS azimuth
+	  ST_Distance_Sphere(the_geom, c.center) AS distance,
+	  ST_Azimuth(the_geom, c.center) AS azimuth
 	FROM
 	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
                                                                                                 self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
-	  AND st_transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
+	  AND ST_Transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
 
             params = {
                 'srid': self.get_srid(),
