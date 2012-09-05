@@ -449,7 +449,7 @@ class Stroke(Base):
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
             ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
-            'VALUES (%(timestamp)s, %(nanoseconds)s, st_setsrid(makepoint(%(longitude)s, %(latitude)s), 4326), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
+            'VALUES (%(timestamp)s, %(nanoseconds)s, ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
@@ -556,7 +556,7 @@ class Station(Base):
     def insert(self, station):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
                          ' (number, short_name, "name", location_name, country, timestamp, the_geom) ' + \
-                         'VALUES (%s, %s, %s, %s, %s, %s, st_setsrid(makepoint(%s, %s), 4326))',
+                         'VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))',
                          (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
 
     def select(self, timestamp=None):
