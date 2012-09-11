@@ -154,12 +154,12 @@ class Query(object):
 
                     if arg.is_valid:
 
-                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
-#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
-                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(the_geom, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
-#self.add_condition('Intersects(ST_SetSRID(CAST(:geometry AS geometry), :srid), Transform(the_geom, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(geog, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+#self.add_condition('Intersects(ST_SetSRID(CAST(:geometry AS geometry), :srid), Transform(geog, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -189,19 +189,19 @@ class RasterQuery(Query):
 
         self.raster = raster
 
-        env = self.raster.getEnv()
+        env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
-#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(the_geom, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
     def __str__(self):
         sql = 'SELECT '
 
-        sql += 'TRUNC((ST_X(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getXMin()) + ') /' + str(self.raster.getXDiv()) + ') AS rx, '
-        sql += 'TRUNC((ST_Y(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getYMin()) + ') /' + str(self.raster.getYDiv()) + ') AS ry, '
+        sql += 'TRUNC((ST_X(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(self.raster.get_x_div()) + ') AS rx, '
+        sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(self.raster.get_y_div()) + ') AS ry, '
         sql += 'count(*) AS count, max(timestamp) as timestamp FROM ('
 
         sql += Query.__str__(self)
@@ -214,6 +214,7 @@ class RasterQuery(Query):
 
         if db.cur.rowcount > 0:
             for result in db.cur.fetchall():
+	        print result['rx'], result['ry']
                 self.raster.set(result['rx'], result['ry'], geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
 
@@ -409,9 +410,7 @@ class Stroke(Base):
 
     database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, PRIMARY KEY(id));
-    SELECT AddGeometryColumn('public','strokes','the_geom','4326','POINT',2);
-
+    CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point), PRIMARY KEY(id));
     ALTER TABLE strokes ADD COLUMN region SMALLINT;
     ALTER TABLE strokes ADD COLUMN amplitude REAL;
     ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
@@ -421,9 +420,9 @@ class Stroke(Base):
     CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
     CREATE INDEX strokes_region_timestamp ON strokes USING btree(region, "timestamp");
     CREATE INDEX strokes_id_timestamp ON strokes USING btree(id, "timestamp");
-    CREATE INDEX strokes_geom ON strokes USING gist(the_geom);
-    CREATE INDEX strokes_timestamp_geom ON strokes USING gist("timestamp", the_geom);
-    CREATE INDEX strokes_id_timestamp_geom ON strokes USING gist(id, "timestamp", the_geom);
+    CREATE INDEX strokes_geog ON strokes USING gist(geog);
+    CREATE INDEX strokes_timestamp_geog ON strokes USING gist("timestamp", geog);
+    CREATE INDEX strokes_id_timestamp_geog ON strokes USING gist(id, "timestamp", geog);
 
     empty the table with the following commands:
 
@@ -439,7 +438,7 @@ class Stroke(Base):
 
 #        if not self.has_table(self.get_table_name()):
 #            self.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
-#            self.execute("SELECT AddGeometryColumn('strokes','the_geom',4326,'POINT',2)")
+#            self.execute("SELECT AddGeometryColumn('strokes','geog',4326,'POINT',2)")
 #            self.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
 #            self.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
 #            self.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
@@ -448,8 +447,8 @@ class Stroke(Base):
 
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
-            ' ("timestamp", nanoseconds, the_geom, region, amplitude, error2d, type, stationcount) ' + \
-            'VALUES (%(timestamp)s, %(nanoseconds)s, ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
+            ' ("timestamp", nanoseconds, geog, region, amplitude, error2d, type, stationcount) ' + \
+            'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
@@ -481,7 +480,7 @@ class Stroke(Base):
 
         stroke_builder.set_id(result['id'])
         stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        location = shapely.wkb.loads(result['the_geom'].decode('hex'))
+        location = shapely.wkb.loads(result['geog'].decode('hex'))
         stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
         stroke_builder.set_amplitude(result['amplitude'])
@@ -498,10 +497,10 @@ class Stroke(Base):
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(the_geom, %(srid)s) AS the_geom', 'amplitude', 'type', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(geog::geometry, %(srid)s) AS geog', 'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
-#query.add_condition('the_geom IS NOT NULL')
+#query.add_condition('geog IS NOT NULL')
         query.parse_args(args)
         return query
 
@@ -529,9 +528,7 @@ class Station(Base):
 
     database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE stations (id bigserial, number int, PRIMARY KEY(id));
-    SELECT AddGeometryColumn('public','stations','the_geom','4326','POINT',2);
-
+    CREATE TABLE stations (id bigserial, number int, geog GEOGRAPHY(Point), PRIMARY KEY(id));
     ALTER TABLE stations ADD COLUMN short_name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN location_name CHARACTER VARYING;
@@ -540,7 +537,7 @@ class Station(Base):
 
     CREATE INDEX stations_timestamp ON stations USING btree("timestamp");
     CREATE INDEX stations_number_timestamp ON stations USING btree(number, "timestamp");
-    CREATE INDEX stations_geom ON stations USING gist(the_geom);
+    CREATE INDEX stations_geog ON stations USING gist(geog);
 
     empty the table with the following commands:
 
@@ -555,13 +552,13 @@ class Station(Base):
 
     def insert(self, station):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                         ' (number, short_name, "name", location_name, country, timestamp, the_geom) ' + \
-                         'VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))',
+                         ' (number, short_name, "name", location_name, country, timestamp, geog) ' + \
+                         'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))',
                          (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
 
     def select(self, timestamp=None):
         sql = ''' select
-        o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.the_geom
+        o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
 	from stations as s
 	inner join 
 	   (select b.number, max(b.timestamp) as timestamp
@@ -589,7 +586,7 @@ class Station(Base):
         station_builder.set_name(result['name'])
         station_builder.set_location_name(result['location_name'])
         station_builder.set_country(result['country'])
-        location = shapely.wkb.loads(result['the_geom'].decode('hex'))
+        location = shapely.wkb.loads(result['geog'].decode('hex'))
         station_builder.set_x(location.x)
         station_builder.set_y(location.y)
         station_builder.set_timestamp(self.fix_timezone(result['begin']))
@@ -658,8 +655,7 @@ class Location(Base):
 
     CREATE SCHEMA geo;
 
-    CREATE TABLE geo.geonames (id bigserial, "name" character varying, PRIMARY KEY(id));
-    SELECT AddGeometryColumn('geo','geonames','the_geom','4326','POINT',2);
+    CREATE TABLE geo.geonames (id bigserial, "name" character varying, geog Geography(Point), PRIMARY KEY(id));
 
     ALTER TABLE geo.geonames ADD COLUMN "class" INTEGER;
     ALTER TABLE geo.geonames ADD COLUMN feature_class CHARACTER(1);
@@ -670,7 +666,7 @@ class Location(Base):
     ALTER TABLE geo.geonames ADD COLUMN population INTEGER;
     ALTER TABLE geo.geonames ADD COLUMN elevation SMALLINT;
 
-    CREATE INDEX geonames_geom ON geo.geonames USING gist(the_geom);
+    CREATE INDEX geonames_geog ON geo.geonames USING gist(geog);
 
     '''
 
@@ -710,7 +706,7 @@ class Location(Base):
 
         if classification is not None:
             self.execute('INSERT INTO ' + self.get_full_table_name() + '''
-	(the_geom, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
+	(geog, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
 	ST_GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                                                                                   (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
@@ -747,17 +743,17 @@ class Location(Base):
 	  feature_class,
 	  feature_code,
 	  elevation,
-	  ST_Transform(the_geom, %(srid)s) AS the_geom,
+	  ST_Transform(geog, %(srid)s) AS geog,
 	  population,
-	  ST_Distance_Sphere(the_geom, c.center) AS distance,
-	  ST_Azimuth(the_geom, c.center) AS azimuth
+	  ST_Distance_Sphere(geog, c.center) AS distance,
+	  ST_Azimuth(geog, c.center) AS azimuth
 	FROM
 	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
                                                                                                 self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
-	  AND ST_Transform(the_geom, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
+	  AND ST_Transform(geog, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
 
             params = {
                 'srid': self.get_srid(),
