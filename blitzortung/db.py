@@ -188,7 +188,7 @@ class RasterQuery(Query):
 
         self.raster = raster
 
-        env = self.raster.getEnv()
+        env = self.raster.get_env()
 
         if env.is_valid:
             self.add_condition('SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && st_transform(the_geom, %(srid)s)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
@@ -199,8 +199,8 @@ class RasterQuery(Query):
     def __str__(self):
         sql = 'SELECT '
 
-        sql += 'TRUNC((ST_X(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getXMin()) + ') /' + str(self.raster.getXDiv()) + ') AS rx, '
-        sql += 'TRUNC((ST_Y(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.getYMin()) + ') /' + str(self.raster.getYDiv()) + ') AS ry, '
+        sql += 'TRUNC((ST_X(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(self.raster.get_x_div()) + ') AS rx, '
+        sql += 'TRUNC((ST_Y(ST_TRANSFORM(the_geom, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(self.raster.get_y_div()) + ') AS ry, '
         sql += 'count(*) AS count, max(timestamp) as timestamp FROM ('
 
         sql += Query.__str__(self)
@@ -507,6 +507,20 @@ class Stroke(Base):
         query = self.select_query(args, RasterQuery(raster))
 
         return self.select_execute(query)
+
+    def select_histogram(self, minutes, binsize=1):
+        query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' group by interval order by interval;"
+
+	self.cur.execute(query, {'minutes': minutes, 'binsize':binsize})
+
+	value_count = minutes/binsize
+	result = [0] * value_count
+
+	raw_result = self.cur.fetchall()
+	for bin_data in raw_result:
+	  result[bin_data[0] + value_count - 1] = bin_data[1]
+
+	return result
 
     def select_execute(self, query):
         self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
