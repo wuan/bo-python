@@ -266,11 +266,11 @@ class Base(object):
 
     as user postgres:
 
-    createuser -i -D -R -S -W blitzortung
+    createuser -i -D -R -S -W -E -P blitzortung
     createdb -E utf8 -O blitzortung blitzortung
     createlang plpgsql blitzortung
-    psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/postgis.sql -d blitzortung
-    psql -f /usr/share/postgresql/8.4/contrib/postgis-1.5/spatial_ref_sys.sql -d blitzortung  
+    psql -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql -d blitzortung  
     (< pg 9.0)
     psql -f /usr/share/postgresql/8.4/contrib/btree_gist.sql blitzortung
 
@@ -518,10 +518,10 @@ class Stroke(Base):
 
         return self.select_execute(query)
 
-    def select_histogram(self, minutes, binsize=1):
-        query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' group by interval order by interval;"
+    def select_histogram(self, minutes, region=1, binsize=5):
+        query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
 
-	self.cur.execute(query, {'minutes': minutes, 'binsize':binsize})
+	self.cur.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
 	value_count = minutes/binsize
 	result = [0] * value_count
