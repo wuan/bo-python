@@ -214,7 +214,6 @@ class RasterQuery(Query):
 
         if db.cur.rowcount > 0:
             for result in db.cur.fetchall():
-	        print result['rx'], result['ry']
                 self.raster.set(result['rx'], result['ry'], geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
 
