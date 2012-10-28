@@ -15,10 +15,11 @@ import shapely
 from abc import ABCMeta, abstractmethod
 
 class Point(object):
+    ''' base component for objects on the globe '''
 
     __geod = pyproj.Geod(ellps='WGS84', units='m')
 
-    __whitespaceRe = re.compile('\s+')
+    __whitespaceRe = re.compile(r'\s+')
 
     def __init__(self, x_coord, y_coord):
         self.x_coord = x_coord
@@ -135,7 +136,10 @@ class Raster(Envelope):
         return self.ymin + (rowindex + 0.5) * self.ydiv
 
     def set(self, x_index, y_index, value):
-        self.data[y_index][x_index] = value
+        try:
+          self.data[y_index][x_index] = value
+        except IndexError:
+          pass
 
     def get(self, x_index, y_index):
         return self.data[y_index][x_index]
@@ -187,7 +191,7 @@ class Raster(Envelope):
             result += "|\n"
 
         result += (self.get_x_bin_count() + 2) * '-' + '\n'
-        result += 'total count: %d, max per area: %d' %(total, maximum)
+        result += 'total count: %d, max per area: %d' % (total, maximum)
         return result
 
     def to_reduced_array(self, reference_time):
