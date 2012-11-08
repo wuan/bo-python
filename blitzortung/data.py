@@ -109,7 +109,13 @@ class Event(types.Point):
         return self.timestamp - other.timestamp
 
     def ns_difference_to(self, other):
-        return self.timestamp.value - other.timestamp.value
+        return other.timestamp.value - self.timestamp.value
+
+    def __eq__(self, other):
+        return self.timestamp.value == other.timestamp.value
+
+    def __lt__(self, other):
+        return self.timestamp.value < other.timestamp.value
 
     def __str__(self):
         return "%s%03d%s %.4f %.4f " \
