@@ -14,32 +14,6 @@ import shapely
 
 from abc import ABCMeta, abstractmethod
 
-class Point(object):
-    ''' base component for objects on the globe '''
-
-    __geod = pyproj.Geod(ellps='WGS84', units='m')
-
-    __whitespaceRe = re.compile(r'\s+')
-
-    def __init__(self, x_coord, y_coord):
-        self.x_coord = x_coord
-        self.y_coord = y_coord
-
-    def get_x(self):
-        return self.x_coord
-
-    def get_y(self):
-        return self.y_coord
-
-    def __invgeod(self, other):
-        return Point.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord)
-
-    def distance(self, other):
-        return self.__invgeod(other)[2]
-
-    def azimuth(self, other):
-        return self.__invgeod(other)[0]
-
 class Geometry(object):
     '''
     abstract base class for geometries
