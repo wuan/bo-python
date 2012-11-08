@@ -55,7 +55,7 @@ class ThreePointSolver(object):
             if self.is_angle_valid_for_hyperbola(solution_direction, D1, G1, phi1) and \
                self.is_angle_valid_for_hyperbola(solution_direction, D2, G2, phi2):
                 solution_distance = self.hyperbola_radius(solution_direction, D1, G1, phi1)
-                solution = ThreePointSolution(self.events[0], solution_direction, solution_distance)
+                solution = ThreePointSolution(self.events[0], phi1 - solution_direction, solution_distance)
                 solutions.append(solution)
                 
         return solutions
@@ -94,6 +94,12 @@ class ThreePointSolution(object):
     
     def __init__(self, center_event, azimuth, distance):
         self.location = center_event.geodesic_shift(azimuth, distance)
+        
+        distance = center_event.distance_to(self.location)
+        
+        timestamp = center_event.get_timestamp();
+        
+        print timestamp.value
         
     def get_location(self):
         return self.location

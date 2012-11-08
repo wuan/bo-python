@@ -126,7 +126,6 @@ class StrokeTest(TestBase):
 
     self.builder.set_x(0.0)
     self.builder.set_y(0.0)
-    self.builder.set_timestamp_nanoseconds(0)
     self.builder.set_amplitude(1.0)
     self.builder.set_lateral_error(5.0)
     self.builder.set_type(-1)

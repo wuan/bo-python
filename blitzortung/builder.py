@@ -40,9 +40,6 @@ class Timestamp(Base):
         else:
             self.timestamp = self.parse_timestamp(timestamp)
 
-    def set_timestamp_nanoseconds(self, timestamp_nanoseconds):
-        self.timestamp_nanoseconds = timestamp_nanoseconds
-
 class Event(Timestamp):
     
     def __init__(self):
@@ -54,7 +51,11 @@ class Event(Timestamp):
         self.x_coord = x_coord
 
     def set_y(self, y_coord):
-        self.y_coord = y_coord    
+        self.y_coord = y_coord
+        
+    def build(self):
+        return data.Event(self.timestamp, self.x_coord, self.y_coord)
+        
         
 class Stroke(Event):
 
@@ -282,8 +283,8 @@ class RawWaveformEvent(Event):
             fields = string.split(' ')
             self.y = float(fields[2])
             self.x = float(fields[3])
-            (self.timestamp, self.timestamp_nanoseconds) = self.parse_timestamp_with_nanoseconds(' '.join(fields[0:2]))
-            self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
+            self.set_timestamp(' '.join(fields[0:2]))
+            self.timestamp += datetime.timedelta(seconds=1)
             if len(fields) >= 8:
                 self.number_of_satellites = int(fields[4])
                 self.sample_period = int(fields[8])
@@ -318,9 +319,7 @@ class RawWaveformEvent(Event):
                 if number_of_channels > 1:
                     self.y_amplitude = maximum_values[1]
 
-                self.timestamp_nanoseconds += maximum_index * self.sample_period # add maximum offset to time
-                self.timestamp += datetime.timedelta(microseconds=self.timestamp_nanoseconds / 1000) # fix nanoseconds overflow
-                self.timestamp_nanoseconds %= 1000;
+                self.timestamp += np.timedelta64(maximum_index * self.sample_period, 'ns') # add maximum offset to time
 
 
             else:
