@@ -39,25 +39,25 @@ class TestEvent(unittest.TestCase):
         
         now = pd.Timestamp(datetime.datetime.utcnow(), tz=pytz.UTC)
         later = pd.Timestamp(np.datetime64(now.value + 100, 'ns'), tz=pytz.UTC)
-        
+    
         event1 = blitzortung.data.Event(now, 11, 49)
         event2 = blitzortung.data.Event(later, 11, 49)
         
         self.assertEqual(datetime.timedelta(), event1.difference_to(event2))
         self.assertEqual(datetime.timedelta(), event2.difference_to(event1))
-        self.assertEqual(-100, event1.ns_difference_to(event2))
-        self.assertEqual(100, event2.ns_difference_to(event1))
+        self.assertEqual(100, event1.ns_difference_to(event2))
+        self.assertEqual(-100, event2.ns_difference_to(event1))
         
         even_later = pd.Timestamp(np.datetime64(now.value + 20150, 'ns'), tz=pytz.UTC)
         event3 = blitzortung.data.Event(even_later, 11, 49)
         self.assertEqual(datetime.timedelta(days=-1,seconds=86399,microseconds=999980), event1.difference_to(event3))
         self.assertEqual(datetime.timedelta(microseconds=20), event3.difference_to(event1))
-        self.assertEqual(-20150, event1.ns_difference_to(event3))
-        self.assertEqual(20150, event3.ns_difference_to(event1))
+        self.assertEqual(20150, event1.ns_difference_to(event3))
+        self.assertEqual(-20150, event3.ns_difference_to(event1))
 
         much_later = pd.Timestamp(np.datetime64(now.value + 3000000200, 'ns'), tz=pytz.UTC)
         event4 = blitzortung.data.Event(much_later, 11, 49)
         self.assertEqual(datetime.timedelta(days=-1,seconds=86397,microseconds=0), event1.difference_to(event4))
         self.assertEqual(datetime.timedelta(seconds=3), event4.difference_to(event1))       
-        self.assertEqual(-3000000200, event1.ns_difference_to(event4))
-        self.assertEqual(3000000200, event4.ns_difference_to(event1))
+        self.assertEqual(3000000200, event1.ns_difference_to(event4))
+        self.assertEqual(-3000000200, event4.ns_difference_to(event1))
