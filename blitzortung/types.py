@@ -38,7 +38,7 @@ class Point(object):
 
     def geodesic_shift(self, azimuth, distance):
         result = self.__geod.fwd(self.x_coord, self.y_coord, azimuth / self.__radians_factor, distance, radians=False)
-        return result[0], result[1]
+        return Point(result[0], result[1])
     
     def geodesic_relation_to(self, other):
         result = self.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord, radians=False)
