@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 
 import math
+from injector import Module, Key, provides, Injector, inject, singleton
 
 import datetime
 import pytz
@@ -17,6 +18,8 @@ except ImportError:
 
 import builder
 import geom
+
+import blitzortung
 
 from abc import ABCMeta, abstractmethod
 
@@ -256,6 +259,15 @@ class Center(object):
     def get_point(self):
         return self.center
 
+class Connection(Module):
+    
+    @singleton
+    @provides(psycopg2._psycopg.connection)
+    @inject(configuration=blitzortung.Configuration)
+    
+    def provide_psycopg2_connection(self, configuration):
+        return psycopg2.connect(configuration['db_connection_string'])
+        
 
 class Base(object):
     '''
@@ -287,28 +299,18 @@ class Base(object):
 
     DefaultTimezone = pytz.UTC
 
-    def __init__(self):
-        '''
-        create PostgreSQL db access object
-        '''
-
-        connection = "host='localhost' dbname='blitzortung' user='blitzortung' password='blitzortung'"
+    @inject(db_connection=psycopg2._psycopg.connection)
+    def __init__(self, db_conn):
         self.schema_name = None
         self.table_name = None
         self.cur = None
-        self.conn = None
-	self.initialized = False
+        self.conn = db_connection
+        self.initialized = False
 
         self.srid = geom.Geometry.DefaultSrid
         self.tz = Base.DefaultTimezone
 
-#            self.db_file = "/tmp/blitzortung.sqlite"
-#            self.conn = db.connect(self.db_file, detect_types=db.PARSE_DECLTYPES)
-#            self.conn.enable_load_extension(True)
-#            self.conn.execute('SELECT load_extension("libspatialite.so");')
-#            self.conn.row_factory = db.Row
         try:
-            self.conn = psycopg2.connect(connection)
             self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.cur)
         except psycopg2.DatabaseError, e:
@@ -371,7 +373,7 @@ class Base(object):
         self.tz = tz
 
     def fix_timezone(self, timestamp):
-	return timestamp.astimezone(self.tz) if timestamp else None
+        return timestamp.astimezone(self.tz) if timestamp else None
 
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
@@ -394,13 +396,13 @@ class Base(object):
     @abstractmethod
     def select(self, args):
         pass
-  
-    def execute(self, sql_string, parameters=None):
-	if not self.initialized:
-	    self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
-	    self.initialized = True
 
-	self.cur.execute(sql_string, parameters)
+    def execute(self, sql_string, parameters=None):
+        if not self.initialized:
+            self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+            self.initialized = True
+
+        self.cur.execute(sql_string, parameters)
 
 
 class Stroke(Base):
@@ -520,16 +522,16 @@ class Stroke(Base):
     def select_histogram(self, minutes, region=1, binsize=5):
         query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
 
-	self.cur.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
+        self.cur.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
-	value_count = minutes/binsize
-	result = [0] * value_count
+        value_count = minutes/binsize
+        result = [0] * value_count
 
-	raw_result = self.cur.fetchall()
-	for bin_data in raw_result:
-	  result[bin_data[0] + value_count - 1] = bin_data[1]
+        raw_result = self.cur.fetchall()
+        for bin_data in raw_result:
+            result[bin_data[0] + value_count - 1] = bin_data[1]
 
-	return result
+        return result
 
     def select_execute(self, query):
         self.execute(str(query), query.get_parameters())
@@ -565,9 +567,9 @@ class Station(Base):
 
     def insert(self, station):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                         ' (number, short_name, "name", location_name, country, timestamp, geog) ' + \
-                         'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))',
-                         (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
+                     ' (number, short_name, "name", location_name, country, timestamp, geog) ' + \
+                     'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))',
+                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
 
     def select(self, timestamp=None):
         sql = ''' select
@@ -633,13 +635,13 @@ class StationOffline(Base):
 
     def insert(self, station_offline):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                         ' (number, begin, "end") ' + \
-                         'VALUES (%s, %s, %s)',
-                         (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
+                     ' (number, begin, "end") ' + \
+                     'VALUES (%s, %s, %s)',
+                     (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
 
     def update(self, station_offline):
         self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s',
-                         (station_offline.get_end(), station_offline.get_id()))
+                     (station_offline.get_end(), station_offline.get_id()))
 
     def select(self, timestamp=None):
         sql = '''select id, number, begin, "end" from stations_offline where "end" is null order by number;'''
@@ -722,7 +724,7 @@ class Location(Base):
 	(geog, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
       VALUES(
 	ST_GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-                                                                                  (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
+                                                                                     (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
 
     def size_class(self, n):
         if n < 1:
@@ -762,7 +764,7 @@ class Location(Base):
 	  ST_Azimuth(geog, c.center) AS azimuth
 	FROM
 	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
-                                                                                                self.get_full_table_name() + '''
+                                                                                                      self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
