@@ -34,6 +34,7 @@ class Error(Exception):
 
 from blitzortung import Config
 import builder
+import calc
 import data
 import db
 import geom
@@ -44,7 +45,9 @@ import web
 __all__ = [
     'Config', # main classes
 
-    'builder.Stroke', 'builder.Station'
+    'builder.Stroke', 'builder.Station',
+    
+    'calc.ThreePointSolution', 'calc.ThreePointSolver',
 
     'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
 
