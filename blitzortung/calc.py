@@ -40,14 +40,14 @@ class ThreePointSolver(object):
         
         denominator = q1 * q1 + q2 * q2 - 2 * q1 * q2 * cosine
         
-        nominator_1 = -p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine
-        nominator_2 = math.sqrt( q2 * q2 * (-self.square(p1 - p2) + denominator) * sine * sine)
+        part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
+        part_2 = math.sqrt( q2 * q2 * (-self.square(p1 - p2) + denominator) * sine * sine) / denominator
         
         soultion_directions = []
-        soultion_directions.append(math.acos((nominator_1 + nominator_2) / denominator))
-        soultion_directions.append(math.acos((nominator_1 - nominator_2) / denominator))
-        soultion_directions.append(-math.acos((nominator_1 + nominator_2) / denominator))
-        soultion_directions.append(-math.acos((nominator_1 - nominator_2) / denominator))
+        soultion_directions.append(math.acos(part_1 + part_2))
+        soultion_directions.append(math.acos(part_1 - part_2))
+        soultion_directions.append(-math.acos(part_1 + part_2))
+        soultion_directions.append(-math.acos(part_1 - part_2))
         
         solutions = []
         
@@ -66,7 +66,7 @@ class ThreePointSolver(object):
         return (math.cos(angle), math.sin(angle))
     
     def hyperbola_radius(self, theta, D, G, phi):
-        0.5 * (G * G - D * D)/(D + G * cos(theta - phi))
+        0.5 * (G * G - D * D)/(D + G * math.cos(theta - phi))
         
     def is_angle_valid_for_hyperbola(self, angle, D, G, phi):
         angle -= phi
