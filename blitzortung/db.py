@@ -16,12 +16,9 @@ try:
 except ImportError:
     pass
 
-import builder
-import geom
+from abc import ABCMeta, abstractmethod
 
 import blitzortung
-
-from abc import ABCMeta, abstractmethod
 
 class BaseInterval(object):
 
@@ -263,8 +260,7 @@ class Connection(Module):
     
     @singleton
     @provides(psycopg2._psycopg.connection)
-    @inject(configuration=blitzortung.Configuration)
-    
+    @inject(configuration=blitzortung.config.configuration)
     def provide_psycopg2_connection(self, configuration):
         return psycopg2.connect(configuration['db_connection_string'])
         
@@ -299,15 +295,14 @@ class Base(object):
 
     DefaultTimezone = pytz.UTC
 
-    @inject(db_connection=psycopg2._psycopg.connection)
-    def __init__(self, db_conn):
+    def __init__(self, db_connection):
         self.schema_name = None
         self.table_name = None
         self.cur = None
         self.conn = db_connection
         self.initialized = False
 
-        self.srid = geom.Geometry.DefaultSrid
+        self.srid = blitzortung.geom.Geometry.DefaultSrid
         self.tz = Base.DefaultTimezone
 
         try:
@@ -404,7 +399,7 @@ class Base(object):
 
         self.cur.execute(sql_string, parameters)
 
-
+@singleton
 class Stroke(Base):
     '''
     stroke db access class
@@ -431,9 +426,10 @@ class Stroke(Base):
     ALTER SEQUENCE strokes_id_seq RESTART 1;
 
     '''
-
-    def __init__(self):
-        super(Stroke, self).__init__()
+    
+    @inject(db_connection=psycopg2._psycopg.connection)
+    def __init__(self, db_connection):
+        super(Stroke, self).__init__(db_connection)
 
         self.set_table_name('strokes')
 
@@ -477,12 +473,12 @@ class Stroke(Base):
             return None
 
     def create(self, result):
-        stroke_builder = builder.Stroke()
+        stroke_builder = blitzortung.builder.Stroke()
 
-        stroke_builder.set_id(result['id'])
-        stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
+        stroke_blitzortung.builder.set_id(result['id'])
+        stroke_blitzortung.builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['geog'].decode('hex'))
-        stroke_builder.set_x(location.x)
+        stroke_blitzortung.builder.set_x(location.x)
         stroke_builder.set_y(location.y)
         stroke_builder.set_amplitude(result['amplitude'])
         stroke_builder.set_type(result['type'])
@@ -537,7 +533,13 @@ class Stroke(Base):
         self.execute(str(query), query.get_parameters())
 
         return query.get_results(self)
+    
+    @staticmethod
+    def get_instance():
+        from __init__ import injector
+        return injector.get(Stroke)
 
+@singleton
 class Station(Base):
     '''
 
@@ -560,7 +562,8 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     '''
 
-    def __init__(self):
+    @inject(db_connection=psycopg2._psycopg.connection)
+    def __init__(self, db_connection):
         super(Station, self).__init__()
 
         self.set_table_name('stations')
@@ -608,6 +611,12 @@ class Station(Base):
 
         return station_builder.build()  
 
+    @staticmethod
+    def get_instance():
+        from __init__ import injector
+        return injector.get(Station)
+
+@singleton
 class StationOffline(Base):
     '''
 
@@ -628,8 +637,9 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     '''
 
-    def __init__(self):
-        super(StationOffline, self).__init__()
+    @inject(db_connection=psycopg2._psycopg.connection)
+    def __init__(self, db_connection):
+        super(StationOffline, self).__init__(db_connection)
 
         self.set_table_name('stations_offline')
 
@@ -662,8 +672,14 @@ class StationOffline(Base):
         stationOfflineBuilder.set_begin(result['begin'])
         stationOfflineBuilder.set_end(result['end'])
 
-        return stationOfflineBuilder.build()  
+        return stationOfflineBuilder.build() 
+    
+    @staticmethod
+    def get_instance():
+        from __init__ import injector
+        return injector.get(StaionOffline)  
 
+@singleton
 class Location(Base):
     '''
     geonames db access class
@@ -684,9 +700,10 @@ class Location(Base):
     CREATE INDEX geonames_geog ON geo.geonames USING gist(geog);
 
     '''
-
-    def __init__(self):
-        super(Location, self).__init__()
+    
+    @inject(db_connection=psycopg2._psycopg.connection)
+    def __init__(self, db_connection):
+        super(Location, self).__init__(db_connection)
         self.set_schema_name('geo')
         self.set_table_name('geonames')
         self.center = None
@@ -791,3 +808,8 @@ class Location(Base):
                     locations.append(location)
 
             return locations
+        
+        @staticmethod
+        def get_instance():
+            from __init__ import injector
+            return injector.get(Location)        

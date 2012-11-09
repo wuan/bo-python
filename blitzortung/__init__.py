@@ -31,9 +31,9 @@ class Error(Exception):
 #   Public interface and exports.
 #-----------------------------------------------------------------------------
 
-
 import builder
 import calc
+import config
 import data
 import db
 import geom
@@ -41,35 +41,11 @@ import files
 import util
 import web
 
-import injector
-import ConfigParser
+from injector import Injector
 
-Configuration = injector.Key('configuration')
-
-class Config(injector.Module):
-    def __init__(self, configfilename='/etc/blitzortung.conf'):
-
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(configfilename)
-        
-    def get_username(self):
-        return self.config.get('auth', 'username')
-    
-    def get_password(self):
-        return self.config.get('auth', 'password')
-    
-    def get_raw_path(self):
-        return self.config.get('path', 'raw')
-    
-    def get_archive_path(self):
-        return self.config.get('path', 'archive')
-
-    def configure(self, binder):
-        binder.bind(Configuration, to={'db_connection_string': "host='localhost' dbname='blitzortung' user='blitzortung' password='blitzortung'"}, scope=singleton)
-    
+injector = Injector([config.Config(), calc.CalcModule(), db.Connection()])
 
 __all__ = [
-    'Config', 'Configuration', # main classes
 
     'builder.Stroke', 'builder.Station',
     

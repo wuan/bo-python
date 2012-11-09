@@ -7,7 +7,44 @@
 '''
 
 import math
+from injector import Module, inject, singleton, provides
 
+import blitzortung
+
+class SignalVelocity(object):
+    
+    # speed of light in m / ns
+    __c0 = 0.299792458 
+    
+    __c_reduction_permille = 2.5
+    
+    __c = (1 - 0.001 * __c_reduction_permille) * __c0
+    
+    def get_runtime(self, distance):
+        return distance / self.__c
+
+
+class CalcModule(Module):
+    
+    @singleton
+    @provides(SignalVelocity)
+    def provide_signal_velocity(self):
+        return SignalVelocity()
+
+class ThreePointSolution(object):
+    
+    def __init__(self, center_event, azimuth, distance):
+        self.location = center_event.geodesic_shift(azimuth, distance)
+        
+        distance = center_event.distance_to(self.location)
+        
+        timestamp = center_event.get_timestamp();
+        
+        print timestamp.value
+        
+    def get_location(self):
+        return self.location
+    
 class ThreePointSolver(object):
     
     """ calculates the exact coordinates of the intersection of two hyperbola defined by three event points/times
@@ -19,6 +56,9 @@ class ThreePointSolver(object):
             raise ValueError("ThreePointSolution requires three events")
             
         self.events = events
+        from __init__ import injector
+        self.signal_velocity = injector.get(SignalVelocity)
+        print self.signal_velocity
 
         distance_0_1 = events[0].distance_to(events[1])
         distance_0_2 = events[0].distance_to(events[2])
@@ -89,18 +129,4 @@ class ThreePointSolver(object):
    
     def square(self, x):
         return x*x
-    
-class ThreePointSolution(object):
-    
-    def __init__(self, center_event, azimuth, distance):
-        self.location = center_event.geodesic_shift(azimuth, distance)
-        
-        distance = center_event.distance_to(self.location)
-        
-        timestamp = center_event.get_timestamp();
-        
-        print timestamp.value
-        
-    def get_location(self):
-        return self.location
-        
+         
