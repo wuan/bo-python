@@ -7,6 +7,7 @@
 '''
 
 import math
+import numpy
 from injector import Module, inject, singleton, provides
 
 import blitzortung
@@ -20,8 +21,11 @@ class SignalVelocity(object):
     
     __c = (1 - 0.001 * __c_reduction_permille) * __c0
     
-    def get_runtime(self, distance):
-        return distance / self.__c
+    def get_distance_time(self, distance):
+        return int(distance / self.__c)
+    
+    def get_time_distance(self, time_ns):
+        return time_ns * self.__c
 
 
 class CalcModule(Module):
@@ -34,16 +38,17 @@ class CalcModule(Module):
 class ThreePointSolution(object):
     
     def __init__(self, center_event, azimuth, distance):
+        #print azimuth, distance
         self.location = center_event.geodesic_shift(azimuth, distance)
         
-        distance = center_event.distance_to(self.location)
-        
+        distance = center_event.distance_to(self.location)        
         timestamp = center_event.get_timestamp();
-        
-        print timestamp.value
         
     def get_location(self):
         return self.location
+    
+    def __eq__(self, other):
+        return self.location == other.location
     
 class ThreePointSolver(object):
     
@@ -58,21 +63,32 @@ class ThreePointSolver(object):
         self.events = events
         from __init__ import injector
         self.signal_velocity = injector.get(SignalVelocity)
-        print self.signal_velocity
 
         distance_0_1 = events[0].distance_to(events[1])
         distance_0_2 = events[0].distance_to(events[2])
         
         azimuth_0_1 = events[0].azimuth_to(events[1])
-        azimuth_0_2 = events[0].azimuth_to(events[1])
+        azimuth_0_2 = events[0].azimuth_to(events[2])
         
         time_difference_0_1 = events[0].ns_difference_to(events[1])
-        time_difference_0_2 = events[0].ns_difference_to(events[1])
-
-        self.solutions = self.solve(time_difference_0_1, distance_0_1, azimuth_0_1, time_difference_0_2, distance_0_2, azimuth_0_2)
+        time_difference_0_2 = events[0].ns_difference_to(events[2])
         
+        time_distance_0_1 = self.signal_velocity.get_time_distance(time_difference_0_1)
+        time_distance_0_2 = self.signal_velocity.get_time_distance(time_difference_0_2)
+
+        #print "0-1 %.2f %1f %1f" % (azimuth_0_1 / math.pi * 180, distance_0_1, time_distance_0_1)
+        #print "0-2 %.2f %1f %1f" % (azimuth_0_2 / math.pi * 180, distance_0_2, time_distance_0_2)
+        
+        self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2, distance_0_2, azimuth_0_2)
+        
+    def get_solutions(self):
+        return self.solutions
     
-    def solve(self, D1, G1, phi1, D2, G2, phi2):
+    def solve(self, D1, G1, azimuth1, D2, G2, azimuth2):
+        
+        phi1 = self.azimuth_to_angle(azimuth1)
+        phi2 = self.azimuth_to_angle(azimuth2)
+        
         (p1, q1) = self.calculate_P_Q(D1, G1)
         (p2, q2) = self.calculate_P_Q(D2, G2)
         
@@ -83,30 +99,42 @@ class ThreePointSolver(object):
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
         part_2 = math.sqrt( q2 * q2 * (-self.square(p1 - p2) + denominator) * sine * sine) / denominator
         
-        soultion_directions = []
-        soultion_directions.append(math.acos(part_1 + part_2))
-        soultion_directions.append(math.acos(part_1 - part_2))
-        soultion_directions.append(-math.acos(part_1 + part_2))
-        soultion_directions.append(-math.acos(part_1 - part_2))
+        angle_offset = (phi1 - phi2) / 2
+        angle_offset = 0
+        solution_angles = []
+        solution_angles.append(math.acos(part_1 + part_2) + angle_offset)
+        solution_angles.append(math.acos(part_1 - part_2) + angle_offset)
+        solution_angles.append(-math.acos(part_1 + part_2) + angle_offset)
+        solution_angles.append(-math.acos(part_1 - part_2) + angle_offset)
+        
+        #print numpy.array(solution_angles) / math.pi * 180
         
         solutions = []
         
-        for solution_direction in soultion_directions:
-            if self.is_angle_valid_for_hyperbola(solution_direction, D1, G1, phi1) and \
-               self.is_angle_valid_for_hyperbola(solution_direction, D2, G2, phi2):
-                solution_distance = self.hyperbola_radius(solution_direction, D1, G1, phi1)
-                solution = ThreePointSolution(self.events[0], phi1 - solution_direction, solution_distance)
-                solutions.append(solution)
+        for solution_angle in solution_angles:
+            if self.is_angle_valid_for_hyperbola(solution_angle, D1, G1, phi1) and \
+               self.is_angle_valid_for_hyperbola(solution_angle, D2, G2, phi2):
+                
+                solution_distance = self.hyperbola_radius(solution_angle, D1, G1, 0)
+                solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
+                solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance)
+                
+                solution_distance = self.hyperbola_radius(solution_angle, D2, G2, phi2 - phi1)
+                solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
+                solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance)
+                
+                if  solution_a.get_location() == solution_b.get_location():
+                  solutions.append(solution_a)
                 
         return solutions
                 
             
-    def calculateAngleProjection(self, A1, A2):
-        angle = A1 - A2
+    def calculateAngleProjection(self, phi1, phi2):
+        angle = phi2 - phi1
         return (math.cos(angle), math.sin(angle))
     
     def hyperbola_radius(self, theta, D, G, phi):
-        0.5 * (G * G - D * D)/(D + G * math.cos(theta - phi))
+        return 0.5 * (G * G - D * D) / (D + G * math.cos(theta - phi))
         
     def is_angle_valid_for_hyperbola(self, angle, D, G, phi):
         angle -= phi
@@ -130,3 +158,9 @@ class ThreePointSolver(object):
     def square(self, x):
         return x*x
          
+    def azimuth_to_angle(self, azimuth):
+        return math.pi / 2 - azimuth
+    
+    def angle_to_azimuth(self, angle):
+        return math.pi / 2 - angle
+        

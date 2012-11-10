@@ -42,7 +42,13 @@ class Point(object):
     
     def geodesic_relation_to(self, other):
         result = self.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord, radians=False)
-        return result[0] * self.__radians_factor, result[2]    
+        return result[0] * self.__radians_factor, result[2]
+    
+    def __eq__(self, other):
+        return self.equal(self.x_coord, other.x_coord) and self.equal(self.y_coord, other.y_coord)
+                   
+    def equal(self, a, b):
+        return abs(a-b) < 1e-4
 
     def __str__(self):
         return "(%.4f, %.4f)" %(self.x_coord, self.y_coord)
