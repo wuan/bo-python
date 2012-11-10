@@ -1,6 +1,7 @@
 import unittest
 import math
 import datetime
+import pandas as pd
 
 import blitzortung
 
@@ -14,23 +15,30 @@ class ThreePointSolutionTest(unittest.TestCase):
         event_builder.set_timestamp(self.timestamp)
         self.center_event = event_builder.build()    
         self.radians_factor = math.pi / 180
+        self.signal_velocity = blitzortung.calc.SignalVelocity()
 
     def test_get_solution_location(self):
-        solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000)
+        solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000, self.signal_velocity)
         location = solution.get_location()
 
         self.assertAlmostEqual(location.get_x(), 11)
         self.assertAlmostEqual(location.get_y(), 49.89913151)
 
-        solution = blitzortung.calc.ThreePointSolution(self.center_event, math.pi / 2, 100000)
+        solution = blitzortung.calc.ThreePointSolution(self.center_event, math.pi / 2, 100000, self.signal_velocity)
         location = solution.get_location()
 
         self.assertAlmostEqual(location.get_x(), 12.3664992)
         self.assertAlmostEqual(location.get_y(), 48.9919072)    
 
     def test_get_solution_timestamp(self):
-        solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000)
+        solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000, self.signal_velocity)
 
+        timestamp = self.center_event.get_timestamp()
+        total_nanoseconds = timestamp.value - self.signal_velocity.get_distance_time(100000)
+        stroke_timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
+        
+        self.assertEqual(stroke_timestamp, solution.get_timestamp())
+        
 class ThreePointSolverTest(unittest.TestCase):
 
     def setUp(self):
@@ -51,10 +59,13 @@ class ThreePointSolverTest(unittest.TestCase):
         
         #print "azimuth: ", location_0.azimuth_to(location) / math.pi * 180
         
-        self.timestamp = datetime.datetime.utcnow()
-        event_builder = blitzortung.builder.Event()
+        self.build_events(location_0, ns_offset_0, location_1, ns_offset_1, location_2, ns_offset_2)
         
         #print "ns offsets:", ns_offset_0, ns_offset_1, ns_offset_2
+        
+    def build_events(self, location_0, ns_offset_0, location_1, ns_offset_1, location_2, ns_offset_2):
+        self.timestamp = datetime.datetime.utcnow()
+        event_builder = blitzortung.builder.Event()
         
         event_builder.set_x(location_0.get_x())
         event_builder.set_y(location_0.get_y())
@@ -73,6 +84,20 @@ class ThreePointSolverTest(unittest.TestCase):
         
         self.events = [self.center_event, self.event_1, self.event_2]
         
+    def test_solve_with_no_solution(self):
+        
+        location_0 = blitzortung.types.Point(11.0, 49.0)
+        location_1 = blitzortung.types.Point(12.0, 49.0)
+        location_2 = blitzortung.types.Point(10.0, 49.0)
+        
+        self.build_events(location_0, 0, location_1, 0, location_2, 0)
+        
+        solver = blitzortung.calc.ThreePointSolver(self.events)
+        
+        solutions = solver.get_solutions()
+        
+        self.assertEqual(0, len(solutions))       
+
     def test_solve_with_one_solution(self):
         
         location = blitzortung.types.Point(11.7, 49.3)

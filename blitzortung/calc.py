@@ -7,7 +7,7 @@
 '''
 
 import math
-import numpy
+import pandas as pd
 from injector import Module, inject, singleton, provides
 
 import blitzortung
@@ -37,18 +37,27 @@ class CalcModule(Module):
 
 class ThreePointSolution(object):
     
-    def __init__(self, center_event, azimuth, distance):
+    def __init__(self, center_event, azimuth, distance, signal_velocity):
         #print azimuth, distance
         self.location = center_event.geodesic_shift(azimuth, distance)
         
         distance = center_event.distance_to(self.location)        
         timestamp = center_event.get_timestamp();
         
+        total_nanoseconds = timestamp.value - signal_velocity.get_distance_time(distance)
+        self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
+        
     def get_location(self):
         return self.location
     
+    def get_timestamp(self):
+        return self.timestamp
+    
     def __eq__(self, other):
         return self.location == other.location
+    
+    def __str__(self):
+        return "%s %s" %(str(self.timestamp), str(self.location))
     
 class ThreePointSolver(object):
     
@@ -96,8 +105,15 @@ class ThreePointSolver(object):
         
         denominator = q1 * q1 + q2 * q2 - 2 * q1 * q2 * cosine
         
+        root_argument = q2 * q2 * (-self.square(p1 - p2) + denominator) * sine * sine
+        
+        solutions = []
+                
+        if root_argument < 0.0:
+            return solutions
+        
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
-        part_2 = math.sqrt( q2 * q2 * (-self.square(p1 - p2) + denominator) * sine * sine) / denominator
+        part_2 = math.sqrt(root_argument) / denominator
         
         angle_offset = (phi1 - phi2) / 2
         angle_offset = 0
@@ -109,19 +125,17 @@ class ThreePointSolver(object):
         
         #print numpy.array(solution_angles) / math.pi * 180
         
-        solutions = []
-        
         for solution_angle in solution_angles:
             if self.is_angle_valid_for_hyperbola(solution_angle, D1, G1, phi1) and \
                self.is_angle_valid_for_hyperbola(solution_angle, D2, G2, phi2):
                 
                 solution_distance = self.hyperbola_radius(solution_angle, D1, G1, 0)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
-                solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance)
+                solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance, self.signal_velocity)
                 
                 solution_distance = self.hyperbola_radius(solution_angle, D2, G2, phi2 - phi1)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
-                solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance)
+                solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance, self.signal_velocity)
                 
                 if  solution_a.get_location() == solution_b.get_location():
                   solutions.append(solution_a)
