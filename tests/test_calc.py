@@ -43,54 +43,23 @@ class ThreePointSolverTest(unittest.TestCase):
 
     def setUp(self):
         self.signal_velocity = blitzortung.calc.SignalVelocity()
-        self.prepare_solution(blitzortung.types.Point(11.5, 49.5))
+        self.prepare_solution(11.5, 49.5)
         
-    def prepare_solution(self, location):
-        location_0 = blitzortung.types.Point(11.0, 49.0)
-        location_1 = blitzortung.types.Point(12.0, 49.0)
-        location_2 = blitzortung.types.Point(11.0, 50.0)
-        
-        distance_0 = location.distance_to(location_0)
-        ns_offset_0 = self.signal_velocity.get_distance_time(distance_0)
-        distance_1 = location.distance_to(location_1)
-        ns_offset_1 = self.signal_velocity.get_distance_time(distance_1)
-        distance_2 = location.distance_to(location_2)
-        ns_offset_2 = self.signal_velocity.get_distance_time(distance_2)
-        
-        #print "azimuth: ", location_0.azimuth_to(location) / math.pi * 180
-        
-        self.build_events(location_0, ns_offset_0, location_1, ns_offset_1, location_2, ns_offset_2)
-        
-        #print "ns offsets:", ns_offset_0, ns_offset_1, ns_offset_2
-        
-    def build_events(self, location_0, ns_offset_0, location_1, ns_offset_1, location_2, ns_offset_2):
-        self.timestamp = datetime.datetime.utcnow()
-        event_builder = blitzortung.builder.Event()
-        
-        event_builder.set_x(location_0.get_x())
-        event_builder.set_y(location_0.get_y())
-        event_builder.set_timestamp(self.timestamp, ns_offset_0)
-        self.center_event = event_builder.build()
-        
-        event_builder.set_x(location_1.get_x())
-        event_builder.set_y(location_1.get_y())
-        event_builder.set_timestamp(self.timestamp, ns_offset_1)
-        self.event_1 = event_builder.build()
-        
-        event_builder.set_x(location_2.get_x())
-        event_builder.set_y(location_2.get_y())
-        event_builder.set_timestamp(self.timestamp, ns_offset_2)
-        self.event_2 = event_builder.build()
+    def prepare_solution(self, x_coord, y_coord):
+        self.simulated_data = blitzortung.calc.SimulatedData(x_coord, y_coord)
+        self.center_event = self.simulated_data.get_event_at(11.0, 49.0)
+        self.event_1 = self.simulated_data.get_event_at(12.0, 49.0)
+        self.event_2 = self.simulated_data.get_event_at(11.0, 50.0)
         
         self.events = [self.center_event, self.event_1, self.event_2]
         
     def test_solve_with_no_solution(self):
         
-        location_0 = blitzortung.types.Point(11.0, 49.0)
-        location_1 = blitzortung.types.Point(12.0, 49.0)
-        location_2 = blitzortung.types.Point(10.0, 49.0)
+        self.prepare_solution(11.5, 49.0)
+        self.event_1 = self.simulated_data.get_event_at(10.0, 49.0)
+        self.event_2 = self.simulated_data.get_event_at(12.0, 49.0)
         
-        self.build_events(location_0, 0, location_1, 0, location_2, 0)
+        self.events = [self.center_event, self.event_1, self.event_2]
         
         solver = blitzortung.calc.ThreePointSolver(self.events)
         
@@ -101,7 +70,7 @@ class ThreePointSolverTest(unittest.TestCase):
     def test_solve_with_one_solution(self):
         
         location = blitzortung.types.Point(11.7, 49.3)
-        self.prepare_solution(location)
+        self.prepare_solution(location.get_x(), location.get_y())
         
         solver = blitzortung.calc.ThreePointSolver(self.events)
         
@@ -115,7 +84,7 @@ class ThreePointSolverTest(unittest.TestCase):
     def test_solve_with_two_solutions(self):
         
         location = blitzortung.types.Point(11.1, 49.1)
-        self.prepare_solution(location)
+        self.prepare_solution(location.get_x(), location.get_y())
         
         solver = blitzortung.calc.ThreePointSolver(self.events)
         
@@ -175,5 +144,8 @@ class TestLeastSquareFit(unittest.TestCase):
         self.assertEqual(0.0, self.fit.calculate_time_value(self.events[0].get_timestamp()))
         
     def test_calculate_residual_time(self):
-        self.assertAlmostEqual(2.126, self.fit.calculate_residual_time(0))
+        self.assertAlmostEqual(2.126, self.fit.calculate_residual_time(self.events[0]))
+        
+    def test_fit(self):
+        pass
         

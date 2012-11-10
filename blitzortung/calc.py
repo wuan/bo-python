@@ -7,6 +7,7 @@
 '''
 
 import math
+import datetime
 import collections
 import numpy as np
 import pandas as pd
@@ -29,7 +30,26 @@ class SignalVelocity(object):
     def get_time_distance(self, time_ns):
         return time_ns * self.__c
 
-
+class SimulatedData(object):
+    
+    def __init__ (self, x_coord, y_coord):
+        self.stroke_location = blitzortung.types.Point(x_coord, y_coord)
+        self.signal_velocity = SignalVelocity()
+        self.event_builder = blitzortung.builder.Event()
+        self.timestamp = datetime.datetime.utcnow()
+        
+    def get_event_at(self, x_coord, y_coord, distance_offset = 0.0):
+        event_location = blitzortung.types.Point(x_coord, y_coord)
+        distance = self.stroke_location.distance_to(event_location)
+        
+        nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
+        
+        self.event_builder.set_x(x_coord)
+        self.event_builder.set_y(y_coord)
+        self.event_builder.set_timestamp(self.timestamp, nanosecond_offset)
+        
+        return self.event_builder.build()
+        
 class CalcModule(Module):
     
     @singleton
@@ -198,6 +218,10 @@ class LeastSquareFit(object):
         
         self.a_matrix = np.zeros((self.n_dim, self.m_dim))
         self.b_vector = np.zeros(self.m_dim)
+        self.residuals = np.zeros(self.m_dim)
+        
+        self.least_square_sum = None
+        self.previous_least_square_sum = None
         
     def get_parameter(self, parameter):
         return self.parameters[parameter]
@@ -205,15 +229,51 @@ class LeastSquareFit(object):
     def calculate_time_value(self, timestamp):
         return (timestamp.value - self.time_reference.value) / self.TIME_FACTOR
     
-    def calculate_partial_derivative(self, sample_index, parameter_index):
+    def calculate_partial_derivative(self, event_index, parameter_index):
         delta = 0.001
         
         self.parameters[parameter_index] += delta
         
+        slope = (self.residuals[event_index] - self.calculate_residual_time(self.events[event_index])) / delta
         
-    def calculate_residual_time(self, event_index):
-        event = self.events[event_index]
-
+        self.parameters[parameter_index] -= delta
+        
+        return slope
+    
+    def perform_fit_step(self):
+        
+        self.initialize_data()
+        
+        (solution, residues, rank, singular_values) = np.linalg.lstsq(self.a_matrix, self.b_vector)
+        
+    def initialize_data(self):
+        
+        for index, event in enumerate(self.events):
+            self.residuals[index] = self.calculate_residual_time(event)
+            
+        for event_index in range(self.m_dim):
+            for parameter_index in self.parameters:
+                self.a_matrix[event_index][parameter_index] = self.calculate_partial_derivative(event_index, parameter_index)
+            self.b_vector[event_index] = self.calculate_residual_time(self.events[event_index])
+            
+    def calculate_least_square_sum(self):
+        residual_time_sum = 0.0
+        
+        for event in self.events:
+            residual_time = self.calculate_residual_time(event)
+            
+            residual_time_sum += residual_time * residual_time
+            
+        overdetermination_count = max(1, self.m_dim - self.n_dim)
+        
+        sum /= overdetermination_count
+    
+        self.previous_least_square_sum = self.least_square_sum
+        self.least_square_sum = sum
+        
+        return sum
+    
+    def calculate_residual_time(self, event):
         location = self.get_location()
         distance = location.distance_to(event)
         distance_runtime = self.signal_velocity.get_distance_time(distance) / self.TIME_FACTOR
