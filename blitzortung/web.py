@@ -7,75 +7,106 @@
 import sys
 import urllib2
 
-import builder
+from injector import inject, singleton
+
+import blitzortung
 
 class Url(object):
 
     host = 'http://blitzortung.net'
-    base = host + '/Data_%d/Protected/'
+    base_url = host + '/Data_%(region)d/Protected/'
 
-    def __init__(self, baseurl):
-        self.url = baseurl
-        self.username = ''
-        self.password = ''
+    def __init__(self, url_path, configuration):
+        self.url = self.base_url + url_path
+        self.configuration = configuration
+        self.parameters = {'region': 1}
 
-    def set_credentials(self, username, password):
-        self.username = username
-        self.password = password
-
+    def set_parameter(self, key, value):
+        self.parameters[key] = value
+        
     def read(self):
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password("Blitzortung.org", "http://blitzortung.net", self.username, self.password)
+        password_mgr.add_password("Blitzortung.org", Url.host, self.configuration['username'], self.configuration['password'])
         handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 
         opener = urllib2.build_opener(handler)
+        
+        url_string = self.url %(self.parameters)
 
         try:
-            urlconnection = opener.open(self.url, timeout=60)
+            urlconnection = opener.open(url_string, timeout=60)
         except urllib2.URLError, error:
-            sys.stderr.write("%s when opening '%s'\n" % (error, self.url))
+            sys.stderr.write("%s when opening '%s'\n" % (error, url_string))
             return None
 
-        data = urlconnection.read().strip()
+        response = urlconnection.read().strip()
         urlconnection.close()
 
-        return data.decode('ISO-8859-1')
+        return response.decode('ISO-8859-1')
 
 class StrokesBase(Url):
 
-    def __init__(self, base_url, config):
-        super(StrokesBase, self).__init__(base_url)
-        self.set_credentials(config.get_username(), config.get_password())
+    def __init__(self, url_path, configuration):
+        super(StrokesBase, self).__init__(url_path, configuration)
 
     def get_strokes(self, time_interval=None):
         strokes = []
         for line in self.read().split('\n'):
             if line.strip():
-                stroke_builder = builder.Stroke()
+                stroke_builder = blitzortung.builder.Stroke()
                 stroke_builder.from_string(line)
                 stroke = stroke_builder.build()
                 if not time_interval or time_interval.contains(stroke.get_timestamp()):
                     strokes.append(stroke)
         return strokes
 
+@singleton
 class Strokes(StrokesBase):
 
+    @inject(configuration=blitzortung.config.configuration)
     def __init__(self, config, region=1):
-        super(Strokes, self).__init__(Url.base %(region) + 'strikes.txt', config)
+        super(Strokes, self).__init__('strikes.txt', configuration)
 
+def strokes():
+    from __init__ import INJECTOR
+    return INJECTOR.get(Strokes)
+
+@singleton
 class Participants(StrokesBase):
 
-    def __init__(self, config, region=1):
-        super(Participants, self).__init__(Url.base %(region) + 'participants.txt')
+    @inject(configuration=blitzortung.config.configuration)
+    def __init__(self, configuration):
+        super(Participants, self).__init__('participants.txt', configuration)
+        
+def participants():
+    from __init__ import INJECTOR
+    return INJECTOR.get(Participants)
 
+@singleton
 class Stations(Url):
 
-    def __init__(self, config, region=1):
-        super(Stations, self).__init__(Url.base %(region) + 'stations.txt')
-        self.set_credentials(config.get_username(), config.get_password())
+    @inject(configuration=blitzortung.config.configuration)
+    def __init__(self, configuration):
+        super(Stations, self).__init__('stations.txt', configuration)
 
+def stations():
+    from __init__ import INJECTOR
+    return INJECTOR.get(Stations)
+
+@singleton
 class Raw(Url):
 
-    def __init__(self, config, region, station_id, hour=0):
-        super(Raw, self).__init__(Url.base %(region) + 'raw_data/%s/%02d.log' %(station_id, hour))
-        self.set_credentials(config.get_username(), config.get_password())
+    @inject(configuration=blitzortung.config.configuration)
+    def __init__(self, configuration):
+        super(Raw, self).__init__('raw_data/%(station_id)s/%(hour)02d.log', configuration)
+        
+    def set_station_id(self, station_id):
+        self.set_parameter('station_id', station_id)
+        
+    def set_hour(self, hour):
+        self.set_parameter('hour', hour)
+
+        
+def raw():
+    from __init__ import INJECTOR
+    return INJECTOR.get(Raw)
