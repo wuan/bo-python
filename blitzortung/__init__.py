@@ -31,10 +31,10 @@ class Error(Exception):
 #   Public interface and exports.
 #-----------------------------------------------------------------------------
 
+import data
 import builder
 import calc
 import config
-import data
 import db
 import geom
 import files

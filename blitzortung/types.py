@@ -18,9 +18,8 @@ class Point(object):
     
     __geod = pyproj.Geod(ellps='WGS84', units='m')
 
-    def __init__(self, x_coord, y_coord):
-        self.x_coord = x_coord
-        self.y_coord = y_coord   
+    def __init__(self, x_coord_or_point, y_coord = None):
+        (self.x_coord, self.y_coord) = self.__get_point_coordinates(x_coord_or_point, y_coord)
         
     def get_x(self):
         ' returns x coordinate of point '
@@ -44,6 +43,12 @@ class Point(object):
         result = self.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord, radians=False)
         return result[0] * self.__radians_factor, result[2]
     
+    def __get_point_coordinates(self, x_coord_or_point, y_coord):
+        if isinstance(x_coord_or_point, Point):
+            return x_coord_or_point.get_x(), x_coord_or_point.get_y()
+        else:
+            return x_coord_or_point, y_coord
+            
     def __eq__(self, other):
         return self.equal(self.x_coord, other.x_coord) and self.equal(self.y_coord, other.y_coord)
                    

@@ -131,7 +131,7 @@ class StrokeTest(TestBase):
     self.builder.set_type(-1)
     self.builder.set_station_count(10)
 
-    self.assertEqual(self.builder.build().get_timestamp(), timestamp)
+    self.assertEqual(self.builder.build().get_timestamp(), pd.Timestamp(timestamp))
 
   def test_build_stroke_from_string(self):
     line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12"

@@ -32,23 +32,24 @@ class SignalVelocity(object):
 
 class SimulatedData(object):
     
-    def __init__ (self, x_coord, y_coord):
-        self.stroke_location = blitzortung.types.Point(x_coord, y_coord)
+    def __init__ (self, x_coord_or_point, y_coord=None):
+        self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
         self.signal_velocity = SignalVelocity()
         self.event_builder = blitzortung.builder.Event()
         self.timestamp = datetime.datetime.utcnow()
         
-    def get_event_at(self, x_coord, y_coord, distance_offset = 0.0):
-        event_location = blitzortung.types.Point(x_coord, y_coord)
+    def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset = 0.0):
+        event_location = blitzortung.types.Point(x_coord_or_point, y_coord)
         distance = self.stroke_location.distance_to(event_location)
         
         nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
         
-        self.event_builder.set_x(x_coord)
+        self.event_builder.set_x(x_coord_or_point)
         self.event_builder.set_y(y_coord)
         self.event_builder.set_timestamp(self.timestamp, nanosecond_offset)
         
         return self.event_builder.build()
+        
         
 class CalcModule(Module):
     
@@ -57,30 +58,17 @@ class CalcModule(Module):
     def provide_signal_velocity(self):
         return SignalVelocity()
 
-class ThreePointSolution(object):
+class ThreePointSolution(blitzortung.data.Event):
     
-    def __init__(self, center_event, azimuth=0, distance=0, signal_velocity=None):
-        self.location = center_event.geodesic_shift(azimuth, distance)
-        
-        distance = center_event.distance_to(self.location)        
-        timestamp = center_event.get_timestamp();
-        
-        total_nanoseconds = timestamp.value
+    def __init__(self, reference_event, azimuth=0, distance=0, signal_velocity=None):
+        location = reference_event.geodesic_shift(azimuth, distance)
+        distance = reference_event.distance_to(location)        
+
+        total_nanoseconds = reference_event.get_timestamp().value;
         if signal_velocity:
             total_nanoseconds -= signal_velocity.get_distance_time(distance)
-        self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
-        
-    def get_location(self):
-        return self.location
     
-    def get_timestamp(self):
-        return self.timestamp
-    
-    def __eq__(self, other):
-        return self.location == other.location
-    
-    def __str__(self):
-        return "%s %s" %(str(self.timestamp), str(self.location))
+        super(ThreePointSolution, self).__init__(pd.Timestamp(total_nanoseconds), location)
     
 class ThreePointSolver(object):
     
@@ -155,7 +143,7 @@ class ThreePointSolver(object):
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
                 solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance, self.signal_velocity)
                 
-                if  solution_a.get_location() == solution_b.get_location():
+                if  solution_a.has_same_location(solution_b):
                   solutions.append(solution_a)
                 
         return solutions

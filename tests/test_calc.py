@@ -16,6 +16,7 @@ class TestSignalVelocity(unittest.TestCase):
     def test_get_time_distance(self):
         self.assertAlmostEqual(29.90429768, self.signal_velocity.get_time_distance(100))     
         
+
     
 class ThreePointSolutionTest(unittest.TestCase):
 
@@ -31,16 +32,14 @@ class ThreePointSolutionTest(unittest.TestCase):
 
     def test_get_solution_location(self):
         solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000, self.signal_velocity)
-        location = solution.get_location()
-
-        self.assertAlmostEqual(location.get_x(), 11)
-        self.assertAlmostEqual(location.get_y(), 49.89913151)
+        
+        self.assertAlmostEqual(solution.get_x(), 11)
+        self.assertAlmostEqual(solution.get_y(), 49.89913151)
 
         solution = blitzortung.calc.ThreePointSolution(self.center_event, math.pi / 2, 100000, self.signal_velocity)
-        location = solution.get_location()
 
-        self.assertAlmostEqual(location.get_x(), 12.3664992)
-        self.assertAlmostEqual(location.get_y(), 48.9919072)    
+        self.assertAlmostEqual(solution.get_x(), 12.3664992)
+        self.assertAlmostEqual(solution.get_y(), 48.9919072)    
 
     def test_get_solution_timestamp(self):
         solution = blitzortung.calc.ThreePointSolution(self.center_event, 0, 100000, self.signal_velocity)
@@ -90,7 +89,7 @@ class ThreePointSolverTest(unittest.TestCase):
         
         self.assertEqual(1, len(solutions))
         
-        self.assertEqual(location, solutions[0].get_location())
+        self.assertEqual(location, solutions[0])
         
             
     def test_solve_with_two_solutions(self):
@@ -104,9 +103,9 @@ class ThreePointSolverTest(unittest.TestCase):
         
         self.assertEqual(2, len(solutions))
         
-        self.assertEqual(location, solutions[0].get_location())
+        self.assertEqual(location, solutions[0])
         
-        self.assertNotEqual(location, solutions[1].get_location())
+        self.assertNotEqual(0.0, location.distance_to(solutions[1]))
             
     def test_azimuth_to_angle(self):
         solver = blitzortung.calc.ThreePointSolver(self.events)
@@ -127,6 +126,11 @@ class TestLeastSquareFit(unittest.TestCase):
     
     def setUp(self):
         self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
+        
+        self.stroke_location = blitzortung.types.Point(11.5, 49.5)
+        
+        self.simulated_data = blitzortung.calc.SimulatedData(self.stroke_location)
+        self.center_event = self.simulated_data.get_event_at(11.0, 49.0)
         
         event_builder = blitzortung.builder.Event()
         

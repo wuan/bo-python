@@ -98,8 +98,8 @@ class TimeIntervals(TimeInterval):
 
 class Event(types.Point):
 
-    def __init__(self, timestamp, x_coord, y_coord):
-        super(Event, self).__init__(x_coord, y_coord)
+    def __init__(self, timestamp, x_coord_or_point, y_coord = None):
+        super(Event, self).__init__(x_coord_or_point, y_coord)
         self.timestamp = timestamp
 
     def get_timestamp(self):
@@ -111,8 +111,8 @@ class Event(types.Point):
     def ns_difference_to(self, other):
         return other.timestamp.value - self.timestamp.value
 
-    def __eq__(self, other):
-        return self.timestamp.value == other.timestamp.value
+    def has_same_location(self, other):
+        return super(Event, self).__eq__(other)       
 
     def __lt__(self, other):
         return self.timestamp.value < other.timestamp.value
