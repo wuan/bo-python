@@ -43,7 +43,7 @@ import web
 
 from injector import Injector
 
-injector = Injector([config.Config(), calc.CalcModule(), db.Connection()])
+INJECTOR = Injector([config.Config(), calc.CalcModule(), db.Connection()])
 
 __all__ = [
 

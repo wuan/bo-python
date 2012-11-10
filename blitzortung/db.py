@@ -535,8 +535,8 @@ class Stroke(Base):
         return query.get_results(self)
     
 def stroke():
-    from __init__ import injector
-    return injector.get(Stroke)
+    from __init__ import INJECTOR
+    return INJECTOR.get(Stroke)
 
 @singleton
 class Station(Base):
@@ -611,8 +611,8 @@ class Station(Base):
         return station_builder.build()  
 
 def station():
-    from __init__ import injector
-    return injector.get(Station)
+    from __init__ import INJECTOR
+    return INJECTOR.get(Station)
 
 @singleton
 class StationOffline(Base):
@@ -673,8 +673,8 @@ class StationOffline(Base):
         return stationOfflineBuilder.build() 
     
 def station_offline():
-    from __init__ import injector
-    return injector.get(StationOffline)  
+    from __init__ import INJECTOR
+    return INJECTOR.get(StationOffline)  
 
 @singleton
 class Location(Base):
@@ -807,5 +807,5 @@ class Location(Base):
             return locations
         
 def location():
-    from __init__ import injector
-    return injector.get(Location)        
+    from __init__ import INJECTOR
+    return INJECTOR.get(Location)        

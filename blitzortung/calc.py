@@ -61,8 +61,8 @@ class ThreePointSolver(object):
             raise ValueError("ThreePointSolution requires three events")
             
         self.events = events
-        from __init__ import injector
-        self.signal_velocity = injector.get(SignalVelocity)
+        from __init__ import INJECTOR
+        self.signal_velocity = INJECTOR.get(SignalVelocity)
 
         distance_0_1 = events[0].distance_to(events[1])
         distance_0_2 = events[0].distance_to(events[2])
