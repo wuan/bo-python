@@ -157,7 +157,7 @@ class TestLeastSquareFit(unittest.TestCase):
         self.events = []
         
         event_builder.set_timestamp(self.timestamp + datetime.timedelta(microseconds=100))
-        event_builder.set_x(10.8)
+        event_builder.set_x(10.6)
         self.events.append(event_builder.build())
         
         self.fit = blitzortung.calc.LeastSquareFit(self.three_point_solution, self.events, blitzortung.calc.SignalVelocity())
@@ -167,7 +167,13 @@ class TestLeastSquareFit(unittest.TestCase):
         self.assertAlmostEqual(49.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Latitude))
         self.assertAlmostEquals(-100.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Time))
 
+    def test_get_location(self):
+        self.assertEqual(blitzortung.types.Point(11.0, 49.0), self.fit.get_location())
+        
     def test_calculate_time_value(self):
         self.assertEqual(-100.0, self.fit.calculate_time_value(self.timestamp))
         self.assertEqual(0.0, self.fit.calculate_time_value(self.events[0].get_timestamp()))
+        
+    def test_calculate_residual_time(self):
+        self.assertAlmostEqual(2.126, self.fit.calculate_residual_time(0))
         

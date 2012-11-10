@@ -213,10 +213,14 @@ class LeastSquareFit(object):
         
     def calculate_residual_time(self, event_index):
         event = self.events[event_index]
+
         location = self.get_location()
         distance = location.distance_to(event)
         distance_runtime = self.signal_velocity.get_distance_time(distance) / self.TIME_FACTOR
-        measured_runtime = self.calculate_time_value(event.get_timestamp()) + self.parameters[FitParameter.Time]
+
+        measured_runtime = self.calculate_time_value(event.get_timestamp()) - self.parameters[FitParameter.Time]
+
+        return measured_runtime - distance_runtime
             
     def get_location(self):
         return blitzortung.types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
