@@ -142,3 +142,32 @@ class ThreePointSolverTest(unittest.TestCase):
         self.assertAlmostEqual(-math.pi / 2, solver.angle_to_azimuth(math.pi))
         
         
+class TestLeastSquareFit(unittest.TestCase):
+    
+    def setUp(self):
+        self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
+        
+        event_builder = blitzortung.builder.Event()
+        
+        event_builder.set_timestamp(self.timestamp)
+        event_builder.set_x(11.0)
+        event_builder.set_y(49.0)
+        self.three_point_solution = event_builder.build()
+        
+        self.events = []
+        
+        event_builder.set_timestamp(self.timestamp + datetime.timedelta(microseconds=100))
+        event_builder.set_x(10.8)
+        self.events.append(event_builder.build())
+        
+        self.fit = blitzortung.calc.LeastSquareFit(self.three_point_solution, self.events, blitzortung.calc.SignalVelocity())
+        
+    def test_get_parameter(self):
+        self.assertAlmostEqual(11.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Longitude))
+        self.assertAlmostEqual(49.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Latitude))
+        self.assertAlmostEquals(-100.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Time))
+
+    def test_calculate_time_value(self):
+        self.assertEqual(-100.0, self.fit.calculate_time_value(self.timestamp))
+        self.assertEqual(0.0, self.fit.calculate_time_value(self.events[0].get_timestamp()))
+        

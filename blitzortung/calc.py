@@ -7,6 +7,8 @@
 '''
 
 import math
+import collections
+import numpy as np
 import pandas as pd
 from injector import Module, inject, singleton, provides
 
@@ -37,14 +39,15 @@ class CalcModule(Module):
 
 class ThreePointSolution(object):
     
-    def __init__(self, center_event, azimuth, distance, signal_velocity):
-        #print azimuth, distance
+    def __init__(self, center_event, azimuth=0, distance=0, signal_velocity=None):
         self.location = center_event.geodesic_shift(azimuth, distance)
         
         distance = center_event.distance_to(self.location)        
         timestamp = center_event.get_timestamp();
         
-        total_nanoseconds = timestamp.value - signal_velocity.get_distance_time(distance)
+        total_nanoseconds = timestamp.value
+        if signal_velocity:
+            total_nanoseconds -= signal_velocity.get_distance_time(distance)
         self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         
     def get_location(self):
@@ -173,3 +176,50 @@ class ThreePointSolver(object):
     def angle_to_azimuth(self, angle):
         return math.pi / 2 - angle
         
+
+class FitParameter:
+    Time, Longitude, Latitude = range(3)
+
+class LeastSquareFit(object):
+    
+    TIME_FACTOR = 1000.0
+    
+    def __init__(self, three_point_solution, events, signal_velocity):
+        self.n_dim = 3
+        self.m_dim = len(events)
+        self.events = events
+        self.time_reference = events[0].get_timestamp()
+        self.signal_velocity = signal_velocity
+        
+        self.parameters = collections.OrderedDict()
+        self.parameters[FitParameter.Time] = self.calculate_time_value(three_point_solution.get_timestamp()) 
+        self.parameters[FitParameter.Longitude] = three_point_solution.get_x()
+        self.parameters[FitParameter.Latitude] = three_point_solution.get_y()
+        
+        self.a_matrix = np.zeros((self.n_dim, self.m_dim))
+        self.b_vector = np.zeros(self.m_dim)
+        
+    def get_parameter(self, parameter):
+        return self.parameters[parameter]
+
+    def calculate_time_value(self, timestamp):
+        return (timestamp.value - self.time_reference.value) / self.TIME_FACTOR
+    
+    def calculate_partial_derivative(self, sample_index, parameter_index):
+        delta = 0.001
+        
+        self.parameters[parameter_index] += delta
+        
+        
+    def calculate_residual_time(self, event_index):
+        event = self.events[event_index]
+        location = self.get_location()
+        distance = self.location.distance_to(event)
+        distance_runtime = self.signal_velocity.get_distance_time(distance) / self.TIME_FACTOR
+        measured_runtime = self.calculate_time_value(event.get_timestamp()) + self.parameters[FitParameter.Time]
+            
+    def get_location(self):
+        return blitzortung.types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
+    
+    
+    
