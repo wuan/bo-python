@@ -51,4 +51,4 @@ class Point(object):
         return abs(a-b) < 1e-4
 
     def __str__(self):
-        return "(%.4f, %.4f)" %(self.x_coord, self.y_coord)
+        return "(%.4f, %.4f)" % (self.x_coord, self.y_coord)

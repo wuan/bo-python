@@ -8,7 +8,6 @@
 
 import datetime, pytz
 import math
-import json
 import HTMLParser
 import numpy as np
 import pandas as pd
