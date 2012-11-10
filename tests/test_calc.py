@@ -5,6 +5,18 @@ import pandas as pd
 
 import blitzortung
 
+class TestSignalVelocity(unittest.TestCase):
+    
+    def setUp(self):
+        self.signal_velocity = blitzortung.calc.SignalVelocity()
+        
+    def test_get_distance_time(self):
+        self.assertAlmostEqual(33440, self.signal_velocity.get_distance_time(10000.0))
+        
+    def test_get_time_distance(self):
+        self.assertAlmostEqual(29.90429768, self.signal_velocity.get_time_distance(100))     
+        
+    
 class ThreePointSolutionTest(unittest.TestCase):
 
     def setUp(self):
