@@ -214,7 +214,7 @@ class RasterQuery(Query):
 
         if db.cur.rowcount > 0:
             for result in db.cur.fetchall():
-                self.raster.set(result['rx'], result['ry'], geom.RasterElement(result['count'], result['timestamp']))
+                self.raster.set(result['rx'], result['ry'], blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
 
 class Order(object):
@@ -475,10 +475,10 @@ class Stroke(Base):
     def create(self, result):
         stroke_builder = blitzortung.builder.Stroke()
 
-        stroke_blitzortung.builder.set_id(result['id'])
-        stroke_blitzortung.builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
+        stroke_builder.set_id(result['id'])
+        stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['geog'].decode('hex'))
-        stroke_blitzortung.builder.set_x(location.x)
+        stroke_builder.set_x(location.x)
         stroke_builder.set_y(location.y)
         stroke_builder.set_amplitude(result['amplitude'])
         stroke_builder.set_type(result['type'])
@@ -597,7 +597,7 @@ class Station(Base):
         return resulting_stations    
 
     def create(self, result):
-        station_builder = builder.Station()
+        station_builder = blitzortung.builder.Station()
 
         station_builder.set_number(result['number'])
         station_builder.set_short_name(result['short_name'])
@@ -665,7 +665,7 @@ class StationOffline(Base):
         return resulting_stations    
 
     def create(self, result):
-        stationOfflineBuilder = builder.StationOffline()
+        stationOfflineBuilder = blitzortung.builder.StationOffline()
 
         stationOfflineBuilder.set_id(result['id'])
         stationOfflineBuilder.set_number(result['number'])
@@ -677,7 +677,7 @@ class StationOffline(Base):
     @staticmethod
     def get_instance():
         from __init__ import injector
-        return injector.get(StaionOffline)  
+        return injector.get(StationOffline)  
 
 @singleton
 class Location(Base):

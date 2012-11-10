@@ -57,7 +57,7 @@ class Raw(object):
 class RawFile(object):
 
     def __init__(self, config):        
-        raw_file_names = glob.glob(os.path.join(rawPath, '*.bor'))
+        raw_file_names = glob.glob(os.path.join(raw_path, '*.bor'))
 
         raw_file_names.sort()
 

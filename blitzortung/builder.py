@@ -13,7 +13,7 @@ import HTMLParser
 import numpy as np
 import pandas as pd
 
-import data
+import blitzortung
 
 class Base(object):
 
@@ -54,7 +54,7 @@ class Event(Timestamp):
         self.y_coord = y_coord
         
     def build(self):
-        return data.Event(self.timestamp, self.x_coord, self.y_coord)
+        return blitzortung.data.Event(self.timestamp, self.x_coord, self.y_coord)
         
         
 class Stroke(Event):
@@ -87,7 +87,7 @@ class Stroke(Event):
         self.participants = participants
 
     def build(self):
-        return data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
+        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
 
     def from_string(self, string):
         ' Construct stroke from blitzortung text format data line '
@@ -103,7 +103,7 @@ class Stroke(Event):
                 self.set_station_count(int(fields[7]))
 
                 participants = []
-                for index in range(8,len(fields)):
+                for index in range(8, len(fields)):
                     participants.append(fields[index])
                 self.set_participants(participants)
             else:
@@ -162,7 +162,7 @@ class Station(Event):
         self.set_samples_per_hour(int(fields[10]))
 
     def build(self):
-        return data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x_coord, self.y_coord, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
+        return blitzortung.data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x_coord, self.y_coord, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
 
     def _unquote(self, html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
@@ -189,7 +189,7 @@ class StationOffline(Base):
         self.end = end
 
     def build(self):
-        return data.StationOffline(self.id_value, self.number, self.begin, self.end)
+        return blitzortung.data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
 class RawEvent(Event):
 
@@ -200,7 +200,7 @@ class RawEvent(Event):
         self.angle = 0
 
     def build(self):
-        return data.RawEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle)
+        return blitzortung.data.RawEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
@@ -234,7 +234,7 @@ class RawEvent(Event):
                 self.x_amplitude = float(fields[7])
                 self.y_amplitude = float(fields[8])
             else:
-                raise RuntimeError("not enough data fields for raw event data '%s'" %(data))
+                raise RuntimeError("not enough data fields for raw event data '%s'" %(string))
 
 class RawWaveformEvent(Event):
 
@@ -247,7 +247,7 @@ class RawWaveformEvent(Event):
         self.angle_offset = 0
 
     def build(self):
-        return data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.sample_period, self.x_values, self.y_values, self.angle_offset)
+        return blitzortung.data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.sample_period, self.x_values, self.y_values, self.angle_offset)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
@@ -335,5 +335,5 @@ class ExtEvent(RawEvent):
         self.station_number = station_number
 
     def build(self):
-        return data.ExtEvent(self.timestamp, self.x, self.y, self.altitude, self.amplitude, self.angle, self.station_number)
+        return blitzortung.data.ExtEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle, self.station_number)
 
