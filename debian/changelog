@@ -1,5 +1,7 @@
-python-blitzortung (1.1.0SNAPSHOT201208232238) unstable; urgency=low
+python-blitzortung (1.1.0SNAPSHOT201211100914) unstable; urgency=low
 
+  * added global dependency injection
+  * refactored package interplay
   * clean up of builder and data
   * replace timestamp handling by pandas.Timestamp which is aware of nanoseconds
   * better builder and raw file integration
