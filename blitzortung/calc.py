@@ -85,9 +85,6 @@ class ThreePointSolver(object):
         time_distance_0_1 = self.signal_velocity.get_time_distance(time_difference_0_1)
         time_distance_0_2 = self.signal_velocity.get_time_distance(time_difference_0_2)
 
-        #print "0-1 %.2f %1f %1f" % (azimuth_0_1 / math.pi * 180, distance_0_1, time_distance_0_1)
-        #print "0-2 %.2f %1f %1f" % (azimuth_0_2 / math.pi * 180, distance_0_2, time_distance_0_2)
-        
         self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2, distance_0_2, azimuth_0_2)
         
     def get_solutions(self):
@@ -115,15 +112,13 @@ class ThreePointSolver(object):
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
         part_2 = math.sqrt(root_argument) / denominator
         
-        angle_offset = (phi1 - phi2) / 2
-        angle_offset = 0
         solution_angles = []
-        solution_angles.append(math.acos(part_1 + part_2) + angle_offset)
-        solution_angles.append(math.acos(part_1 - part_2) + angle_offset)
-        solution_angles.append(-math.acos(part_1 + part_2) + angle_offset)
-        solution_angles.append(-math.acos(part_1 - part_2) + angle_offset)
-        
-        #print numpy.array(solution_angles) / math.pi * 180
+        if abs(part_1 + part_2) <= 1.0:
+            solution_angles.append(math.acos(part_1 + part_2))
+            solution_angles.append(-math.acos(part_1 + part_2))
+        if abs(part_1 - part_2) <= 1.0:
+            solution_angles.append(math.acos(part_1 - part_2))
+            solution_angles.append(-math.acos(part_1 - part_2))
         
         for solution_angle in solution_angles:
             if self.is_angle_valid_for_hyperbola(solution_angle, D1, G1, phi1) and \
