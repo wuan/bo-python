@@ -23,6 +23,9 @@ class Url(object):
 
     def set_parameter(self, key, value):
         self.parameters[key] = value
+
+    def set_region(self, region):
+        self.set_parameter('region', region)
         
     def read(self):
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
@@ -64,7 +67,7 @@ class StrokesBase(Url):
 class Strokes(StrokesBase):
 
     @inject(configuration=blitzortung.config.configuration)
-    def __init__(self, config, region=1):
+    def __init__(self, configuration):
         super(Strokes, self).__init__('strikes.txt', configuration)
 
 def strokes():

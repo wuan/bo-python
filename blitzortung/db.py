@@ -563,7 +563,7 @@ class Station(Base):
 
     @inject(db_connection=psycopg2._psycopg.connection)
     def __init__(self, db_connection):
-        super(Station, self).__init__()
+        super(Station, self).__init__(db_connection)
 
         self.set_table_name('stations')
 
