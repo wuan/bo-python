@@ -125,43 +125,60 @@ class ThreePointSolverTest(unittest.TestCase):
 class TestLeastSquareFit(unittest.TestCase):
     
     def setUp(self):
-        self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
         
-        self.stroke_location = blitzortung.types.Point(11.5, 49.5)
-        
+        self.stroke_location = blitzortung.types.Point(11.3, 49.5)
+
         self.simulated_data = blitzortung.calc.SimulatedData(self.stroke_location)
-        self.center_event = self.simulated_data.get_event_at(11.0, 49.0)
+        self.source_event = self.simulated_data.get_source_event()
         
+        self.timestamp = self.simulated_data.get_timestamp()
+
         event_builder = blitzortung.builder.Event()
-        
         event_builder.set_timestamp(self.timestamp)
-        event_builder.set_x(11.0)
-        event_builder.set_y(49.0)
+        event_builder.set_x(11.4)
+        event_builder.set_y(49.4)
         self.three_point_solution = event_builder.build()
         
         self.events = []
-        
-        event_builder.set_timestamp(self.timestamp + datetime.timedelta(microseconds=100))
-        event_builder.set_x(10.6)
-        self.events.append(event_builder.build())
-        
+        self.events.append(self.simulated_data.get_event_at(11.0, 50.0))
+        self.events.append(self.simulated_data.get_event_at(11.0, 49.0))
+        self.events.append(self.simulated_data.get_event_at(12.0, 49.0))
+        self.events.append(self.simulated_data.get_event_at(12.0, 50.0))
+                
         self.fit = blitzortung.calc.LeastSquareFit(self.three_point_solution, self.events, blitzortung.calc.SignalVelocity())
         
     def test_get_parameter(self):
-        self.assertAlmostEqual(11.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Longitude))
-        self.assertAlmostEqual(49.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Latitude))
-        self.assertAlmostEquals(-100.0, self.fit.get_parameter(blitzortung.calc.FitParameter.Time))
+        self.assertAlmostEqual(11.4, self.fit.get_parameter(blitzortung.calc.FitParameter.Longitude))
+        self.assertAlmostEqual(49.4, self.fit.get_parameter(blitzortung.calc.FitParameter.Latitude))
+        self.assertAlmostEquals(-199.525, self.fit.get_parameter(blitzortung.calc.FitParameter.Time))
 
     def test_get_location(self):
-        self.assertEqual(blitzortung.types.Point(11.0, 49.0), self.fit.get_location())
+        self.assertEquals(11.4, self.fit.get_location().get_x())
+        self.assertEquals(49.4, self.fit.get_location().get_y())
         
     def test_calculate_time_value(self):
-        self.assertEqual(-100.0, self.fit.calculate_time_value(self.timestamp))
+        self.assertEqual(-199.525, self.fit.calculate_time_value(self.timestamp))
         self.assertEqual(0.0, self.fit.calculate_time_value(self.events[0].get_timestamp()))
         
     def test_calculate_residual_time(self):
-        self.assertAlmostEqual(2.126, self.fit.calculate_residual_time(self.events[0]))
+        self.assertAlmostEqual(-43.601, self.fit.calculate_residual_time(self.events[0]))
         
     def test_fit(self):
-        pass
+        print self.source_event 
+        #for event in self.events:
+        #    print event, "%.1f %.3f" % (self.source_event.distance_to(event)/1000.0, self.source_event.ns_difference_to(event)/1000.0)
+           
+        #for parameter_value in self.fit.parameters.items():
+        #    print parameter_value
+            
+        self.fit.perform_fit_step()
+
+        self.fit.perform_fit_step()
+        
+        self.fit.perform_fit_step()
+
+        self.fit.perform_fit_step()
+
+        self.fit.perform_fit_step()
+
         

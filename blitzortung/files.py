@@ -12,7 +12,7 @@ import datetime
 import json
 import pandas as pd
 
-import builder
+import blitzortung
 
 class Raw(object):
 
@@ -28,11 +28,11 @@ class Raw(object):
         return os.path.basename(self.file_path)
     
     def get_data(self, starttime=None, endtime=None):
-        return [ builder.RawEvent().from_json(element).build()
+        return [ blitzortung.builder.RawEvent().from_json(element).build()
                  for element in self.__execute(starttime, endtime) ]
 
     def get_waveform_data(self, starttime=None, endtime=None):
-        return [ builder.RawWaveformEvent().from_json(element).build()
+        return [ blitzortung.builder.RawWaveformEvent().from_json(element).build()
                  for element in self.__execute(starttime, endtime, '--long-data') ]
     
     def get_info(self, starttime=None, endtime=None):
@@ -169,7 +169,7 @@ class Data(object):
         rawEvents = []
 
         for line in self.get_output(raw_file, starttime, endtime):
-            raw_event_builder = builder.RawEvent()
+            raw_event_builder = blitzortung.builder.RawEvent()
             raw_event_builder.from_string(line)
             rawEvents.append(raw_event_builder.build())
 

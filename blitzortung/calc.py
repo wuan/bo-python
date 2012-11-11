@@ -34,9 +34,13 @@ class SimulatedData(object):
     
     def __init__ (self, x_coord_or_point, y_coord=None):
         self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
+        print "stroke_location", self.stroke_location
         self.signal_velocity = SignalVelocity()
         self.event_builder = blitzortung.builder.Event()
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
+        
+    def get_timestamp(self):
+        return self.timestamp
         
     def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset = 0.0):
         event_location = blitzortung.types.Point(x_coord_or_point, y_coord)
@@ -44,12 +48,18 @@ class SimulatedData(object):
         
         nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
         
+        print "%.1f %.1f" %(distance/1000, nanosecond_offset/1e6)
         self.event_builder.set_x(x_coord_or_point)
         self.event_builder.set_y(y_coord)
         self.event_builder.set_timestamp(self.timestamp, nanosecond_offset)
         
         return self.event_builder.build()
         
+    def get_source_event(self):
+        self.event_builder.set_x(self.stroke_location.get_x())
+        self.event_builder.set_y(self.stroke_location.get_y())
+        self.event_builder.set_timestamp(self.timestamp)
+        return self.event_builder.build()
         
 class CalcModule(Module):
     
@@ -204,7 +214,7 @@ class LeastSquareFit(object):
         self.parameters[FitParameter.Longitude] = three_point_solution.get_x()
         self.parameters[FitParameter.Latitude] = three_point_solution.get_y()
         
-        self.a_matrix = np.zeros((self.n_dim, self.m_dim))
+        self.a_matrix = np.zeros((self.m_dim, self.n_dim))
         self.b_vector = np.zeros(self.m_dim)
         self.residuals = np.zeros(self.m_dim)
         
@@ -218,12 +228,16 @@ class LeastSquareFit(object):
         return (timestamp.value - self.time_reference.value) / self.TIME_FACTOR
     
     def calculate_partial_derivative(self, event_index, parameter_index):
-        delta = 0.001
+
+        if parameter_index == FitParameter.Time:
+            delta = 0.1
+        else:
+            delta = 0.001
         
         self.parameters[parameter_index] += delta
         
         slope = (self.residuals[event_index] - self.calculate_residual_time(self.events[event_index])) / delta
-        
+                
         self.parameters[parameter_index] -= delta
         
         return slope
@@ -233,6 +247,15 @@ class LeastSquareFit(object):
         self.initialize_data()
         
         (solution, residues, rank, singular_values) = np.linalg.lstsq(self.a_matrix, self.b_vector)
+        
+        #print "solution", solution
+        print "residues", residues
+        #print "rank:", rank
+        #print "singular_values", singular_values
+        
+        for parameter_index, delta in enumerate(solution):
+            self.parameters[parameter_index] += delta
+            print 'parameter #', parameter_index, self.parameters[parameter_index], delta
         
     def initialize_data(self):
         
