@@ -1,7 +1,9 @@
 # -*- coding: utf8 -*-
 
+''' classes for database access '''
+
 import math
-from injector import Module, Key, provides, Injector, inject, singleton
+from injector import Module, provides, inject, singleton
 
 import datetime
 import pytz
