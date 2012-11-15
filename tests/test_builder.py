@@ -95,6 +95,15 @@ class TimestampTest(unittest.TestCase):
 
     self.assert_correct_timestamp()
 
+  def test_set_timestamp_from_pandas_timestamp(self):
+    timestamp = pd.Timestamp(datetime.datetime(2012,2,10,12,56,18,96651))
+    timestamp = pd.Timestamp(timestamp.value + 423)
+    
+    self.builder.set_timestamp(timestamp)
+    
+    self.assert_correct_timestamp()
+    self.assertEqual(self.builder.timestamp.nanosecond, 423)    
+    
 class StrokeTest(TestBase):
 
   def setUp(self):
