@@ -219,6 +219,8 @@ class LeastSquareFit(object):
         self.least_square_sum = None
         self.previous_least_square_sum = None
         
+        self.successful = False
+        
     def get_parameter(self, parameter):
         return self.parameters[parameter]
 
@@ -242,10 +244,10 @@ class LeastSquareFit(object):
         self.initialize_data()
         
         (solution, residues, rank, singular_values) = np.linalg.lstsq(self.a_matrix, self.b_vector)
+
+        self.update_parameters(solution)
         
-        for parameter_index, delta in enumerate(solution):
-            self.parameters[parameter_index] += delta
-            #print 'parameter #', parameter_index, self.parameters[parameter_index], delta
+        self.calculate_least_square_sum()
         
     def initialize_data(self):
         
@@ -256,6 +258,10 @@ class LeastSquareFit(object):
             for parameter_index in self.parameters:
                 self.a_matrix[event_index][parameter_index] = self.calculate_partial_derivative(event_index, parameter_index)
             self.b_vector[event_index] = self.calculate_residual_time(self.events[event_index])
+            
+    def update_parameters(self, solution):
+        for parameter_index, delta in enumerate(solution):
+            self.parameters[parameter_index] += delta
             
     def calculate_least_square_sum(self):
         residual_time_sum = 0.0
@@ -289,4 +295,15 @@ class LeastSquareFit(object):
     def get_timestamp(self):
         return pd.Timestamp(self.time_reference.value + int(self.parameters[FitParameter.Time] * 1000))
     
+    def least_square_sum(self):
+        return self.least_square_sum
     
+    def requires_another_iteration(self):
+        if self.least_square_sum and self.previous_least_square_sum:
+            if self.least_square_sum / self.previous_least_square_sum > 0.9:
+                return False
+            if self.least_square_sum < 10e-4:
+                self.successful = True
+                return False
+        return True
+            
