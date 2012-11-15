@@ -301,6 +301,11 @@ class LeastSquareFit(object):
     def get_least_square_sum(self):
         return self.least_square_sum
     
+    def get_least_square_change(self):
+        if self.least_square_sum and self.previous_least_square_sum:
+            return self.least_square_sum / self.previous_least_square_sum - 1.0
+        return float("nan")
+        
     def requires_another_iteration(self):
         if self.least_square_sum and self.previous_least_square_sum:
             if self.least_square_sum / self.previous_least_square_sum > 1.1:
