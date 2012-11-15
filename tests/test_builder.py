@@ -88,7 +88,8 @@ class TimestampTest(unittest.TestCase):
     self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
 
     self.assert_correct_timestamp()
-    self.assertEqual(self.builder.timestamp.nanosecond, 423)
+    self.assertEqual(423, self.builder.timestamp.nanosecond)
+    self.assertEqual(pytz.UTC, self.builder.timestamp.tzinfo)
 
   def test_set_timestamp_from_datetime(self):
     self.builder.set_timestamp(datetime.datetime(2012,2,10,12,56,18,96651))
@@ -102,7 +103,17 @@ class TimestampTest(unittest.TestCase):
     self.builder.set_timestamp(timestamp)
     
     self.assert_correct_timestamp()
-    self.assertEqual(self.builder.timestamp.nanosecond, 423)    
+    self.assertEqual(self.builder.timestamp.nanosecond, 423)
+    
+  def test_set_timestamp_from_pandas_timestamp_with_ns_offset(self):
+    timestamp = pd.Timestamp(datetime.datetime(2012,2,10,12,56,18,96651), tz='CET')
+    
+    self.builder.set_timestamp(timestamp, 423)
+    
+    self.assert_correct_timestamp()
+    
+    self.assertEqual(pytz.timezone('CET'), self.builder.timestamp.tzinfo) 
+    self.assertEqual(423, self.builder.timestamp.nanosecond)     
     
 class StrokeTest(TestBase):
 

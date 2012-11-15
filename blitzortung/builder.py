@@ -35,7 +35,7 @@ class Timestamp(Base):
             self.timestamp = None
         elif isinstance(timestamp, pd.Timestamp):
             if nanoseconds:
-                self.timestamp = pd.Timestamp(timestamp.value + nanoseconds)
+                self.timestamp = pd.Timestamp(timestamp.value + nanoseconds, tz=timestamp.tzinfo)
             else:
                 self.timestamp = timestamp
         elif isinstance(timestamp, datetime.datetime):
