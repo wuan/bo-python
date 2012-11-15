@@ -34,7 +34,6 @@ class SimulatedData(object):
     
     def __init__ (self, x_coord_or_point, y_coord=None):
         self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
-        print "stroke_location", self.stroke_location
         self.signal_velocity = SignalVelocity()
         self.event_builder = blitzortung.builder.Event()
         self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
@@ -48,7 +47,6 @@ class SimulatedData(object):
         
         nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
         
-        print "%.1f %.1f" %(distance/1000, nanosecond_offset/1e6)
         self.event_builder.set_x(x_coord_or_point)
         self.event_builder.set_y(y_coord)
         self.event_builder.set_timestamp(self.timestamp, nanosecond_offset)
@@ -229,10 +227,7 @@ class LeastSquareFit(object):
     
     def calculate_partial_derivative(self, event_index, parameter_index):
 
-        if parameter_index == FitParameter.Time:
-            delta = 0.1
-        else:
-            delta = 0.001
+        delta = 0.001
         
         self.parameters[parameter_index] += delta
         
@@ -248,14 +243,9 @@ class LeastSquareFit(object):
         
         (solution, residues, rank, singular_values) = np.linalg.lstsq(self.a_matrix, self.b_vector)
         
-        #print "solution", solution
-        print "residues", residues
-        #print "rank:", rank
-        #print "singular_values", singular_values
-        
         for parameter_index, delta in enumerate(solution):
             self.parameters[parameter_index] += delta
-            print 'parameter #', parameter_index, self.parameters[parameter_index], delta
+            #print 'parameter #', parameter_index, self.parameters[parameter_index], delta
         
     def initialize_data(self):
         
@@ -275,14 +265,14 @@ class LeastSquareFit(object):
             
             residual_time_sum += residual_time * residual_time
             
-        overdetermination_count = max(1, self.m_dim - self.n_dim)
+        overdetermination_factor = max(1, self.m_dim - self.n_dim)
         
-        sum /= overdetermination_count
+        residual_time_sum /= overdetermination_factor
     
         self.previous_least_square_sum = self.least_square_sum
-        self.least_square_sum = sum
+        self.least_square_sum = residual_time_sum
         
-        return sum
+        return residual_time_sum
     
     def calculate_residual_time(self, event):
         location = self.get_location()
@@ -296,5 +286,7 @@ class LeastSquareFit(object):
     def get_location(self):
         return blitzortung.types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
     
+    def get_timestamp(self):
+        return pd.Timestamp(self.time_reference.value + int(self.parameters[FitParameter.Time] * 1000))
     
     

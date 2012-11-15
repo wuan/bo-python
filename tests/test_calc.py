@@ -163,8 +163,7 @@ class TestLeastSquareFit(unittest.TestCase):
     def test_calculate_residual_time(self):
         self.assertAlmostEqual(-43.601, self.fit.calculate_residual_time(self.events[0]))
         
-    def test_fit(self):
-        print self.source_event 
+    def test_leastsquare_fit(self):
         #for event in self.events:
         #    print event, "%.1f %.3f" % (self.source_event.distance_to(event)/1000.0, self.source_event.ns_difference_to(event)/1000.0)
            
@@ -173,12 +172,26 @@ class TestLeastSquareFit(unittest.TestCase):
             
         self.fit.perform_fit_step()
 
-        self.fit.perform_fit_step()
+        print self.fit.calculate_least_square_sum()
         
         self.fit.perform_fit_step()
 
+        print self.fit.calculate_least_square_sum()
+        
         self.fit.perform_fit_step()
 
+        print self.fit.calculate_least_square_sum()
+        
         self.fit.perform_fit_step()
+
+        print self.fit.calculate_least_square_sum()
+                
+        
+        stroke_location = self.fit.get_location()
+        self.assertAlmostEqual(11.3, stroke_location.get_x(), 4)
+        self.assertAlmostEqual(49.5, stroke_location.get_y(), 4)
+        
+        
+
 
         

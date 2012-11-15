@@ -295,8 +295,8 @@ class RawWaveformEvent(Event):
 
                 maximum = 0.0
                 maximum_index = 0
-                maximum_values = [0] * number_of_channels;
-                current_values = [0] * number_of_channels;
+                maximum_values = [0] * number_of_channels
+                current_values = [0] * number_of_channels
 
                 value_offset = -(1 << (chars_per_sample * 4 - 1))
                 for sample in range(0, number_of_samples):
