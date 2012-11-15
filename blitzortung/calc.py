@@ -295,15 +295,18 @@ class LeastSquareFit(object):
     def get_timestamp(self):
         return pd.Timestamp(self.time_reference.value + int(self.parameters[FitParameter.Time] * 1000))
     
-    def least_square_sum(self):
+    def get_least_square_sum(self):
         return self.least_square_sum
     
     def requires_another_iteration(self):
         if self.least_square_sum and self.previous_least_square_sum:
             if self.least_square_sum / self.previous_least_square_sum > 0.9:
                 return False
-            if self.least_square_sum < 10e-4:
+            if self.least_square_sum < 10e-5:
                 self.successful = True
                 return False
         return True
+    
+    def is_successful(self):
+        return self.successful
             

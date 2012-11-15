@@ -169,23 +169,14 @@ class TestLeastSquareFit(unittest.TestCase):
            
         #for parameter_value in self.fit.parameters.items():
         #    print parameter_value
+           
+        while self.fit.requires_another_iteration():
             
-        self.fit.perform_fit_step()
+            self.fit.perform_fit_step()
 
-        print self.fit.calculate_least_square_sum()
+            parameter_string = ["%.3f" % self.fit.parameters[index] for index in range(0, len(self.fit.parameters))]
+            print self.fit.get_least_square_sum(), ' '.join(parameter_string) 
         
-        self.fit.perform_fit_step()
-
-        print self.fit.calculate_least_square_sum()
-        
-        self.fit.perform_fit_step()
-
-        print self.fit.calculate_least_square_sum()
-        
-        self.fit.perform_fit_step()
-
-        print self.fit.calculate_least_square_sum()
-                
         
         stroke_location = self.fit.get_location()
         self.assertAlmostEqual(11.3, stroke_location.get_x(), 4)
