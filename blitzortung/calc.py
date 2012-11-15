@@ -68,15 +68,23 @@ class CalcModule(Module):
 
 class ThreePointSolution(blitzortung.data.Event):
     
-    def __init__(self, reference_event, azimuth=0, distance=0, signal_velocity=None):
+    def __init__(self, reference_event, azimuth, distance, signal_velocity):
         location = reference_event.geodesic_shift(azimuth, distance)
         distance = reference_event.distance_to(location)        
 
         total_nanoseconds = reference_event.get_timestamp().value;
-        if signal_velocity:
-            total_nanoseconds -= signal_velocity.get_distance_time(distance)
+        total_nanoseconds -= signal_velocity.get_distance_time(distance)
+        self.signal_velocity = signal_velocity
     
         super(ThreePointSolution, self).__init__(pd.Timestamp(total_nanoseconds), location)
+        
+    def get_residual_time_at(self, event):
+        distance = self.distance_to(event)
+        distance_runtime = self.signal_velocity.get_distance_time(distance)
+
+        measured_runtime = event.get_timestamp().value - self.get_timestamp().value
+
+        return (measured_runtime - distance_runtime) / 1000.0
     
 class ThreePointSolver(object):
     
@@ -234,7 +242,7 @@ class LeastSquareFit(object):
         
         self.parameters[parameter_index] += delta
         
-        slope = (self.residuals[event_index] - self.calculate_residual_time(self.events[event_index])) / delta
+        slope = (self.residuals[event_index] - self.get_residual_time_at(self.events[event_index])) / delta
                 
         self.parameters[parameter_index] -= delta
         
@@ -255,12 +263,12 @@ class LeastSquareFit(object):
     def initialize_data(self):
         
         for index, event in enumerate(self.events):
-            self.residuals[index] = self.calculate_residual_time(event)
+            self.residuals[index] = self.get_residual_time_at(event)
             
         for event_index in range(self.m_dim):
             for parameter_index in self.parameters:
                 self.a_matrix[event_index][parameter_index] = self.calculate_partial_derivative(event_index, parameter_index)
-            self.b_vector[event_index] = self.calculate_residual_time(self.events[event_index])
+            self.b_vector[event_index] = self.get_residual_time_at(self.events[event_index])
             
     def update_parameters(self, solution):
         for parameter_index, delta in enumerate(solution):
@@ -270,7 +278,7 @@ class LeastSquareFit(object):
         residual_time_sum = 0.0
         
         for event in self.events:
-            residual_time = self.calculate_residual_time(event)
+            residual_time = self.get_residual_time_at(event)
             
             residual_time_sum += residual_time * residual_time
             
@@ -283,7 +291,7 @@ class LeastSquareFit(object):
         
         return residual_time_sum
     
-    def calculate_residual_time(self, event):
+    def get_residual_time_at(self, event):
         location = self.get_location()
         distance = location.distance_to(event)
         distance_runtime = self.signal_velocity.get_distance_time(distance) / self.TIME_FACTOR
@@ -314,11 +322,14 @@ class LeastSquareFit(object):
                 self.successful = True
                 return False
             
-        if self.iteration_count > 20:
+        if self.iteration_count >= 20:
             return False
         
         return True
     
     def is_successful(self):
         return self.successful
+    
+    def get_number_of_iterations(self):
+        return self.iteration_count
             

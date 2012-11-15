@@ -161,7 +161,7 @@ class TestLeastSquareFit(unittest.TestCase):
         self.assertEqual(0.0, self.fit.calculate_time_value(self.events[0].get_timestamp()))
         
     def test_calculate_residual_time(self):
-        self.assertAlmostEqual(-43.601, self.fit.calculate_residual_time(self.events[0]))
+        self.assertAlmostEqual(-43.601, self.fit.get_residual_time_at(self.events[0]))
         
     def test_leastsquare_fit(self):
         #for event in self.events:
