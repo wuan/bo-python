@@ -220,6 +220,7 @@ class LeastSquareFit(object):
         self.previous_least_square_sum = None
         
         self.successful = False
+        self.iteration_count = 0
         
     def get_parameter(self, parameter):
         return self.parameters[parameter]
@@ -240,6 +241,8 @@ class LeastSquareFit(object):
         return slope
     
     def perform_fit_step(self):
+        
+        self.iteration_count += 1
         
         self.initialize_data()
         
@@ -300,11 +303,15 @@ class LeastSquareFit(object):
     
     def requires_another_iteration(self):
         if self.least_square_sum and self.previous_least_square_sum:
-            if self.least_square_sum / self.previous_least_square_sum > 0.9:
+            if self.least_square_sum / self.previous_least_square_sum > 1.1:
                 return False
             if self.least_square_sum < 10e-5:
                 self.successful = True
                 return False
+            
+        if self.iteration_count > 20:
+            return False
+        
         return True
     
     def is_successful(self):
