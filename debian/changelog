@@ -1,4 +1,4 @@
-python-blitzortung (1.1.0SNAPSHOT201211100914) unstable; urgency=low
+python-blitzortung (1.1.0) unstable; urgency=low
 
   * added calc module with functions for stroke location
   * added global dependency injection
@@ -7,7 +7,7 @@ python-blitzortung (1.1.0SNAPSHOT201211100914) unstable; urgency=low
   * replace timestamp handling by pandas.Timestamp which is aware of nanoseconds
   * better builder and raw file integration
 
- -- Andreas Würl <blitzortung@tryb.de>  Thu, 23 Aug 2012 23:22:33 +0100
+ -- Andreas Würl <blitzortung@tryb.de>  Thu, 14 Nov 2012 23:41:12 +0100
 
 python-blitzortung (1.0.0) unstable; urgency=low
 

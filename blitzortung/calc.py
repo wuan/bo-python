@@ -298,13 +298,15 @@ class LeastSquareFit(object):
 
         measured_runtime = self.calculate_time_value(event.get_timestamp()) - self.parameters[FitParameter.Time]
 
+#print "%.3f - %.3f = %.3f : %.3f %d %d" %(measured_runtime, distance_runtime, measured_runtime - distance_runtime, self.calculate_time_value(event.get_timestamp()), self.time_reference.value, event.get_timestamp().value)
+
         return measured_runtime - distance_runtime
             
     def get_location(self):
         return blitzortung.types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
     
     def get_timestamp(self):
-        return pd.Timestamp(self.time_reference.value + int(self.parameters[FitParameter.Time] * 1000))
+        return pd.Timestamp(self.time_reference.value + int(round(self.parameters[FitParameter.Time] * 1000, 0)))
     
     def get_least_square_sum(self):
         return self.least_square_sum
@@ -318,7 +320,7 @@ class LeastSquareFit(object):
         if self.least_square_sum and self.previous_least_square_sum:
             if self.least_square_sum / self.previous_least_square_sum > 1.1:
                 return False
-            if self.least_square_sum < 10e-5:
+            if abs(self.get_least_square_change()) < 10e-3:
                 self.successful = True
                 return False
             
@@ -329,7 +331,16 @@ class LeastSquareFit(object):
     
     def is_successful(self):
         return self.successful
-    
+
+    def get_solution(self):
+      builder = blitzortung.builder.Event()
+
+      location = self.get_location()
+      builder.set_x(location.get_x())
+      builder.set_y(location.get_y())
+      builder.set_timestamp(self.get_timestamp())
+
+      return builder.build()
+            
     def get_number_of_iterations(self):
         return self.iteration_count
-            
