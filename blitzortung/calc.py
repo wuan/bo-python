@@ -320,7 +320,7 @@ class LeastSquareFit(object):
         if self.least_square_sum and self.previous_least_square_sum:
             if self.least_square_sum / self.previous_least_square_sum > 1.1:
                 return False
-            if abs(self.get_least_square_change()) < 10e-3:
+            if abs(self.get_least_square_change()) < 10e-4:
                 self.successful = True
                 return False
             
