@@ -529,7 +529,7 @@ class Stroke(Base):
         for bin_data in raw_result:
 	    try:
                 result[bin_data[0] + value_count - 1] = bin_data[1]
-	    catch IndexError:
+	    except IndexError:
 	        print "Index %d/%d out of range (%s)" % ( bin_data[0] + value_count - 1, value_count, str(bin_data))
 
         return result
