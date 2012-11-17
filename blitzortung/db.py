@@ -527,7 +527,10 @@ class Stroke(Base):
 
         raw_result = self.cur.fetchall()
         for bin_data in raw_result:
-            result[bin_data[0] + value_count - 1] = bin_data[1]
+	    try:
+                result[bin_data[0] + value_count - 1] = bin_data[1]
+	    catch IndexError:
+	        print "Index %d/%d out of range (%s)" % ( bin_data[0] + value_count - 1, value_count, str(bin_data))
 
         return result
 
