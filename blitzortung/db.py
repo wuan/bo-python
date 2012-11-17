@@ -523,6 +523,7 @@ class Stroke(Base):
         self.cur.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
         value_count = minutes/binsize
+
         result = [0] * value_count
 
         raw_result = self.cur.fetchall()
@@ -531,6 +532,7 @@ class Stroke(Base):
                 result[bin_data[0] + value_count - 1] = bin_data[1]
 	    except IndexError:
 	        print "Index %d/%d out of range (%s)" % ( bin_data[0] + value_count - 1, value_count, str(bin_data))
+	        print "Query:",query % {'minutes': str(minutes), 'binsize': str(binsize), 'region': str(region)}
 
         return result
 
