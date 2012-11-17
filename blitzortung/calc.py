@@ -8,6 +8,7 @@
 
 import math
 import datetime
+import itertools
 import collections
 import numpy as np
 import pandas as pd
@@ -86,6 +87,19 @@ class ThreePointSolution(blitzortung.data.Event):
 
         return (measured_runtime - distance_runtime) / 1000.0
     
+    def get_total_residual_time_of(self, events):
+        
+        residual_time_sum = 0.0
+        for event in events:
+            residual_time = self.get_residual_time_at(event)
+            
+            residual_time_sum += residual_time * residual_time
+            
+        return math.sqrt(residual_time_sum) / len(events)
+    
+    def __str__(self):
+        return super(ThreePointSolution, self).__str__()
+    
 class ThreePointSolver(object):
     
     """ calculates the exact coordinates of the intersection of two hyperbola defined by three event points/times
@@ -116,6 +130,21 @@ class ThreePointSolver(object):
         
     def get_solutions(self):
         return self.solutions
+    
+    def get_solution_for(self, events):
+        solution_count = len(self.solutions)
+        
+        if solution_count > 1:
+            solutions = {}
+            for solution in self.solutions:
+                solutions[solution] = solution.get_total_residual_time_of(self.events)
+                
+            return min(solutions, key=solutions.get)
+        elif solution_count == 1:
+            return self.solutions[0]
+        else:
+            return None
+        
     
     def solve(self, D1, G1, azimuth1, D2, G2, azimuth2):
         
@@ -201,6 +230,36 @@ class ThreePointSolver(object):
         return math.pi / 2 - angle
         
 
+class FitSeed(object):
+    
+    def __init__(self, events, signal_velocity):
+        self.events = events
+        self.signal_velocity = signal_velocity
+        
+        self.solutions = {}
+                
+    def iterate_combinations(self):
+        
+        for combination in itertools.combinations(self.events[1:5], 2):
+            self.find_three_point_solution([self.events[0]] + list(combination))
+            
+    def find_three_point_solution(self, selected_events):
+        three_point_solver = ThreePointSolver(selected_events)
+        
+        solutions = {}
+        solution = three_point_solver.get_solution_for(self.events)
+        if solution:
+            solutions[solution] = solution.get_total_residual_time_of(self.events)
+            
+    def get_seed_event(self):
+        
+        self.iterate_combinations()
+        
+        if self.solutions:
+            return min(self.solutions, key=self.solutions.get)
+        else:
+            return None
+        
 class FitParameter:
     Time, Longitude, Latitude = range(3)
 

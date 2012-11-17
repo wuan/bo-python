@@ -3,6 +3,8 @@ import math
 import datetime
 import pandas as pd
 
+from mock import Mock, MagicMock, patch, call
+
 import blitzortung
 
 class TestSignalVelocity(unittest.TestCase):
@@ -107,6 +109,19 @@ class ThreePointSolverTest(unittest.TestCase):
         
         self.assertNotEqual(0.0, location.distance_to(solutions[1]))
             
+    def test_get_solution_for_event_list(self):            
+        location = blitzortung.types.Point(11.1, 49.1)
+        self.prepare_solution(location.get_x(), location.get_y())
+            
+        solver = blitzortung.calc.ThreePointSolver(self.events)
+        
+        self.assertEqual(2, len(solver.get_solutions()))
+                         
+        solution = solver.get_solution_for(self.events)
+        
+        self.assertAlmostEqual(11.1, solution.get_x(), 5)
+        self.assertAlmostEqual(49.1, solution.get_y(), 5)
+        
     def test_azimuth_to_angle(self):
         solver = blitzortung.calc.ThreePointSolver(self.events)
                 
@@ -120,7 +135,47 @@ class ThreePointSolverTest(unittest.TestCase):
         self.assertAlmostEqual(math.pi / 2, solver.angle_to_azimuth(0))
         self.assertAlmostEqual(0, solver.angle_to_azimuth(math.pi / 2))
         self.assertAlmostEqual(-math.pi / 2, solver.angle_to_azimuth(math.pi))
+    
+class TestFitSeed(unittest.TestCase):
+    
+    def setUp(self):
+        self.signal_velocity = blitzortung.calc.SignalVelocity()
+       
+    def generic_combination(self, events, expected_args): 
+        fit_seed = blitzortung.calc.FitSeed(events, self.signal_velocity)
+        fit_seed.find_three_point_solution = MagicMock()
         
+        fit_seed.get_seed_event()
+        
+        self.assertEqual(len(expected_args), len(fit_seed.find_three_point_solution.mock_calls))
+        
+        expected = [call.find_three_point_solution(arg) for arg in expected_args]
+        self.assertTrue(expected == fit_seed.find_three_point_solution.mock_calls)
+
+    def test_combinations_with_6_events(self):
+        events = [1, 2, 3, 4, 5, 6]
+        expected_args = [[1, 2, 3], [1, 2, 4], [1, 2, 5], [1, 3, 4], [1, 3, 5], [1, 4, 5]] 
+        self.generic_combination(events, expected_args)
+        
+    def test_combinations_with_5_events(self):
+        events = [1, 2, 3, 4, 5]
+        expected_args = [[1, 2, 3], [1, 2, 4], [1, 2, 5], [1, 3, 4], [1, 3, 5], [1, 4, 5]] 
+        self.generic_combination(events, expected_args)
+
+    def test_combinations_with_4_events(self):
+        events = [1, 2, 3, 4]
+        expected_args = [[1, 2, 3], [1, 2, 4], [1, 3, 4]] 
+        self.generic_combination(events, expected_args)
+        
+    def test_combinations_with_3_events(self):
+        events = [1, 2, 3]
+        expected_args = [[1, 2, 3]] 
+        self.generic_combination(events, expected_args)        
+        
+    def test_combinations_with_2_events(self):
+        events = [1, 2]
+        expected_args = [] 
+        self.generic_combination(events, expected_args)  
         
 class TestLeastSquareFit(unittest.TestCase):
     
