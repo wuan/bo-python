@@ -162,7 +162,8 @@ class ThreePointSolver(object):
         
         solutions = []
                 
-        if root_argument < 0.0:
+        if root_argument < 0.0 or denominator == 0.0:
+	    print "%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2) 
             return solutions
         
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
