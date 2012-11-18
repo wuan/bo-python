@@ -260,7 +260,7 @@ class Center(object):
     def get_point(self):
         return self.center
 
-class Connection(Module):
+class ConnectionModule(Module):
     
 #    @singleton
     @provides(psycopg2._psycopg.connection)
