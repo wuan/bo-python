@@ -33,6 +33,7 @@ class Error(Exception):
 
 import data
 import builder
+import config
 import calc
 import config
 import db
@@ -43,7 +44,7 @@ import web
 
 from injector import Injector
 
-INJECTOR = Injector([config.Config(), calc.CalcModule(), db.Connection()])
+INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.Connection()])
 
 __all__ = [
 

@@ -16,9 +16,9 @@ class Url(object):
     host = 'http://blitzortung.net'
     base_url = host + '/Data_%(region)d/Protected/'
 
-    def __init__(self, url_path, configuration):
+    def __init__(self, url_path, config):
         self.url = self.base_url + url_path
-        self.configuration = configuration
+        self.config = config
         self.parameters = {'region': 1}
 
     def set_parameter(self, key, value):
@@ -29,7 +29,7 @@ class Url(object):
         
     def read(self):
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password("Blitzortung.org", Url.host, self.configuration['username'], self.configuration['password'])
+        password_mgr.add_password("Blitzortung.org", Url.host, self.config.get_username(), self.config.get_password())
         handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 
         opener = urllib2.build_opener(handler)
@@ -49,8 +49,8 @@ class Url(object):
 
 class StrokesBase(Url):
 
-    def __init__(self, url_path, configuration):
-        super(StrokesBase, self).__init__(url_path, configuration)
+    def __init__(self, url_path, config):
+        super(StrokesBase, self).__init__(url_path, config)
 
     def get_strokes(self, time_interval=None):
         strokes = []
@@ -66,9 +66,9 @@ class StrokesBase(Url):
 @singleton
 class Strokes(StrokesBase):
 
-    @inject(configuration=blitzortung.config.configuration)
-    def __init__(self, configuration):
-        super(Strokes, self).__init__('strikes.txt', configuration)
+    @inject(config=blitzortung.config.Config)
+    def __init__(self, config):
+        super(Strokes, self).__init__('strikes.txt', config)
 
 def strokes():
     from __init__ import INJECTOR
@@ -77,9 +77,9 @@ def strokes():
 @singleton
 class Participants(StrokesBase):
 
-    @inject(configuration=blitzortung.config.configuration)
-    def __init__(self, configuration):
-        super(Participants, self).__init__('participants.txt', configuration)
+    @inject(config=blitzortung.config.Config)
+    def __init__(self, config):
+        super(Participants, self).__init__('participants.txt', config)
         
 def participants():
     from __init__ import INJECTOR
@@ -88,9 +88,9 @@ def participants():
 @singleton
 class Stations(Url):
 
-    @inject(configuration=blitzortung.config.configuration)
-    def __init__(self, configuration):
-        super(Stations, self).__init__('stations.txt', configuration)
+    @inject(config=blitzortung.config.Config)
+    def __init__(self, config):
+        super(Stations, self).__init__('stations.txt', config)
 
 def stations():
     from __init__ import INJECTOR
@@ -99,9 +99,9 @@ def stations():
 @singleton
 class Raw(Url):
 
-    @inject(configuration=blitzortung.config.configuration)
-    def __init__(self, configuration):
-        super(Raw, self).__init__('raw_data/%(station_id)s/%(hour)02d.log', configuration)
+    @inject(config=blitzortung.config.Config)
+    def __init__(self, config):
+        super(Raw, self).__init__('raw_data/%(station_id)s/%(hour)02d.log', config)
         
     def set_station_id(self, station_id):
         self.set_parameter('station_id', station_id)

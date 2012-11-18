@@ -1,11 +1,12 @@
 # -*- coding: utf8 -*-
 
-from injector import Key, Module, singleton
 import ConfigParser
 
-configuration = Key('configuration')
+from injector import Key, Module, singleton, provides
 
-class ConfigFile(object):
+import blitzortung
+
+class Config(object):
     def __init__(self, configfilename='/etc/blitzortung.conf'):
 
         self.config = ConfigParser.ConfigParser()
@@ -31,19 +32,16 @@ class ConfigFile(object):
         
         return "host='%s' dbname='%s' user='%s' password='%s'" % (host, dbname, username, password)
         
-        
-    def get_dict(self):
-        config = {}
-        config['username'] = self.get_username()
-        config['password'] = self.get_password()
-        config['raw_path'] = self.get_raw_path()
-        config['archive_path'] = self.get_archive_path()
-        config['db_connection_string'] = self.get_db_connection_string()
-        return config
-        
+    def get_webservice_port(self):
+        return int(self.config.get('webservice', 'port'))
 
-class Config(Module):
-    def configure(self, binder):
-        config_file = ConfigFile()
+def config():
+    from __init__ import INJECTOR
+    return INJECTOR.get(Config)
+    
+class ConfigModule(Module):
 
-        binder.bind(configuration, to=config_file.get_dict(), scope=singleton)
+    @singleton
+    @provides(Config)
+    def provide_config(self):
+        return Config()

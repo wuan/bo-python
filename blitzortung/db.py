@@ -264,10 +264,10 @@ class Connection(Module):
     
 #    @singleton
     @provides(psycopg2._psycopg.connection)
-    @inject(configuration=blitzortung.config.configuration)
-    def provide_psycopg2_connection(self, configuration):
-        return psycopg2.connect(configuration['db_connection_string'])
-        
+    @inject(config=blitzortung.config.Config)
+    def provide_psycopg2_connection(self, config):
+        return psycopg2.connect(config.get_db_connection_string())
+
 
 class Base(object):
     '''
