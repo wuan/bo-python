@@ -304,10 +304,9 @@ class Base(object):
         self.table_name = None
         self.conn = db_connection
 	self.conn.set_client_encoding('UTF8')
-        self.initialized = False
 
-        self.srid = blitzortung.geom.Geometry.DefaultSrid
-        self.tz = Base.DefaultTimezone
+        self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
+        self.set_timezone(Base.DefaultTimezone)
 
         try:
             cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -365,6 +364,8 @@ class Base(object):
 
     def set_timezone(self, tz):
         self.tz = tz
+	cur = self.conn.cursor()
+	cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -394,7 +395,6 @@ class Base(object):
     def execute(self, sql_string, parameters=None):
 	cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 	cur.execute(sql_string, parameters)
-
 	return cur
 
 @singleton
@@ -514,7 +514,7 @@ class Stroke(Base):
         return self.select_execute(query)
 
     def select_histogram(self, minutes, region=1, binsize=5):
-        query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
+        query = "select -extract(epoch from clock_timestamp() - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > clock_timestamp() - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
 
         cur = self.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
@@ -524,11 +524,7 @@ class Stroke(Base):
 
         raw_result = cur.fetchall()
         for bin_data in raw_result:
-	    try:
-                result[bin_data[0] + value_count - 1] = bin_data[1]
-	    except IndexError:
-	        print "Index %d/%d out of range (%s)" % ( bin_data[0] + value_count - 1, value_count, str(bin_data))
-	        print "Query:",query % {'minutes': str(minutes), 'binsize': str(binsize), 'region': str(region)}
+	    result[bin_data[0] + value_count - 1] = bin_data[1]
 
         return result
 
