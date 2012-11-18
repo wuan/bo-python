@@ -3,7 +3,7 @@
 ''' classes for database access '''
 
 import math
-from injector import Module, provides, inject, singleton
+from injector import Module, provides, inject
 
 import datetime
 import pytz
@@ -262,7 +262,6 @@ class Center(object):
 
 class ConnectionModule(Module):
     
-#    @singleton
     @provides(psycopg2._psycopg.connection)
     @inject(config=blitzortung.config.Config)
     def provide_psycopg2_connection(self, config):
@@ -397,7 +396,6 @@ class Base(object):
 	cur.execute(sql_string, parameters)
 	return cur
 
-@singleton
 class Stroke(Base):
     '''
     stroke db access class
@@ -537,7 +535,6 @@ def stroke():
     from __init__ import INJECTOR
     return INJECTOR.get(Stroke)
 
-@singleton
 class Station(Base):
     '''
 
@@ -613,7 +610,6 @@ def station():
     from __init__ import INJECTOR
     return INJECTOR.get(Station)
 
-@singleton
 class StationOffline(Base):
     '''
 
@@ -675,7 +671,6 @@ def station_offline():
     from __init__ import INJECTOR
     return INJECTOR.get(StationOffline)  
 
-@singleton
 class Location(Base):
     '''
     geonames db access class
