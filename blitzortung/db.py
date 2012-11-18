@@ -3,7 +3,7 @@
 ''' classes for database access '''
 
 import math
-from injector import Module, provides, inject
+from injector import Module, provides, singleton, inject
 
 import datetime
 import pytz
@@ -13,6 +13,7 @@ import pandas as pd
 
 try:
     import psycopg2
+    import psycopg2.pool
     import psycopg2.extras
     import psycopg2.extensions
     psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -260,12 +261,13 @@ class Center(object):
     def get_point(self):
         return self.center
 
-class ConnectionModule(Module):
-    
-    @provides(psycopg2._psycopg.connection)
+class DbModule(Module):
+
+    @singleton
+    @provides(psycopg2.pool.ThreadedConnectionPool)
     @inject(config=blitzortung.config.Config)
-    def provide_psycopg2_connection(self, config):
-        return psycopg2.connect(config.get_db_connection_string())
+    def provide_psycopg2_connection_pool(self, config):
+        return psycopg2.pool.ThreadedConnectionPool(10, 50, config.get_db_connection_string())
 
 
 class Base(object):
@@ -298,11 +300,14 @@ class Base(object):
 
     DefaultTimezone = pytz.UTC
 
-    def __init__(self, db_connection):
+    def __init__(self, db_connection_pool):
+
+        self.db_connection_pool = db_connection_pool
+
         self.schema_name = None
         self.table_name = None
-        self.conn = db_connection
-	self.conn.set_client_encoding('UTF8')
+        self.conn = self.db_connection_pool.getconn()
+        self.conn.set_client_encoding('UTF8')
 
         self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
         self.set_timezone(Base.DefaultTimezone)
@@ -317,16 +322,12 @@ class Base(object):
                     self.conn.close()
                 except NameError:
                     pass
-	finally:
-	    cur.close()
+        finally:
+            cur.close()
 
-        #if not self.has_table('geometry_columns'):
-        #    self.execute('SELECT InitSpatialMetadata()')
-        #    self.execute("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, ref_sys_name, proj4text) VALUES (4326, 'epsg', 4326, 'WGS 84', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')")
+    def __del__(self):
+        self.db_connection_pool.putconn(self.conn)
 
-#    def has_table(self, table_name):
-#        result = self.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name)
-#        return result.fetchone() != None
 
     def is_connected(self):
         if self.conn != None:
@@ -363,8 +364,8 @@ class Base(object):
 
     def set_timezone(self, tz):
         self.tz = tz
-	cur = self.conn.cursor()
-	cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+        cur = self.conn.cursor()
+        cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -392,9 +393,9 @@ class Base(object):
         pass
 
     def execute(self, sql_string, parameters=None):
-	cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-	cur.execute(sql_string, parameters)
-	return cur
+        cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(sql_string, parameters)
+        return cur
 
 class Stroke(Base):
     '''
@@ -422,8 +423,8 @@ class Stroke(Base):
     ALTER SEQUENCE strokes_id_seq RESTART 1;
 
     '''
-    
-    @inject(db_connection=psycopg2._psycopg.connection)
+
+    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection):
         super(Stroke, self).__init__(db_connection)
 
@@ -522,7 +523,7 @@ class Stroke(Base):
 
         raw_result = cur.fetchall()
         for bin_data in raw_result:
-	    result[bin_data[0] + value_count - 1] = bin_data[1]
+            result[bin_data[0] + value_count - 1] = bin_data[1]
 
         return result
 
@@ -530,7 +531,7 @@ class Stroke(Base):
         cur = self.execute(str(query), query.get_parameters())
 
         return query.get_results(cur, self)
-    
+
 def stroke():
     from __init__ import INJECTOR
     return INJECTOR.get(Stroke)
@@ -557,7 +558,7 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     '''
 
-    @inject(db_connection=psycopg2._psycopg.connection)
+    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection):
         super(Station, self).__init__(db_connection)
 
@@ -630,7 +631,7 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     '''
 
-    @inject(db_connection=psycopg2._psycopg.connection)
+    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection):
         super(StationOffline, self).__init__(db_connection)
 
@@ -666,7 +667,7 @@ class StationOffline(Base):
         stationOfflineBuilder.set_end(result['end'])
 
         return stationOfflineBuilder.build() 
-    
+
 def station_offline():
     from __init__ import INJECTOR
     return INJECTOR.get(StationOffline)  
@@ -691,8 +692,8 @@ class Location(Base):
     CREATE INDEX geonames_geog ON geo.geonames USING gist(geog);
 
     '''
-    
-    @inject(db_connection=psycopg2._psycopg.connection)
+
+    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection):
         super(Location, self).__init__(db_connection)
         self.set_schema_name('geo')
@@ -799,7 +800,7 @@ class Location(Base):
                     locations.append(location)
 
             return locations
-        
+
 def location():
     from __init__ import INJECTOR
     return INJECTOR.get(Location)        
