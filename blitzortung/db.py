@@ -15,6 +15,8 @@ try:
     import psycopg2
     import psycopg2.extras
     import psycopg2.extensions
+    psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+    psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 except ImportError:
     pass
 
@@ -175,11 +177,11 @@ class Query(object):
                 else:
                     print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
 
-    def get_results(self, db):
+    def get_results(self, cur, db):
 
         resulting_strokes = []
-        if db.cur.rowcount > 0:
-            for result in db.cur.fetchall():
+        if cur.rowcount > 0:
+            for result in cur.fetchall():
                 resulting_strokes.append(db.create(result))
 
         return resulting_strokes
@@ -212,10 +214,10 @@ class RasterQuery(Query):
 
         return sql
 
-    def get_results(self, db):
+    def get_results(self, cur, db):
 
-        if db.cur.rowcount > 0:
-            for result in db.cur.fetchall():
+        if cur.rowcount > 0:
+            for result in cur.fetchall():
                 self.raster.set(result['rx'], result['ry'], blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
 
@@ -260,7 +262,7 @@ class Center(object):
 
 class Connection(Module):
     
-    @singleton
+#    @singleton
     @provides(psycopg2._psycopg.connection)
     @inject(configuration=blitzortung.config.configuration)
     def provide_psycopg2_connection(self, configuration):
@@ -300,30 +302,25 @@ class Base(object):
     def __init__(self, db_connection):
         self.schema_name = None
         self.table_name = None
-        self.cur = None
         self.conn = db_connection
+	self.conn.set_client_encoding('UTF8')
         self.initialized = False
 
         self.srid = blitzortung.geom.Geometry.DefaultSrid
         self.tz = Base.DefaultTimezone
 
         try:
-            self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.cur)
+            cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except psycopg2.DatabaseError, e:
             print e
-
-            if self.cur != None:
-                try:
-                    self.cur.close()
-                except NameError:
-                    pass
 
             if self.conn != None:
                 try:
                     self.conn.close()
                 except NameError:
                     pass
+	finally:
+	    cur.close()
 
         #if not self.has_table('geometry_columns'):
         #    self.execute('SELECT InitSpatialMetadata()')
@@ -395,11 +392,10 @@ class Base(object):
         pass
 
     def execute(self, sql_string, parameters=None):
-        if not self.initialized:
-            self.cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
-            self.initialized = True
+	cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+	cur.execute(sql_string, parameters)
 
-        self.cur.execute(sql_string, parameters)
+	return cur
 
 @singleton
 class Stroke(Base):
@@ -467,9 +463,9 @@ class Stroke(Base):
         sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
             ' WHERE region=%(region)s' + \
             ' ORDER BY timestamp DESC LIMIT 1'
-        self.execute(sql, {'region': region})
-        if self.cur.rowcount == 1:
-            result = self.cur.fetchone()
+        cur = self.execute(sql, {'region': region})
+        if cur.rowcount == 1:
+            result = cur.fetchone()
             return pd.Timestamp(self.fix_timezone(result['timestamp']))
         else:
             return None
@@ -520,13 +516,13 @@ class Stroke(Base):
     def select_histogram(self, minutes, region=1, binsize=5):
         query = "select -extract(epoch from current_timestamp - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > current_timestamp - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
 
-        self.cur.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
+        cur = self.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
         value_count = minutes/binsize
 
         result = [0] * value_count
 
-        raw_result = self.cur.fetchall()
+        raw_result = cur.fetchall()
         for bin_data in raw_result:
 	    try:
                 result[bin_data[0] + value_count - 1] = bin_data[1]
@@ -537,9 +533,9 @@ class Stroke(Base):
         return result
 
     def select_execute(self, query):
-        self.execute(str(query), query.get_parameters())
+        cur = self.execute(str(query), query.get_parameters())
 
-        return query.get_results(self)
+        return query.get_results(cur, self)
     
 def stroke():
     from __init__ import INJECTOR
@@ -593,11 +589,11 @@ class Station(Base):
 	left join stations_offline as o
 	on o.number = s.number and o."end" is null
 	order by s.number'''
-        self.execute(sql)
+        cur = self.execute(sql)
 
         resulting_stations = []
-        if self.cur.rowcount > 0:
-            for result in self.cur.fetchall():
+        if cur.rowcount > 0:
+            for result in cur.fetchall():
                 resulting_stations.append(self.create(result))
 
         return resulting_stations    
@@ -660,11 +656,11 @@ class StationOffline(Base):
 
     def select(self, timestamp=None):
         sql = '''select id, number, begin, "end" from stations_offline where "end" is null order by number;'''
-        self.execute(sql)
+        cur = self.execute(sql)
 
         resulting_stations = []
-        if self.cur.rowcount > 0:
-            for result in self.cur.fetchall():
+        if cur.rowcount > 0:
+            for result in cur.fetchall():
                 resulting_stations.append(self.create(result))
 
         return resulting_stations    
@@ -800,11 +796,11 @@ class Location(Base):
                 'limit': self.limit
             }
 
-            self.execute(queryString, params)
+            cur = self.execute(queryString, params)
 
             locations = []
-            if self.cur.rowcount > 0:
-                for result in self.cur.fetchall():
+            if cur.rowcount > 0:
+                for result in cur.fetchall():
                     location = {}
                     location['name'] = result['name']
                     location['distance'] = result['distance']

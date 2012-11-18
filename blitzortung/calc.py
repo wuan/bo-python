@@ -138,7 +138,7 @@ class ThreePointSolver(object):
             solutions = {}
             for solution in self.solutions:
                 solutions[solution] = solution.get_total_residual_time_of(self.events)
-                
+                print "      3PointSolution:",solution, solutions[solution]
             return min(solutions, key=solutions.get)
         elif solution_count == 1:
             return self.solutions[0]
@@ -247,16 +247,17 @@ class FitSeed(object):
     def find_three_point_solution(self, selected_events):
         three_point_solver = ThreePointSolver(selected_events)
         
-        solutions = {}
         solution = three_point_solver.get_solution_for(self.events)
         if solution:
-            solutions[solution] = solution.get_total_residual_time_of(self.events)
+            self.solutions[solution] = solution.get_total_residual_time_of(self.events)
             
     def get_seed_event(self):
         
         self.iterate_combinations()
         
         if self.solutions:
+	    for solution, residual_time in self.solutions.iteritems():
+	      print "%.1f %s" % (residual_time, str(solution))
             return min(self.solutions, key=self.solutions.get)
         else:
             return None
