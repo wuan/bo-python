@@ -424,9 +424,9 @@ class Stroke(Base):
 
     '''
 
-    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection):
-        super(Stroke, self).__init__(db_connection)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(Stroke, self).__init__(db_connection_pool)
 
         self.set_table_name('strokes')
 
@@ -558,9 +558,9 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     '''
 
-    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection):
-        super(Station, self).__init__(db_connection)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(Station, self).__init__(db_connection_pool)
 
         self.set_table_name('stations')
 
@@ -631,9 +631,9 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     '''
 
-    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection):
-        super(StationOffline, self).__init__(db_connection)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(StationOffline, self).__init__(db_connection_pool)
 
         self.set_table_name('stations_offline')
 
@@ -693,9 +693,9 @@ class Location(Base):
 
     '''
 
-    @inject(db_connection=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection):
-        super(Location, self).__init__(db_connection)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(Location, self).__init__(db_connection_pool)
         self.set_schema_name('geo')
         self.set_table_name('geonames')
         self.center = None
