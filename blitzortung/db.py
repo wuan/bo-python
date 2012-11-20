@@ -267,7 +267,7 @@ class DbModule(Module):
     @provides(psycopg2.pool.ThreadedConnectionPool)
     @inject(config=blitzortung.config.Config)
     def provide_psycopg2_connection_pool(self, config):
-        return psycopg2.pool.ThreadedConnectionPool(10, 50, config.get_db_connection_string())
+        return psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
 
 
 class Base(object):
@@ -306,7 +306,16 @@ class Base(object):
 
         self.schema_name = None
         self.table_name = None
-        self.conn = self.db_connection_pool.getconn()
+	while True:
+	  self.conn = self.db_connection_pool.getconn()
+	  self.conn.cancel()
+	  try:
+	    self.conn.reset()
+	  except psycopg2.OperationalError:
+	    print "reconnect to db"
+            self.db_connection_pool.putconn(self.conn, close=True)
+            continue
+	  break
         self.conn.set_client_encoding('UTF8')
 
         self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
