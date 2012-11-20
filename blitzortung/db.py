@@ -140,31 +140,27 @@ class Query(object):
                 if isinstance(arg, TimeInterval):
 
                     if arg.get_start() != None:
-                        self.add_condition('timestamp >= %(starttime)s', {'starttime': arg.get_start()})
-#self.add_condition('timestamp >= :starttime', {'starttime': arg.get_start().astimezone(pytz.UTC).replace(tzinfo=None)})
+                        self.add_condition('"timestamp" >= %(start_time)s', {'start_time': arg.get_start()})
 
                     if arg.get_end() != None:
-                        self.add_condition('timestamp < %(endtime)s', {'endtime': arg.get_end()})
-#self.add_condition('timestamp < :endtime', {'endtime': arg.get_end().astimezone(pytz.UTC).replace(tzinfo=None)})
+                        self.add_condition('"timestamp" < %(end_time)s', {'end_time': arg.get_end()})
 
                 elif isinstance(arg, IdInterval):
 
                     if arg.get_start() != None:
-                        self.add_condition('id >= %(startid)s', {'startid': arg.get_start()})
+                        self.add_condition('id >= %(start_id)s', {'start_id': arg.get_start()})
 
                     if arg.get_end() != None:
-                        self.add_condition('id < %(endid)s', {'endid': arg.get_end()})
+                        self.add_condition('id < %(end_id)s', {'end_id': arg.get_end()})
 
                 elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
                     if arg.is_valid:
 
                         self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
-#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ST_Transform(geog::geometry, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
-#self.add_condition('Intersects(ST_SetSRID(CAST(:geometry AS geometry), :srid), Transform(geog, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -207,7 +203,7 @@ class RasterQuery(Query):
 
         sql += 'TRUNC((ST_X(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(self.raster.get_x_div()) + ') AS rx, '
         sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(self.raster.get_y_div()) + ') AS ry, '
-        sql += 'count(*) AS count, max(timestamp) as timestamp FROM ('
+        sql += 'count(*) AS count, max("timestamp") as "timestamp" FROM ('
 
         sql += Query.__str__(self)
 
@@ -216,6 +212,8 @@ class RasterQuery(Query):
         return sql
 
     def get_results(self, cur, db):
+
+        self.raster.clear()
 
         if cur.rowcount > 0:
             for result in cur.fetchall():
@@ -412,7 +410,7 @@ class Stroke(Base):
 
     database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE strokes (id bigserial, timestamp timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point), PRIMARY KEY(id));
+    CREATE TABLE strokes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point), PRIMARY KEY(id));
     ALTER TABLE strokes ADD COLUMN region SMALLINT;
     ALTER TABLE strokes ADD COLUMN amplitude REAL;
     ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
@@ -439,15 +437,6 @@ class Stroke(Base):
 
         self.set_table_name('strokes')
 
-#        if not self.has_table(self.get_table_name()):
-#            self.execute("CREATE TABLE strokes (id INTEGER PRIMARY KEY, timestamp timestamp, nanoseconds INTEGER)")
-#            self.execute("SELECT AddGeometryColumn('strokes','geog',4326,'POINT',2)")
-#            self.execute("ALTER TABLE strokes ADD COLUMN amplitude REAL")
-#            self.execute("ALTER TABLE strokes ADD COLUMN error2d INTEGER")
-#            self.execute("ALTER TABLE strokes ADD COLUMN type INTEGER")
-#            self.execute("ALTER TABLE strokes ADD COLUMN stationcount INTEGER")
-#            self.execute("ALTER TABLE strokes ADD COLUMN detected BOOLEAN")
-
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
             ' ("timestamp", nanoseconds, geog, region, amplitude, error2d, type, stationcount) ' + \
@@ -468,9 +457,9 @@ class Stroke(Base):
         self.execute(sql, parameters)
 
     def get_latest_time(self, region=1):
-        sql = 'SELECT timestamp FROM ' + self.get_full_table_name() + \
+        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
             ' WHERE region=%(region)s' + \
-            ' ORDER BY timestamp DESC LIMIT 1'
+            ' ORDER BY "timestamp" DESC LIMIT 1'
         cur = self.execute(sql, {'region': region})
         if cur.rowcount == 1:
             result = cur.fetchone()
@@ -522,7 +511,7 @@ class Stroke(Base):
         return self.select_execute(query)
 
     def select_histogram(self, minutes, region=1, binsize=5):
-        query = "select -extract(epoch from clock_timestamp() - timestamp)::int/60/%(binsize)s as interval, count(*) from strokes where timestamp > clock_timestamp() - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval;"
+        query = """select -extract(epoch from clock_timestamp() - "timestamp")::int/60/%(binsize)s as interval, count(*) from strokes where "timestamp" > clock_timestamp() - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval"""
 
         cur = self.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
 
@@ -555,7 +544,7 @@ class Station(Base):
     ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN location_name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN country CHARACTER VARYING;
-    ALTER TABLE stations ADD COLUMN timestamp TIMESTAMPTZ;
+    ALTER TABLE stations ADD COLUMN "timestamp" TIMESTAMPTZ;
 
     CREATE INDEX stations_timestamp ON stations USING btree("timestamp");
     CREATE INDEX stations_number_timestamp ON stations USING btree(number, "timestamp");
@@ -575,7 +564,7 @@ class Station(Base):
 
     def insert(self, station):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                     ' (number, short_name, "name", location_name, country, timestamp, geog) ' + \
+                     ' (number, short_name, "name", location_name, country, "timestamp", geog) ' + \
                      'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))',
                      (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
 
@@ -584,11 +573,11 @@ class Station(Base):
         o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
 	from stations as s
 	inner join 
-	   (select b.number, max(b.timestamp) as timestamp
+	   (select b.number, max(b."timestamp") as "timestamp"
 	    from stations as b
 	    group by number
             order by number) as c
-	on s.number = c.number and s.timestamp = c.timestamp
+	on s.number = c.number and s."timestamp" = c."timestamp"
 	left join stations_offline as o
 	on o.number = s.number and o."end" is null
 	order by s.number'''

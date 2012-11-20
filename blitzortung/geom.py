@@ -89,6 +89,9 @@ class Raster(Envelope):
         self.xdiv = xdiv
         self.ydiv = ydiv
         self.nodata = nodata if nodata else RasterElement(0, None)
+	self.clear()
+
+    def clear(self):
         self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.nodata))
 
     def get_x_div(self):
