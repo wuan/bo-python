@@ -163,7 +163,7 @@ class Query(object):
 #self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
-                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), st_transform(geog, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ST_Transform(geog::geometry, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 #self.add_condition('Intersects(ST_SetSRID(CAST(:geometry AS geometry), :srid), Transform(geog, :srid))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
@@ -491,7 +491,7 @@ class Stroke(Base):
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'st_transform(geog::geometry, %(srid)s) AS geog', 'amplitude', 'type', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog', 'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
 #query.add_condition('geog IS NOT NULL')
@@ -767,17 +767,17 @@ class Location(Base):
 	  feature_class,
 	  feature_code,
 	  elevation,
-	  ST_Transform(geog, %(srid)s) AS geog,
+	  ST_Transform(geog::geometry, %(srid)s) AS geog,
 	  population,
-	  ST_Distance_Sphere(geog, c.center) AS distance,
-	  ST_Azimuth(geog, c.center) AS azimuth
+	  ST_Distance_Sphere(geog::geometry, c.center) AS distance,
+	  ST_Azimuth(geog::geometry, c.center) AS azimuth
 	FROM
 	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
                                                                                                       self.get_full_table_name() + '''
 	WHERE
 	  feature_class='P'
 	  AND population >= %(min_population)s
-	  AND ST_Transform(geog, %(srid)s) && st_expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
+	  AND ST_Transform(geog::geometry, %(srid)s) && ST_Expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
 
             params = {
                 'srid': self.get_srid(),
