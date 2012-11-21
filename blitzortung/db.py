@@ -510,10 +510,18 @@ class Stroke(Base):
 
         return self.select_execute(query)
 
-    def select_histogram(self, minutes, region=1, binsize=5):
-        query = """select -extract(epoch from clock_timestamp() - "timestamp")::int/60/%(binsize)s as interval, count(*) from strokes where "timestamp" > clock_timestamp() - interval '%(minutes)s minutes' and region = %(region)s group by interval order by interval"""
+    def select_histogram(self, minutes, minute_offset=0, region=1, binsize=5):
+        query = """
+	select -extract(epoch from clock_timestamp() - interval '%(offset)s minutes' - "timestamp")::int/60/%(binsize)s as interval, count(*)
+	       from strokes
+	       where
+	           "timestamp" >= clock_timestamp() - interval '%(offset)s minutes' - interval '%(minutes)s minutes' and 
+	           "timestamp" < clock_timestamp() - interval '%(offset)s minutes' and
+	           region = %(region)s
+	       group by interval
+	       order by interval"""
 
-        cur = self.execute(query, {'minutes': minutes, 'binsize':binsize, 'region':region})
+        cur = self.execute(query, {'minutes': minutes, 'offset': minute_offset, 'binsize':binsize, 'region':region})
 
         value_count = minutes/binsize
 
