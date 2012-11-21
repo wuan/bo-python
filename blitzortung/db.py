@@ -512,11 +512,11 @@ class Stroke(Base):
 
     def select_histogram(self, minutes, minute_offset=0, region=1, binsize=5):
         query = """
-	select -extract(epoch from clock_timestamp() - interval '%(offset)s minutes' - "timestamp")::int/60/%(binsize)s as interval, count(*)
+	select -extract(epoch from clock_timestamp() + interval '%(offset)s minutes' - "timestamp")::int/60/%(binsize)s as interval, count(*)
 	       from strokes
 	       where
-	           "timestamp" >= clock_timestamp() - interval '%(offset)s minutes' - interval '%(minutes)s minutes' and 
-	           "timestamp" < clock_timestamp() - interval '%(offset)s minutes' and
+	           "timestamp" >= clock_timestamp() + interval '%(offset)s minutes' - interval '%(minutes)s minutes' and 
+	           "timestamp" < clock_timestamp() + interval '%(offset)s minutes' and
 	           region = %(region)s
 	       group by interval
 	       order by interval"""
