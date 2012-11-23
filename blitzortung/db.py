@@ -819,20 +819,26 @@ def location():
 
 class ServiceLog(Base):
 
+  """
+    CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT, address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
+
+    """
+
   @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
   def __init__(self, db_connection_pool):
     super(ServiceLog, self).__init__(db_connection_pool)
 
     self.set_table_name('servicelog')
 
-  def insert(self, timestamp, ip_address, city_name, country_name, longitude, latitude):
+  def insert(self, timestamp, ip_address, version, city_name, country_name, longitude, latitude):
     sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
-	  '("timestamp", geog, address, city, country)' + \
-	  'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(city_name)s, %(country_name)s);'
+	  '("timestamp", geog, address, version, city, country)' + \
+	  'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(version)s, %(city_name)s, %(country_name)s);'
 
     parameters = {
     	'timestamp': timestamp,
 	'ip_address': ip_address,
+	'version': version,
         'longitude': longitude,
         'latitude': latitude,
         'city_name': city_name,
