@@ -548,6 +548,7 @@ class Station(Base):
     database table creation (as db user blitzortung, database blitzortung): 
 
     CREATE TABLE stations (id bigserial, number int, geog GEOGRAPHY(Point), PRIMARY KEY(id));
+    ALTER TABLE stations ADD COLUMN region SMALLINT;
     ALTER TABLE stations ADD COLUMN short_name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN location_name CHARACTER VARYING;
@@ -570,26 +571,30 @@ class Station(Base):
 
         self.set_table_name('stations')
 
-    def insert(self, station):
+    def insert(self, station, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                     ' (number, short_name, "name", location_name, country, "timestamp", geog) ' + \
-                     'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))',
-                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y()))
+                     ' (number, short_name, "name", location_name, country, "timestamp", geog, region) ' + \
+                     'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
+                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y(), region))
 
-    def select(self, timestamp=None):
+    def select(self, timestamp=None, region=None):
         sql = ''' select
         o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
 	from stations as s
 	inner join 
-	   (select b.number, max(b."timestamp") as "timestamp"
+	   (select b. region, b.number, max(b."timestamp") as "timestamp"
 	    from stations as b
-	    group by number
-            order by number) as c
-	on s.number = c.number and s."timestamp" = c."timestamp"
+	    group by region, number
+            order by region, number) as c
+	on s.region = c.region and s.number = c.number and s."timestamp" = c."timestamp"
 	left join stations_offline as o
-	on o.number = s.number and o."end" is null
-	order by s.number'''
-        cur = self.execute(sql)
+	on o.number = s.number and o.region = s.region and o."end" is null'''
+	
+	if region:
+	    sql += ''' where s.region = %(region)s'''
+
+	sql += ''' order by s.number'''
+        cur = self.execute(sql, {'region': region})
 
         resulting_stations = []
         if cur.rowcount > 0:
@@ -623,6 +628,7 @@ class StationOffline(Base):
     database table creation (as db user blitzortung, database blitzortung): 
 
     CREATE TABLE stations_offline (id bigserial, number int, PRIMARY KEY(id));
+    ALTER TABLE stations ADD COLUMN region SMALLINT;
     ALTER TABLE stations_offline ADD COLUMN begin TIMESTAMPTZ;
     ALTER TABLE stations_offline ADD COLUMN "end" TIMESTAMPTZ;
 
@@ -643,19 +649,19 @@ class StationOffline(Base):
 
         self.set_table_name('stations_offline')
 
-    def insert(self, station_offline):
+    def insert(self, station_offline, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                     ' (number, begin, "end") ' + \
-                     'VALUES (%s, %s, %s)',
-                     (station_offline.get_number(), station_offline.get_begin(), station_offline.get_end()))
+                     ' (number, region, begin, "end") ' + \
+                     'VALUES (%s, %s, %s, %s)',
+                     (station_offline.get_number(), region, station_offline.get_begin(), station_offline.get_end()))
 
-    def update(self, station_offline):
-        self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s',
-                     (station_offline.get_end(), station_offline.get_id()))
+    def update(self, station_offline, region=1):
+        self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s and region=%s',
+                     (station_offline.get_end(), station_offline.get_id(), region))
 
-    def select(self, timestamp=None):
-        sql = '''select id, number, begin, "end" from stations_offline where "end" is null order by number;'''
-        cur = self.execute(sql)
+    def select(self, timestamp=None, region=1):
+        sql = '''select id, number, region, begin, "end" from stations_offline where "end" is null and region=%s order by number;'''
+        cur = self.execute(sql, (region,))
 
         resulting_stations = []
         if cur.rowcount > 0:
@@ -810,3 +816,45 @@ class Location(Base):
 def location():
     from __init__ import INJECTOR
     return INJECTOR.get(Location)        
+
+class ServiceLog(Base):
+
+  @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+  def __init__(self, db_connection_pool):
+    super(ServiceLog, self).__init__(db_connection_pool)
+
+    self.set_table_name('servicelog')
+
+  def insert(self, timestamp, ip_address, city_name, country_name, longitude, latitude):
+    sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+	  '("timestamp", geog, address, city, country)' + \
+	  'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(city_name)s, %(country_name)s);'
+
+    parameters = {
+    	'timestamp': timestamp,
+	'ip_address': ip_address,
+        'longitude': longitude,
+        'latitude': latitude,
+        'city_name': city_name,
+        'country_name': country_name
+    }
+ 
+    self.execute(sql, parameters)
+
+  def get_latest_time(self, region=1):
+        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
+            ' ORDER BY "timestamp" DESC LIMIT 1'
+        cur = self.execute(sql)
+        if cur.rowcount == 1:
+            result = cur.fetchone()
+            return pd.Timestamp(self.fix_timezone(result['timestamp']))
+        else:
+            return None
+
+  def select(self):
+    pass
+
+def servicelog():
+    from __init__ import INJECTOR
+    return INJECTOR.get(ServiceLog)        
+
