@@ -232,6 +232,12 @@ class Station(Event):
     def get_samples_per_hour(self):
         return self.samples_per_hour
 
+    def is_valid(self):
+        return (self.get_x() != 0.0 or self.get_y() != 0.0) \
+		and -180 <= self.get_x() <= 180 \
+		and -90 < self.get_y() < 90 \
+		and self.get_number() > 0
+
 class StationOffline(object):
 
     def __init__(self, id_number, number, begin, end=None):
