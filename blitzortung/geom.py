@@ -205,3 +205,8 @@ class RasterElement(object):
 
     def get_timestamp(self):
         return self.timestamp
+
+    def __str__(self):
+        if self.timestamp is None:
+	  return str(self.count)
+

@@ -14,8 +14,8 @@ import pandas as pd
 
 import blitzortung
 
-class Base(object):
 
+class Base(object):
     timeformat = '%Y-%m-%d %H:%M:%S'
     timeformat_fractional_seconds = timeformat + '.%f'
     timestamp_string_minimal_fractional_seconds_length = 20
@@ -24,8 +24,8 @@ class Base(object):
     def parse_timestamp(self, timestamp_string):
         return pd.Timestamp(np.datetime64(timestamp_string + 'Z', 'ns'), tz=pytz.UTC)
 
-class Timestamp(Base):
 
+class Timestamp(Base):
     def __init__(self):
         super(Timestamp, self).__init__()
         self.timestamp = None
@@ -43,10 +43,10 @@ class Timestamp(Base):
             self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         else:
             self.timestamp = self.parse_timestamp(timestamp)
-	return self
+        return self
+
 
 class Event(Timestamp):
-    
     def __init__(self):
         super(Event, self).__init__()
         self.x_coord = 0
@@ -54,18 +54,17 @@ class Event(Timestamp):
 
     def set_x(self, x_coord):
         self.x_coord = x_coord
-	return self
+        return self
 
     def set_y(self, y_coord):
         self.y_coord = y_coord
-	return self
-        
+        return self
+
     def build(self):
         return blitzortung.data.Event(self.timestamp, self.x_coord, self.y_coord)
-        
-        
-class Stroke(Event):
 
+
+class Stroke(Event):
     def __init__(self):
         super(Stroke, self).__init__()
         self.id_value = -1
@@ -74,38 +73,40 @@ class Stroke(Event):
 
     def set_id(self, id_value):
         self.id_value = id_value
-	return self
+        return self
 
     def set_altitude(self, altitude):
         self.altitude = altitude
-	return self
+        return self
 
     def set_amplitude(self, amplitude):
         self.amplitude = amplitude
-	return self
+        return self
 
     def set_type(self, type_val):
         self.type_val = type_val
-	return self
+        return self
 
     def set_lateral_error(self, lateral_error):
         self.lateral_error = lateral_error if lateral_error > 0 else 0
-	return self
+        return self
 
     def set_station_count(self, station_count):
         self.station_count = station_count
-	return self
+        return self
 
     def set_participants(self, participants):
         self.participants = participants
-	return self
+        return self
 
     def build(self):
-        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude, self.altitude, self.lateral_error, self.type_val, self.station_count, self.participants)
+        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude,
+                                       self.altitude, self.lateral_error, self.type_val, self.station_count,
+                                       self.participants)
 
     def from_string(self, string):
         ' Construct stroke from blitzortung text format data line '
-        if string != None:
+        if string is not  None:
             fields = string.split(' ')
             if len(fields) >= 8:
                 self.set_x(float(fields[3]))
@@ -121,13 +122,12 @@ class Stroke(Event):
                     participants.append(fields[index])
                 self.set_participants(participants)
             else:
-                raise ValueError("not enough data fields from stroke data line '%s'" %(string))
+                raise ValueError("not enough data fields from stroke data line '%s'" % (string))
         self.set_altitude(0.0)
-	return self
+        return self
 
 
 class Station(Event):
-
     html_parser = HTMLParser.HTMLParser()
 
     def __init__(self):
@@ -140,35 +140,35 @@ class Station(Event):
 
     def set_number(self, number):
         self.number = number
-	return self
+        return self
 
     def set_short_name(self, short_name):
         self.short_name = short_name
-	return self
+        return self
 
     def set_name(self, name):
         self.name = name
-	return self
+        return self
 
     def set_location_name(self, location_name):
         self.location_name = location_name
-	return self
+        return self
 
     def set_country(self, country):
         self.country = country
-	return self
+        return self
 
     def set_gps_status(self, gps_status):
         self.gps_status = gps_status
-	return self
+        return self
 
     def set_tracker_version(self, tracker_version):
         self.tracker_version = tracker_version
-	return self
+        return self
 
     def set_samples_per_hour(self, samples_per_hour):
         self.samples_per_hour = samples_per_hour
-	return self
+        return self
 
     def from_string(self, data):
         fields = data.split(' ')
@@ -183,16 +183,18 @@ class Station(Event):
         self.set_gps_status(fields[8])
         self.set_tracker_version(self._unquote(fields[9]))
         self.set_samples_per_hour(int(fields[10]))
-	return self
+        return self
 
     def build(self):
-        return blitzortung.data.Station(self.number, self.short_name, self.name, self.location_name, self.country, self.x_coord, self.y_coord, self.timestamp, self.gps_status, self.tracker_version, self.samples_per_hour)
+        return blitzortung.data.Station(self.number, self.short_name, self.name, self.location_name, self.country,
+                                        self.x_coord, self.y_coord, self.timestamp, self.gps_status,
+                                        self.tracker_version, self.samples_per_hour)
 
     def _unquote(self, html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
 
-class StationOffline(Base):
 
+class StationOffline(Base):
     def __init__(self):
         super(StationOffline, self).__init__()
         self.id_value = -1
@@ -202,25 +204,25 @@ class StationOffline(Base):
 
     def set_id(self, id_value):
         self.id_value = id_value
-	return self
+        return self
 
     def set_number(self, number):
         self.number = number
-	return self
+        return self
 
     def set_begin(self, begin):
         self.begin = begin
-	return self
+        return self
 
     def set_end(self, end):
         self.end = end
-	return self
+        return self
 
     def build(self):
         return blitzortung.data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
-class RawEvent(Event):
 
+class RawEvent(Event):
     def __init__(self):
         super(RawEvent, self).__init__()
         self.altitude = 0
@@ -228,19 +230,20 @@ class RawEvent(Event):
         self.angle = 0
 
     def build(self):
-        return blitzortung.data.RawEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle)
+        return blitzortung.data.RawEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude,
+                                         self.angle)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
-	return self
+        return self
 
     def set_amplitude(self, amplitude):
         self.amplitude = amplitude
-	return self
-    
+        return self
+
     def set_angle(self, angle):
         self.angle = angle
-	return self
+        return self
 
     def from_json(self, json_object):
         self.set_timestamp(json_object[0])
@@ -250,7 +253,7 @@ class RawEvent(Event):
         self.set_amplitude(json_object[6])
         self.set_angle(json_object[7])
         return self
-        
+
     def from_string(self, string):
         if string:
             ' Construct stroke from blitzortung text format data line '
@@ -264,11 +267,11 @@ class RawEvent(Event):
                 self.x_amplitude = float(fields[7])
                 self.y_amplitude = float(fields[8])
             else:
-                raise RuntimeError("not enough data fields for raw event data '%s'" %(string))
-	return self
+                raise RuntimeError("not enough data fields for raw event data '%s'" % (string))
+        return self
+
 
 class RawWaveformEvent(Event):
-
     def __init__(self):
         super(RawWaveformEvent, self).__init__()
         self.altitude = 0
@@ -278,27 +281,28 @@ class RawWaveformEvent(Event):
         self.angle_offset = 0
 
     def build(self):
-        return blitzortung.data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.sample_period, self.x_values, self.y_values, self.angle_offset)
+        return blitzortung.data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude,
+                                                 self.sample_period, self.x_values, self.y_values, self.angle_offset)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
-	return self
-        
+        return self
+
     def set_sample_period(self, sample_period):
         self.sample_period = sample_period
-	return self
-        
+        return self
+
     def set_x_values(self, x_values):
         self.x_values = x_values
-	return self
-    
+        return self
+
     def set_y_values(self, y_values):
         self.y_values = y_values
-	return self
-        
+        return self
+
     def set_angle_offset(self, angle_offset):
         self.angle_offset = angle_offset
-	return self
+        return self
 
     def from_json(self, json_object):
         self.set_timestamp(json_object[0])
@@ -327,7 +331,7 @@ class RawWaveformEvent(Event):
 
                 number_of_channels = int(fields[5])
                 number_of_samples = int(fields[6])
-                chars_per_sample = int(fields[7])/4
+                chars_per_sample = int(fields[7]) / 4
                 data = fields[9]
 
                 maximum = 0.0
@@ -340,7 +344,7 @@ class RawWaveformEvent(Event):
                     current_sum = 0.0
                     for channel in range(0, number_of_channels):
                         index = chars_per_sample * (number_of_channels * sample + channel)
-                        value_string = data[index : index+ chars_per_sample]
+                        value_string = data[index: index + chars_per_sample]
                         value = int(value_string, 16) + value_offset
 
                         current_values[channel] = value
@@ -357,21 +361,21 @@ class RawWaveformEvent(Event):
 
                 self.timestamp += np.timedelta64(maximum_index * self.sample_period, 'ns') # add maximum offset to time
 
-
             else:
-                raise RuntimeError("not enough data fields for raw event data '%s'" %(data))
-	return self
+                raise RuntimeError("not enough data fields for raw event data '%s'" % string)
+        return self
+
 
 class ExtEvent(RawEvent):
-
     def __init__(self):
         super(ExtEvent, self).__init__()
         self.station_number = 0
 
     def set_station_number(self, station_number):
         self.station_number = station_number
-	return self
+        return self
 
     def build(self):
-        return blitzortung.data.ExtEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude, self.angle, self.station_number)
+        return blitzortung.data.ExtEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude,
+                                         self.angle, self.station_number)
 
