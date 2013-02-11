@@ -10,8 +10,6 @@ blitzortung python modules
 """
 __version__ = '1.1.0'
 
-import struct as _struct
-
 #-----------------------------------------------------------------------------
 #  Constants.
 #-----------------------------------------------------------------------------
@@ -31,6 +29,8 @@ class Error(Exception):
 #   Public interface and exports.
 #-----------------------------------------------------------------------------
 
+from injector import Injector
+
 import data
 import builder
 import config
@@ -40,9 +40,9 @@ import db
 import geom
 import files
 import util
+import types
 import web
 
-from injector import Injector
 
 INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.DbModule()])
 
@@ -61,6 +61,8 @@ __all__ = [
     'files.Raw', 'files.Data',
 
     'geom.Point',
+
+    'types.Point',
 
     'util.Timer',
 

@@ -2,9 +2,8 @@
 
 import ConfigParser
 
-from injector import Key, Module, singleton, provides
+from injector import Module, singleton, provides
 
-import blitzortung
 
 class Config(object):
     def __init__(self, configfilename='/etc/blitzortung.conf'):

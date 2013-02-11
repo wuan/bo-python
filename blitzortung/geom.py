@@ -6,13 +6,13 @@
 
 '''
 
-import re
-import pyproj
-import numpy
 import math
+from abc import ABCMeta, abstractmethod
+
 import shapely
 
-from abc import ABCMeta, abstractmethod
+import numpy
+
 
 class Geometry(object):
     '''

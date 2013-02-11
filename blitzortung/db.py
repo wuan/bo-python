@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 
-''' classes for database access '''
+""" classes for database access """
 
 import math
 from injector import Module, provides, singleton, inject
@@ -16,18 +16,17 @@ try:
     import psycopg2.pool
     import psycopg2.extras
     import psycopg2.extensions
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
 except ImportError:
-    pass
+    psycopg2 = None
 
 from abc import ABCMeta, abstractmethod
 
 import blitzortung
 
-class BaseInterval(object):
 
-    def __init__(self, start = None, end = None):
+class BaseInterval(object):
+    def __init__(self, start=None, end=None):
         self.start = start
         self.end = end
 
@@ -40,31 +39,31 @@ class BaseInterval(object):
     def __str__(self):
         return '[' + str(self.start) + ' - ' + str(self.end) + ']'
 
-class IdInterval(BaseInterval):
 
-    def __init__(self, start = None, end = None):
+class IdInterval(BaseInterval):
+    def __init__(self, start=None, end=None):
         if start and not isinstance(start, int):
             raise ValueError("start should be an integer value")
         if end and not isinstance(end, int):
-            raise ValueError("end should be an integer value")        
+            raise ValueError("end should be an integer value")
 
         super(IdInterval, self).__init__(start, end)
 
-class TimeInterval(BaseInterval):
 
-    def __init__(self, start = None, end = None):
+class TimeInterval(BaseInterval):
+    def __init__(self, start=None, end=None):
         if start and not isinstance(start, datetime.datetime):
             raise ValueError("start should be a datetime value")
         if end and not isinstance(end, datetime.datetime):
-            raise ValueError("end should be a datetime value")        
+            raise ValueError("end should be a datetime value")
 
         super(TimeInterval, self).__init__(start, end)
 
 
 class Query(object):
-    '''
+    """
     simple class for building of complex queries
-    '''
+    """
 
     def __init__(self):
         self.sql = ''
@@ -85,13 +84,13 @@ class Query(object):
         self.order.append(order)
 
     def set_limit(self, limit):
-        if self.limit != None:
+        if self.limit:
             raise RuntimeError("overriding Query.limit")
         self.limit = limit
 
-    def add_condition(self, condition, parameters = None):
+    def add_condition(self, condition, parameters=None):
         self.conditions.append(condition)
-        if parameters != None:
+        if parameters:
             self.parameters.update(parameters)
 
     def add_parameters(self, parameters):
@@ -139,28 +138,31 @@ class Query(object):
             if arg:
                 if isinstance(arg, TimeInterval):
 
-                    if arg.get_start() != None:
+                    if arg.get_start():
                         self.add_condition('"timestamp" >= %(start_time)s', {'start_time': arg.get_start()})
 
-                    if arg.get_end() != None:
+                    if arg.get_end():
                         self.add_condition('"timestamp" < %(end_time)s', {'end_time': arg.get_end()})
 
                 elif isinstance(arg, IdInterval):
 
-                    if arg.get_start() != None:
+                    if arg.get_start():
                         self.add_condition('id >= %(start_id)s', {'start_id': arg.get_start()})
 
-                    if arg.get_end() != None:
+                    if arg.get_end():
                         self.add_condition('id < %(end_id)s', {'end_id': arg.get_end()})
 
                 elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
                     if arg.is_valid:
 
-                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog', {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
+                                           {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
 
                         if not arg.equals(arg.envelope):
-                            self.add_condition('Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ST_Transform(geog::geometry, %(srid)s))', {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                            self.add_condition(
+                                'Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ST_Transform(geog::geometry, %(srid)s))',
+                                {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -183,8 +185,8 @@ class Query(object):
 
         return resulting_strokes
 
-class RasterQuery(Query):
 
+class RasterQuery(Query):
     def __init__(self, raster):
         super(RasterQuery, self).__init__()
 
@@ -193,16 +195,19 @@ class RasterQuery(Query):
         env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog', {'envelope': shapely.wkb.dumps(env).encode('hex')})
-#self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
+            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
+                               {'envelope': shapely.wkb.dumps(env).encode('hex')})
+        #self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
     def __str__(self):
         sql = 'SELECT '
 
-        sql += 'TRUNC((ST_X(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(self.raster.get_x_div()) + ') AS rx, '
-        sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(self.raster.get_y_div()) + ') AS ry, '
+        sql += 'TRUNC((ST_X(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(
+            self.raster.get_x_div()) + ') AS rx, '
+        sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(
+            self.raster.get_y_div()) + ') AS ry, '
         sql += 'count(*) AS count, max("timestamp") as "timestamp" FROM ('
 
         sql += Query.__str__(self)
@@ -217,15 +222,17 @@ class RasterQuery(Query):
 
         if cur.rowcount > 0:
             for result in cur.fetchall():
-                self.raster.set(result['rx'], result['ry'], blitzortung.geom.RasterElement(result['count'], result['timestamp']))
+                self.raster.set(result['rx'], result['ry'],
+                                blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
+
 
 class Order(object):
     '''
     definition for query search order
     '''
 
-    def __init__(self, column, desc = False):
+    def __init__(self, column, desc=False):
         self.column = column
         self.desc = desc
 
@@ -259,8 +266,8 @@ class Center(object):
     def get_point(self):
         return self.center
 
-class DbModule(Module):
 
+class DbModule(Module):
     @singleton
     @provides(psycopg2.pool.ThreadedConnectionPool)
     @inject(config=blitzortung.config.Config)
@@ -269,7 +276,7 @@ class DbModule(Module):
 
 
 class Base(object):
-    '''
+    """
     abstract base class for database access objects
 
     creation of database 
@@ -293,7 +300,7 @@ class Base(object):
     (>= pg 9.0)
     CREATE EXTENSION "btree_gist";
 
-    '''
+    """
     __metaclass__ = ABCMeta
 
     DefaultTimezone = pytz.UTC
@@ -304,40 +311,44 @@ class Base(object):
 
         self.schema_name = None
         self.table_name = None
-	while True:
-	  self.conn = self.db_connection_pool.getconn()
-	  self.conn.cancel()
-	  try:
-	    self.conn.reset()
-	  except psycopg2.OperationalError:
-	    print "reconnect to db"
-            self.db_connection_pool.putconn(self.conn, close=True)
-            continue
-	  break
+
+        while True:
+            self.conn = self.db_connection_pool.getconn()
+            self.conn.cancel()
+            try:
+                self.conn.reset()
+            except psycopg2.OperationalError:
+                print "reconnect to db"
+                self.db_connection_pool.putconn(self.conn, close=True)
+                continue
+            break
+        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.conn)
+        psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
         self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
         self.set_timezone(Base.DefaultTimezone)
 
+        cur = None
         try:
             cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except psycopg2.DatabaseError, e:
             print e
 
-            if self.conn != None:
+            if self.conn:
                 try:
                     self.conn.close()
                 except NameError:
                     pass
         finally:
-            cur.close()
+            if cur:
+                cur.close()
 
     def __del__(self):
         self.db_connection_pool.putconn(self.conn)
 
-
     def is_connected(self):
-        if self.conn != None:
+        if self.conn:
             return not self.conn.closed
         else:
             return False
@@ -349,7 +360,7 @@ class Base(object):
         return self.table_name
 
     def get_full_table_name(self):
-        if self.get_schema_name() != None:
+        if self.get_schema_name():
             return '"' + self.get_schema_name() + '"."' + self.get_table_name() + '"'
         else:
             return self.get_table_name()
@@ -372,7 +383,7 @@ class Base(object):
     def set_timezone(self, tz):
         self.tz = tz
         cur = self.conn.cursor()
-        cur.execute('SET TIME ZONE \'%s\'' %(str(self.tz)))
+        cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -384,11 +395,11 @@ class Base(object):
         return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
 
     def commit(self):
-        ''' commit pending database transaction '''
+        """ commit pending database transaction """
         self.conn.commit()
 
     def rollback(self):
-        ''' rollback pending database transaction '''
+        """ rollback pending database transaction """
         self.conn.rollback()
 
     @abstractmethod
@@ -404,8 +415,9 @@ class Base(object):
         cur.execute(sql_string, parameters)
         return cur
 
+
 class Stroke(Base):
-    '''
+    """
     stroke db access class
 
     database table creation (as db user blitzortung, database blitzortung): 
@@ -429,7 +441,7 @@ class Stroke(Base):
     DELETE FROM strokes;
     ALTER SEQUENCE strokes_id_seq RESTART 1;
 
-    '''
+    """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection_pool):
@@ -439,8 +451,9 @@ class Stroke(Base):
 
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
-            ' ("timestamp", nanoseconds, geog, region, amplitude, error2d, type, stationcount) ' + \
-            'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
+              ' ("timestamp", nanoseconds, geog, region, amplitude, error2d, type, stationcount) ' + \
+              'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), ' + \
+              '%(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
@@ -458,8 +471,8 @@ class Stroke(Base):
 
     def get_latest_time(self, region=1):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
-            ' WHERE region=%(region)s' + \
-            ' ORDER BY "timestamp" DESC LIMIT 1'
+              ' WHERE region=%(region)s' + \
+              ' ORDER BY "timestamp" DESC LIMIT 1'
         cur = self.execute(sql, {'region': region})
         if cur.rowcount == 1:
             result = cur.fetchone()
@@ -482,29 +495,30 @@ class Stroke(Base):
 
         return stroke_builder.build()
 
-    def select_query(self, args, query = None):
-        ' build up query object for select statement '
+    def select_query(self, args, query=None):
+        """ build up query object for select statement """
 
         if not query:
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog', 'amplitude', 'type', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog', \
+                           'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
-#query.add_condition('geog IS NOT NULL')
+        #query.add_condition('geog IS NOT NULL')
         query.parse_args(args)
         return query
 
     def select(self, *args):
-        ' build up query '
+        """ build up query """
 
         query = self.select_query(args)
 
         return self.select_execute(query)
 
     def select_raster(self, raster, *args):
-        ' build up query '
+        """ build up raster query """
 
         query = self.select_query(args, RasterQuery(raster))
 
@@ -512,18 +526,24 @@ class Stroke(Base):
 
     def select_histogram(self, minutes, minute_offset=0, region=1, binsize=5):
         query = """
-	select -extract(epoch from clock_timestamp() + interval '%(offset)s minutes' - "timestamp")::int/60/%(binsize)s as interval, count(*)
-	       from strokes
-	       where
-	           "timestamp" >= (select clock_timestamp() + interval '%(offset)s minutes' - interval '%(minutes)s minutes') and 
-	           "timestamp" < (select clock_timestamp() + interval '%(offset)s minutes') and
-	           region = %(region)s
-	       group by interval
-	       order by interval"""
+            select
+                -extract(epoch from clock_timestamp()
+                    + interval '%(offset)s minutes'
+                    - "timestamp")::int/60/%(binsize)s as interval,
+                count(*)
+            from strokes
+            where
+                "timestamp" >= (select clock_timestamp()
+                    + interval '%(offset)s minutes'
+                    - interval '%(minutes)s minutes') and
+                "timestamp" < (select clock_timestamp() + interval '%(offset)s minutes') and
+                region = %(region)s
+            group by interval
+            order by interval"""
 
-        cur = self.execute(query, {'minutes': minutes, 'offset': minute_offset, 'binsize':binsize, 'region':region})
+        cur = self.execute(query, {'minutes': minutes, 'offset': minute_offset, 'binsize': binsize, 'region': region})
 
-        value_count = minutes/binsize
+        value_count = minutes / binsize
 
         result = [0] * value_count
 
@@ -538,12 +558,15 @@ class Stroke(Base):
 
         return query.get_results(cur, self)
 
+
 def stroke():
     from __init__ import INJECTOR
+
     return INJECTOR.get(Stroke)
 
+
 class Station(Base):
-    '''
+    """
 
     database table creation (as db user blitzortung, database blitzortung): 
 
@@ -563,7 +586,7 @@ class Station(Base):
 
     DELETE FROM stations;
     ALTER SEQUENCE stations_id_seq RESTART 1;
-    '''
+    """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection_pool):
@@ -573,27 +596,28 @@ class Station(Base):
 
     def insert(self, station, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                     ' (number, short_name, "name", location_name, country, "timestamp", geog, region) ' + \
+                     ' (number, short_name, "name", location_name, country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
-                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(), station.get_country(), station.get_timestamp(), station.get_x(), station.get_y(), region))
+                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(),
+                      station.get_country(), station.get_timestamp(), station.get_x(), station.get_y(), region))
 
     def select(self, timestamp=None, region=None):
         sql = ''' select
-        o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
-	from stations as s
-	inner join 
-	   (select b. region, b.number, max(b."timestamp") as "timestamp"
-	    from stations as b
-	    group by region, number
-            order by region, number) as c
-	on s.region = c.region and s.number = c.number and s."timestamp" = c."timestamp"
-	left join stations_offline as o
-	on o.number = s.number and o.region = s.region and o."end" is null'''
-	
-	if region:
-	    sql += ''' where s.region = %(region)s'''
+             o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
+        from stations as s
+        inner join
+           (select b. region, b.number, max(b."timestamp") as "timestamp"
+            from stations as b
+        group by region, number
+        order by region, number) as c
+        on s.region = c.region and s.number = c.number and s."timestamp" = c."timestamp"
+        left join stations_offline as o
+        on o.number = s.number and o.region = s.region and o."end" is null'''
 
-	sql += ''' order by s.number'''
+        if region:
+            sql += ''' where s.region = %(region)s'''
+
+        sql += ''' order by s.number'''
         cur = self.execute(sql, {'region': region})
 
         resulting_stations = []
@@ -601,7 +625,7 @@ class Station(Base):
             for result in cur.fetchall():
                 resulting_stations.append(self.create(result))
 
-        return resulting_stations    
+        return resulting_stations
 
     def create(self, result):
         station_builder = blitzortung.builder.Station()
@@ -616,14 +640,17 @@ class Station(Base):
         station_builder.set_y(location.y)
         station_builder.set_timestamp(self.fix_timezone(result['begin']))
 
-        return station_builder.build()  
+        return station_builder.build()
+
 
 def station():
     from __init__ import INJECTOR
+
     return INJECTOR.get(Station)
 
+
 class StationOffline(Base):
-    '''
+    """
 
     database table creation (as db user blitzortung, database blitzortung): 
 
@@ -641,7 +668,7 @@ class StationOffline(Base):
 
     DELETE FROM stations_offline;
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
-    '''
+    """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection_pool):
@@ -650,8 +677,8 @@ class StationOffline(Base):
         self.set_table_name('stations_offline')
 
     def insert(self, station_offline, region=1):
-        self.execute('INSERT INTO ' + self.get_full_table_name() + \
-                     ' (number, region, begin, "end") ' + \
+        self.execute('INSERT INTO ' + self.get_full_table_name() +
+                     ' (number, region, begin, "end") ' +
                      'VALUES (%s, %s, %s, %s)',
                      (station_offline.get_number(), region, station_offline.get_begin(), station_offline.get_end()))
 
@@ -660,7 +687,8 @@ class StationOffline(Base):
                      (station_offline.get_end(), station_offline.get_id(), region))
 
     def select(self, timestamp=None, region=1):
-        sql = '''select id, number, region, begin, "end" from stations_offline where "end" is null and region=%s order by number;'''
+        sql = '''select id, number, region, begin, "end"
+            from stations_offline where "end" is null and region=%s order by number;'''
         cur = self.execute(sql, (region,))
 
         resulting_stations = []
@@ -668,7 +696,7 @@ class StationOffline(Base):
             for result in cur.fetchall():
                 resulting_stations.append(self.create(result))
 
-        return resulting_stations    
+        return resulting_stations
 
     def create(self, result):
         stationOfflineBuilder = blitzortung.builder.StationOffline()
@@ -678,14 +706,17 @@ class StationOffline(Base):
         stationOfflineBuilder.set_begin(result['begin'])
         stationOfflineBuilder.set_end(result['end'])
 
-        return stationOfflineBuilder.build() 
+        return stationOfflineBuilder.build()
+
 
 def station_offline():
     from __init__ import INJECTOR
-    return INJECTOR.get(StationOffline)  
+
+    return INJECTOR.get(StationOffline)
+
 
 class Location(Base):
-    '''
+    """
     geonames db access class
 
     CREATE SCHEMA geo;
@@ -703,7 +734,7 @@ class Location(Base):
 
     CREATE INDEX geonames_geog ON geo.geonames USING gist(geog);
 
-    '''
+    """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection_pool):
@@ -741,18 +772,19 @@ class Location(Base):
         classification = self.size_class(population)
 
         if classification is not None:
-            self.execute('INSERT INTO ' + self.get_full_table_name() + '''
-	(geog, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation)
-      VALUES(
-	ST_GeomFromText('POINT(%s %s)', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-                                                                                     (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1, admin_code_2, population, elevation))
+            self.execute('INSERT INTO ' + self.get_full_table_name() +
+                         '(geog, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, ' +
+                         'population, elevation)' +
+                         'VALUES(ST_GeomFromText(\'POINT(%s %s)\', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)',
+                         (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1,
+                          admin_code_2, population, elevation))
 
     def size_class(self, n):
         if n < 1:
             return None
-        base = math.floor(math.log(n)/math.log(10)) - 1
+        base = math.floor(math.log(n) / math.log(10)) - 1
         relative = n / math.pow(10, base)
-        order = min(2, math.floor(relative/25))
+        order = min(2, math.floor(relative / 25))
         if base < 0:
             base = 0
         return min(15, base * 3 + order)
@@ -772,24 +804,26 @@ class Location(Base):
 
         if self.is_connected():
             queryString = '''SELECT
-	  name,
-	  country_code,
-	  admin_code_1,
-	  admin_code_2,
-	  feature_class,
-	  feature_code,
-	  elevation,
-	  ST_Transform(geog::geometry, %(srid)s) AS geog,
-	  population,
-	  ST_Distance_Sphere(geog::geometry, c.center) AS distance,
-	  ST_Azimuth(geog::geometry, c.center) AS azimuth
-	FROM
-	  (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
-                                                                                                      self.get_full_table_name() + '''
-	WHERE
-	  feature_class='P'
-	  AND population >= %(min_population)s
-	  AND ST_Transform(geog::geometry, %(srid)s) && ST_Expand(c.center, %(max_distance)s) order by distance limit %(limit)s'''
+                name,
+                country_code,
+                admin_code_1,
+                admin_code_2,
+                feature_class,
+                feature_code,
+                elevation,
+                ST_Transform(geog::geometry, %(srid)s) AS geog,
+                population,
+                ST_Distance_Sphere(geog::geometry, c.center) AS distance,
+                ST_Azimuth(geog::geometry, c.center) AS azimuth
+            FROM
+                (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
+                          self.get_full_table_name() + '''
+            WHERE
+                feature_class='P'
+                AND population >= %(min_population)s
+                AND ST_Transform(geog::geometry, %(srid)s) && ST_Expand(c.center, %(max_distance)s)
+            ORDER BY distance
+            LIMIT %(limit)s'''
 
             params = {
                 'srid': self.get_srid(),
@@ -805,51 +839,50 @@ class Location(Base):
             locations = []
             if cur.rowcount > 0:
                 for result in cur.fetchall():
-                    location = {}
-                    location['name'] = result['name']
-                    location['distance'] = result['distance']
-                    location['azimuth'] = result['azimuth']
+                    location = {'name': result['name'], 'distance': result['distance'], 'azimuth': result['azimuth']}
                     locations.append(location)
 
             return locations
 
+
 def location():
     from __init__ import INJECTOR
-    return INJECTOR.get(Location)        
+
+    return INJECTOR.get(Location)
+
 
 class ServiceLog(Base):
-
-  """
-    CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT, address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
-
+    """
+      CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT, address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
     """
 
-  @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-  def __init__(self, db_connection_pool):
-    super(ServiceLog, self).__init__(db_connection_pool)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLog, self).__init__(db_connection_pool)
 
-    self.set_table_name('servicelog')
+        self.set_table_name('servicelog')
 
-  def insert(self, timestamp, ip_address, version, city_name, country_name, longitude, latitude):
-    sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
-	  '("timestamp", geog, address, version, city, country)' + \
-	  'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(version)s, %(city_name)s, %(country_name)s);'
+    def insert(self, timestamp, ip_address, version, city_name, country_name, longitude, latitude):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", geog, address, version, city, country)' + \
+              'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(version)s, ' + \
+              '%(city_name)s, %(country_name)s);'
 
-    parameters = {
-    	'timestamp': timestamp,
-	'ip_address': ip_address,
-	'version': version,
-        'longitude': longitude,
-        'latitude': latitude,
-        'city_name': city_name,
-        'country_name': country_name
-    }
- 
-    self.execute(sql, parameters)
+        parameters = {
+            'timestamp': timestamp,
+            'ip_address': ip_address,
+            'version': version,
+            'longitude': longitude,
+            'latitude': latitude,
+            'city_name': city_name,
+            'country_name': country_name
+        }
 
-  def get_latest_time(self, region=1):
+        self.execute(sql, parameters)
+
+    def get_latest_time(self, region=1):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
-            ' ORDER BY "timestamp" DESC LIMIT 1'
+              ' ORDER BY "timestamp" DESC LIMIT 1'
         cur = self.execute(sql)
         if cur.rowcount == 1:
             result = cur.fetchone()
@@ -857,10 +890,12 @@ class ServiceLog(Base):
         else:
             return None
 
-  def select(self):
-    pass
+    def select(self):
+        pass
+
 
 def servicelog():
     from __init__ import INJECTOR
-    return INJECTOR.get(ServiceLog)        
+
+    return INJECTOR.get(ServiceLog)
 
