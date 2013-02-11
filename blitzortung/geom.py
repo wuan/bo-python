@@ -69,24 +69,25 @@ class Envelope(Geometry):
 
     def contains(self, point):
         if ((point.getX() >= self.x_min) and
-            (point.getX() <= self.x_max) and
-            (point.getY() >= self.y_min) and
-            (point.getY() <= self.y_max)):
+                (point.getX() <= self.x_max) and
+                (point.getY() >= self.y_min) and
+                (point.getY() <= self.y_max)):
             return True
         else:
             return False
 
     def get_env(self):
-        return shapely.geometry.Polygon(((self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max), (self.x_max, self.y_min)))
+        return shapely.geometry.Polygon(((self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),
+                                         (self.x_max, self.y_min)))
 
     def __str__(self):
         return 'longitude: %.2f .. %.2f, latitude: %.2f .. %.2f' % (self.x_min, self.x_max, self.y_min, self.y_max)
 
 
 class Raster(Envelope):
-    ' class for raster characteristics and data '
+    """ class for raster characteristics and data """
 
-    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data = None):
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data=None):
         Envelope.__init__(self, x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
@@ -192,7 +193,6 @@ class Raster(Envelope):
 
 
 class RasterElement(object):
-
     def __init__(self, count, timestamp):
         self.count = count
         self.timestamp = timestamp
@@ -212,4 +212,3 @@ class RasterElement(object):
     def __str__(self):
         if self.timestamp is None:
             return str(self.count)
-

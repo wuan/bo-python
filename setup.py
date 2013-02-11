@@ -2,22 +2,25 @@
 
 from distutils.core import setup
 
+from setuptools import find_packages
+
 import blitzortung
 
 setup(
-    name            = 'blitzortung',
-    version         = blitzortung.__version__,
-    description     = 'blitzortung.org python modules',
-    download_url    = 'http://www.tryb.de/andi/blitzortung/',
-    author          = 'Andreas Wuerl',
-    author_email    = 'blitzortung@tryb.de',
-    url             = 'http://www.blitzortung.org/',
-    packages        = ['blitzortung'],
-    scripts	    = [],
-    license         = 'GPL-3 License',
-    long_description = """a library providing python classes for blitzortung operation""",
-    platforms = 'OS Independent',
-    classifiers = [
+    name='blitzortung',
+    packages=find_packages(),
+    install_requires=['injector', 'pytz', 'dateutils', 'shapely', 'pyproj'],
+    version=blitzortung.__version__,
+    description='blitzortung.org python modules',
+    download_url='http://www.tryb.de/andi/blitzortung/',
+    author='Andreas Wuerl',
+    author_email='blitzortung@tryb.de',
+    url='http://www.blitzortung.org/',
+    packages=['blitzortung'],
+    license='GPL-3 License',
+    long_description="""a library providing python classes for blitzortung operation""",
+    platforms='OS Independent',
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Environment :: Plugins',

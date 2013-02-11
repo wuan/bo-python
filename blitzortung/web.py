@@ -1,15 +1,16 @@
-'''
+"""
 
 @author: awuerl
 
-'''
+"""
 
 import sys
 import urllib2
 
-from injector import inject, singleton
+import injector
 
 import blitzortung
+
 
 class Url(object):
 
@@ -34,7 +35,7 @@ class Url(object):
 
         opener = urllib2.build_opener(handler)
         
-        url_string = self.url %(self.parameters)
+        url_string = self.url % self.parameters
 
         try:
             urlconnection = opener.open(url_string, timeout=60)
@@ -46,6 +47,7 @@ class Url(object):
         urlconnection.close()
 
         return response.decode('ISO-8859-1')
+
 
 class StrokesBase(Url):
 
@@ -63,43 +65,50 @@ class StrokesBase(Url):
                     strokes.append(stroke)
         return strokes
 
-@singleton
+
+@injector.singleton
 class Strokes(StrokesBase):
 
-    @inject(config=blitzortung.config.Config)
+    @injector.inject(config=blitzortung.config.Config)
     def __init__(self, config):
         super(Strokes, self).__init__('strikes.txt', config)
+
 
 def strokes():
     from __init__ import INJECTOR
     return INJECTOR.get(Strokes)
 
-@singleton
+
+@injector.singleton
 class Participants(StrokesBase):
 
-    @inject(config=blitzortung.config.Config)
+    @injector.inject(config=blitzortung.config.Config)
     def __init__(self, config):
         super(Participants, self).__init__('participants.txt', config)
-        
+
+
 def participants():
     from __init__ import INJECTOR
     return INJECTOR.get(Participants)
 
-@singleton
+
+@injector.singleton
 class Stations(Url):
 
-    @inject(config=blitzortung.config.Config)
+    @injector.inject(config=blitzortung.config.Config)
     def __init__(self, config):
         super(Stations, self).__init__('stations.txt', config)
+
 
 def stations():
     from __init__ import INJECTOR
     return INJECTOR.get(Stations)
 
-@singleton
+
+@injector.singleton
 class Raw(Url):
 
-    @inject(config=blitzortung.config.Config)
+    @injector.inject(config=blitzortung.config.Config)
     def __init__(self, config):
         super(Raw, self).__init__('raw_data/%(station_id)s/%(hour)02d.log', config)
         
