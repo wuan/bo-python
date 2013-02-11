@@ -161,7 +161,8 @@ class Query(object):
 
                         if not arg.equals(arg.envelope):
                             self.add_condition(
-                                'Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ST_Transform(geog::geometry, %(srid)s))',
+                                'Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ' +
+                                'ST_Transform(geog::geometry, %(srid)s))',
                                 {'geometry': shapely.wkb.dumps(arg).encode('hex')})
 
                     else:
@@ -197,7 +198,6 @@ class RasterQuery(Query):
         if env.is_valid:
             self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
                                {'envelope': shapely.wkb.dumps(env).encode('hex')})
-        #self.add_condition('ST_SetSRID(CAST(:envelope AS geometry), :srid) && Transform(geog, :srid)', {'envelope': shapely.wkb.dumps(env).encode('hex')})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
@@ -244,9 +244,9 @@ class Order(object):
 
 
 class Limit(object):
-    '''
+    """
     definition of query result limit
-    '''
+    """
 
     def __init__(self, limit):
         self.limit = limit
@@ -256,9 +256,9 @@ class Limit(object):
 
 
 class Center(object):
-    '''
+    """
     definition of query center point
-    '''
+    """
 
     def __init__(self, center):
         self.center = center
@@ -422,7 +422,8 @@ class Stroke(Base):
 
     database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE strokes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point), PRIMARY KEY(id));
+    CREATE TABLE strokes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point),
+        PRIMARY KEY(id));
     ALTER TABLE strokes ADD COLUMN region SMALLINT;
     ALTER TABLE strokes ADD COLUMN amplitude REAL;
     ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
@@ -502,7 +503,7 @@ class Stroke(Base):
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog', \
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog',
                            'amplitude', 'type', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
@@ -595,7 +596,7 @@ class Station(Base):
         self.set_table_name('stations')
 
     def insert(self, station, region=1):
-        self.execute('INSERT INTO ' + self.get_full_table_name() + \
+        self.execute('INSERT INTO ' + self.get_full_table_name() +
                      ' (number, short_name, "name", location_name, country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
                      (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(),
@@ -759,8 +760,6 @@ class Location(Base):
         country_code = fields[8]
         admin_code_1 = fields[10]
         admin_code_2 = fields[11]
-        admin_code_3 = fields[12]
-        admin_code_4 = fields[13]
         population = int(fields[14])
         if fields[15] != '':
             elevation = int(fields[15])
@@ -796,7 +795,7 @@ class Location(Base):
         self.limit = 10
 
         for arg in args:
-            if arg != None:
+            if arg:
                 if isinstance(arg, Center):
                     self.center = arg
                 elif isinstance(arg, Limit):
@@ -853,7 +852,8 @@ def location():
 
 class ServiceLog(Base):
     """
-      CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT, address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
+        CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT,
+            address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
     """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
@@ -890,7 +890,7 @@ class ServiceLog(Base):
         else:
             return None
 
-    def select(self):
+    def select(self, args):
         pass
 
 

@@ -1,18 +1,20 @@
 # -*- coding: utf8 -*-
 
-'''
+"""
 
 @author Andreas Würl
 
-'''
+"""
 
-import os, subprocess
+import os
+import subprocess
 import glob
 import datetime
 import json
 import pandas as pd
 
 import blitzortung
+
 
 class Raw(object):
 
@@ -27,37 +29,38 @@ class Raw(object):
     def get_file_name(self):
         return os.path.basename(self.file_path)
     
-    def get_data(self, starttime=None, endtime=None):
-        return [ blitzortung.builder.RawEvent().from_json(element).build()
-                 for element in self.__execute(starttime, endtime) ]
+    def get_data(self, start_time=None, end_time=None):
+        return [blitzortung.builder.RawEvent().from_json(element).build()
+                for element in self.__execute(start_time, end_time)]
 
-    def get_waveform_data(self, starttime=None, endtime=None):
-        return [ blitzortung.builder.RawWaveformEvent().from_json(element).build()
-                 for element in self.__execute(starttime, endtime, '--long-data') ]
+    def get_waveform_data(self, start_time=None, end_time=None):
+        return [blitzortung.builder.RawWaveformEvent().from_json(element).build()
+                for element in self.__execute(start_time, end_time, '--long-data')]
     
-    def get_info(self, starttime=None, endtime=None):
-        return self.__execute(starttime, endtime, '--mode', 'info')
+    def get_info(self, start_time=None, end_time=None):
+        return self.__execute(start_time, end_time, '--mode', 'info')
 
-    def get_histogram(self, starttime=None, endtime=None):
-        return self.__execute(starttime, endtime, '--mode', 'histogram')
+    def get_histogram(self, start_time=None, end_time=None):
+        return self.__execute(start_time, end_time, '--mode', 'histogram')
         
     def __repr__(self):
         return "files.Raw(%s)" % (os.path.basename(self.file_path))
     
-    def __execute(self, starttime, endtime, *additional_args):
+    def __execute(self, start_time, end_time, *additional_args):
         args = [self.BO_DATA_EXECUTABLE, '-j', '-i', self.file_path]
-        if starttime:
-            args += ['-s', starttime]
-        if endtime:
-            args += ['-e', endtime]
+        if start_time:
+            args += ['-s', start_time]
+        if end_time:
+            args += ['-e', end_time]
         dataPipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
         (output, _) = dataPipe.communicate()
         return json.loads(output)
-        
+
+
 class RawFile(object):
 
     def __init__(self, config):        
-        raw_file_names = glob.glob(os.path.join(raw_path, '*.bor'))
+        raw_file_names = glob.glob(os.path.join(config.get_raw_path(), '*.bor'))
 
         raw_file_names.sort()
 
@@ -68,7 +71,7 @@ class RawFile(object):
                 date = datetime.datetime.strptime(raw_file_name[-12:-4], '%Y%m%d').date()
             except ValueError:
                 continue
-            if not self.raw_files.has_key(date):
+            if not date in self.raw_files:
                 self.raw_files[date] = raw_file_name
             else:
                 raise Exception("ERROR: double date! " + raw_file_name + " vs. " + self.raw_files[date])
@@ -83,6 +86,7 @@ class RawFile(object):
         dates = self.raw_files.keys()
         dates.sort()
         return dates
+
 
 class Archive(object):
 
@@ -107,7 +111,7 @@ class Archive(object):
         date = pd.Timestamp(date_string)
         if date in self.dates_filecount:
             
-            for file_path in glob.glob(os.path.join(self.__get_path_for_date(date),'*')):
+            for file_path in glob.glob(os.path.join(self.__get_path_for_date(date), '*')):
                 result.append(Raw(file_path))
                 
         return result
@@ -132,6 +136,7 @@ class Archive(object):
             components.append(last)
             return components
 
+
 class Data(object):
 
     def __init__(self, raw_file_path, time):
@@ -142,7 +147,6 @@ class Data(object):
     def get(self, long_format=False):
         start = self.time.get_start_time()
         start_time = start.strftime("%H%M")
-        start_date = start.strftime("%Y%m%d")
 
         end = self.time.get_end_minute()
         end_time = end.strftime("%H%M")
@@ -157,7 +161,7 @@ class Data(object):
             return self.get_data(raw_file, start_time, end_time)
 
     def get_output(self, raw_file, starttime, endtime, long_format=False):
-        cmd = ['bo-data','-i', raw_file, '-s', starttime, '-e', endtime]
+        cmd = ['bo-data', '-i', raw_file, '-s', starttime, '-e', endtime]
         if long_format:
             cmd.append('--long-data')
         dataPipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -183,6 +187,7 @@ class Data(object):
         for line in self.get(True):
             print line
 
+
 class StatisticsData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
@@ -206,11 +211,8 @@ class StatisticsData(Data):
             return self.variance
         return float('nan')
 
+
 class HistogramData(Data):
 
     def get_data(self, raw_file, starttime, endtime):
         return raw_file.get_histogram(starttime, endtime)
-        dataPipe = subprocess.Popen(['bo-data','-i', raw_file, '-s', starttime, '-e', endtime, '--mode', 'histogram'], stdout=subprocess.PIPE)
-        (output, _) = dataPipe.communicate()
-
-        return output.splitlines()

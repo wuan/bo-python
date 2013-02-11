@@ -1,10 +1,10 @@
 # -*- coding: utf8 -*-
 
-'''
+"""
 
 @author Andreas Würl
 
-'''
+"""
 
 import math
 from abc import ABCMeta, abstractmethod
@@ -15,15 +15,15 @@ import numpy
 
 
 class Geometry(object):
-    '''
+    """
     abstract base class for geometries
-    '''
+    """
 
     __metaclass__ = ABCMeta
 
     DefaultSrid = 4326
 
-    def __init__(self, srid = DefaultSrid):
+    def __init__(self, srid=DefaultSrid):
         self.srid = srid
 
     def get_srid(self):
@@ -38,94 +38,96 @@ class Geometry(object):
 
 
 class Envelope(Geometry):
-    ''' class for definition of coordinate envelopes '''
+    """
+    class for definition of coordinate envelopes
+    """
 
-    def __init__(self, xmin, xmax, ymin, ymax, srid=Geometry.DefaultSrid):
+    def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
         Geometry.__init__(self, srid)
-        self.xmin = xmin
-        self.xmax = xmax
-        self.ymin = ymin
-        self.ymax = ymax
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
 
     def get_x_min(self):
-        return self.xmin
+        return self.x_min
 
     def get_x_max(self):
-        return self.xmax
+        return self.x_max
 
     def get_y_min(self):
-        return self.ymin
+        return self.y_min
 
     def get_y_max(self):
-        return self.ymax
+        return self.y_max
 
     def get_y_delta(self):
-        return abs(self.ymax - self.ymin)
+        return abs(self.y_max - self.y_min)
 
     def get_x_delta(self):
-        return abs(self.xmax - self.xmin)
+        return abs(self.x_max - self.x_min)
 
     def contains(self, point):
-        if ((point.getX() >= self.xmin) and
-            (point.getX() <= self.xmax) and
-            (point.getY() >= self.ymin) and
-            (point.getY() <= self.ymax)):
+        if ((point.getX() >= self.x_min) and
+            (point.getX() <= self.x_max) and
+            (point.getY() >= self.y_min) and
+            (point.getY() <= self.y_max)):
             return True
         else:
             return False
 
     def get_env(self):
-        return shapely.geometry.Polygon(((self.xmin, self.ymin), (self.xmin, self.ymax), (self.xmax, self.ymax), (self.xmax, self.ymin)))
+        return shapely.geometry.Polygon(((self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max), (self.x_max, self.y_min)))
 
     def __str__(self):
-        return 'longitude: %.2f .. %.2f, latitude: %.2f .. %.2f' % (self.xmin, self.xmax, self.ymin, self.ymax)
+        return 'longitude: %.2f .. %.2f, latitude: %.2f .. %.2f' % (self.x_min, self.x_max, self.y_min, self.y_max)
 
 
 class Raster(Envelope):
     ' class for raster characteristics and data '
 
-    def __init__(self, xmin, xmax, ymin, ymax, xdiv, ydiv, srid=Geometry.DefaultSrid, nodata = None):
-        Envelope.__init__(self, xmin, xmax, ymin, ymax, srid)
-        self.xdiv = xdiv
-        self.ydiv = ydiv
-        self.nodata = nodata if nodata else RasterElement(0, None)
-	self.clear()
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data = None):
+        Envelope.__init__(self, x_min, x_max, y_min, y_max, srid)
+        self.x_div = x_div
+        self.y_div = y_div
+        self.no_data = no_data if no_data else RasterElement(0, None)
+        self.clear()
 
     def clear(self):
-        self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.nodata))
+        self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.no_data))
 
     def get_x_div(self):
-        return self.xdiv
+        return self.x_div
 
     def get_y_div(self):
-        return self.ydiv
+        return self.y_div
 
     def get_x_bin_count(self):
-        return int(math.ceil(1.0 * (self.xmax - self.xmin) / self.xdiv))
+        return int(math.ceil(1.0 * (self.x_max - self.x_min) / self.x_div))
 
     def get_y_bin_count(self):
-        return int(math.ceil(1.0 * (self.ymax - self.ymin) / self.ydiv))
+        return int(math.ceil(1.0 * (self.y_max - self.y_min) / self.y_div))
 
-    def get_x_center(self, cellindex):
-        return self.xmin + (cellindex + 0.5) * self.xdiv
+    def get_x_center(self, cell_index):
+        return self.x_min + (cell_index + 0.5) * self.x_div
 
-    def get_y_center(self, rowindex):
-        return self.ymin + (rowindex + 0.5) * self.ydiv
+    def get_y_center(self, row_index):
+        return self.y_min + (row_index + 0.5) * self.y_div
 
     def set(self, x_index, y_index, value):
         try:
-          self.data[y_index][x_index] = value
+            self.data[y_index][x_index] = value
         except IndexError:
-          pass
+            pass
 
     def get(self, x_index, y_index):
         return self.data[y_index][x_index]
 
     def get_nodata_value(self):
-        return self.nodata
+        return self.no_data
 
     def to_arcgrid(self):
-        result  = 'NCOLS %d\n' % self.get_x_bin_count()
+        result = 'NCOLS %d\n' % self.get_x_bin_count()
         result += 'NROWS %d\n' % self.get_y_bin_count()
         result += 'XLLCORNER %.4f\n' % self.get_x_min()
         result += 'YLLCORNER %.4f\n' % self.get_y_min()
@@ -182,11 +184,12 @@ class Raster(Envelope):
                 if cell:
                     reduced_array.append([cellindex, rowindex,
                                           int(cell.get_count()),
-                                          -((reference_time - cell.get_timestamp()).seconds)])
+                                          -(reference_time - cell.get_timestamp()).seconds])
                 cellindex += 1
             rowindex += 1
 
         return reduced_array
+
 
 class RasterElement(object):
 
@@ -208,5 +211,5 @@ class RasterElement(object):
 
     def __str__(self):
         if self.timestamp is None:
-	  return str(self.count)
+            return str(self.count)
 

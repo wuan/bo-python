@@ -1,6 +1,3 @@
-pytz
-shapely
-injector
 #!/usr/bin/env python
 
 from distutils.core import setup
