@@ -36,7 +36,7 @@ class Raw(object):
     def get_waveform_data(self, start_time=None, end_time=None):
         return [blitzortung.builder.RawWaveformEvent().from_json(element).build()
                 for element in self.__execute(start_time, end_time, '--long-data')]
-    
+
     def get_info(self, start_time=None, end_time=None):
         return self.__execute(start_time, end_time, '--mode', 'info')
 
@@ -59,7 +59,7 @@ class Raw(object):
 
 class RawFile(object):
 
-    def __init__(self, config):        
+    def __init__(self, config):
         raw_file_names = glob.glob(os.path.join(config.get_raw_path(), '*.bor'))
 
         raw_file_names.sort()
@@ -160,8 +160,8 @@ class Data(object):
         else:
             return self.get_data(raw_file, start_time, end_time)
 
-    def get_output(self, raw_file, starttime, endtime, long_format=False):
-        cmd = ['bo-data', '-i', raw_file, '-s', starttime, '-e', endtime]
+    def get_output(self, raw_file, start_time, end_time, long_format=False):
+        cmd = ['bo-data', '-i', raw_file, '-s', start_time, '-e', end_time]
         if long_format:
             cmd.append('--long-data')
         dataPipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -169,10 +169,10 @@ class Data(object):
 
         return output.splitlines()
 
-    def get_data(self, raw_file, starttime, endtime):
+    def get_data(self, raw_file, start_time, end_time):
         rawEvents = []
 
-        for line in self.get_output(raw_file, starttime, endtime):
+        for line in self.get_output(raw_file, start_time, end_time):
             raw_event_builder = blitzortung.builder.RawEvent()
             raw_event_builder.from_string(line)
             rawEvents.append(raw_event_builder.build())
@@ -190,7 +190,7 @@ class Data(object):
 
 class StatisticsData(Data):
 
-    def get_data(self, raw_file, starttime, endtime):
+    def get_data(self, raw_file, start_time, end_time):
         results = raw_file.get_statistical_data()
         self.count = int(results[0])
         self.mean = float(results[1])
@@ -214,5 +214,5 @@ class StatisticsData(Data):
 
 class HistogramData(Data):
 
-    def get_data(self, raw_file, starttime, endtime):
-        return raw_file.get_histogram(starttime, endtime)
+    def get_data(self, raw_file, start_time, end_time):
+        return raw_file.get_histogram(start_time, end_time)

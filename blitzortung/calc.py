@@ -1,10 +1,10 @@
 # -*- coding: utf8 -*-
 
-'''
+"""
 
 @author Andreas Würl
 
-'''
+"""
 
 import math
 import datetime
@@ -15,6 +15,7 @@ import pandas as pd
 from injector import Module, singleton, provides
 
 import blitzortung
+
 
 class SignalVelocity(object):
 
@@ -30,6 +31,7 @@ class SignalVelocity(object):
 
     def get_time_distance(self, time_ns):
         return time_ns * self.__c
+
 
 class SimulatedData(object):
 
@@ -60,12 +62,14 @@ class SimulatedData(object):
         self.event_builder.set_timestamp(self.timestamp)
         return self.event_builder.build()
 
+
 class CalcModule(Module):
 
     @singleton
     @provides(SignalVelocity)
     def provide_signal_velocity(self):
         return SignalVelocity()
+
 
 class ThreePointSolution(blitzortung.data.Event):
 
@@ -99,6 +103,7 @@ class ThreePointSolution(blitzortung.data.Event):
 
     def __str__(self):
         return super(ThreePointSolution, self).__str__()
+
 
 class ThreePointSolver(object):
 
@@ -197,7 +202,7 @@ class ThreePointSolver(object):
 
     def calculateAngleProjection(self, phi1, phi2):
         angle = phi2 - phi1
-        return (math.cos(angle), math.sin(angle))
+        return math.cos(angle), math.sin(angle)
 
     def hyperbola_radius(self, theta, D, G, phi):
         return 0.5 * (G * G - D * D) / (D + G * math.cos(theta - phi))
@@ -219,7 +224,7 @@ class ThreePointSolver(object):
 
     def calculate_P_Q(self, D, G):
         denominator = G * G - D * D
-        return (D / denominator, G / denominator)
+        return D / denominator, G / denominator
 
     def square(self, x):
         return x*x
@@ -262,8 +267,10 @@ class FitSeed(object):
         else:
             return None
 
+
 class FitParameter:
     Time, Longitude, Latitude = range(3)
+
 
 class LeastSquareFit(object):
 
