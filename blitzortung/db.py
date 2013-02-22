@@ -120,14 +120,9 @@ class Query(object):
             sql += 'WHERE ' + ' AND '.join(self.conditions) + ' '
 
         if self.order:
-            sql += 'ORDER BY '
-            for index, order in enumerate(self.order):
-                if index != 0:
-                    sql += ', '
-                sql += order.get_column()
-                if order.is_desc():
-                    sql += ' DESC'
-            sql += ' '
+            build_order_query = lambda order: order.get_column() + (' DESC' if order.is_desc() else '')
+            order_query_elements = map(build_order_query, self.order)
+            sql += 'ORDER BY ' + ', '.join(order_query_elements) + ' '
 
         if self.limit:
             sql += 'LIMIT ' + str(self.limit.get_number()) + ' '
@@ -179,7 +174,7 @@ class Query(object):
                     self.set_limit(arg)
 
                 else:
-                    print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
+                    print 'WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg))
 
     def get_results(self, cur, db_obj):
 
