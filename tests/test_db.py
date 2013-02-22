@@ -62,7 +62,14 @@ class QueryTest(unittest.TestCase):
     def test_set_columns(self):
         self.query.set_columns(['bar', 'baz'])
         self.assertEqual(str(self.query), "SELECT bar, baz FROM foo")
-        
+
+    def test_set_condition(self):
+        self.query.add_condition("qux")
+        self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux")
+
+        self.query.add_condition("quux")
+        self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux AND quux")
+
     def test_add_order(self):
         self.query.add_order(blitzortung.db.Order("bar"))
         self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar")

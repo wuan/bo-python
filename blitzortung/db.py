@@ -26,6 +26,10 @@ import blitzortung
 
 
 class BaseInterval(object):
+    """
+    Basic interval range
+    """
+
     def __init__(self, start=None, end=None):
         self.start = start
         self.end = end
@@ -41,6 +45,10 @@ class BaseInterval(object):
 
 
 class IdInterval(BaseInterval):
+    """
+    Interval of Id
+    """
+
     def __init__(self, start=None, end=None):
         if start and not isinstance(start, int):
             raise ValueError("start should be an integer value")
@@ -51,6 +59,10 @@ class IdInterval(BaseInterval):
 
 
 class TimeInterval(BaseInterval):
+    """
+    Time interval
+    """
+
     def __init__(self, start=None, end=None):
         if start and not isinstance(start, datetime.datetime):
             raise ValueError("start should be a datetime value")
@@ -100,22 +112,14 @@ class Query(object):
         sql = 'SELECT '
 
         if self.columns:
-            for index, column in enumerate(self.columns):
-                if index != 0:
-                    sql += ', '
-                sql += column
-            sql += ' '
+            sql += ', '.join(self.columns) + ' '
 
         sql += 'FROM ' + self.table_name + ' '
 
-        for index, condition in enumerate(self.conditions):
-            if index == 0:
-                sql += 'WHERE '
-            else:
-                sql += 'AND '
-            sql += condition + ' '
+        if self.conditions:
+            sql += 'WHERE ' + ' AND '.join(self.conditions) + ' '
 
-        if len(self.order) > 0:
+        if self.order:
             sql += 'ORDER BY '
             for index, order in enumerate(self.order):
                 if index != 0:
@@ -177,12 +181,12 @@ class Query(object):
                 else:
                     print 'WARNING: ' + __name__ + ' unhandled object ' + str(type(arg))
 
-    def get_results(self, cur, db):
+    def get_results(self, cur, db_obj):
 
         resulting_strokes = []
         if cur.rowcount > 0:
             for result in cur.fetchall():
-                resulting_strokes.append(db.create(result))
+                resulting_strokes.append(db_obj.create(result))
 
         return resulting_strokes
 
@@ -228,9 +232,9 @@ class RasterQuery(Query):
 
 
 class Order(object):
-    '''
+    """
     definition for query search order
-    '''
+    """
 
     def __init__(self, column, desc=False):
         self.column = column

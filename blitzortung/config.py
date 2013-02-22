@@ -34,10 +34,12 @@ class Config(object):
     def get_webservice_port(self):
         return int(self.config.get('webservice', 'port'))
 
+
 def config():
     from __init__ import INJECTOR
     return INJECTOR.get(Config)
-    
+
+
 class ConfigModule(Module):
 
     @singleton

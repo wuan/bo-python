@@ -35,7 +35,7 @@ class SignalVelocity(object):
 
 class SimulatedData(object):
 
-    def __init__ (self, x_coord_or_point, y_coord=None):
+    def __init__(self, x_coord_or_point, y_coord=None):
         self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
         self.signal_velocity = SignalVelocity()
         self.event_builder = blitzortung.builder.Event()
@@ -44,7 +44,7 @@ class SimulatedData(object):
     def get_timestamp(self):
         return self.timestamp
 
-    def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset = 0.0):
+    def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset=0.0):
         event_location = blitzortung.types.Point(x_coord_or_point, y_coord)
         distance = self.stroke_location.distance_to(event_location)
 
@@ -77,7 +77,7 @@ class ThreePointSolution(blitzortung.data.Event):
         location = reference_event.geodesic_shift(azimuth, distance)
         distance = reference_event.distance_to(location)        
 
-        total_nanoseconds = reference_event.get_timestamp().value;
+        total_nanoseconds = reference_event.get_timestamp().value
         total_nanoseconds -= signal_velocity.get_distance_time(distance)
         self.signal_velocity = signal_velocity
 
@@ -107,9 +107,12 @@ class ThreePointSolution(blitzortung.data.Event):
 
 class ThreePointSolver(object):
 
-    """ calculates the exact coordinates of the intersection of two hyperbola defined by three event points/times
+    """
+    calculates the exact coordinates of the intersection of two hyperbola defined by three event points/times
 
-    The solution is calculated in a polar coordinate system which has its origin in the location of the first event point"""
+    The solution is calculated in a polar coordinate system which has its origin in the location
+    of the first event point
+    """
 
     def __init__(self, events):
         if len(events) != 3:
@@ -131,7 +134,8 @@ class ThreePointSolver(object):
         time_distance_0_1 = self.signal_velocity.get_time_distance(time_difference_0_1)
         time_distance_0_2 = self.signal_velocity.get_time_distance(time_difference_0_2)
 
-        self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2, distance_0_2, azimuth_0_2)
+        self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2,
+                                    distance_0_2, azimuth_0_2)
 
     def get_solutions(self):
         return self.solutions
@@ -143,13 +147,12 @@ class ThreePointSolver(object):
             solutions = {}
             for solution in self.solutions:
                 solutions[solution] = solution.get_total_residual_time_of(self.events)
-                print "      3PointSolution:",solution, solutions[solution]
+                print "      3PointSolution:", solution, solutions[solution]
             return min(solutions, key=solutions.get)
         elif solution_count == 1:
             return self.solutions[0]
         else:
             return None
-
 
     def solve(self, D1, G1, azimuth1, D2, G2, azimuth2):
 
@@ -184,7 +187,7 @@ class ThreePointSolver(object):
 
         for solution_angle in solution_angles:
             if self.is_angle_valid_for_hyperbola(solution_angle, D1, G1, phi1) and \
-               self.is_angle_valid_for_hyperbola(solution_angle, D2, G2, phi2):
+                    self.is_angle_valid_for_hyperbola(solution_angle, D2, G2, phi2):
 
                 solution_distance = self.hyperbola_radius(solution_angle, D1, G1, 0)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)

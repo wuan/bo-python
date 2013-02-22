@@ -1,10 +1,10 @@
 # -*- coding: utf8 -*-
 
-'''
+"""
 
 @author Andreas Würl
 
-'''
+"""
 
 import datetime
 
@@ -12,8 +12,8 @@ import builder
 import files
 import types
 
-class TimeRange(object):
 
+class TimeRange(object):
     def __init__(self, end_time, time_delta=datetime.timedelta(hours=2)):
         self.end_time = end_time
         self.start_time = end_time - time_delta
@@ -31,10 +31,10 @@ class TimeRange(object):
         return self.get_end_time() - datetime.timedelta(minutes=1)
 
     def contains(self, time):
-        return time >= self.get_start_time() and time < self.get_end_time()
+        return self.get_start_time() <= time < self.get_end_time()
+
 
 class TimeInterval(TimeRange):
-
     def __init__(self, end_time, time_delta=datetime.timedelta(hours=1)):
         self.time_delta = time_delta
         TimeRange.__init__(self, self.round_time(end_time), time_delta)
@@ -43,7 +43,7 @@ class TimeInterval(TimeRange):
         return "['" + str(self.start_time) + "':'" + str(self.end_time) + "'," + str(self.time_delta) + "]"
 
     def total_seconds(self, time):
-        ' return the total seconds of the given time or datetime (relative to midnight) '
+        """ return the total seconds of the given time or datetime (relative to midnight) """
 
         if isinstance(time, datetime.datetime):
             return time.hour * 3600 + time.minute * 60 + time.second
@@ -55,12 +55,12 @@ class TimeInterval(TimeRange):
     def round_time(self, time):
         delta_seconds = self.total_seconds(self.time_delta)
 
-        seconds =  self.total_seconds(time)
+        seconds = self.total_seconds(time)
         seconds /= delta_seconds
         seconds *= delta_seconds
 
         if isinstance(time, datetime.datetime):
-            return time.replace(hour = seconds/3600, minute= seconds / 60 % 60, second= seconds % 60, microsecond=0)
+            return time.replace(hour=seconds / 3600, minute=seconds / 60 % 60, second=seconds % 60, microsecond=0)
         else:
             return datetime.timedelta(seconds=seconds)
 
@@ -73,8 +73,8 @@ class TimeInterval(TimeRange):
     def get_center_time(self):
         return self.start_time + self.time_delta / 2
 
-class TimeIntervals(TimeInterval):
 
+class TimeIntervals(TimeInterval):
     def __init__(self, end_time, time_delta=datetime.timedelta(minutes=15), total_duration=datetime.timedelta(days=1)):
         TimeInterval.__init__(self, end_time, time_delta)
 
@@ -97,8 +97,7 @@ class TimeIntervals(TimeInterval):
 
 
 class Event(types.Point):
-
-    def __init__(self, timestamp, x_coord_or_point, y_coord = None):
+    def __init__(self, timestamp, x_coord_or_point, y_coord=None):
         super(Event, self).__init__(x_coord_or_point, y_coord)
         self.timestamp = timestamp
 
@@ -112,7 +111,7 @@ class Event(types.Point):
         return other.timestamp.value - self.timestamp.value
 
     def has_same_location(self, other):
-        return super(Event, self).__eq__(other)       
+        return super(Event, self).__eq__(other)
 
     def __lt__(self, other):
         return self.timestamp.value < other.timestamp.value
@@ -123,6 +122,7 @@ class Event(types.Point):
                   self.get_timestamp().nanosecond,
                   self.timestamp.strftime('%z'), self.x_coord, self.y_coord)
 
+
 class RawEvent(Event):
     def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude, angle):
         super(RawEvent, self).__init__(timestamp, x_coord, y_coord)
@@ -132,7 +132,7 @@ class RawEvent(Event):
 
     def get_altitude(self):
         return self.altitude
-    
+
     def get_amplitude(self):
         return self.amplitude
 
@@ -140,7 +140,7 @@ class RawEvent(Event):
         return self.angle
 
     def __str__(self):
-        return super(RawEvent, self).__str__() + "%d %.2f %.2f" %(self.altitude, self.amplitude, self.angle)
+        return super(RawEvent, self).__str__() + "%d %.2f %.2f" % (self.altitude, self.amplitude, self.angle)
 
 
 class RawWaveformEvent(Event):
@@ -154,40 +154,42 @@ class RawWaveformEvent(Event):
 
     def get_altitude(self):
         return self.altitude
-    
+
     def get_sample_period(self):
         return self.sample_period
-    
+
     def get_x_amplitude(self, index):
         return self.amplitude_x[index]
 
     def get_y_amplitude(self, index):
         return self.amplitude_y[index]
-    
+
     def get_angle_offset(self):
         return self.angle_offset
 
     def __str__(self):
-        return super(RawWaveformEvent, self).__str__() + "%d %d %s %s %.2f" %(self.altitude, self.sample_period, str(self.amplitude_x), str(self.amplitude_y), self.angle_offset)
+        return super(RawWaveformEvent, self).__str__() + "%d %d %s %s %.2f" \
+               % (self.altitude, self.sample_period, str(self.amplitude_x), str(self.amplitude_y), self.angle_offset)
 
 
 class ExtEvent(RawEvent):
-    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y, station_number):
-        super(ExtEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period, amplitude_x, amplitude_y)
+    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period,
+                 amplitude_x, amplitude_y, station_number):
+        super(ExtEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites,
+                                       sample_period, amplitude_x, amplitude_y)
 
         self.station_number = station_number
 
     def __str__(self):
-        return "%03d %s" %(self.station_number, super(ExtEvent, self).__str__() )
+        return "%03d %s" % (self.station_number, super(ExtEvent, self).__str__())
 
     def get_station_number(self):
         return self.station_number
 
 
-
 class Station(Event):
-
-    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status, tracker_version, samples_per_hour):
+    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status,
+                 tracker_version, samples_per_hour):
         super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
         self.short_name = short_name
@@ -199,7 +201,9 @@ class Station(Event):
         self.samples_per_hour = samples_per_hour
 
     def __str__(self):
-        return u"%d %s %s %s %s %s" %(self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(), self.get_timestamp().strftime(builder.Base.timeformat))
+        return u"%d %s %s %s %s %s" % (
+            self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(),
+            self.get_timestamp().strftime(builder.Base.timeformat))
 
     def __eq__(self, other):
         #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp
@@ -234,12 +238,12 @@ class Station(Event):
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-		and -180 <= self.get_x() <= 180 \
-		and -90 < self.get_y() < 90 \
-		and self.get_number() > 0
+                   and -180 <= self.get_x() <= 180 \
+                   and -90 < self.get_y() < 90 \
+            and self.get_number() > 0
+
 
 class StationOffline(object):
-
     def __init__(self, id_number, number, begin, end=None):
         self.id_number = id_number
         self.number = number
@@ -266,11 +270,12 @@ class StationOffline(object):
 
 
 class Stroke(Event):
-    '''
+    """
     classdocs
-    '''
+    """
 
-    def __init__(self, stroke_id, x_coord, y_coord, timestamp, amplitude, height, lateral_error, type_val, station_count, participants = None):
+    def __init__(self, stroke_id, x_coord, y_coord, timestamp, amplitude, height, lateral_error, type_val,
+                 station_count, participants=None):
         super(Stroke, self).__init__(x_coord, y_coord, timestamp)
         self.stroke_id = stroke_id
         self.amplitude = amplitude
@@ -278,7 +283,7 @@ class Stroke(Event):
         self.lateral_error = lateral_error
         self.type_val = type_val
         self.station_count = station_count
-        self.participants = [] if participants == None else participants
+        self.participants = [] if participants is None else participants
 
     def get_location(self):
         return self
@@ -312,10 +317,11 @@ class Stroke(Event):
 
     def __str__(self):
         return super(Stroke, self).__str__() + "%s %d %d %.1f %d" \
-               % (str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error, self.station_count)
+               % (str(self.height) if self.height else '-', self.amplitude, self.type_val, self.lateral_error,
+                  self.station_count)
+
 
 class Histogram(object):
-
     def __init__(self, file_names, time):
         data = files.StatisticsData(file_names, time)
 
@@ -324,12 +330,8 @@ class Histogram(object):
 
             data.get()
 
-            entry = {}
-
-            entry['center_time'] = time.get_center_time()
-            entry['count'] = data.getCount()
-            entry['mean'] = data.getMean()
-            entry['variance'] = data.getVariance()
+            entry = {'center_time': time.get_center_time(), 'count': data.getCount(), 'mean': data.getMean(),
+                     'variance': data.getVariance()}
 
             self.histogram.append(entry)
 
@@ -341,8 +343,8 @@ class Histogram(object):
     def get(self):
         return self.histogram
 
-class AmplitudeHistogram(object):
 
+class AmplitudeHistogram(object):
     def __init__(self, file_names, time):
         data = files.HistogramData(file_names, time)
 
