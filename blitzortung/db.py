@@ -80,9 +80,10 @@ class Query(object):
     def __init__(self):
         self.sql = ''
         self.conditions = []
+        self.groups = []
         self.parameters = {}
         self.table_name = None
-        self.columns = None
+        self.columns = []
         self.limit = None
         self.order = []
 
@@ -92,8 +93,14 @@ class Query(object):
     def set_columns(self, columns):
         self.columns = columns
 
+    def add_column(self, column):
+        self.columns.append(column)
+
+    def add_group_by(self, group_by):
+        self.groups.append(group_by)
+
     def add_order(self, order):
-        self.order.append(order)
+        self.order.append(order if isinstance(order, Order) else Order(order))
 
     def set_limit(self, limit):
         if self.limit:
@@ -118,6 +125,9 @@ class Query(object):
 
         if self.conditions:
             sql += 'WHERE ' + ' AND '.join(self.conditions) + ' '
+
+        if self.groups:
+            sql += 'GROUP BY ' + ', '.join(self.groups) + ' '
 
         if self.order:
             build_order_query = lambda order: order.get_column() + (' DESC' if order.is_desc() else '')
@@ -525,23 +535,21 @@ class Stroke(Base):
         return self.select_execute(query)
 
     def select_histogram(self, minutes, minute_offset=0, region=1, binsize=5):
-        query = """
-            select
-                -extract(epoch from clock_timestamp()
-                    + interval '%(offset)s minutes'
-                    - "timestamp")::int/60/%(binsize)s as interval,
-                count(*)
-            from strokes
-            where
-                "timestamp" >= (select clock_timestamp()
-                    + interval '%(offset)s minutes'
-                    - interval '%(minutes)s minutes') and
-                "timestamp" < (select clock_timestamp() + interval '%(offset)s minutes') and
-                region = %(region)s
-            group by interval
-            order by interval"""
 
-        cur = self.execute(query, {'minutes': minutes, 'offset': minute_offset, 'binsize': binsize, 'region': region})
+        query = Query()
+        query.set_table_name(self.get_full_table_name())
+        query.add_column("-extract(epoch from clock_timestamp() + interval '%(offset)s minutes'"
+                         " - \"timestamp\")::int/60/%(binsize)s as interval")
+        query.add_column("count(*)")
+        query.add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
+                            " - interval '%(minutes)s minutes')")
+        query.add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ")
+        query.add_column("region = %(region)s")
+        query.add_group_by("interval")
+        query.add_order("interval")
+
+        cur = self.execute(str(query),
+                           {'minutes': minutes, 'offset': minute_offset, 'binsize': binsize, 'region': region})
 
         value_count = minutes / binsize
 
@@ -655,7 +663,7 @@ class StationOffline(Base):
     database table creation (as db user blitzortung, database blitzortung): 
 
     CREATE TABLE stations_offline (id bigserial, number int, PRIMARY KEY(id));
-    ALTER TABLE stations ADD COLUMN region SMALLINT;
+    ALTER TABLE stations_offline ADD COLUMN region SMALLINT;
     ALTER TABLE stations_offline ADD COLUMN begin TIMESTAMPTZ;
     ALTER TABLE stations_offline ADD COLUMN "end" TIMESTAMPTZ;
 

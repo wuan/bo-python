@@ -55,13 +55,28 @@ class QueryTest(unittest.TestCase):
     def setUp(self):
         self.query = blitzortung.db.Query()
         self.query.set_table_name("foo")
-        
+
+    def test_initialization(self):
+        self.assertEqual(str(self.query), "SELECT FROM foo")
+
     def test_set_table_name(self):
         self.assertEqual(str(self.query), "SELECT FROM foo")
         
     def test_set_columns(self):
         self.query.set_columns(['bar', 'baz'])
         self.assertEqual(str(self.query), "SELECT bar, baz FROM foo")
+
+    def test_add_column(self):
+        self.query.add_column('bar')
+        self.assertEqual(str(self.query), "SELECT bar FROM foo")
+        self.query.add_column('baz')
+        self.assertEqual(str(self.query), "SELECT bar, baz FROM foo")
+
+    def test_add_group_by(self):
+        self.query.add_group_by('bar')
+        self.assertEqual(str(self.query), "SELECT FROM foo GROUP BY bar")
+        self.query.add_group_by('baz')
+        self.assertEqual(str(self.query), "SELECT FROM foo GROUP BY bar, baz")
 
     def test_set_condition(self):
         self.query.add_condition("qux")
