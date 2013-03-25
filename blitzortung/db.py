@@ -544,7 +544,7 @@ class Stroke(Base):
         query.add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
                             " - interval '%(minutes)s minutes')")
         query.add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ")
-        query.add_column("region = %(region)s")
+        query.add_condition("region = %(region)s")
         query.add_group_by("interval")
         query.add_order("interval")
 
