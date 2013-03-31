@@ -534,7 +534,7 @@ class Stroke(Base):
 
         return self.select_execute(query)
 
-    def select_histogram(self, minutes, minute_offset=0, region=None, binsize=5):
+    def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
         query = Query()
         query.set_table_name(self.get_full_table_name())
@@ -544,13 +544,20 @@ class Stroke(Base):
         query.add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
                             " - interval '%(minutes)s minutes')")
         query.add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ")
+
         if region:
             query.add_condition("region = %(region)s")
+
+        if envelope:
+            query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
+                                {'envelope': shapely.wkb.dumps(envelope.envelope).encode('hex')})
+
         query.add_group_by("interval")
         query.add_order("interval")
+        query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
         cur = self.execute(str(query),
-                           {'minutes': minutes, 'offset': minute_offset, 'binsize': binsize, 'region': region})
+                           query.get_parameters())
 
         value_count = minutes / binsize
 
