@@ -550,7 +550,7 @@ class Stroke(Base):
 
         if envelope:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                                {'envelope': shapely.wkb.dumps(envelope.envelope).encode('hex')})
+                                {'envelope': shapely.wkb.dumps(envelope.envelope).encode('hex'), 'srid': self.get_srid()})
 
         query.add_group_by("interval")
         query.add_order("interval")
