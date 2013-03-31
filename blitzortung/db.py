@@ -546,7 +546,7 @@ class Stroke(Base):
         if region:
             query.add_condition("region = %(region)s")
 
-        if envelope and envelope.get_env().is_valid():
+        if envelope and envelope.get_env().is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
                                 {'envelope': shapely.wkb.dumps(envelope.get_env()).encode('hex'), 'envelope_srid': envelope.get_srid()})
 
