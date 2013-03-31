@@ -178,16 +178,12 @@ class Raster(Envelope):
 
         reduced_array = []
 
-        rowindex = 0
-        for row in self.data[::-1]:
-            cellindex = 0
-            for cell in row:
+        for row_index, row in enumerate(self.data[::-1]):
+            for column_index, cell in enumerate(row):
                 if cell:
-                    reduced_array.append([cellindex, rowindex,
+                    reduced_array.append([column_index, row_index,
                                           int(cell.get_count()),
                                           -(reference_time - cell.get_timestamp()).seconds])
-                cellindex += 1
-            rowindex += 1
 
         return reduced_array
 

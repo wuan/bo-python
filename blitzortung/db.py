@@ -205,8 +205,8 @@ class RasterQuery(Query):
         env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                               {'envelope': shapely.wkb.dumps(env).encode('hex')})
+            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
+                               {'envelope': shapely.wkb.dumps(env).encode('hex'), 'envelope_srid': raster.get_srid()})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
@@ -218,9 +218,7 @@ class RasterQuery(Query):
         sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(
             self.raster.get_y_div()) + ') AS ry, '
         sql += 'count(*) AS count, max("timestamp") as "timestamp" FROM ('
-
         sql += Query.__str__(self)
-
         sql += ') AS ' + self.table_name + ' GROUP BY rx, ry'
 
         return sql
@@ -548,9 +546,9 @@ class Stroke(Base):
         if region:
             query.add_condition("region = %(region)s")
 
-        if envelope:
-            query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                                {'envelope': shapely.wkb.dumps(envelope.envelope).encode('hex'), 'srid': self.get_srid()})
+        if envelope and envelope.get_env().is_valid():
+            query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
+                                {'envelope': shapely.wkb.dumps(envelope.get_env()).encode('hex'), 'envelope_srid': envelope.get_srid()})
 
         query.add_group_by("interval")
         query.add_order("interval")
