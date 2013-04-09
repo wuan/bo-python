@@ -14,7 +14,7 @@ import blitzortung
 
 class Url(object):
 
-    host = 'http://blitzortung.net'
+    host = 'http://data.blitzortung.org'
     base_url = host + '/Data_%(region)d/Protected/'
 
     def __init__(self, url_path, config):
