@@ -173,10 +173,8 @@ class RawWaveformEvent(Event):
 
 
 class ExtEvent(RawEvent):
-    def __init__(self, x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites, sample_period,
-                 amplitude_x, amplitude_y, station_number):
-        super(ExtEvent, self).__init__(x_coord, y_coord, timestamp, timestamp_nanoseconds, height, number_of_satellites,
-                                       sample_period, amplitude_x, amplitude_y)
+    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude, angle, station_number):
+        super(ExtEvent, self).__init__(timestamp, x_coord, y_coord, altitude, amplitude, angle)
 
         self.station_number = station_number
 
