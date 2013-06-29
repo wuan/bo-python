@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from injector import Module, singleton, provides
 
-import blitzortung
+import blitzortung.data
 
 
 class SignalVelocity(object):

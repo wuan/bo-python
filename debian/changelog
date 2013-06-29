@@ -1,3 +1,8 @@
+python-blitzortung (1.2.0) unstable; urgency=low
+  * added cache module for object caching
+
+-- Andreas Würl <blitzortung@tryb.de>  Sat, 29 Jun 2013 22:42:36 +0200
+
 python-blitzortung (1.1.0) unstable; urgency=low
 
   * added calc module with functions for stroke location
