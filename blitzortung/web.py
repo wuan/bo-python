@@ -38,13 +38,13 @@ class Url(object):
         url_string = self.url % self.parameters
 
         try:
-            urlconnection = opener.open(url_string, timeout=60)
+            url_connection = opener.open(url_string, timeout=60)
         except urllib2.URLError, error:
             sys.stderr.write("%s when opening '%s'\n" % (error, url_string))
             return None
 
-        response = urlconnection.read().strip()
-        urlconnection.close()
+        response = url_connection.read().strip()
+        url_connection.close()
 
         return response.decode('ISO-8859-1')
 

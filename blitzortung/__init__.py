@@ -31,16 +31,16 @@ class Error(Exception):
 
 from injector import Injector
 
-import data
 import builder
-import config
+import cache
 import calc
 import config
+import data
 import db
 import geom
 import files
-import util
 import types
+import util
 import web
 
 
@@ -49,6 +49,8 @@ INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.DbModule()])
 __all__ = [
 
     'builder.Stroke', 'builder.Station',
+
+    'calc.ObjectCache'
     
     'calc.ThreePointSolution', 'calc.ThreePointSolver',
 
