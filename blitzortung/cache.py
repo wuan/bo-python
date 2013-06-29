@@ -50,6 +50,8 @@ class ObjectCache(object):
         return entry.get_payload()
 
     def clear(self):
+        self.total_count = 0
+        self.total_hit_count = 0
         self.cache.clear()
 
     def get_time_to_live(self):

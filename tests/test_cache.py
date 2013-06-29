@@ -62,8 +62,17 @@ class TestObjectCache(TestCase):
 
     def test_clear_clears_cache(self):
         cached_object = self.cache.get(TestObject)
+
         self.cache.clear()
         assert_that(self.cache.get(TestObject), is_not(same_instance(cached_object)))
+
+    def test_clear_resets_counters(self):
+        self.cache.get(TestObject)
+        self.cache.get(TestObject)
+
+        self.cache.clear()
+
+        assert_that(self.cache.get_ratio(), is_(0.0))
 
     def test_get_creates_new_object_if_original_object_is_expired(self):
         self.cache = ObjectCache(ttl_seconds=-10)

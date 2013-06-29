@@ -51,14 +51,14 @@ __all__ = [
     'builder.Stroke', 'builder.Station',
 
     'calc.ObjectCache'
-    
+
     'calc.ThreePointSolution', 'calc.ThreePointSolver',
 
-    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
+    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
 
-    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
+    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline',  # database access
 
-    'Error', # custom exceptions
+    'Error',  # custom exceptions
 
     'files.Raw', 'files.Data',
 
