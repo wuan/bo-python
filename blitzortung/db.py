@@ -186,12 +186,12 @@ class Query(object):
                 else:
                     print 'WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg))
 
-    def get_results(self, cur, db_obj):
+    def get_results(self, cursor, object_creator):
 
         resulting_strokes = []
-        if cur.rowcount > 0:
-            for result in cur.fetchall():
-                resulting_strokes.append(db_obj.create(result))
+        if cursor.rowcount > 0:
+            for result in cursor.fetchall():
+                resulting_strokes.append(object_creator(result))
 
         return resulting_strokes
 
@@ -223,12 +223,12 @@ class RasterQuery(Query):
 
         return sql
 
-    def get_results(self, cur, db):
+    def get_results(self, cursor, object_creator):
 
         self.raster.clear()
 
-        if cur.rowcount > 0:
-            for result in cur.fetchall():
+        if cursor.rowcount > 0:
+            for result in cursor.fetchall():
                 self.raster.set(result['rx'], result['ry'],
                                 blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
@@ -389,8 +389,8 @@ class Base(object):
 
     def set_timezone(self, tz):
         self.tz = tz
-        cur = self.conn.cursor()
-        cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
+        with self.conn.cursor() as cur:
+	    cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -417,10 +417,17 @@ class Base(object):
     def select(self, args):
         pass
 
-    def execute(self, sql_string, parameters=None):
-        cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(sql_string, parameters)
-        return cur
+    @abstractmethod
+    def create(self, result):
+        pass
+
+    def create_results(self, cursor, object_creator):
+        return [self.create(result) for result in cursor.fetchall()]
+
+    def execute(self, sql_string, parameters=None, extract=lambda cursor, creator: None):
+        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+	    cursor.execute(sql_string, parameters)
+	    return extract(cursor, self.create)
 
 
 class Stroke(Base):
@@ -481,12 +488,15 @@ class Stroke(Base):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
-        cur = self.execute(sql, {'region': region})
-        if cur.rowcount == 1:
-            result = cur.fetchone()
-            return pd.Timestamp(self.fix_timezone(result['timestamp']))
-        else:
-            return None
+
+	def prepare_result(cursor, object_creator):
+	    if cursor.rowcount == 1:
+		result = cursor.fetchone()
+		return pd.Timestamp(self.fix_timezone(result['timestamp']))
+	    else:
+		return None
+
+        return self.execute(sql, {'region': region}, prepare_result)
 
     def create(self, result):
         stroke_builder = blitzortung.builder.Stroke()
@@ -554,23 +564,21 @@ class Stroke(Base):
         query.add_order("interval")
         query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
-        cur = self.execute(str(query),
-                           query.get_parameters())
+	def prepare_result(cursor, object_creator):
+	    value_count = minutes / binsize
 
-        value_count = minutes / binsize
+	    result = [0] * value_count
 
-        result = [0] * value_count
+	    raw_result = cursor.fetchall()
+	    for bin_data in raw_result:
+		result[bin_data[0] + value_count - 1] = bin_data[1]
 
-        raw_result = cur.fetchall()
-        for bin_data in raw_result:
-            result[bin_data[0] + value_count - 1] = bin_data[1]
+	    return result
 
-        return result
+        return self.execute(str(query), query.get_parameters(), prepare_result)
 
     def select_execute(self, query):
-        cur = self.execute(str(query), query.get_parameters())
-
-        return query.get_results(cur, self)
+        return self.execute(str(query), query.get_parameters(), query.get_results)
 
 
 def stroke():
@@ -632,14 +640,9 @@ class Station(Base):
             sql += ''' where s.region = %(region)s'''
 
         sql += ''' order by s.number'''
-        cur = self.execute(sql, {'region': region})
 
-        resulting_stations = []
-        if cur.rowcount > 0:
-            for result in cur.fetchall():
-                resulting_stations.append(self.create(result))
+        return self.execute(sql, {'region': region}, self.create_results)
 
-        return resulting_stations
 
     def create(self, result):
         station_builder = blitzortung.builder.Station()
@@ -703,14 +706,9 @@ class StationOffline(Base):
     def select(self, timestamp=None, region=1):
         sql = '''select id, number, region, begin, "end"
             from stations_offline where "end" is null and region=%s order by number;'''
-        cur = self.execute(sql, (region,))
+	
+        return self.execute(sql, (region,), self.create_results)
 
-        resulting_stations = []
-        if cur.rowcount > 0:
-            for result in cur.fetchall():
-                resulting_stations.append(self.create(result))
-
-        return resulting_stations
 
     def create(self, result):
         stationOfflineBuilder = blitzortung.builder.StationOffline()
@@ -896,14 +894,20 @@ class ServiceLog(Base):
     def get_latest_time(self, region=1):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
-        cur = self.execute(sql)
-        if cur.rowcount == 1:
-            result = cur.fetchone()
-            return pd.Timestamp(self.fix_timezone(result['timestamp']))
-        else:
-            return None
+
+        def prepare_result(cursor, object_creator):
+	    if cursor.rowcount == 1:
+		result = cursor.fetchone()
+		return pd.Timestamp(self.fix_timezone(result['timestamp']))
+	    else:
+		return None
+
+        return self.execute(sql, extract=prepare_result)
 
     def select(self, args):
+        pass
+
+    def create(self, result):
         pass
 
 
