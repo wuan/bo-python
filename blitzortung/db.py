@@ -422,7 +422,7 @@ class Base(object):
         pass
 
     def create_results(self, cursor, _):
-        return [self.create_object_instance(result) for result in cursor.fetchall()]
+        return map(self.create_object_instance, cursor.fetchall())
 
     def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
