@@ -10,6 +10,7 @@ import pytz
 import shapely.wkb
 import shapely.geometry
 import pandas as pd
+import atexit
 
 try:
     import psycopg2
@@ -275,11 +276,17 @@ class Center(object):
 
 
 class DbModule(Module):
+
+    def cleanup(self, connection_pool):
+	connection_pool.closeall()
+
     @singleton
     @provides(psycopg2.pool.ThreadedConnectionPool)
     @inject(config=blitzortung.config.Config)
     def provide_psycopg2_connection_pool(self, config):
-        return psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
+        connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
+        atexit.register(self.cleanup, connection_pool)
+        return connection_pool
 
 
 class Base(object):
@@ -352,7 +359,10 @@ class Base(object):
                 cur.close()
 
     def __del__(self):
-        self.db_connection_pool.putconn(self.conn)
+        try:
+             self.db_connection_pool.putconn(self.conn)
+	except psycopg2.pool.PoolError:
+	     pass
 
     def is_connected(self):
         if self.conn:
