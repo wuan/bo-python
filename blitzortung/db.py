@@ -390,7 +390,7 @@ class Base(object):
     def set_timezone(self, tz):
         self.tz = tz
         with self.conn.cursor() as cur:
-	    cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
+            cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -418,16 +418,16 @@ class Base(object):
         pass
 
     @abstractmethod
-    def create(self, result):
+    def create_object_instance(self, result):
         pass
 
-    def create_results(self, cursor, object_creator):
-        return [self.create(result) for result in cursor.fetchall()]
+    def create_results(self, cursor, create_object_instance):
+        return [create_object_instance(result) for result in cursor.fetchall()]
 
     def execute(self, sql_string, parameters=None, extract=lambda cursor, creator: None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-	    cursor.execute(sql_string, parameters)
-	    return extract(cursor, self.create)
+            cursor.execute(sql_string, parameters)
+            return extract(cursor, self.create_object_instance)
 
 
 class Stroke(Base):
@@ -489,16 +489,16 @@ class Stroke(Base):
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
-	def prepare_result(cursor, object_creator):
-	    if cursor.rowcount == 1:
-		result = cursor.fetchone()
-		return pd.Timestamp(self.fix_timezone(result['timestamp']))
-	    else:
-		return None
+        def prepare_result(cursor, _):
+            if cursor.rowcount == 1:
+                result = cursor.fetchone()
+                return pd.Timestamp(self.fix_timezone(result['timestamp']))
+            else:
+                return None
 
         return self.execute(sql, {'region': region}, prepare_result)
 
-    def create(self, result):
+    def create_object_instance(self, result):
         stroke_builder = blitzortung.builder.Stroke()
 
         stroke_builder.set_id(result['id'])
@@ -558,22 +558,23 @@ class Stroke(Base):
 
         if envelope and envelope.get_env().is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                                {'envelope': shapely.wkb.dumps(envelope.get_env()).encode('hex'), 'envelope_srid': envelope.get_srid()})
+                                {'envelope': shapely.wkb.dumps(envelope.get_env()).encode('hex'),
+                                 'envelope_srid': envelope.get_srid()})
 
         query.add_group_by("interval")
         query.add_order("interval")
         query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
-	def prepare_result(cursor, object_creator):
-	    value_count = minutes / binsize
+        def prepare_result(cursor, _):
+            value_count = minutes / binsize
 
-	    result = [0] * value_count
+            result = [0] * value_count
 
-	    raw_result = cursor.fetchall()
-	    for bin_data in raw_result:
-		result[bin_data[0] + value_count - 1] = bin_data[1]
+            raw_result = cursor.fetchall()
+            for bin_data in raw_result:
+                result[bin_data[0] + value_count - 1] = bin_data[1]
 
-	    return result
+            return result
 
         return self.execute(str(query), query.get_parameters(), prepare_result)
 
@@ -643,8 +644,7 @@ class Station(Base):
 
         return self.execute(sql, {'region': region}, self.create_results)
 
-
-    def create(self, result):
+    def create_object_instance(self, result):
         station_builder = blitzortung.builder.Station()
 
         station_builder.set_number(result['number'])
@@ -706,11 +706,10 @@ class StationOffline(Base):
     def select(self, timestamp=None, region=1):
         sql = '''select id, number, region, begin, "end"
             from stations_offline where "end" is null and region=%s order by number;'''
-	
+
         return self.execute(sql, (region,), self.create_results)
 
-
-    def create(self, result):
+    def create_object_instance(self, result):
         stationOfflineBuilder = blitzortung.builder.StationOffline()
 
         stationOfflineBuilder.set_id(result['id'])
@@ -896,18 +895,18 @@ class ServiceLog(Base):
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
         def prepare_result(cursor, object_creator):
-	    if cursor.rowcount == 1:
-		result = cursor.fetchone()
-		return pd.Timestamp(self.fix_timezone(result['timestamp']))
-	    else:
-		return None
+            if cursor.rowcount == 1:
+                result = cursor.fetchone()
+                return pd.Timestamp(self.fix_timezone(result['timestamp']))
+            else:
+                return None
 
         return self.execute(sql, extract=prepare_result)
 
     def select(self, args):
         pass
 
-    def create(self, result):
+    def create_object_instance(self, result):
         pass
 
 
