@@ -421,13 +421,14 @@ class Base(object):
     def create_object_instance(self, result):
         pass
 
-    def create_results(self, cursor, create_object_instance):
-        return [create_object_instance(result) for result in cursor.fetchall()]
+    def create_results(self, cursor):
+        return [self.create_object_instance(result) for result in cursor.fetchall()]
 
-    def execute(self, sql_string, parameters=None, extract=lambda cursor, creator: None):
+    def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute(sql_string, parameters)
-            return extract(cursor, self.create_object_instance)
+            cursor.execute(sql_statement, parameters)
+            if build_result:
+                return build_result(cursor)
 
 
 class Stroke(Base):
@@ -489,7 +490,7 @@ class Stroke(Base):
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
-        def prepare_result(cursor, _):
+        def prepare_result(cursor):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
                 return pd.Timestamp(self.fix_timezone(result['timestamp']))
@@ -565,7 +566,7 @@ class Stroke(Base):
         query.add_order("interval")
         query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
-        def prepare_result(cursor, _):
+        def prepare_result(cursor):
             value_count = minutes / binsize
 
             result = [0] * value_count
@@ -843,15 +844,16 @@ class Location(Base):
                 'limit': self.limit
             }
 
-            cur = self.execute(queryString, params)
+            def build_results(cursor):
+                locations = []
+                if cursor.rowcount > 0:
+                    for result in cursor.fetchall():
+                        location = {'name': result['name'], 'distance': result['distance'], 'azimuth': result['azimuth']}
+                        locations.append(location)
 
-            locations = []
-            if cur.rowcount > 0:
-                for result in cur.fetchall():
-                    location = {'name': result['name'], 'distance': result['distance'], 'azimuth': result['azimuth']}
-                    locations.append(location)
+                return locations
 
-            return locations
+            return self.execute(queryString, params, build_results)
 
 
 def location():
@@ -894,14 +896,14 @@ class ServiceLog(Base):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
-        def prepare_result(cursor, object_creator):
+        def prepare_result(cursor):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
                 return pd.Timestamp(self.fix_timezone(result['timestamp']))
             else:
                 return None
 
-        return self.execute(sql, extract=prepare_result)
+        return self.execute(sql, build_result=prepare_result)
 
     def select(self, args):
         pass
