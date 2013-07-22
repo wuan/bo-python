@@ -223,7 +223,7 @@ class RasterQuery(Query):
 
         return sql
 
-    def get_results(self, cursor, object_creator):
+    def get_results(self, cursor, _):
 
         self.raster.clear()
 
@@ -421,14 +421,14 @@ class Base(object):
     def create_object_instance(self, result):
         pass
 
-    def create_results(self, cursor):
+    def create_results(self, cursor, _):
         return [self.create_object_instance(result) for result in cursor.fetchall()]
 
     def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_statement, parameters)
             if build_result:
-                return build_result(cursor)
+                return build_result(cursor, self.create_object_instance)
 
 
 class Stroke(Base):
@@ -490,7 +490,7 @@ class Stroke(Base):
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
-        def prepare_result(cursor):
+        def prepare_result(cursor, _):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
                 return pd.Timestamp(self.fix_timezone(result['timestamp']))
@@ -566,7 +566,7 @@ class Stroke(Base):
         query.add_order("interval")
         query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
-        def prepare_result(cursor):
+        def prepare_result(cursor, _):
             value_count = minutes / binsize
 
             result = [0] * value_count
@@ -844,7 +844,7 @@ class Location(Base):
                 'limit': self.limit
             }
 
-            def build_results(cursor):
+            def build_results(cursor, _):
                 locations = []
                 if cursor.rowcount > 0:
                     for result in cursor.fetchall():
@@ -896,7 +896,7 @@ class ServiceLog(Base):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
-        def prepare_result(cursor):
+        def prepare_result(cursor, _):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
                 return pd.Timestamp(self.fix_timezone(result['timestamp']))
