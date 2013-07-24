@@ -106,7 +106,7 @@ class Stroke(Event):
 
     def from_string(self, string):
         ' Construct stroke from blitzortung text format data line '
-        if string is not  None:
+        if string is not None:
             fields = string.split(' ')
             if len(fields) >= 8:
                 self.set_x(float(fields[3]))

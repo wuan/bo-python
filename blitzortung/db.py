@@ -799,6 +799,9 @@ class Location(Base):
             base = 0
         return min(15, base * 3 + order)
 
+    def create_object_instance(self, result):
+        pass
+
     def select(self, *args):
         self.center = None
         self.min_population = 1000
