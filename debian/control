@@ -1,7 +1,7 @@
 Source: python-blitzortung
 Priority: extra
 Maintainer: Andreas Würl <blitzortung@tryb.de>
-Build-Depends: debhelper (>= 7.0.50~), python (>=2.6), python-setuptools, python-pyproj, python-shapely
+Build-Depends: debhelper (>= 7.0.50~), python (>=2.6), python-setuptools
 Standards-Version: 3.8.4
 Section: python
 Homepage: http://launchpad.net/blitzortung-python

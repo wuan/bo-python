@@ -9,6 +9,11 @@ import urllib2
 
 import injector
 
+import cStringIO
+import gzip
+import HTMLParser
+import shlext
+
 import blitzortung
 
 
@@ -46,7 +51,18 @@ class Url(object):
         response = url_connection.read().strip()
         url_connection.close()
 
-        return response.decode('ISO-8859-1')
+        data = self.process(response)
+	data = HTMLParser.HTMLParser().unescape(data)
+  	parameters = shlext.split(' ')
+
+	result = {}
+	for parameter in parameters:
+	  
+
+  	.decode('ISO-8859-1')
+
+    def process(self, data):
+        return data
 
 
 class StrokesBase(Url):
@@ -97,7 +113,11 @@ class Stations(Url):
 
     @injector.inject(config=blitzortung.config.Config)
     def __init__(self, config):
-        super(Stations, self).__init__('stations.txt', config)
+        super(Stations, self).__init__('stations.txt.gz', config)
+
+    def process(self, data):
+        data = cStringIO.StringIO(data)
+        return gzip.GzipFile(fileobj=data).read()
 
 
 def stations():
