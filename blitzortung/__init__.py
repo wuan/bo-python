@@ -44,7 +44,7 @@ import util
 import web
 
 
-INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.DbModule()])
+INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.DbModule(), web.WebModule()])
 
 __all__ = [
 

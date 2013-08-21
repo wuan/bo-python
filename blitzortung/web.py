@@ -7,7 +7,7 @@
 import sys
 import urllib2
 
-import injector
+from injector import Module, singleton, provides, inject
 
 import cStringIO
 import gzip
@@ -81,9 +81,9 @@ class StrokesBase(Url):
         return strokes
 
 
-@injector.singleton
+@singleton
 class Strokes(StrokesBase):
-    @injector.inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
     def __init__(self, config, data_format):
         super(Strokes, self).__init__('strikes.txt', config, data_format)
 
@@ -94,9 +94,9 @@ def strokes():
     return INJECTOR.get(Strokes)
 
 
-@injector.singleton
+@singleton
 class Participants(StrokesBase):
-    @injector.inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
     def __init__(self, config, data_format):
         super(Participants, self).__init__('participants.txt', config, data_format)
 
@@ -107,9 +107,9 @@ def participants():
     return INJECTOR.get(Participants)
 
 
-@injector.singleton
+@singleton
 class Stations(Url):
-    @injector.inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
     def __init__(self, config, data_format):
         super(Stations, self).__init__('stations.txt.gz', config, data_format)
 
@@ -124,9 +124,9 @@ def stations():
     return INJECTOR.get(Stations)
 
 
-@injector.singleton
+@singleton
 class Raw(Url):
-    @injector.inject(config=blitzortung.config.Config)
+    @inject(config=blitzortung.config.Config)
     def __init__(self, config):
         super(Raw, self).__init__('raw_data/%(station_id)s/%(hour)02d.log', config)
 
@@ -143,7 +143,7 @@ def raw():
     return INJECTOR.get(Raw)
 
 
-@injector.singleton
+@singleton
 class DataFormat(object):
     def parse_line(self, line):
         line = HTMLParser.HTMLParser().unescape(line).replace(u'\xa0', ' ').encode('latin1')
@@ -166,4 +166,11 @@ def dataFormat():
     from __init__ import INJECTOR
 
     return INJECTOR.get(DataFormat)
-    
+
+
+class WebModule(Module):
+
+    @singleton
+    @provides(DataFormat)
+    def provide_data_format(self):
+        return DataFormat()
