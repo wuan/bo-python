@@ -293,7 +293,7 @@ class Base(object):
     """
     abstract base class for database access objects
 
-    creation of database 
+    creation of database
 
     as user postgres:
 
