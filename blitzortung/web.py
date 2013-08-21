@@ -16,6 +16,7 @@ import shlex
 
 import blitzortung
 
+
 @singleton
 class DataFormat(object):
     def parse_line(self, line):
@@ -37,7 +38,6 @@ class DataFormat(object):
 
 
 class WebModule(Module):
-
     @provides(DataFormat)
     def provide_data_format(self):
         return DataFormat()
@@ -82,12 +82,12 @@ class Url(object):
         result = []
         for line in response.split('\n'):
             line = line.strip()
-	    line = line.decode('latin1')
+            line = line.decode('latin1')
             if line:
-	        try:
+                try:
                     result.append(self.data_format.parse_line(line))
-	        except UnicodeDecodeError:
-		    print "decoding error:",line
+                except UnicodeDecodeError:
+                    print "decoding error:", line
 
         return result
 

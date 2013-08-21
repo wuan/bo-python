@@ -139,8 +139,8 @@ class Station(Event):
     def __init__(self):
         super(Station, self).__init__()
         self.number = -1
-	self.short_name = None
-	self.name = None
+        self.short_name = None
+        self.name = None
         self.location_name = None
         self.gps_status = None
         self.samples_per_hour = -1
@@ -197,9 +197,10 @@ class Station(Event):
         pos = data['pos']
         self.set_x(float(pos[0]))
         self.set_y(float(pos[1]))
-        self.set_location_name(data['user'])
-        self.set_name(data['city'])
-        self.set_country(data['country'])
+        self.set_number(data['station'][0])
+        self.set_location_name(data['user'][0])
+        self.set_name(data['city'][0])
+        self.set_country(data['country'][0])
         self.set_number(int(data['station'][0]))
         self.set_timestamp(data['last_signal'][0])
         return self
@@ -274,8 +275,8 @@ class RawEvent(Event):
         return self
 
     def from_string(self, string):
+        """ Construct stroke from blitzortung text format data line """
         if string:
-            ' Construct stroke from blitzortung text format data line '
             fields = string.split(' ')
             if len(fields) >= 8:
                 self.set_x(float(fields[2]))
