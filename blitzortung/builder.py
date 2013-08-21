@@ -22,7 +22,10 @@ class Base(object):
     timestamp_string_microseconds_length = 26
 
     def parse_timestamp(self, timestamp_string):
-        return pd.Timestamp(np.datetime64(timestamp_string + 'Z', 'ns'), tz=pytz.UTC)
+        if timestamp_string != '0000-00-00':
+	    return pd.Timestamp(np.datetime64(timestamp_string + ' 00:00:00Z', 'ns'), tz=pytz.UTC)
+	else:
+	    return pd.Timestamp(np.datetime64('nat'))
 
 
 class Timestamp(Base):
@@ -136,6 +139,8 @@ class Station(Event):
     def __init__(self):
         super(Station, self).__init__()
         self.number = -1
+	self.short_name = None
+	self.name = None
         self.location_name = None
         self.gps_status = None
         self.samples_per_hour = -1
@@ -193,9 +198,10 @@ class Station(Event):
         self.set_x(float(pos[0]))
         self.set_y(float(pos[1]))
         self.set_location_name(data['user'])
+        self.set_name(data['city'])
         self.set_country(data['country'])
-        self.set_number(int(data['station']))
-        self.set_timestamp(data['last_signal'])
+        self.set_number(int(data['station'][0]))
+        self.set_timestamp(data['last_signal'][0])
         return self
 
     def build(self):

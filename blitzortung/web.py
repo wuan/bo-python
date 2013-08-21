@@ -19,6 +19,7 @@ import blitzortung
 @singleton
 class DataFormat(object):
     def parse_line(self, line):
+        line = line.encode('latin1')
         line = HTMLParser.HTMLParser().unescape(line).replace(u'\xa0', ' ')
 
         parameters = [parameter.decode('latin1') for parameter in shlex.split(line.encode('latin1'))]
@@ -81,8 +82,12 @@ class Url(object):
         result = []
         for line in response.split('\n'):
             line = line.strip()
+	    line = line.decode('latin1')
             if line:
-                result.append(self.data_format.parse_line(line))
+	        try:
+                    result.append(self.data_format.parse_line(line))
+	        except UnicodeDecodeError:
+		    print "decoding error:",line
 
         return result
 
