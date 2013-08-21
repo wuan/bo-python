@@ -23,9 +23,14 @@ class Base(object):
 
     def parse_timestamp(self, timestamp_string):
         if timestamp_string != '0000-00-00':
-	    return pd.Timestamp(np.datetime64(timestamp_string + ' 00:00:00Z', 'ns'), tz=pytz.UTC)
-	else:
-	    return pd.Timestamp(np.datetime64('nat'))
+	    timestamp_string += ' 00:00:00'
+
+	try:
+	    timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
+	except ValueError:
+	    timestamp = np.datetime64('NaT')
+	    
+	return pd.Timestamp(timestamp)
 
 
 class Timestamp(Base):

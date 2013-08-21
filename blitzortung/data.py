@@ -117,10 +117,12 @@ class Event(types.Point):
         return self.timestamp.value < other.timestamp.value
 
     def __str__(self):
-        return "%s%03d%s %.4f %.4f " \
-               % (self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
-                  self.get_timestamp().nanosecond,
-                  self.timestamp.strftime('%z'), self.x_coord, self.y_coord)
+        return "asdf" #self.get_timestamp()
+
+#return "%s%03d%s %.4f %.4f " \
+#               % (self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
+#                  self.get_timestamp().nanosecond,
+#                  self.timestamp.strftime('%z'), self.x_coord, self.y_coord)
 
 
 class RawEvent(Event):
@@ -199,9 +201,12 @@ class Station(Event):
         self.samples_per_hour = samples_per_hour
 
     def __str__(self):
-        return u"%d %s %s %s %s %s" % (
-            self.number, self.short_name, self.location_name, self.country, super(Station, self).__str__(),
-            self.get_timestamp().strftime(builder.Base.timeformat))
+        print self.number
+	print self.short_name
+	print self.location_name
+	print self.country
+        return u"%d %s %s %s %s" % (
+            self.number, self.short_name, self.location_name, self.country, "asdf")
 
     def __eq__(self, other):
         #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp
