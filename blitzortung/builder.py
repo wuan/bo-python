@@ -126,6 +126,9 @@ class Stroke(Event):
         self.set_altitude(0.0)
         return self
 
+    def from_data(self, data):
+        pass
+
 
 class Station(Event):
     html_parser = HTMLParser.HTMLParser()
@@ -183,6 +186,16 @@ class Station(Event):
         self.set_gps_status(fields[8])
         self.set_tracker_version(self._unquote(fields[9]))
         self.set_samples_per_hour(int(fields[10]))
+        return self
+
+    def from_data(self, data):
+        pos = data['pos']
+        self.set_x(float(pos[0]))
+        self.set_y(float(pos[1]))
+        self.set_location_name(data['user'])
+        self.set_country(data['country'])
+        self.set_number(int(data['station']))
+        self.set_timestamp(data['last_signal'])
         return self
 
     def build(self):
@@ -282,7 +295,8 @@ class RawWaveformEvent(Event):
 
     def build(self):
         return blitzortung.data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude,
-                                                 self.sample_period, self.x_values, self.y_values, self.angle_offset)
+                                                 self.sample_period, self.x_values, self.y_values,
+                                                 self.angle_offset)
 
     def set_altitude(self, altitude):
         self.altitude = altitude
@@ -359,7 +373,8 @@ class RawWaveformEvent(Event):
                 if number_of_channels > 1:
                     self.y_amplitude = maximum_values[1]
 
-                self.timestamp += np.timedelta64(maximum_index * self.sample_period, 'ns') # add maximum offset to time
+                self.timestamp += np.timedelta64(maximum_index * self.sample_period,
+                                                 'ns') # add maximum offset to time
 
             else:
                 raise RuntimeError("not enough data fields for raw event data '%s'" % string)
