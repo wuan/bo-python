@@ -83,7 +83,7 @@ class StrokesBase(Url):
 
 @singleton
 class Strokes(StrokesBase):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
     def __init__(self, config, data_format):
         super(Strokes, self).__init__('strikes.txt', config, data_format)
 
@@ -96,7 +96,7 @@ def strokes():
 
 @singleton
 class Participants(StrokesBase):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
     def __init__(self, config, data_format):
         super(Participants, self).__init__('participants.txt', config, data_format)
 
@@ -109,7 +109,7 @@ def participants():
 
 @singleton
 class Stations(Url):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat())
+    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
     def __init__(self, config, data_format):
         super(Stations, self).__init__('stations.txt.gz', config, data_format)
 
