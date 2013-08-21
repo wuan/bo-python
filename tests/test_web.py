@@ -22,6 +22,6 @@ class DataFormatTest(unittest.TestCase):
         assert_that(result, is_(equal_to({'foo bar': ['3', '4'], 'foo': ['1', '2']})))
 
     def test_parse_line_with_html(self):
-        result = self.data_format.parse_line('foo;1;2 "f&ouml;o&nbsp;b&auml;r";3;4')
+        result = self.data_format.parse_line('foo;b&auml;z;&szlig; "f&ouml;o&nbsp;b&auml;r";3;4')
 
-        assert_that(result, is_(equal_to({u'föo bär': ['3', '4'], 'foo': ['1', '2']})))
+        assert_that(result, is_(equal_to({u'föo bär': ['3', '4'], 'foo': [u'bäz', u'ß']})))

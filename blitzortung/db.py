@@ -276,9 +276,8 @@ class Center(object):
 
 
 class DbModule(Module):
-
     def cleanup(self, connection_pool):
-	connection_pool.closeall()
+        connection_pool.closeall()
 
     @singleton
     @provides(psycopg2.pool.ThreadedConnectionPool)
@@ -360,9 +359,9 @@ class Base(object):
 
     def __del__(self):
         try:
-             self.db_connection_pool.putconn(self.conn)
-	except psycopg2.pool.PoolError:
-	     pass
+            self.db_connection_pool.putconn(self.conn)
+        except psycopg2.pool.PoolError:
+            pass
 
     def is_connected(self):
         if self.conn:
@@ -861,7 +860,8 @@ class Location(Base):
                 locations = []
                 if cursor.rowcount > 0:
                     for result in cursor.fetchall():
-                        location = {'name': result['name'], 'distance': result['distance'], 'azimuth': result['azimuth']}
+                        location = {'name': result['name'], 'distance': result['distance'],
+                                    'azimuth': result['azimuth']}
                         locations.append(location)
 
                 return locations

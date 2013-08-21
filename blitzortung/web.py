@@ -16,6 +16,31 @@ import shlex
 
 import blitzortung
 
+@singleton
+class DataFormat(object):
+    def parse_line(self, line):
+        line = HTMLParser.HTMLParser().unescape(line).replace(u'\xa0', ' ')
+
+        parameters = [parameter.decode('latin1') for parameter in shlex.split(line.encode('latin1'))]
+
+        result = {}
+
+        for parameter in parameters:
+
+            values = parameter.split(';')
+            if values and len(values) > 1:
+                parameter_name = unicode(values[0])
+                result[parameter_name] = values[1:]
+
+        return result
+
+
+class WebModule(Module):
+
+    @provides(DataFormat)
+    def provide_data_format(self):
+        return DataFormat()
+
 
 class Url(object):
     host = 'http://data.blitzortung.org'
@@ -35,7 +60,7 @@ class Url(object):
 
     def read(self):
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password("Blitzortung.org", Url.host, self.config.get_username(), self.config.get_password())
+        password_mgr.add_password("blitzortung.org", Url.host, self.config.get_username(), self.config.get_password())
         handler = urllib2.HTTPBasicAuthHandler(password_mgr)
 
         opener = urllib2.build_opener(handler)
@@ -83,7 +108,7 @@ class StrokesBase(Url):
 
 @singleton
 class Strokes(StrokesBase):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
+    @inject(config=blitzortung.config.Config, data_format=DataFormat)
     def __init__(self, config, data_format):
         super(Strokes, self).__init__('strikes.txt', config, data_format)
 
@@ -96,7 +121,7 @@ def strokes():
 
 @singleton
 class Participants(StrokesBase):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
+    @inject(config=blitzortung.config.Config, data_format=DataFormat)
     def __init__(self, config, data_format):
         super(Participants, self).__init__('participants.txt', config, data_format)
 
@@ -109,7 +134,7 @@ def participants():
 
 @singleton
 class Stations(Url):
-    @inject(config=blitzortung.config.Config, data_format=blitzortung.web.DataFormat)
+    @inject(config=blitzortung.config.Config, data_format=DataFormat)
     def __init__(self, config, data_format):
         super(Stations, self).__init__('stations.txt.gz', config, data_format)
 
@@ -142,35 +167,3 @@ def raw():
 
     return INJECTOR.get(Raw)
 
-
-@singleton
-class DataFormat(object):
-    def parse_line(self, line):
-        line = HTMLParser.HTMLParser().unescape(line).replace(u'\xa0', ' ').encode('latin1')
-
-        parameters = shlex.split(line)
-
-        result = {}
-
-        for parameter in parameters:
-
-            values = parameter.decode('latin1').split(';')
-            if values and len(values) > 1:
-                parameter_name = unicode(values[0])
-                result[parameter_name] = values[1:]
-
-        return result
-
-
-def dataFormat():
-    from __init__ import INJECTOR
-
-    return INJECTOR.get(DataFormat)
-
-
-class WebModule(Module):
-
-    @singleton
-    @provides(DataFormat)
-    def provide_data_format(self):
-        return DataFormat()
