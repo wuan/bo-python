@@ -48,6 +48,7 @@ class BlitzortungDataTransformer(object):
 
 
 class HttpDataTransport(object):
+    logger = logging.getLogger(__name__)
     @inject(config=blitzortung.config.Config)
     def __init__(self, config):
         self.config = config
@@ -65,7 +66,7 @@ class HttpDataTransport(object):
         try:
             url_connection = opener.open(target_url, timeout=60)
         except urllib2.URLError, error:
-            sys.stderr.write("%s when opening '%s'\n" % (error, target_url))
+            self.logger.debug("%s when opening '%s'\n" % (error, target_url))
             return None
 
         response = url_connection.read().strip()
@@ -150,7 +151,7 @@ class BlitzortungStrokeUrlGenerator(object):
 @singleton
 class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
     logger = logging.getLogger(__name__)
-    
+
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
             url_path_generator=BlitzortungStrokeUrlGenerator)
     def __init__(self, data_transport, data_transformer, url_path_generator):
