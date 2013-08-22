@@ -10,27 +10,27 @@ import blitzortung
 
 class DataFormatTest(unittest.TestCase):
     def setUp(self):
-        self.data_format = blitzortung.web.BlitzortungDataTransformer()
+        self.data_format = blitzortung.dataimport.BlitzortungDataTransformer()
 
     def test_parse_line(self):
-        result = self.data_format.transform_entry('foo;1;2 bar;3;4')
+        result = self.data_format.transform_entry(u'foo;1;2 bar;3;4 baz;"single value"')
 
-        assert_that(result, is_(equal_to({'foo': ['1', '2'], 'bar': ['3', '4']})))
+        assert_that(result, is_(equal_to({u'baz': u'single value', u'foo': [u'1', u'2'], u'bar': [u'3', u'4']})))
 
     def test_parse_line_with_space(self):
-        result = self.data_format.transform_entry('foo;1;2 "foo bar";3;4')
+        result = self.data_format.transform_entry(u'foo;1;2 "foo bar";3;4')
 
-        assert_that(result, is_(equal_to({'foo bar': ['3', '4'], 'foo': ['1', '2']})))
+        assert_that(result, is_(equal_to({u'foo bar': [u'3', u'4'], u'foo': [u'1', u'2']})))
 
     def test_parse_line_with_html(self):
-        result = self.data_format.transform_entry('foo;b&auml;z;&szlig; "f&ouml;o&nbsp;b&auml;r";3;4')
+        result = self.data_format.transform_entry(u'foo;b&auml;z;&szlig; "f&ouml;o&nbsp;b&auml;r";3;4')
 
-        assert_that(result, is_(equal_to({u'föo bär': ['3', '4'], 'foo': [u'bäz', u'ß']})))
+        assert_that(result, is_(equal_to({u'föo bär': [u'3', u'4'], u'foo': [u'bäz', u'ß']})))
 
 
 class StrokesUrlTest(unittest.TestCase):
     def create_strokes_url_generator(self, end_time):
-        self.strokes_url = blitzortung.web.BlitzortungStrokeUrlGenerator(end_time - datetime.timedelta(minutes=25), end_time)
+        self.strokes_url = blitzortung.dataimport.BlitzortungStrokeUrlGenerator(end_time - datetime.timedelta(minutes=25), end_time)
 
     def test_stroke_url_iterator(self):
         self.create_strokes_url_generator(datetime.datetime(2013, 8, 20, 12, 9, 0))
