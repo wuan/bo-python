@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 """
 
 @author: awuerl
@@ -35,11 +37,11 @@ class BlitzortungDataTransformer(object):
 
         for index, parameter in enumerate(parameters):
 
-            values = parameter.split(';')
+            values = parameter.split(u';')
             if values:
                 if len(values) > 1:
                     parameter_name = unicode(values[0])
-                    result[parameter_name] = values[1:]
+                    result[parameter_name] = values[1] if len(values) == 2 else values[1:]
                 else:
                     if index in self.single_value_index:
                         result[self.single_value_index[index]] = values[0]
@@ -49,6 +51,7 @@ class BlitzortungDataTransformer(object):
 
 class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
+
     @inject(config=blitzortung.config.Config)
     def __init__(self, config):
         self.config = config
@@ -153,10 +156,11 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
     logger = logging.getLogger(__name__)
 
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
-            url_path_generator=BlitzortungStrokeUrlGenerator)
-    def __init__(self, data_transport, data_transformer, url_path_generator):
+            url_path_generator=BlitzortungStrokeUrlGenerator, stroke_builder=blitzortung.builder.Stroke)
+    def __init__(self, data_transport, data_transformer, url_path_generator, stroke_builder):
         super(StrokesBlitzortungDataProvider, self).__init__(data_transport, data_transformer, None)
         self.url_path_generator = url_path_generator
+        self.stroke_builder = stroke_builder
 
     def get_strokes_since(self, latest_stroke):
         strokes = []
@@ -164,9 +168,7 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
             initial_stroke_count = len(strokes)
             for stroke_data in self.read_data(url_path=url_path):
-                stroke_builder = blitzortung.builder.Stroke()
-                stroke_builder.from_data(stroke_data)
-                stroke = stroke_builder.build()
+                stroke = self.stroke_builder.from_data(stroke_data).build()
                 if latest_stroke < stroke.get_timestamp():
                     strokes.append(stroke)
             self.logger.debug("%s %d", url_path, len(strokes) - initial_stroke_count)
@@ -181,9 +183,17 @@ def strokes():
 
 @singleton
 class StationsBlitzortungDataProvider(BlitzortungDataProvider):
-    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
-    def __init__(self, data_transport, data_transformer):
+    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
+            station_builder=blitzortung.builder.Station)
+    def __init__(self, data_transport, data_transformer, station_builder):
         super(StationsBlitzortungDataProvider, self).__init__(data_transport, data_transformer, 'stations.txt.gz')
+        self.station_builder = station_builder
+
+    def get_stations(self):
+        stations = []
+        for station_data in self.read_data():
+            stations.append(self.station_builder.from_data(station_data).build())
+        return stations
 
     def process(self, data):
         data = cStringIO.StringIO(data)

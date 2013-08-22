@@ -41,10 +41,10 @@ import geom
 import files
 import types
 import util
-import web
+import dataimport
 
 
-INJECTOR = Injector([config.ConfigModule(), calc.CalcModule(), db.DbModule(), web.WebModule()])
+INJECTOR = Injector([builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.WebModule()])
 
 __all__ = [
 

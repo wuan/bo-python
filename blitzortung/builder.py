@@ -9,6 +9,7 @@
 import datetime, pytz
 import math
 import HTMLParser
+from injector import Module, provides
 import numpy as np
 import pandas as pd
 
@@ -112,38 +113,18 @@ class Stroke(Event):
                                        self.altitude, self.lateral_error, self.type_val, self.station_count,
                                        self.participants)
 
-    def from_string(self, string):
-        ' Construct stroke from blitzortung text format data line '
-        if string is not None:
-            fields = string.split(' ')
-            if len(fields) >= 8:
-                self.set_x(float(fields[3]))
-                self.set_y(float(fields[2]))
-                self.set_timestamp(' '.join(fields[0:2]))
-                self.set_amplitude(float(fields[4][:-2]) * 1e3)
-                self.set_type(int(fields[5]))
-                self.set_lateral_error(int(fields[6][:-1]))
-                self.set_station_count(int(fields[7]))
-
-                participants = []
-                for index in range(8, len(fields)):
-                    participants.append(fields[index])
-                self.set_participants(participants)
-            else:
-                raise ValueError("not enough data fields from stroke data line '%s'" % (string))
-        self.set_altitude(0.0)
-        return self
-
     def from_data(self, data):
+        """ Construct stroke from new blitzortung text format data line """
         self.set_timestamp(data['date'] + ' ' + data['time'])
         position = data['pos']
         self.set_x(float(position[1]))
         self.set_y(float(position[0]))
         self.set_altitude(float(position[2]))
-        self.set_amplitude(float(data['str'][0]))
-        self.set_lateral_error(float(data['dev'][0]))
-        self.set_type(int(data['typ'][0]))
+        self.set_amplitude(float(data['str']))
+        self.set_lateral_error(float(data['dev']))
+        self.set_type(int(data['typ']))
         self.set_station_count(int(data['sta'][1]))
+        return self
 
 
 class Station(Event):
@@ -152,9 +133,8 @@ class Station(Event):
     def __init__(self):
         super(Station, self).__init__()
         self.number = -1
-        self.short_name = None
+        self.user = -1
         self.name = None
-        self.location_name = None
         self.gps_status = None
         self.samples_per_hour = -1
         self.tracker_version = None
@@ -163,16 +143,12 @@ class Station(Event):
         self.number = number
         return self
 
-    def set_short_name(self, short_name):
-        self.short_name = short_name
+    def set_user(self, user):
+        self.user = user
         return self
 
     def set_name(self, name):
         self.name = name
-        return self
-
-    def set_location_name(self, location_name):
-        self.location_name = location_name
         return self
 
     def set_country(self, country):
@@ -191,35 +167,20 @@ class Station(Event):
         self.samples_per_hour = samples_per_hour
         return self
 
-    def from_string(self, data):
-        fields = data.split(' ')
-        self.set_number(int(fields[0]))
-        self.set_short_name(fields[1])
-        self.set_name(self._unquote(fields[2]))
-        self.set_location_name(self._unquote(fields[3]))
-        self.set_country(self._unquote(fields[4]))
-        self.set_x(float(fields[6]))
-        self.set_y(float(fields[5]))
-        self.set_timestamp(self._unquote(fields[7]).encode('ascii'))
-        self.set_gps_status(fields[8])
-        self.set_tracker_version(self._unquote(fields[9]))
-        self.set_samples_per_hour(int(fields[10]))
-        return self
-
     def from_data(self, data):
         pos = data['pos']
-        self.set_x(float(pos[0]))
-        self.set_y(float(pos[1]))
-        self.set_number(data['station'][0])
-        self.set_location_name(data['user'][0])
-        self.set_name(data['city'][0])
-        self.set_country(data['country'][0])
-        self.set_number(int(data['station'][0]))
-        self.set_timestamp(data['last_signal'][0])
+        self.set_x(float(pos[1]))
+        self.set_y(float(pos[0]))
+        self.set_number(int(data['station']))
+        self.set_user(int(data['user']))
+        self.set_name(data['city'])
+        self.set_country(data['country'])
+        self.set_number(int(data['station']))
+        self.set_timestamp(data['last_signal'])
         return self
 
     def build(self):
-        return blitzortung.data.Station(self.number, self.short_name, self.name, self.location_name, self.country,
+        return blitzortung.data.Station(self.number, self.user, self.name, self.country,
                                         self.x_coord, self.y_coord, self.timestamp, self.gps_status,
                                         self.tracker_version, self.samples_per_hour)
 
@@ -414,3 +375,12 @@ class ExtEvent(RawEvent):
         return blitzortung.data.ExtEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude, self.amplitude,
                                          self.angle, self.station_number)
 
+
+class BuilderModule(Module):
+    @provides(Stroke)
+    def provide_stroke_builder(self):
+        return Stroke()
+
+    @provides(Station)
+    def provide_station_builder(self):
+        return Station()

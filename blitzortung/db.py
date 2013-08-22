@@ -603,11 +603,9 @@ class Station(Base):
 
     database table creation (as db user blitzortung, database blitzortung): 
 
-    CREATE TABLE stations (id bigserial, number int, geog GEOGRAPHY(Point), PRIMARY KEY(id));
+    CREATE TABLE stations (id bigserial, number int, "user" int, geog GEOGRAPHY(Point), PRIMARY KEY(id));
     ALTER TABLE stations ADD COLUMN region SMALLINT;
-    ALTER TABLE stations ADD COLUMN short_name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
-    ALTER TABLE stations ADD COLUMN location_name CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN country CHARACTER VARYING;
     ALTER TABLE stations ADD COLUMN "timestamp" TIMESTAMPTZ;
 
@@ -629,14 +627,14 @@ class Station(Base):
 
     def insert(self, station, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
-                     ' (number, short_name, "name", location_name, country, "timestamp", geog, region) ' +
-                     'VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
-                     (station.get_number(), station.get_short_name(), station.get_name(), station.get_location_name(),
+                     ' (number, "user", "name", country, "timestamp", geog, region) ' +
+                     'VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
+                     (station.get_number(), station.get_user(), station.get_name(),
                       station.get_country(), station.get_timestamp(), station.get_x(), station.get_y(), region))
 
     def select(self, timestamp=None, region=None):
         sql = ''' select
-             o.begin, s.number, s.short_name, s.name, s.location_name, s.country, s.geog
+             o.begin, s.number, s.user, s.name, s.country, s.geog
         from stations as s
         inner join
            (select b. region, b.number, max(b."timestamp") as "timestamp"
@@ -658,9 +656,8 @@ class Station(Base):
         station_builder = blitzortung.builder.Station()
 
         station_builder.set_number(result['number'])
-        station_builder.set_short_name(result['short_name'])
+        station_builder.set_user(result['user'])
         station_builder.set_name(result['name'])
-        station_builder.set_location_name(result['location_name'])
         station_builder.set_country(result['country'])
         location = shapely.wkb.loads(result['geog'].decode('hex'))
         station_builder.set_x(location.x)

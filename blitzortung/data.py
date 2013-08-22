@@ -117,10 +117,18 @@ class Event(types.Point):
         return self.timestamp.value < other.timestamp.value
 
     def __str__(self):
-        return "%s%03d%s %.4f %.4f " \
-               % (self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
-                  self.get_timestamp().nanosecond,
-                  self.timestamp.strftime('%z'), self.x_coord, self.y_coord)
+        timestamp = self.get_timestamp()
+        if timestamp:
+            timestamp_string = u"%s%03d%s" % (
+                self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
+                self.get_timestamp().nanosecond,
+                self.timestamp.strftime('%z')
+            )
+        else:
+            timestamp_string = u"NaT"
+
+        return u"%s %.4f %.4f " \
+               % (timestamp_string, self.x_coord, self.y_coord)
 
 
 class RawEvent(Event):
@@ -186,29 +194,27 @@ class ExtEvent(RawEvent):
 
 
 class Station(Event):
-    def __init__(self, number, short_name, name, location_name, country, x_coord, y_coord, last_data, gps_status,
+    def __init__(self, number, user, name, country, x_coord, y_coord, last_data, gps_status,
                  tracker_version, samples_per_hour):
         super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
-        self.short_name = short_name
+        self.user = user
         self.name = name
-        self.location_name = location_name
         self.country = country
         self.gps_status = gps_status
         self.tracker_version = tracker_version
         self.samples_per_hour = samples_per_hour
 
     def __str__(self):
-        print self.number
-        print self.short_name
-        print self.location_name
-        print self.country
-        return u"%d %s %s %s %s" % (
-            self.number, self.short_name, self.location_name, self.country, "asdf")
+        return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        return u"%3d/%3d '%s' '%s' %s" % (
+            self.number, self.user, self.name, self.country, super(Station, self).__str__())
 
     def __eq__(self, other):
         #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp
-        return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country
+        return self.number == other.number and self.name == other.name and self.country == other.country
 
     def __ne__(self, other):
         return not self == other
@@ -216,14 +222,11 @@ class Station(Event):
     def get_number(self):
         return self.number
 
-    def get_short_name(self):
-        return self.short_name
+    def get_user(self):
+        return self.user
 
     def get_name(self):
         return self.name
-
-    def get_location_name(self):
-        return self.location_name
 
     def get_country(self):
         return self.country
@@ -239,8 +242,8 @@ class Station(Event):
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-                   and -180 <= self.get_x() <= 180 \
-                   and -90 < self.get_y() < 90 \
+            and -180 <= self.get_x() <= 180 \
+            and -90 < self.get_y() < 90 \
             and self.get_number() > 0
 
 
