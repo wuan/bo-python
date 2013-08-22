@@ -1,4 +1,11 @@
+python-blitzortung (1.3.0) unstable; urgency=low
+
+  * refactored and adapted blitzortung data import to new format
+
+ -- Andreas Wuerl <blitzortung@tryb.de>  THu, 22 Aug 2013 06:45:23 +0200
+
 python-blitzortung (1.2.0) unstable; urgency=low
+
   * added cache module for object caching
 
  -- Andreas Würl <blitzortung@tryb.de>  Sat, 29 Jun 2013 22:42:36 +0200
