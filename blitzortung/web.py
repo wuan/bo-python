@@ -3,6 +3,7 @@
 @author: awuerl
 
 """
+import logging
 
 import sys
 import urllib2
@@ -77,6 +78,7 @@ class HttpDataTransport(object):
 class BlitzortungDataProvider(object):
     host = 'http://data.blitzortung.org'
     target_url = host + '/Data_%(region)d/Protected/%(url_path)s'
+    logger = logging.getLogger(__name__)
 
     def __init__(self, http_data_transport, data_transformer, url_path=None):
         self.http_data_transport = http_data_transport
@@ -112,7 +114,7 @@ class BlitzortungDataProvider(object):
                     try:
                         result.append(self.data_transformer.transform_entry(entry_text))
                     except UnicodeDecodeError:
-                        print "decoding error:", entry_text
+                        self.logger.debug("decoding error: '%s'" % entry_text)
 
         return result
 
@@ -147,6 +149,8 @@ class BlitzortungStrokeUrlGenerator(object):
 
 @singleton
 class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
+    logger = logging.getLogger(__name__)
+    
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
             url_path_generator=BlitzortungStrokeUrlGenerator)
     def __init__(self, data_transport, data_transformer, url_path_generator):
@@ -164,7 +168,7 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
                 stroke = stroke_builder.build()
                 if latest_stroke < stroke.get_timestamp():
                     strokes.append(stroke)
-            print url_path, len(strokes) - initial_stroke_count
+            self.logger.debug("%s %d", url_path, len(strokes) - initial_stroke_count)
         return strokes
 
 
