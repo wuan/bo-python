@@ -33,6 +33,9 @@ class Config(object):
     def get_webservice_port(self):
         return int(self.config.get('webservice', 'port'))
 
+    def __str__(self):
+        return "user: %s, pass: %s" % (self.get_username(), len(self.get_password()) * '*')
+
 
 def config():
     from __init__ import INJECTOR

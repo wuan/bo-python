@@ -22,15 +22,15 @@ class Base(object):
     timestamp_string_microseconds_length = 26
 
     def parse_timestamp(self, timestamp_string):
-        if timestamp_string != '0000-00-00':
-	    timestamp_string += ' 00:00:00'
+        if timestamp_string == '0000-00-00':
+            timestamp_string += ' 00:00:00'
 
-	try:
-	    timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
-	except ValueError:
-	    timestamp = np.datetime64('NaT')
-	    
-	return pd.Timestamp(timestamp)
+        try:
+            timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
+        except ValueError:
+            timestamp = np.datetime64('NaT')
+
+        return pd.Timestamp(timestamp, tz=pytz.UTC)
 
 
 class Timestamp(Base):
@@ -135,7 +135,15 @@ class Stroke(Event):
         return self
 
     def from_data(self, data):
-        pass
+        self.set_timestamp(data['date'] + ' ' + data['time'])
+        position = data['pos']
+        self.set_x(float(position[1]))
+        self.set_y(float(position[0]))
+        self.set_altitude(float(position[2]))
+        self.set_amplitude(float(data['str'][0]))
+        self.set_lateral_error(float(data['dev'][0]))
+        self.set_type(int(data['typ'][0]))
+        self.set_station_count(int(data['sta'][1]))
 
 
 class Station(Event):

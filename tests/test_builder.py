@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import unittest
 import datetime
 import pytz
@@ -193,8 +195,7 @@ class StationTest(TestBase):
     def test_build_station_from_string(self):
         line = "364 MustermK Karl&nbsp;Mustermann Neustadt Germany 49.5435 9.7314 2012-02-10&nbsp;14:39:47.410492569 A WT&#32;5.20.3 4"
 
-        self.builder.from_string(line)
-        station = self.builder.build()
+        station = self.builder.from_string(line).build()
 
         self.assertEqual(station.get_number(), 364)
         self.assertEqual(station.get_short_name(), 'MustermK')
@@ -206,6 +207,31 @@ class StationTest(TestBase):
         self.assertEqual(station.get_gps_status(), 'A')
         self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
         self.assertEqual(station.get_samples_per_hour(), 4)
+
+    def test_build_station_from_data(self):
+        data = {u'status': [u'0'], u'city': [u'Düsseldorf'], u'last_signal': [u'0000-00-00'],
+                u'last_stroke': [u'0000-00-00'],
+                u'input_firmware': [u'1.9_/_May_13_201', u'1.9_/_May_13_201', u'', u'', u'', u''],
+                u'distance': [u'71.474273030335'],
+                u'strokes': [u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'5879', u'0'], u'country': [u'Germany'],
+                u'firmware': [u'STM32F4'], u'myblitz': [u'N'], u'pos': [u'0', u'0', u'0'],
+                u'input_board': [u'5.7', u'5.7', u'', u'', u'', u''], u'signals': [u'0'], u'station': [u'0'],
+                u'input_gain': [u'7.7', u'7.7', u'7.7', u'7.7', u'7.7', u'7.7'], u'board': [u'6.8'],
+                u'input_antenna': [u'', u'', u'', u'', u'', u''], u'user': [u'1']}
+
+        station = self.builder.from_data(data).build()
+
+        self.assertEqual(station.get_number(), 364)
+        self.assertEqual(station.get_short_name(), 'MustermK')
+        self.assertEqual(station.get_name(), 'Karl Mustermann')
+        self.assertEqual(station.get_country(), 'Germany')
+        self.assertEqual(station.get_x(), 9.7314)
+        self.assertEqual(station.get_y(), 49.5435)
+        self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492569Z"))
+        self.assertEqual(station.get_gps_status(), 'A')
+        self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
+        self.assertEqual(station.get_samples_per_hour(), 4)
+
 
     def test_build_station_offline(self):
         self.builder.set_number(364)
