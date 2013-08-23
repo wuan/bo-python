@@ -68,5 +68,5 @@ __all__ = [
 
     'util.Timer',
 
-    'web.Url', 'web.DataFormat',
+    'dataimport.StrokesBlitzortungDataProvider', 'dataimport.StrokesBlitzortungDataProvider',
 ]
