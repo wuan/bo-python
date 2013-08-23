@@ -274,7 +274,7 @@ class Stroke(Event):
     """
 
     def __init__(self, stroke_id, x_coord, y_coord, timestamp, amplitude, height, lateral_error, type_val,
-                 station_count, participants=None):
+                 station_count, stations=None):
         super(Stroke, self).__init__(x_coord, y_coord, timestamp)
         self.stroke_id = stroke_id
         self.amplitude = amplitude
@@ -282,7 +282,7 @@ class Stroke(Event):
         self.lateral_error = lateral_error
         self.type_val = type_val
         self.station_count = station_count
-        self.participants = [] if participants is None else participants
+        self.stations = [] if stations is None else stations
 
     def get_location(self):
         return self
@@ -306,10 +306,10 @@ class Stroke(Event):
         return self.station_count
 
     def has_participant(self, participant):
-        return self.participants.count(participant) > 0
+        return self.stations.count(participant) > 0
 
-    def get_participants(self):
-        return self.participants
+    def get_stations(self):
+        return self.stations
 
     def is_detected_by_user(self):
         return False

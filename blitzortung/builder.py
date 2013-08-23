@@ -78,7 +78,7 @@ class Stroke(Event):
         super(Stroke, self).__init__()
         self.id_value = -1
         self.altitude = None
-        self.participants = []
+        self.stations = []
 
     def set_id(self, id_value):
         self.id_value = id_value
@@ -104,14 +104,14 @@ class Stroke(Event):
         self.station_count = station_count
         return self
 
-    def set_participants(self, participants):
-        self.participants = participants
+    def set_stations(self, stations):
+        self.stations = stations
         return self
 
     def build(self):
         return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude,
                                        self.altitude, self.lateral_error, self.type_val, self.station_count,
-                                       self.participants)
+                                       self.stations)
 
     def from_data(self, data):
         """ Construct stroke from new blitzortung text format data line """
@@ -123,7 +123,9 @@ class Stroke(Event):
         self.set_amplitude(float(data['str']))
         self.set_lateral_error(float(data['dev']))
         self.set_type(int(data['typ']))
-        self.set_station_count(int(data['sta'][1]))
+        stations = data['sta']
+        self.set_station_count(int(stations[0]))
+        self.set_stations([int(station) for station in stations[2].split(',')])
         return self
 
 
