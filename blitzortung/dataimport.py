@@ -25,7 +25,7 @@ import blitzortung
 
 @singleton
 class BlitzortungDataTransformer(object):
-    single_value_index = {0: 'date', 1: 'time'}
+    single_value_index = {0: u'date', 1: u'time'}
 
     def transform_entry(self, entry_text):
         entry_text = entry_text.encode('latin1')
@@ -130,11 +130,12 @@ class BlitzortungStrokeUrlGenerator(object):
     url_path_minute_increment = 10
     url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
 
-    def get_url_paths(self, latest_time):
+    def get_url_paths(self, latest_time, present_time=None):
         self.current_time = self.__round_time(latest_time)
-        now_utc = datetime.datetime.utcnow()
-        now_utc = now_utc.replace(tzinfo=pytz.UTC)
-        self.end_time = self.__round_time(now_utc)
+        if not present_time:
+            present_time = datetime.datetime.utcnow()
+            present_time = present_time.replace(tzinfo=pytz.UTC)
+        self.end_time = self.__round_time(present_time)
 
         url_paths = []
 

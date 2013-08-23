@@ -135,9 +135,8 @@ class Station(Event):
         self.number = -1
         self.user = -1
         self.name = None
-        self.gps_status = None
-        self.samples_per_hour = -1
-        self.tracker_version = None
+        self.status = None
+        self.board = None
 
     def set_number(self, number):
         self.number = number
@@ -155,34 +154,29 @@ class Station(Event):
         self.country = country
         return self
 
-    def set_gps_status(self, gps_status):
-        self.gps_status = gps_status
-        return self
+    def set_board(self, board):
+        self.board = board
 
-    def set_tracker_version(self, tracker_version):
-        self.tracker_version = tracker_version
-        return self
-
-    def set_samples_per_hour(self, samples_per_hour):
-        self.samples_per_hour = samples_per_hour
-        return self
+    def set_status(self, status):
+        self.status = status
 
     def from_data(self, data):
-        pos = data['pos']
-        self.set_x(float(pos[1]))
-        self.set_y(float(pos[0]))
         self.set_number(int(data['station']))
         self.set_user(int(data['user']))
         self.set_name(data['city'])
         self.set_country(data['country'])
-        self.set_number(int(data['station']))
+        pos = data['pos']
+        self.set_x(float(pos[1]))
+        self.set_y(float(pos[0]))
+        self.set_board(data['board'])
+        self.set_status(data['status'])
         self.set_timestamp(data['last_signal'])
         return self
 
     def build(self):
         return blitzortung.data.Station(self.number, self.user, self.name, self.country,
-                                        self.x_coord, self.y_coord, self.timestamp, self.gps_status,
-                                        self.tracker_version, self.samples_per_hour)
+                                        self.x_coord, self.y_coord, self.timestamp, self.status,
+                                        self.board)
 
     def _unquote(self, html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))

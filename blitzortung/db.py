@@ -717,14 +717,14 @@ class StationOffline(Base):
         return self.execute(sql, (region,), self.create_results)
 
     def create_object_instance(self, result):
-        stationOfflineBuilder = blitzortung.builder.StationOffline()
+        station_offline_builder = blitzortung.builder.StationOffline()
 
-        stationOfflineBuilder.set_id(result['id'])
-        stationOfflineBuilder.set_number(result['number'])
-        stationOfflineBuilder.set_begin(result['begin'])
-        stationOfflineBuilder.set_end(result['end'])
+        station_offline_builder.set_id(result['id'])
+        station_offline_builder.set_number(result['number'])
+        station_offline_builder.set_begin(result['begin'])
+        station_offline_builder.set_end(result['end'])
 
-        return stationOfflineBuilder.build()
+        return station_offline_builder.build()
 
 
 def station_offline():

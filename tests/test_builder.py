@@ -151,34 +151,21 @@ class StrokeTest(TestBase):
 
         self.assertEqual(self.builder.build().get_timestamp(), pd.Timestamp(timestamp))
 
-    def test_build_stroke_from_string(self):
-        line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12"
+    def test_build_stroke_from_data(self):
+        stroke_data = {u'sta': [u'10', u'24',
+                                u'226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594'],
+                       u'pos': [u'44.162701', u'8.931001', u'0'], u'dev': u'20146', u'str': u'4.75',
+                       'time': u'10:30:03.644038642', 'date': u'2013-08-08', u'typ': u'0'}
 
-        self.builder.from_string(line)
+        stroke = self.builder.from_data(stroke_data).build()
 
-        stroke = self.builder.build()
-
-        self.assertEqual(stroke.get_timestamp(), self.get_timestamp("2012-08-23 13:18:15.504862926Z"))
-        self.assertEqual(stroke.get_x(), 17.583977)
-        self.assertEqual(stroke.get_y(), 44.254116)
-        self.assertEqual(stroke.get_amplitude(), 6340)
-        self.assertEqual(stroke.get_type(), -1)
-        self.assertEqual(stroke.get_lateral_error(), 3406)
-        self.assertEqual(stroke.get_station_count(), 12)
-
-    def test_build_stroke_from_participants_string(self):
-        line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m 12 User1 User2 User3 User4 User5 User6 User7 User8 User9 User10 User11"
-
-        self.builder.from_string(line)
-
-        stroke = self.builder.build()
-
-        self.assertEqual(len(stroke.get_participants()), 11)
-        self.assertTrue(stroke.has_participant('User1'))
-
-    def test_build_stroke_from_string_throws_exception_with_too_short_string(self):
-        line = "2012-08-23 13:18:15.504862926 44.254116 17.583977 6.34kA -1 3406m"
-        self.assertRaises(ValueError, self.builder.from_string, line)
+        self.assertEqual(stroke.get_timestamp(), self.get_timestamp("2013-08-08 10:30:03.644038642Z"))
+        self.assertEqual(stroke.get_x(), 8.931001)
+        self.assertEqual(stroke.get_y(), 44.162701)
+        self.assertEqual(stroke.get_amplitude(), 4.75)
+        self.assertEqual(stroke.get_type(), 0)
+        self.assertEqual(stroke.get_lateral_error(), 20146)
+        self.assertEqual(stroke.get_station_count(), 24)
 
 
 class StationTest(TestBase):
@@ -187,76 +174,54 @@ class StationTest(TestBase):
 
     def test_default_values(self):
         self.assertEqual(self.builder.number, -1)
-        self.assertEqual(self.builder.location_name, None)
-        self.assertEqual(self.builder.gps_status, None)
-        self.assertEqual(self.builder.samples_per_hour, -1)
-        self.assertEqual(self.builder.tracker_version, None)
-
-    def test_build_station_from_string(self):
-        line = "364 MustermK Karl&nbsp;Mustermann Neustadt Germany 49.5435 9.7314 2012-02-10&nbsp;14:39:47.410492569 A WT&#32;5.20.3 4"
-
-        station = self.builder.from_string(line).build()
-
-        self.assertEqual(station.get_number(), 364)
-        self.assertEqual(station.get_short_name(), 'MustermK')
-        self.assertEqual(station.get_name(), 'Karl Mustermann')
-        self.assertEqual(station.get_country(), 'Germany')
-        self.assertEqual(station.get_x(), 9.7314)
-        self.assertEqual(station.get_y(), 49.5435)
-        self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492569Z"))
-        self.assertEqual(station.get_gps_status(), 'A')
-        self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
-        self.assertEqual(station.get_samples_per_hour(), 4)
+        self.assertEqual(self.builder.user, -1)
+        self.assertEqual(self.builder.name, None)
+        self.assertEqual(self.builder.status, None)
+        self.assertEqual(self.builder.board, None)
 
     def test_build_station_from_data(self):
-        data = {u'status': [u'0'], u'city': [u'Düsseldorf'], u'last_signal': [u'0000-00-00'],
-                u'last_stroke': [u'0000-00-00'],
+        data = {u'status': u'0', u'city': u'Musterdörfl', u'last_signal': u'2012-02-10 14:39:47.410492569',
+                u'last_stroke': u'0000-00-00',
                 u'input_firmware': [u'1.9_/_May_13_201', u'1.9_/_May_13_201', u'', u'', u'', u''],
-                u'distance': [u'71.474273030335'],
-                u'strokes': [u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'5879', u'0'], u'country': [u'Germany'],
-                u'firmware': [u'STM32F4'], u'myblitz': [u'N'], u'pos': [u'0', u'0', u'0'],
-                u'input_board': [u'5.7', u'5.7', u'', u'', u'', u''], u'signals': [u'0'], u'station': [u'0'],
+                u'distance': u'71.474273030335',
+                u'strokes': [u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'5879', u'0'], u'country': u'Germany',
+                u'firmware': u'STM32F4', u'myblitz': u'N', u'pos': [u'49.5435', u'9.7314', u'130'],
+                u'input_board': [u'5.7', u'5.7', u'', u'', u'', u''], u'signals': u'100', u'station': u'364',
                 u'input_gain': [u'7.7', u'7.7', u'7.7', u'7.7', u'7.7', u'7.7'], u'board': [u'6.8'],
-                u'input_antenna': [u'', u'', u'', u'', u'', u''], u'user': [u'1']}
+                u'input_antenna': [u'', u'', u'', u'', u'', u''], u'user': u'1'}
 
         station = self.builder.from_data(data).build()
 
         self.assertEqual(station.get_number(), 364)
-        self.assertEqual(station.get_short_name(), 'MustermK')
-        self.assertEqual(station.get_name(), 'Karl Mustermann')
+        self.assertEqual(station.get_user(), 1)
+        self.assertEqual(station.get_name(), u'Musterdörfl')
         self.assertEqual(station.get_country(), 'Germany')
         self.assertEqual(station.get_x(), 9.7314)
         self.assertEqual(station.get_y(), 49.5435)
         self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492569Z"))
-        self.assertEqual(station.get_gps_status(), 'A')
-        self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
-        self.assertEqual(station.get_samples_per_hour(), 4)
 
 
     def test_build_station_offline(self):
         self.builder.set_number(364)
-        self.builder.set_short_name('MustermK')
-        self.builder.set_name('Karl Mustermann')
+        self.builder.set_user(10)
+        self.builder.set_name('Musterdörfl')
         self.builder.set_country('Germany')
         self.builder.set_x(9.7314)
         self.builder.set_y(49.5435)
         self.builder.set_timestamp("2012-02-10 14:39:47.410492123")
-        self.builder.set_gps_status('A')
-        self.builder.set_tracker_version('WT 5.20.3')
-        self.builder.set_samples_per_hour(4)
+        self.builder.set_status('A')
+        self.builder.set_board('WT 5.20.3')
 
         station = self.builder.build()
 
         self.assertEqual(station.get_number(), 364)
-        self.assertEqual(station.get_short_name(), 'MustermK')
-        self.assertEqual(station.get_name(), 'Karl Mustermann')
+        self.assertEqual(station.get_name(), 'Musterdörfl')
         self.assertEqual(station.get_country(), 'Germany')
         self.assertEqual(station.get_x(), 9.7314)
         self.assertEqual(station.get_y(), 49.5435)
         self.assertEqual(station.get_timestamp(), self.get_timestamp("2012-02-10T14:39:47.410492123Z"))
-        self.assertEqual(station.get_gps_status(), 'A')
-        self.assertEqual(station.get_tracker_version(), 'WT 5.20.3')
-        self.assertEqual(station.get_samples_per_hour(), 4)
+        self.assertEqual(station.get_status(), 'A')
+        self.assertEqual(station.get_board(), 'WT 5.20.3')
 
 
 class StationOffline(unittest.TestCase):

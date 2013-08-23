@@ -194,16 +194,14 @@ class ExtEvent(RawEvent):
 
 
 class Station(Event):
-    def __init__(self, number, user, name, country, x_coord, y_coord, last_data, gps_status,
-                 tracker_version, samples_per_hour):
+    def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
         super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
         self.user = user
         self.name = name
         self.country = country
-        self.gps_status = gps_status
-        self.tracker_version = tracker_version
-        self.samples_per_hour = samples_per_hour
+        self.status = status
+        self.board = board
 
     def __str__(self):
         return unicode(self).encode('utf-8')
@@ -231,14 +229,11 @@ class Station(Event):
     def get_country(self):
         return self.country
 
-    def get_gps_status(self):
-        return self.gps_status
+    def get_status(self):
+        return self.status
 
-    def get_tracker_version(self):
-        return self.tracker_version
-
-    def get_samples_per_hour(self):
-        return self.samples_per_hour
+    def get_board(self):
+        return self.board
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
