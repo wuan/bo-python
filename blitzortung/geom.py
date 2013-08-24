@@ -68,13 +68,10 @@ class Envelope(Geometry):
         return abs(self.x_max - self.x_min)
 
     def contains(self, point):
-        if ((point.getX() >= self.x_min) and
-                (point.getX() <= self.x_max) and
-                (point.getY() >= self.y_min) and
-                (point.getY() <= self.y_max)):
-            return True
-        else:
-            return False
+        return (point.get_x() >= self.x_min) and \
+               (point.get_x() <= self.x_max) and \
+               (point.get_y() >= self.y_min) and \
+               (point.get_y() <= self.y_max)
 
     def get_env(self):
         return shapely.geometry.Polygon(((self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),

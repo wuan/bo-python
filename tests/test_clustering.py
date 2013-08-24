@@ -10,7 +10,6 @@ import blitzortung
 class TestClustering(TestCase):
     def setUp(self):
         pass
-        
 
     def test_clustering(self):
         strokes_db = blitzortung.db.stroke()
@@ -20,7 +19,4 @@ class TestClustering(TestCase):
         strokes = strokes_db.select(time_interval)
 
         self.clustering = blitzortung.clustering.Clustering(strokes)
-
-    def test_test(self):
-        
 
