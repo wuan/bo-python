@@ -127,7 +127,7 @@ class Raster(Grid):
     """ class for grid characteristics"""
 
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data=None):
-        super(Grid, self).__init__(x_min, x_max, y_min, y_max, x_div, y_div, srid)
+        super(Raster, self).__init__(x_min, x_max, y_min, y_max, x_div, y_div, srid)
         self.no_data = no_data if no_data else RasterElement(0, None)
         self.clear()
 
