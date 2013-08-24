@@ -468,11 +468,12 @@ class Stroke(Base):
 
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, stroke_builder=blitzortung.builder.Stroke)
+    def __init__(self, db_connection_pool, stroke_builder):
         super(Stroke, self).__init__(db_connection_pool)
 
         self.set_table_name('strokes')
+        self.stroke_builder = stroke_builder
 
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
@@ -509,19 +510,18 @@ class Stroke(Base):
         return self.execute(sql, {'region': region}, prepare_result)
 
     def create_object_instance(self, result):
-        stroke_builder = blitzortung.builder.Stroke()
 
-        stroke_builder.set_id(result['id'])
-        stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
+        self.stroke_builder.set_id(result['id'])
+        self.stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
         location = shapely.wkb.loads(result['geog'].decode('hex'))
-        stroke_builder.set_x(location.x)
-        stroke_builder.set_y(location.y)
-        stroke_builder.set_amplitude(result['amplitude'])
-        stroke_builder.set_type(result['type'])
-        stroke_builder.set_station_count(result['stationcount'])
-        stroke_builder.set_lateral_error(result['error2d'])
+        self.stroke_builder.set_x(location.x)
+        self.stroke_builder.set_y(location.y)
+        self.stroke_builder.set_amplitude(result['amplitude'])
+        self.stroke_builder.set_type(result['type'])
+        self.stroke_builder.set_station_count(result['stationcount'])
+        self.stroke_builder.set_lateral_error(result['error2d'])
 
-        return stroke_builder.build()
+        return self.stroke_builder.build()
 
     def select_query(self, args, query=None):
         """ build up query object for select statement """
@@ -619,11 +619,12 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_builder=blitzortung.builder.Station)
+    def __init__(self, db_connection_pool, station_builder):
         super(Station, self).__init__(db_connection_pool)
 
         self.set_table_name('stations')
+        self.station_builder = station_builder
 
     def insert(self, station, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -653,18 +654,16 @@ class Station(Base):
         return self.execute(sql, {'region': region}, self.create_results)
 
     def create_object_instance(self, result):
-        station_builder = blitzortung.builder.Station()
-
-        station_builder.set_number(result['number'])
-        station_builder.set_user(result['user'])
-        station_builder.set_name(result['name'])
-        station_builder.set_country(result['country'])
+        self.station_builder.set_number(result['number'])
+        self.station_builder.set_user(result['user'])
+        self.station_builder.set_name(result['name'])
+        self.station_builder.set_country(result['country'])
         location = shapely.wkb.loads(result['geog'].decode('hex'))
-        station_builder.set_x(location.x)
-        station_builder.set_y(location.y)
-        station_builder.set_timestamp(self.fix_timezone(result['begin']))
+        self.station_builder.set_x(location.x)
+        self.station_builder.set_y(location.y)
+        self.station_builder.set_timestamp(self.fix_timezone(result['begin']))
 
-        return station_builder.build()
+        return self.station_builder.build()
 
 
 def station():
@@ -694,11 +693,12 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_offline_builder=blitzortung.builder.StationOffline)
+    def __init__(self, db_connection_pool, station_offline_builder):
         super(StationOffline, self).__init__(db_connection_pool)
 
         self.set_table_name('stations_offline')
+        self.station_offline_builder = station_offline_builder
 
     def insert(self, station_offline, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -717,14 +717,12 @@ class StationOffline(Base):
         return self.execute(sql, (region,), self.create_results)
 
     def create_object_instance(self, result):
-        station_offline_builder = blitzortung.builder.StationOffline()
+        self.station_offline_builder.set_id(result['id'])
+        self.station_offline_builder.set_number(result['number'])
+        self.station_offline_builder.set_begin(result['begin'])
+        self.station_offline_builder.set_end(result['end'])
 
-        station_offline_builder.set_id(result['id'])
-        station_offline_builder.set_number(result['number'])
-        station_offline_builder.set_begin(result['begin'])
-        station_offline_builder.set_end(result['end'])
-
-        return station_offline_builder.build()
+        return self.station_offline_builder.build()
 
 
 def station_offline():
