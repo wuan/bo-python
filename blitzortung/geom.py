@@ -43,7 +43,7 @@ class Envelope(Geometry):
     """
 
     def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
-        Geometry.__init__(self, srid)
+        super(Envelope, self).__init__(srid)
         self.x_min = x_min
         self.x_max = x_max
         self.y_min = y_min
@@ -84,18 +84,15 @@ class Envelope(Geometry):
         return 'longitude: %.2f .. %.2f, latitude: %.2f .. %.2f' % (self.x_min, self.x_max, self.y_min, self.y_max)
 
 
-class Raster(Envelope):
-    """ class for raster characteristics and data """
+class Grid(Envelope):
+    """ class for grid characteristics"""
 
-    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data=None):
-        Envelope.__init__(self, x_min, x_max, y_min, y_max, srid)
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid):
+        super(Grid, self).__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
-        self.no_data = no_data if no_data else RasterElement(0, None)
-        self.clear()
-
-    def clear(self):
-        self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.no_data))
+        self.x_bin_count = None
+        self.y_bin_count = None
 
     def get_x_div(self):
         return self.x_div
@@ -103,17 +100,39 @@ class Raster(Envelope):
     def get_y_div(self):
         return self.y_div
 
+    def get_x_bin(self, x_pos):
+        return int(math.ceil(float(x_pos - self.x_min) / self.x_div))
+
+    def get_y_bin(self, y_pos):
+        return int(math.ceil(float(y_pos - self.y_min) / self.y_div))
+
     def get_x_bin_count(self):
-        return int(math.ceil(1.0 * (self.x_max - self.x_min) / self.x_div))
+        if not self.x_bin_count:
+            self.x_bin_count = self.get_x_bin(self.x_max)
+        return self.x_bin_count
 
     def get_y_bin_count(self):
-        return int(math.ceil(1.0 * (self.y_max - self.y_min) / self.y_div))
+        if not self.y_bin_count:
+            self.y_bin_count = self.get_y_bin(self.y_max)
+        return self.y_bin_count
 
     def get_x_center(self, cell_index):
         return self.x_min + (cell_index + 0.5) * self.x_div
 
     def get_y_center(self, row_index):
         return self.y_min + (row_index + 0.5) * self.y_div
+
+
+class Raster(Grid):
+    """ class for grid characteristics"""
+
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data=None):
+        super(Grid, self).__init__(x_min, x_max, y_min, y_max, x_div, y_div, srid)
+        self.no_data = no_data if no_data else RasterElement(0, None)
+        self.clear()
+
+    def clear(self):
+        self.data = numpy.empty((self.get_y_bin_count(), self.get_x_bin_count()), dtype=type(self.no_data))
 
     def set(self, x_index, y_index, value):
         try:

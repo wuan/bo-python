@@ -16,6 +16,10 @@ import pandas as pd
 import blitzortung
 
 
+class BuildError(blitzortung.Error):
+    pass
+
+
 class Base(object):
     timeformat = '%Y-%m-%d %H:%M:%S'
     timeformat_fractional_seconds = timeformat + '.%f'
@@ -163,16 +167,19 @@ class Station(Event):
         self.status = status
 
     def from_data(self, data):
-        self.set_number(int(data['station']))
-        self.set_user(int(data['user']))
-        self.set_name(data['city'])
-        self.set_country(data['country'])
-        pos = data['pos']
-        self.set_x(float(pos[1]))
-        self.set_y(float(pos[0]))
-        self.set_board(data['board'])
-        self.set_status(data['status'])
-        self.set_timestamp(data['last_signal'])
+        try:
+            self.set_number(int(data['station']))
+            self.set_user(int(data['user']))
+            self.set_name(data['city'])
+            self.set_country(data['country'])
+            pos = data['pos']
+            self.set_x(float(pos[1]))
+            self.set_y(float(pos[0]))
+            self.set_board(data['board'])
+            self.set_status(data['status'])
+            self.set_timestamp(data['last_signal'])
+        except KeyError:
+            raise BuildError()
         return self
 
     def build(self):

@@ -184,6 +184,8 @@ def strokes():
 
 @singleton
 class StationsBlitzortungDataProvider(BlitzortungDataProvider):
+    logger = logging.getLogger(__name__)
+
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
             station_builder=blitzortung.builder.Station)
     def __init__(self, data_transport, data_transformer, station_builder):
@@ -193,7 +195,10 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
     def get_stations(self):
         stations = []
         for station_data in self.read_data():
-            stations.append(self.station_builder.from_data(station_data).build())
+            try:
+                stations.append(self.station_builder.from_data(station_data).build())
+            except blitzortung.builder.BuildError:
+                self.logger.debug("error parsing station data '%s'" % station_data)
         return stations
 
     def process(self, data):

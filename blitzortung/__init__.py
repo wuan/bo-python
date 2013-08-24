@@ -15,7 +15,7 @@ __version__ = '1.2.0'
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
-#   Custom exceptions.
+#   Custom ex   ceptions.
 #-----------------------------------------------------------------------------
 
 class Error(Exception):
@@ -34,6 +34,7 @@ from injector import Injector
 import builder
 import cache
 import calc
+import clustering
 import config
 import data
 import db
