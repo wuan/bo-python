@@ -1,10 +1,10 @@
 # -*- coding: utf8 -*-
 
-'''
+"""
 
 @author Andreas Würl
 
-'''
+"""
 
 import datetime, pytz
 import math
@@ -21,24 +21,15 @@ class BuildError(blitzortung.Error):
 
 
 class Base(object):
+    pass
+
+
+class Timestamp(Base):
     timeformat = '%Y-%m-%d %H:%M:%S'
     timeformat_fractional_seconds = timeformat + '.%f'
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
-    def parse_timestamp(self, timestamp_string):
-        if timestamp_string == '0000-00-00':
-            timestamp_string += ' 00:00:00'
-
-        try:
-            timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
-        except ValueError:
-            timestamp = np.datetime64('NaT')
-
-        return pd.Timestamp(timestamp, tz=pytz.UTC)
-
-
-class Timestamp(Base):
     def __init__(self):
         super(Timestamp, self).__init__()
         self.timestamp = None
@@ -55,8 +46,20 @@ class Timestamp(Base):
             total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
             self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         else:
-            self.timestamp = self.parse_timestamp(timestamp)
+            self.timestamp = self.__parse_timestamp(timestamp)
         return self
+
+    def __parse_timestamp(self, timestamp_string):
+        try:
+            timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
+        except ValueError:
+            timestamp = np.datetime64('NaT')
+
+        return pd.Timestamp(timestamp, tz=pytz.UTC)
+
+
+    def build(self):
+        return self.timestamp
 
 
 class Event(Timestamp):
@@ -264,7 +267,7 @@ class RawEvent(Event):
                 self.x_amplitude = float(fields[7])
                 self.y_amplitude = float(fields[8])
             else:
-                raise RuntimeError("not enough data fields for raw event data '%s'" % (string))
+                raise RuntimeError("not enough data fields for raw event data '%s'" % string)
         return self
 
 
@@ -316,7 +319,7 @@ class RawWaveformEvent(Event):
         return self
 
     def from_string(self, string):
-        ' Construct stroke from blitzortung text format data line '
+        """ Construct stroke from blitzortung text format data line """
         if string:
             fields = string.split(' ')
             self.y = float(fields[2])
@@ -357,8 +360,7 @@ class RawWaveformEvent(Event):
                 if number_of_channels > 1:
                     self.y_amplitude = maximum_values[1]
 
-                self.timestamp += np.timedelta64(maximum_index * self.sample_period,
-                                                 'ns') # add maximum offset to time
+                self.timestamp += np.timedelta64(maximum_index * self.sample_period, 'ns')
 
             else:
                 raise RuntimeError("not enough data fields for raw event data '%s'" % string)

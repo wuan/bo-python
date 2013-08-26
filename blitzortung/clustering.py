@@ -17,9 +17,7 @@ class Clustering(object):
             coordinates[index][1] = event.get_y()
 
         self.result = scipy.cluster.hierarchy.linkage(coordinates)
-        self.clusters = []
-        for cluster in self.result:
-            self.clusters.append([value for value in cluster])
+        self.clusters = [[value for value in cluster] for cluster in self.result]
 
         print self.clusters
 

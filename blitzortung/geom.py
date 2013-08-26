@@ -151,12 +151,10 @@ class Raster(Grid):
         result += 'CELLSIZE %.4f\n' % self.get_x_div()
         result += 'NODATA_VALUE %s\n' % str(self.get_nodata_value())
 
-        for row in self.data[::-1]:
-            for cell in row:
-                result += str(cell.get_count() if cell else 0) + ' '
-            result += '\n'
+        cell_to_string = lambda cell: str(cell.get_count()) if cell else '0'
+        result += [[cell_to_string(cell) for cell in row].join(" ") for row in self.data[::-1]].join('\n')
 
-        return result.strip()
+        return result
 
     def to_map(self):
         chars = " .-o*O8"

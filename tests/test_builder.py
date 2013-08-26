@@ -3,6 +3,7 @@
 import unittest
 import datetime
 from hamcrest import assert_that, is_, equal_to, none
+import nose
 import pytz
 import numpy as np
 import pandas as pd
@@ -15,9 +16,95 @@ class TestBase(unittest.TestCase):
         return pd.Timestamp(np.datetime64(time_string), tz=pytz.UTC)
 
 
-class BaseTest(TestBase):
+class TimestampTest(unittest.TestCase):
     def setUp(self):
-        self.builder = blitzortung.builder.Base()
+        self.builder = blitzortung.builder.Timestamp()
+
+    def test_initial_value(self):
+        assert_that(self.builder.build(), is_(none()))
+
+    def test_set_timestamp_from_none_value(self):
+        self.builder.set_timestamp(None)
+        assert_that(self.builder.build(), is_(none()))
+
+    def test_set_timestamp_from_datetime(self):
+        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)).build()
+
+        self.assert_timestamp(timestamp)
+
+    def test_set_timestamp_from_pandas_timestamp(self):
+        timestamp = pd.Timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651))
+        timestamp = pd.Timestamp(timestamp.value + 423)
+
+        self.builder.set_timestamp(timestamp)
+
+        timestamp = self.builder.build()
+        self.assert_timestamp(timestamp)
+        assert_that(timestamp.nanosecond, is_(equal_to(423)))
+
+    def test_set_timestamp_from_pandas_timestamp_with_ns_offset(self):
+        timestamp = pd.Timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651), tz='CET')
+
+        self.builder.set_timestamp(timestamp, 423)
+
+        timestamp = self.builder.build()
+        self.assert_timestamp(timestamp)
+
+        assert_that(timestamp.tzinfo, is_(equal_to(pytz.timezone('CET'))))
+        assert_that(timestamp.nanosecond, is_(equal_to(423)))
+
+    def test_set_timestamp_from_bad_string(self):
+        raise nose.SkipTest("fix pandas timestamp behavior first")
+        timestamp = self.builder.set_timestamp('0000-00-00').build()
+        assert_that(timestamp, is_(pd.Timestamp.NaT))
+
+    def test_set_timestamp_from_string(self):
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423").build()
+
+        self.assert_timestamp(timestamp)
+        assert_that(timestamp.nanosecond, is_(equal_to(423)))
+        assert_that(timestamp.tzinfo, is_(equal_to(pytz.UTC)))
+
+    def test_set_timestamp_from_string(self):
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
+
+        timestamp = self.builder.build()
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(96651)))
+        assert_that(timestamp.nanosecond, is_(equal_to(423)))
+
+    def test_set_timestamp_from_millisecond_string(self):
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096").build()
+
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(96000)))
+        assert_that(timestamp.nanosecond, is_(equal_to(0)))
+
+    def test_create_from_string_wihtout_fractional_seconds(self):
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18").build()
+
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(0)))
+        assert_that(timestamp.nanosecond, is_(equal_to(0)))
+
+    def test_create_from_nanosecond_string(self):
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.123456789").build()
+
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(123456)))
+        assert_that(timestamp.nanosecond, is_(equal_to(789)))
+
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.12345678").build()
+
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(123456)))
+        assert_that(timestamp.nanosecond, is_(equal_to(780)))
+
+        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.1234567").build()
+
+        self.assert_timestamp_base(timestamp)
+        assert_that(timestamp.microsecond, is_(equal_to(123456)))
+        assert_that(timestamp.nanosecond, is_(equal_to(700)))
 
     def assert_timestamp_base(self, timestamp):
         assert_that(timestamp.day, is_(equal_to(10)))
@@ -27,92 +114,9 @@ class BaseTest(TestBase):
         assert_that(timestamp.minute, is_(equal_to(56)))
         assert_that(timestamp.second, is_(equal_to(18)))
 
-    def test_create_from_string(self):
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.096651423")
-
+    def assert_timestamp(self, timestamp):
         self.assert_timestamp_base(timestamp)
         assert_that(timestamp.microsecond, is_(equal_to(96651)))
-        assert_that(timestamp.nanosecond, is_(equal_to(423)))
-
-    def test_create_from_millisecond_string(self):
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.096")
-
-        self.assert_timestamp_base(timestamp)
-        assert_that(timestamp.microsecond, is_(equal_to(96000)))
-        assert_that(timestamp.nanosecond, is_(equal_to(0)))
-
-    def test_create_from_string_wihtout_fractional_seconds(self):
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18")
-
-        self.assert_timestamp_base(timestamp)
-        assert_that(timestamp.microsecond, is_(equal_to(0)))
-        assert_that(timestamp.nanosecond, is_(equal_to(0)))
-
-    def test_create_from_nanosecond_string(self):
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.123456789")
-
-        self.assert_timestamp_base(timestamp)
-        assert_that(timestamp.microsecond, is_(equal_to(123456)))
-        assert_that(timestamp.nanosecond, is_(equal_to(789)))
-
-        self.builder = blitzortung.builder.Base()
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.12345678")
-
-        self.assert_timestamp_base(timestamp)
-        assert_that(timestamp.microsecond, is_(equal_to(123456)))
-        assert_that(timestamp.nanosecond, is_(equal_to(780)))
-
-        self.builder = blitzortung.builder.Base()
-        timestamp = self.builder.parse_timestamp("2012-02-10 12:56:18.1234567")
-
-        self.assert_timestamp_base(timestamp)
-        assert_that(timestamp.microsecond, is_(equal_to(123456)))
-        assert_that(timestamp.nanosecond, is_(equal_to(700)))
-
-
-class TimestampTest(unittest.TestCase):
-    def setUp(self):
-        self.builder = blitzortung.builder.Timestamp()
-
-    def assert_correct_timestamp(self):
-        assert_that(self.builder.timestamp.day, is_(equal_to(10)))
-        assert_that(self.builder.timestamp.month, is_(equal_to(2)))
-        assert_that(self.builder.timestamp.year, is_(equal_to(2012)))
-        assert_that(self.builder.timestamp.hour, is_(equal_to(12)))
-        assert_that(self.builder.timestamp.minute, is_(equal_to(56)))
-        assert_that(self.builder.timestamp.second, is_(equal_to(18)))
-        assert_that(self.builder.timestamp.microsecond, is_(equal_to(96651)))
-
-    def test_set_timestamp_from_string(self):
-        self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
-
-        self.assert_correct_timestamp()
-        assert_that(self.builder.timestamp.nanosecond, is_(equal_to(423)))
-        assert_that(self.builder.timestamp.tzinfo, is_(equal_to(pytz.UTC)))
-
-    def test_set_timestamp_from_datetime(self):
-        self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651))
-
-        self.assert_correct_timestamp()
-
-    def test_set_timestamp_from_pandas_timestamp(self):
-        timestamp = pd.Timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651))
-        timestamp = pd.Timestamp(timestamp.value + 423)
-
-        self.builder.set_timestamp(timestamp)
-
-        self.assert_correct_timestamp()
-        assert_that(self.builder.timestamp.nanosecond, is_(equal_to(423)))
-
-    def test_set_timestamp_from_pandas_timestamp_with_ns_offset(self):
-        timestamp = pd.Timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651), tz='CET')
-
-        self.builder.set_timestamp(timestamp, 423)
-
-        self.assert_correct_timestamp()
-
-        assert_that(self.builder.timestamp.tzinfo, is_(equal_to(pytz.timezone('CET'))))
-        assert_that(self.builder.timestamp.nanosecond, is_(equal_to(423)))
 
 
 class StrokeTest(TestBase):

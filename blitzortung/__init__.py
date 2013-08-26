@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf8 -*-
 #-----------------------------------------------------------------------------
 #   Copyright (c) 2011, Andreas Wuerl. All rights reserved.
 #
-#   Released under the GPLv3 license. See the LICENSE file for details.
+#   See the LICENSE file for details.
 #-----------------------------------------------------------------------------
 """
 blitzortung python modules

@@ -120,7 +120,7 @@ class Event(types.Point):
         timestamp = self.get_timestamp()
         if timestamp:
             timestamp_string = u"%s%03d%s" % (
-                self.get_timestamp().strftime(builder.Base.timeformat_fractional_seconds),
+                self.get_timestamp().strftime(builder.Timestamp.timeformat_fractional_seconds),
                 self.get_timestamp().nanosecond,
                 self.timestamp.strftime('%z')
             )
