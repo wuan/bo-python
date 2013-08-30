@@ -177,7 +177,7 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
                 if latest_stroke < timestamp:
                     strokes.append(stroke)
             end_time = time.time()
-            self.logger.info("imported %d strokes in %.2fs from %s", len(strokes) - initial_stroke_count,
+            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes) - initial_stroke_count,
                               end_time - start_time, url_path)
         return strokes
 
