@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 
 
@@ -59,5 +60,5 @@ class ObjectCache(object):
 
     def get_ratio(self):
         if self.total_hit_count == 0:
-            return 0
-        return float(self.total_hit_count) / self.total_count
+            return 0.0
+        return self.total_hit_count / self.total_count

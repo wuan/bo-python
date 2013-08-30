@@ -7,7 +7,7 @@
 """
 import logging
 
-import sys
+import time
 import urllib2
 import datetime
 from urlparse import urlparse
@@ -164,15 +164,21 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
         self.stroke_builder = stroke_builder
 
     def get_strokes_since(self, latest_stroke):
+        self.logger.debug("import strokes since %s" % latest_stroke)
         strokes = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
             initial_stroke_count = len(strokes)
+            start_time = time.time()
             for stroke_data in self.read_data(url_path=url_path):
                 stroke = self.stroke_builder.from_data(stroke_data).build()
-                if latest_stroke < stroke.get_timestamp():
+                timestamp = stroke.get_timestamp()
+                timestamp.nanoseconds = 0
+                if latest_stroke < timestamp:
                     strokes.append(stroke)
-            self.logger.debug("%s %d", url_path, len(strokes) - initial_stroke_count)
+            end_time = time.time()
+            self.logger.info("imported %d strokes in %.2fs from %s", len(strokes) - initial_stroke_count,
+                              end_time - start_time, url_path)
         return strokes
 
 

@@ -1,40 +1,42 @@
 # -*- coding: utf8 -*-
 
+from __future__ import unicode_literals
+
 import ConfigParser
 
-from injector import Module, singleton, provides
+from injector import Module, singleton, provides, inject
 
-
+@singleton
 class Config(object):
-    def __init__(self, configfilename='/etc/blitzortung.conf'):
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(configfilename)
+    @inject(config_parser=ConfigParser.ConfigParser)
+    def __init__(self, config_parser):
+        self.config_parser = config_parser
 
     def get_username(self):
-        return self.config.get('auth', 'username')
+        return self.config_parser.get('auth', 'username')
 
     def get_password(self):
-        return self.config.get('auth', 'password')
+        return self.config_parser.get('auth', 'password')
 
     def get_raw_path(self):
-        return self.config.get('path', 'raw')
+        return self.config_parser.get('path', 'raw')
 
     def get_archive_path(self):
-        return self.config.get('path', 'archive')
+        return self.config_parser.get('path', 'archive')
 
     def get_db_connection_string(self):
-        host = self.config.get('db', 'host')
-        dbname = self.config.get('db', 'dbname')
-        username = self.config.get('db', 'username')
-        password = self.config.get('db', 'password')
+        host = self.config_parser.get('db', 'host')
+        dbname = self.config_parser.get('db', 'dbname')
+        username = self.config_parser.get('db', 'username')
+        password = self.config_parser.get('db', 'password')
 
         return "host='%s' dbname='%s' user='%s' password='%s'" % (host, dbname, username, password)
 
     def get_webservice_port(self):
-        return int(self.config.get('webservice', 'port'))
+        return int(self.config_parser.get('webservice', 'port'))
 
     def __str__(self):
-        return "user: %s, pass: %s" % (self.get_username(), len(self.get_password()) * '*')
+        return "Config(user: %s, pass: %s)" % (self.get_username(), len(self.get_password()) * '*')
 
 
 def config():
@@ -45,6 +47,9 @@ def config():
 
 class ConfigModule(Module):
     @singleton
-    @provides(Config)
-    def provide_config(self):
-        return Config()
+    @provides(ConfigParser.ConfigParser)
+    def provide_config_parser(self):
+        config_parser = ConfigParser.ConfigParser()
+        config_parser.read('/etc/blitzortung.conf')
+        return config_parser
+

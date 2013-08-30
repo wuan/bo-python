@@ -496,14 +496,15 @@ class Stroke(Base):
         self.execute(sql, parameters)
 
     def get_latest_time(self, region=1):
-        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
+        sql = 'SELECT "timestamp", nanoseconds FROM ' + self.get_full_table_name() + \
               ' WHERE region=%(region)s' + \
-              ' ORDER BY "timestamp" DESC LIMIT 1'
+              ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
 
         def prepare_result(cursor, _):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
-                return pd.Timestamp(self.fix_timezone(result['timestamp']))
+                total_nanoseconds = pd.Timestamp(self.fix_timezone(result['timestamp'])).value + result['nanoseconds']
+                return pd.Timestamp(total_nanoseconds, tz=self.tz)
             else:
                 return None
 
