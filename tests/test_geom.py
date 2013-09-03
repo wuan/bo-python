@@ -3,6 +3,7 @@ import datetime
 from mockito import mock, when, verify
 from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to
 import time
+import shapely
 
 import blitzortung
 
@@ -73,3 +74,54 @@ class TestEnvelope(TestCase):
         self.assertFalse(self.envelope.contains(blitzortung.types.Point(0, 2.0001)))
         self.assertFalse(self.envelope.contains(blitzortung.types.Point(-5.0001, 0)))
         self.assertFalse(self.envelope.contains(blitzortung.types.Point(4.0001, 0)))
+
+    def test_get_env(self):
+        expected_env = shapely.geometry.LinearRing([(-5, -3), (-5, 2), (4, 2), (4, -3)])
+        self.assertTrue(expected_env.almost_equals(self.envelope.get_env()))
+
+    def test_str(self):
+        assert_that(repr(self.envelope), is_(equal_to('Envelope(x: -5.0000..4.0000, y: -3.0000..2.0000)')))
+
+
+class TestGrid(TestCase):
+    def setUp(self):
+        self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25)
+
+    def test_get_x_div(self):
+        assert_that(self.grid.get_x_div(), is_(equal_to(0.5)))
+
+    def test_get_y_div(self):
+        assert_that(self.grid.get_y_div(), is_(equal_to(1.25)))
+
+    def test_get_x_bin_count(self):
+        assert_that(self.grid.get_x_bin_count(), is_(equal_to(18)))
+
+    def test_get_y_bin_count(self):
+        assert_that(self.grid.get_y_bin_count(), is_(equal_to(4)))
+
+    def test_get_x_bin(self):
+        assert_that(self.grid.get_x_bin(-5), is_(equal_to(-1)))
+        assert_that(self.grid.get_x_bin(-4.9999), is_(equal_to(0)))
+        assert_that(self.grid.get_x_bin(-4.5), is_(equal_to(0)))
+        assert_that(self.grid.get_x_bin(-4.4999), is_(equal_to(1)))
+        assert_that(self.grid.get_x_bin(4), is_(equal_to(17)))
+        assert_that(self.grid.get_x_bin(4.0001), is_(equal_to(18)))
+
+    def test_get_y_bin(self):
+        assert_that(self.grid.get_y_bin(-3), is_(equal_to(-1)))
+        assert_that(self.grid.get_y_bin(-2.9999), is_(equal_to(0)))
+        assert_that(self.grid.get_y_bin(-1.7500), is_(equal_to(0)))
+        assert_that(self.grid.get_y_bin(-1.7499), is_(equal_to(1)))
+        assert_that(self.grid.get_y_bin(2), is_(equal_to(3)))
+        assert_that(self.grid.get_y_bin(2.0001), is_(equal_to(4)))
+
+    def test_get_x_center(self):
+        assert_that(self.grid.get_x_center(0), is_(equal_to(-4.75)))
+        assert_that(self.grid.get_x_center(17), is_(equal_to(3.75)))
+
+    def test_get_y_center(self):
+        assert_that(self.grid.get_y_center(0), is_(equal_to(-2.375)))
+        assert_that(self.grid.get_y_center(3), is_(equal_to(1.375)))
+
+    def test_repr(self):
+        assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000), y: -3.0000..2.0000 (1.2500))")))

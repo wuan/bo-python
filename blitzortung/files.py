@@ -17,18 +17,17 @@ import blitzortung
 
 
 class Raw(object):
-
     BO_DATA_EXECUTABLE = 'bo-data'
-    
+
     def __init__(self, file_path):
         self.file_path = file_path
-        
+
     def get_file_path(self):
         return self.file_path
-    
+
     def get_file_name(self):
         return os.path.basename(self.file_path)
-    
+
     def get_data(self, start_time=None, end_time=None):
         return [blitzortung.builder.RawEvent().from_json(element).build()
                 for element in self.__execute(start_time, end_time)]
@@ -42,10 +41,10 @@ class Raw(object):
 
     def get_histogram(self, start_time=None, end_time=None):
         return self.__execute(start_time, end_time, '--mode', 'histogram')
-        
+
     def __repr__(self):
         return "files.Raw(%s)" % (os.path.basename(self.file_path))
-    
+
     def __execute(self, start_time, end_time, *additional_args):
         args = [self.BO_DATA_EXECUTABLE, '-j', '-i', self.file_path]
         if start_time:
@@ -58,7 +57,6 @@ class Raw(object):
 
 
 class RawFile(object):
-
     def __init__(self, config):
         raw_file_names = glob.glob(os.path.join(config.get_raw_path(), '*.bor'))
 
@@ -89,7 +87,6 @@ class RawFile(object):
 
 
 class Archive(object):
-
     def __init__(self, config):
         self.dates_filecount = {}
 
@@ -101,27 +98,27 @@ class Archive(object):
 
             if depth == 3:
                 date_string = "-".join(self.__split_path_into_components(current_path)[-depth:])
-                self.dates_filecount[pd.Timestamp(date_string)] = len(files)                    
+                self.dates_filecount[pd.Timestamp(date_string)] = len(files)
 
     def get_dates_filecount(self):
         return self.dates_filecount
-    
+
     def get_files_for_date(self, date_string):
         result = []
         date = pd.Timestamp(date_string)
         if date in self.dates_filecount:
-            
+
             for file_path in glob.glob(os.path.join(self.__get_path_for_date(date), '*')):
                 result.append(Raw(file_path))
-                
+
         return result
-                
+
     def __get_path_for_date(self, date):
         path = self.root_path
-        
+
         for format_string in ['%Y', '%m', '%d']:
             path = os.path.join(path, date.strftime(format_string))
-            
+
         return path
 
     def __get_path_depth(self, path):
@@ -138,7 +135,6 @@ class Archive(object):
 
 
 class Data(object):
-
     def __init__(self, raw_file_path, time):
         self.raw_file_path = raw_file_path
         self.time = time
@@ -189,7 +185,6 @@ class Data(object):
 
 
 class StatisticsData(Data):
-
     def get_data(self, raw_file, start_time, end_time):
         results = raw_file.get_statistical_data()
         self.count = int(results[0])
@@ -213,6 +208,5 @@ class StatisticsData(Data):
 
 
 class HistogramData(Data):
-
     def get_data(self, raw_file, start_time, end_time):
         return raw_file.get_histogram(start_time, end_time)

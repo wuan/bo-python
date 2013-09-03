@@ -74,11 +74,12 @@ class Envelope(Geometry):
                (point.get_y() <= self.y_max)
 
     def get_env(self):
-        return shapely.geometry.Polygon(((self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),
-                                         (self.x_max, self.y_min)))
+        return shapely.geometry.LinearRing(
+            [(self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max), (self.x_max, self.y_min)])
 
-    def __str__(self):
-        return 'longitude: %.2f .. %.2f, latitude: %.2f .. %.2f' % (self.x_min, self.x_max, self.y_min, self.y_max)
+    def __repr__(self):
+        return 'Envelope(x: %.4f..%.4f, y: %.4f..%.4f)' % (
+            self.x_min, self.x_max, self.y_min, self.y_max)
 
 
 class Grid(Envelope):
@@ -98,19 +99,19 @@ class Grid(Envelope):
         return self.y_div
 
     def get_x_bin(self, x_pos):
-        return int(math.ceil(float(x_pos - self.x_min) / self.x_div))
+        return int(math.ceil(float(x_pos - self.x_min) / self.x_div)) - 1
 
     def get_y_bin(self, y_pos):
-        return int(math.ceil(float(y_pos - self.y_min) / self.y_div))
+        return int(math.ceil(float(y_pos - self.y_min) / self.y_div)) - 1
 
     def get_x_bin_count(self):
         if not self.x_bin_count:
-            self.x_bin_count = self.get_x_bin(self.x_max)
+            self.x_bin_count = self.get_x_bin(self.x_max) + 1
         return self.x_bin_count
 
     def get_y_bin_count(self):
         if not self.y_bin_count:
-            self.y_bin_count = self.get_y_bin(self.y_max)
+            self.y_bin_count = self.get_y_bin(self.y_max) + 1
         return self.y_bin_count
 
     def get_x_center(self, cell_index):
@@ -118,6 +119,11 @@ class Grid(Envelope):
 
     def get_y_center(self, row_index):
         return self.y_min + (row_index + 0.5) * self.y_div
+
+    def __repr__(self):
+        return 'Grid(x: %.4f..%.4f (%.4f), y: %.4f..%.4f (%.4f))' % (
+            self.get_x_min(), self.get_x_max(), self.get_x_div(),
+            self.get_y_min(), self.get_y_max(), self.get_y_div())
 
 
 class Raster(Grid):
