@@ -214,10 +214,7 @@ class RasterElement(object):
         self.timestamp = timestamp
 
     def __gt__(self, other):
-        return self.count > other
-
-    def __str__(self):
-        return "RasterElement(%d, %s)" % (self.count, str(self.timestamp))
+        return self.count > other.count
 
     def get_count(self):
         return self.count
@@ -228,3 +225,7 @@ class RasterElement(object):
     def __str__(self):
         if self.timestamp is None:
             return str(self.count)
+
+    def __repr__(self):
+        return "RasterElement(%d, %s)" % (self.count, str(self.timestamp))
+

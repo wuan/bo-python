@@ -14,8 +14,9 @@ __version__ = '1.3.0'
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
-#   Custom ex   ceptions.
+#   Custom exceptions.
 #-----------------------------------------------------------------------------
+
 
 class Error(Exception):
     """
@@ -44,7 +45,8 @@ import util
 import dataimport
 
 
-INJECTOR = Injector([builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.WebModule()])
+INJECTOR = Injector(
+    [builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.WebModule()])
 
 __all__ = [
 
@@ -54,11 +56,11 @@ __all__ = [
 
     'calc.ThreePointSolution', 'calc.ThreePointSolver',
 
-    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
+    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
 
-    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline',  # database access
+    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
 
-    'Error',  # custom exceptions
+    'Error', # custom exceptions
 
     'files.Raw', 'files.Data',
 

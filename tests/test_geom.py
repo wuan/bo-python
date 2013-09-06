@@ -1,7 +1,7 @@
 from unittest import TestCase
 import datetime
 from mockito import mock, when, verify
-from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to
+from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to, none
 import time
 import shapely
 
@@ -125,3 +125,52 @@ class TestGrid(TestCase):
 
     def test_repr(self):
         assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000), y: -3.0000..2.0000 (1.2500))")))
+
+
+class TestRaster(TestCase):
+    def setUp(self):
+        self.raster = blitzortung.geom.Raster(-5, 4, -3, 2, 0.5, 1.25)
+
+    def test_empty_raster(self):
+        for x_index in range(0, self.raster.get_x_bin_count()):
+            for y_index in range(0, self.raster.get_y_bin_count()):
+                assert_that(self.raster.get(x_index, y_index), is_(none()))
+
+    def test_empty_raster_to_arcgrid(self):
+        assert_that(self.raster.to_arcgrid(), is_(equal_to("""NCOLS 18
+NROWS 4
+XLLCORNER -5.0000
+YLLCORNER -3.0000
+CELLSIZE 0.5000
+NODATA_VALUE 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0""")))
+
+    def test_empty_raster_to_map(self):
+        assert_that(self.raster.to_map(), is_(equal_to("""--------------------
+|                  |
+|                  |
+|                  |
+|                  |
+--------------------
+total count: 0, max per area: 0""")))
+
+
+class TestRasterElement(TestCase):
+    def setUp(self):
+        self.timestamp = datetime.datetime.utcnow()
+        self.raster_element = blitzortung.geom.RasterElement(1234, self.timestamp)
+
+    def test_get_count(self):
+        assert_that(self.raster_element.get_count(), is_(equal_to(1234)))
+
+    def test_get_timestamp(self):
+        assert_that(self.raster_element.get_timestamp(), is_(equal_to(self.timestamp)))
+
+    def test_comparison(self):
+        other_raster_element = blitzortung.geom.RasterElement(10, self.timestamp)
+
+        assert_that(other_raster_element < self.raster_element)
+        assert_that(self.raster_element > other_raster_element)
