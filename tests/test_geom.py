@@ -195,10 +195,14 @@ total count: 35, max per area: 20""")))
             [[4, 1, 20, -3600], [1, 2, 10, -10], [0, 3, 5, -120]]
         )))
 
+    def test_raster_set_outside_valid_index_value_does_not_throw_exception(self):
+        self.raster.set(1000, 0, blitzortung.geom.RasterElement(20, self.reference_time - datetime.timedelta(hours=1)))
+        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to([])))
+
 
 class TestRasterElement(TestCase):
     def setUp(self):
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime(2013, 9, 6, 21, 36, 0, 123456)
         self.raster_element = blitzortung.geom.RasterElement(1234, self.timestamp)
 
     def test_get_count(self):
@@ -212,3 +216,6 @@ class TestRasterElement(TestCase):
 
         assert_that(other_raster_element < self.raster_element)
         assert_that(self.raster_element > other_raster_element)
+
+    def test_string_representation(self):
+        assert_that(repr(self.raster_element), is_(equal_to("RasterElement(1234, 2013-09-06 21:36:00.123456)")))
