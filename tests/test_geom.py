@@ -129,6 +129,7 @@ class TestGrid(TestCase):
 
 class TestRaster(TestCase):
     def setUp(self):
+        self.reference_time = datetime.datetime.utcnow()
         self.raster = blitzortung.geom.Raster(-5, 4, -3, 2, 0.5, 1.25)
 
     def test_empty_raster(self):
@@ -156,6 +157,43 @@ NODATA_VALUE 0
 |                  |
 --------------------
 total count: 0, max per area: 0""")))
+
+    def test_empty_raster_to_reduced_array(self):
+        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to([])))
+
+    def add_raster_data(self):
+        self.raster.set(0, 0, blitzortung.geom.RasterElement(5, self.reference_time - datetime.timedelta(minutes=2)))
+        self.raster.set(1, 1, blitzortung.geom.RasterElement(10, self.reference_time - datetime.timedelta(seconds=10)))
+        self.raster.set(4, 2, blitzortung.geom.RasterElement(20, self.reference_time - datetime.timedelta(hours=1)))
+
+    def test_raster_to_arcgrid(self):
+        self.add_raster_data()
+        assert_that(self.raster.to_arcgrid(), is_(equal_to("""NCOLS 18
+NROWS 4
+XLLCORNER -5.0000
+YLLCORNER -3.0000
+CELLSIZE 0.5000
+NODATA_VALUE 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 20 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0""")))
+
+    def test_raster_to_map(self):
+        self.add_raster_data()
+        assert_that(self.raster.to_map(), is_(equal_to("""--------------------
+|                  |
+|    8             |
+| o                |
+|-                 |
+--------------------
+total count: 35, max per area: 20""")))
+
+    def test_raster_to_reduced_array(self):
+        self.add_raster_data()
+        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(
+            [[4, 1, 20, -3600], [1, 2, 10, -10], [0, 3, 5, -120]]
+        )))
 
 
 class TestRasterElement(TestCase):
