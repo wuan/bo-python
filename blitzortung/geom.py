@@ -39,7 +39,7 @@ class Geometry(object):
 
 class Envelope(Geometry):
     """
-    class for definition of coordinate envelopes
+    definition of a coordinate envelope
     """
 
     def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
@@ -83,7 +83,7 @@ class Envelope(Geometry):
 
 
 class Grid(Envelope):
-    """ class for grid characteristics"""
+    """ grid characteristics"""
 
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid):
         super(Grid, self).__init__(x_min, x_max, y_min, y_max, srid)
@@ -209,6 +209,10 @@ class Raster(Grid):
 
 
 class RasterElement(object):
+    """
+    raster data entry
+    """
+
     def __init__(self, count, timestamp):
         self.count = count
         self.timestamp = timestamp

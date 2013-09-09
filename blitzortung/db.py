@@ -514,9 +514,9 @@ class Stroke(Base):
 
         self.stroke_builder.set_id(result['id'])
         self.stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        location = shapely.wkb.loads(result['geog'].decode('hex'))
-        self.stroke_builder.set_x(location.x)
-        self.stroke_builder.set_y(location.y)
+        stroke_location = shapely.wkb.loads(result['geog'].decode('hex'))
+        self.stroke_builder.set_x(stroke_location.x)
+        self.stroke_builder.set_y(stroke_location.y)
         self.stroke_builder.set_amplitude(result['amplitude'])
         self.stroke_builder.set_type(result['type'])
         self.stroke_builder.set_station_count(result['stationcount'])
@@ -594,7 +594,7 @@ class Stroke(Base):
 
 
 def stroke():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(Stroke)
 
@@ -694,7 +694,8 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_offline_builder=blitzortung.builder.StationOffline)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool,
+            station_offline_builder=blitzortung.builder.StationOffline)
     def __init__(self, db_connection_pool, station_offline_builder):
         super(StationOffline, self).__init__(db_connection_pool)
 
@@ -727,7 +728,7 @@ class StationOffline(Base):
 
 
 def station_offline():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(StationOffline)
 
@@ -821,7 +822,7 @@ class Location(Base):
                     self.limit = arg
 
         if self.is_connected():
-            queryString = '''SELECT
+            query_string = '''SELECT
                 name,
                 country_code,
                 admin_code_1,
@@ -835,7 +836,7 @@ class Location(Base):
                 ST_Azimuth(geog::geometry, c.center) AS azimuth
             FROM
                 (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
-                          self.get_full_table_name() + '''
+                           self.get_full_table_name() + '''
             WHERE
                 feature_class='P'
                 AND population >= %(min_population)s
@@ -862,11 +863,11 @@ class Location(Base):
 
                 return locations
 
-            return self.execute(queryString, params, build_results)
+            return self.execute(query_string, params, build_results)
 
 
 def location():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(Location)
 
@@ -922,7 +923,7 @@ class ServiceLog(Base):
 
 
 def servicelog():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(ServiceLog)
 
