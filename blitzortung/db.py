@@ -668,7 +668,7 @@ class Station(Base):
 
 
 def station():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(Station)
 
