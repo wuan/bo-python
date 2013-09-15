@@ -2,58 +2,61 @@ import unittest
 import datetime
 
 import blitzortung
+import blitzortung.db.query
 
 
 class IdIntervalTest(unittest.TestCase):
 
     def test_nothing_set(self):
-        id_interval = blitzortung.db.IdInterval()
+        id_interval = blitzortung.db.query.IdInterval()
 
         self.assertEqual(id_interval.get_start(), None)
         self.assertEqual(id_interval.get_end(), None)
         self.assertEqual(str(id_interval), "[None - None]")
 
     def test_start_set(self):
-        id_interval = blitzortung.db.IdInterval(1234)
+        id_interval = blitzortung.db.query.IdInterval(1234)
 
         self.assertEqual(id_interval.get_start(), 1234)
         self.assertEqual(id_interval.get_end(), None)
         self.assertEqual(str(id_interval), "[1234 - None]")
 
     def test_start_and_stop_set(self):
-        id_interval = blitzortung.db.IdInterval(1234, 5678)
+        id_interval = blitzortung.db.query.IdInterval(1234, 5678)
 
         self.assertEqual(id_interval.get_start(), 1234)
         self.assertEqual(id_interval.get_end(), 5678)
         self.assertEqual(str(id_interval), "[1234 - 5678]")
 
+
 class TimeIntervalTest(unittest.TestCase):
 
     def test_nothing_set(self):
-        id_interval = blitzortung.db.TimeInterval()
+        id_interval = blitzortung.db.query.TimeInterval()
 
         self.assertEqual(id_interval.get_start(), None)
         self.assertEqual(id_interval.get_end(), None)
         self.assertEqual(str(id_interval), "[None - None]")
 
     def test_start_set(self):
-        id_interval = blitzortung.db.TimeInterval(datetime.datetime(2010,11,20,11,30,15))
+        id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010,11,20,11,30,15))
 
         self.assertEqual(id_interval.get_start(), datetime.datetime(2010,11,20,11,30,15))
         self.assertEqual(id_interval.get_end(), None)
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 - None]")
 
     def test_start_and_stop_set(self):
-        id_interval = blitzortung.db.TimeInterval(datetime.datetime(2010,11,20,11,30,15), datetime.datetime(2010,12,5,23,15,59))
+        id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010,11,20,11,30,15), datetime.datetime(2010,12,5,23,15,59))
 
         self.assertEqual(id_interval.get_start(), datetime.datetime(2010,11,20,11,30,15))
         self.assertEqual(id_interval.get_end(), datetime.datetime(2010,12,5,23,15,59))
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 - 2010-12-05 23:15:59]")
 
+
 class QueryTest(unittest.TestCase):
     
     def setUp(self):
-        self.query = blitzortung.db.Query()
+        self.query = blitzortung.db.query.Query()
         self.query.set_table_name("foo")
 
     def test_initialization(self):
@@ -86,13 +89,13 @@ class QueryTest(unittest.TestCase):
         self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux AND quux")
 
     def test_add_order(self):
-        self.query.add_order(blitzortung.db.Order("bar"))
+        self.query.add_order(blitzortung.db.query.Order("bar"))
         self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar")
 
-        self.query.add_order(blitzortung.db.Order("baz", True))
+        self.query.add_order(blitzortung.db.query.Order("baz", True))
         self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar, baz DESC")
         
     def test_set_limit(self):
-        self.query.set_limit(blitzortung.db.Limit(10))
+        self.query.set_limit(blitzortung.db.query.Limit(10))
         self.assertEqual(str(self.query), "SELECT FROM foo LIMIT 10")
         

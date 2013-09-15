@@ -56,9 +56,9 @@ __all__ = [
 
     'calc.ThreePointSolution', 'calc.ThreePointSolver',
 
-    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp', # data items
+    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
 
-    'db.Stroke', 'db.Location', 'db.Station', 'db.StationOffline', # database access
+    'db.stroke', 'db.station', 'db.stationOffline', 'db.location',  # database access
 
     'Error', # custom exceptions
 

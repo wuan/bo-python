@@ -9,7 +9,7 @@
 import math
 from abc import ABCMeta, abstractmethod
 
-import shapely
+import shapely.geometry
 
 import numpy
 
