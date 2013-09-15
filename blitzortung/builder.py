@@ -52,11 +52,9 @@ class Timestamp(Base):
     def __parse_timestamp(self, timestamp_string):
         try:
             timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
+            return pd.Timestamp(timestamp, tz=pytz.UTC)
         except ValueError:
-            timestamp = np.datetime64('NaT')
-
-        return pd.Timestamp(timestamp, tz=pytz.UTC)
-
+            return None
 
     def build(self):
         return self.timestamp
