@@ -44,7 +44,6 @@ class ClusterContainer(geom.Grid):
         y_current_bits = self.get_number_as_bitarray(self.get_y_bin(point.get_y()))
         self.bitwise_add_to(self.y_bits, y_current_bits)
 
-
     def get_bits_for_number(self, number):
         return number.bit_length() * bitarray.bitarray('0')
 

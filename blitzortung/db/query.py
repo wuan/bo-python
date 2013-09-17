@@ -1,5 +1,7 @@
 # -*- coding: utf8 -*-
 import datetime
+import shapely.geometry.base
+import shapely.wkb
 
 import blitzortung
 
@@ -251,4 +253,3 @@ class Center(object):
 
     def get_point(self):
         return self.center
-
