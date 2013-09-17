@@ -582,12 +582,6 @@ class Location(Base):
             return self.execute(query_string, params, build_results)
 
 
-def location():
-    from blitzortung import INJECTOR
-
-    return INJECTOR.get(Location)
-
-
 class ServiceLog(Base):
     """
         CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT,

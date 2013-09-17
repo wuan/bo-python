@@ -48,6 +48,12 @@ def station_offline():
     return INJECTOR.get(blitzortung.db.table.StationOffline)
 
 
+def location():
+    from blitzortung import INJECTOR
+
+    return INJECTOR.get(blitzortung.db.table.Location)
+
+
 def servicelog():
     from blitzortung import INJECTOR
 
