@@ -18,23 +18,27 @@ import blitzortung.data
 
 
 class SignalVelocity(object):
+    """
+    class for time/distance conversion regarding the reduced speed of light
+    """
 
     # speed of light in m / ns
-    __c0 = 0.299792458 
+    __c0 = 0.299792458
 
     __c_reduction_permille = 2.5
 
     __c = (1 - 0.001 * __c_reduction_permille) * __c0
 
     def get_distance_time(self, distance):
+        """ return the time in nanoseconds for a given distance in meters """
         return int(distance / self.__c)
 
     def get_time_distance(self, time_ns):
+        """ return the distance in meters for a given time interval in nanoseconds """
         return time_ns * self.__c
 
 
 class SimulatedData(object):
-
     def __init__(self, x_coord_or_point, y_coord=None):
         self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
         self.signal_velocity = SignalVelocity()
@@ -64,7 +68,6 @@ class SimulatedData(object):
 
 
 class CalcModule(Module):
-
     @singleton
     @provides(SignalVelocity)
     def provide_signal_velocity(self):
@@ -72,10 +75,9 @@ class CalcModule(Module):
 
 
 class ThreePointSolution(blitzortung.data.Event):
-
     def __init__(self, reference_event, azimuth, distance, signal_velocity):
         location = reference_event.geodesic_shift(azimuth, distance)
-        distance = reference_event.distance_to(location)        
+        distance = reference_event.distance_to(location)
 
         total_nanoseconds = reference_event.get_timestamp().value
         total_nanoseconds -= signal_velocity.get_distance_time(distance)
@@ -92,7 +94,6 @@ class ThreePointSolution(blitzortung.data.Event):
         return (measured_runtime - distance_runtime) / 1000.0
 
     def get_total_residual_time_of(self, events):
-
         residual_time_sum = 0.0
         for event in events:
             residual_time = self.get_residual_time_at(event)
@@ -106,7 +107,6 @@ class ThreePointSolution(blitzortung.data.Event):
 
 
 class ThreePointSolver(object):
-
     """
     calculates the exact coordinates of the intersection of two hyperbola defined by three event points/times
 
@@ -119,7 +119,8 @@ class ThreePointSolver(object):
             raise ValueError("ThreePointSolution requires three events")
 
         self.events = events
-        from __init__ import INJECTOR
+        from blitzortung import INJECTOR
+
         self.signal_velocity = INJECTOR.get(SignalVelocity)
 
         distance_0_1 = events[0].distance_to(events[1])
@@ -171,7 +172,7 @@ class ThreePointSolver(object):
         solutions = []
 
         if root_argument < 0.0 or denominator == 0.0:
-            print "%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2) 
+            print "%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2)
             return solutions
 
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
@@ -191,13 +192,15 @@ class ThreePointSolver(object):
 
                 solution_distance = self.hyperbola_radius(solution_angle, D1, G1, 0)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
-                solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance, self.signal_velocity)
+                solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance,
+                                                self.signal_velocity)
 
                 solution_distance = self.hyperbola_radius(solution_angle, D2, G2, phi2 - phi1)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
-                solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance, self.signal_velocity)
+                solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance,
+                                                self.signal_velocity)
 
-                if  solution_a.has_same_location(solution_b):
+                if solution_a.has_same_location(solution_b):
                     solutions.append(solution_a)
 
         return solutions
@@ -223,14 +226,14 @@ class ThreePointSolver(object):
         return -asymptotic_angle < angle < asymptotic_angle
 
     def calculate_asymptotic_angle(self, D, G):
-        return math.acos(-D/G)
+        return math.acos(-D / G)
 
     def calculate_P_Q(self, D, G):
         denominator = G * G - D * D
         return D / denominator, G / denominator
 
     def square(self, x):
-        return x*x
+        return x * x
 
     def azimuth_to_angle(self, azimuth):
         return math.pi / 2 - azimuth
@@ -240,7 +243,6 @@ class ThreePointSolver(object):
 
 
 class FitSeed(object):
-
     def __init__(self, events, signal_velocity):
         self.events = events
         self.signal_velocity = signal_velocity
@@ -276,7 +278,6 @@ class FitParameter:
 
 
 class LeastSquareFit(object):
-
     TIME_FACTOR = 1000.0
 
     def __init__(self, three_point_solution, events, signal_velocity):
@@ -287,7 +288,7 @@ class LeastSquareFit(object):
         self.signal_velocity = signal_velocity
 
         self.parameters = collections.OrderedDict()
-        self.parameters[FitParameter.Time] = self.calculate_time_value(three_point_solution.get_timestamp()) 
+        self.parameters[FitParameter.Time] = self.calculate_time_value(three_point_solution.get_timestamp())
         self.parameters[FitParameter.Longitude] = three_point_solution.get_x()
         self.parameters[FitParameter.Latitude] = three_point_solution.get_y()
 
@@ -338,7 +339,8 @@ class LeastSquareFit(object):
 
         for event_index in range(self.m_dim):
             for parameter_index in self.parameters:
-                self.a_matrix[event_index][parameter_index] = self.calculate_partial_derivative(event_index, parameter_index)
+                self.a_matrix[event_index][parameter_index] = self.calculate_partial_derivative(event_index,
+                                                                                                parameter_index)
             self.b_vector[event_index] = self.get_residual_time_at(self.events[event_index])
 
     def update_parameters(self, solution):
@@ -369,7 +371,7 @@ class LeastSquareFit(object):
 
         measured_runtime = self.calculate_time_value(event.get_timestamp()) - self.parameters[FitParameter.Time]
 
-#print "%.3f - %.3f = %.3f : %.3f %d %d" %(measured_runtime, distance_runtime, measured_runtime - distance_runtime, self.calculate_time_value(event.get_timestamp()), self.time_reference.value, event.get_timestamp().value)
+        #print "%.3f - %.3f = %.3f : %.3f %d %d" %(measured_runtime, distance_runtime, measured_runtime - distance_runtime, self.calculate_time_value(event.get_timestamp()), self.time_reference.value, event.get_timestamp().value)
 
         return measured_runtime - distance_runtime
 

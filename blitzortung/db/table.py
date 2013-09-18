@@ -7,7 +7,7 @@ import shapely.geometry
 import shapely.geometry.base
 import pandas as pd
 
-import blitzortung
+import blitzortung.geom
 from blitzortung.db.query import Limit, Center, Query, RasterQuery
 
 
