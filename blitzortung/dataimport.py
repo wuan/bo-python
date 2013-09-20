@@ -171,7 +171,11 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
             initial_stroke_count = len(strokes)
             start_time = time.time()
             for stroke_data in self.read_data(url_path=url_path):
-                stroke = self.stroke_builder.from_data(stroke_data).build()
+	        try:
+                    stroke = self.stroke_builder.from_data(stroke_data).build()
+	 	except Exception as e:
+		    self.logger.error("%s: %s (%s)" %(e.__class__, e.message, stroke_data))
+		    raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
                 if latest_stroke < timestamp:

@@ -34,7 +34,6 @@ from injector import Injector
 import builder
 import cache
 import calc
-import clustering
 import config
 import data
 import db
