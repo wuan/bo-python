@@ -503,7 +503,7 @@ class Location(Base):
 
         name = name.replace("'", "''")
 
-        classification = self.size_class(population)
+        classification = self.determine_size_class(population)
 
         if classification is not None:
             self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -513,7 +513,8 @@ class Location(Base):
                          (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1,
                           admin_code_2, population, elevation))
 
-    def size_class(self, n):
+    @staticmethod
+    def determine_size_class(n):
         if n < 1:
             return None
         base = math.floor(math.log(n) / math.log(10)) - 1

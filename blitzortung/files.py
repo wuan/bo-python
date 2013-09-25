@@ -164,7 +164,7 @@ class Data(object):
         data_pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         (output, _) = data_pipe.communicate()
 
-        return output.splitlines()
+        return output.splitlines(keepends=False)
 
     def get_data(self, raw_file, start_time, end_time):
         raw_events = []

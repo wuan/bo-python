@@ -246,7 +246,7 @@ def raw():
 
 
 class WebModule(Module):
+    @staticmethod
     @provides(BlitzortungDataTransformer)
-    def provide_data_format(self):
+    def provide_data_format():
         return BlitzortungDataTransformer()
-    
