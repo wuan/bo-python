@@ -130,6 +130,10 @@ class BlitzortungStrokeUrlGenerator(object):
     url_path_minute_increment = 10
     url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
 
+    def __init__(self):
+        self.current_time = None
+        self.end_time = None
+
     def get_url_paths(self, latest_time, present_time=None):
         self.current_time = self.__round_time(latest_time)
         if not present_time:
@@ -145,9 +149,9 @@ class BlitzortungStrokeUrlGenerator(object):
 
         return url_paths
 
-    def __round_time(self, time):
-        return time.replace(
-            minute=time.minute // self.url_path_minute_increment * self.url_path_minute_increment,
+    def __round_time(self, time_value):
+        return time_value.replace(
+            minute=time_value.minute // self.url_path_minute_increment * self.url_path_minute_increment,
             second=0,
             microsecond=0)
 
@@ -171,11 +175,11 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
             initial_stroke_count = len(strokes)
             start_time = time.time()
             for stroke_data in self.read_data(url_path=url_path):
-	        try:
+                try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
-	 	except Exception as e:
-		    self.logger.error("%s: %s (%s)" %(e.__class__, e.message, stroke_data))
-		    raise e
+                except Exception as e:
+                    self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
                 if latest_stroke < timestamp:

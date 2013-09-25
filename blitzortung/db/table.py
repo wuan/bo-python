@@ -73,7 +73,8 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
-        self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
+        self.srid = blitzortung.geom.Geometry.DefaultSrid
+        self.tz = None
         self.set_timezone(Base.DefaultTimezone)
 
         cur = None

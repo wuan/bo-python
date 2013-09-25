@@ -206,7 +206,8 @@ class ThreePointSolver(object):
         return solutions
 
 
-    def calculateAngleProjection(self, phi1, phi2):
+    @staticmethod
+    def calculateAngleProjection(phi1, phi2):
         angle = phi2 - phi1
         return math.cos(angle), math.sin(angle)
 
@@ -275,6 +276,9 @@ class FitSeed(object):
 
 class FitParameter:
     Time, Longitude, Latitude = range(3)
+
+    def __init__(self):
+        pass
 
 
 class LeastSquareFit(object):

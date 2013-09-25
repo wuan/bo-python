@@ -329,8 +329,10 @@ class Histogram(object):
 
             data.get()
 
-            entry = {'center_time': time.get_center_time(), 'count': data.getCount(), 'mean': data.getMean(),
-                     'variance': data.getVariance()}
+            entry = {'center_time': time.get_center_time(),
+                     'count': data.get_count(),
+                     'mean': data.get_mean(),
+                     'variance': data.get_variance()}
 
             self.histogram.append(entry)
 

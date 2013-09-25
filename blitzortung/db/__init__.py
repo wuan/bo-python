@@ -18,7 +18,8 @@ import table
 
 
 class DbModule(Module):
-    def cleanup(self, connection_pool):
+    @staticmethod
+    def cleanup(connection_pool):
         connection_pool.closeall()
 
     @singleton

@@ -44,7 +44,8 @@ class Point(object):
         result = self.__geod.inv(self.x_coord, self.y_coord, other.x_coord, other.y_coord, radians=False)
         return result[0] * self.__radians_factor, result[2]
 
-    def __get_point_coordinates(self, x_coord_or_point, y_coord):
+    @staticmethod
+    def __get_point_coordinates(x_coord_or_point, y_coord):
         if isinstance(x_coord_or_point, Point):
             return x_coord_or_point.get_x(), x_coord_or_point.get_y()
         else:
