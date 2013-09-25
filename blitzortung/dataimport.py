@@ -169,10 +169,10 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
 
     def get_strokes_since(self, latest_stroke):
         self.logger.debug("import strokes since %s" % latest_stroke)
-        strokes = []
+        strokes_since = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
-            initial_stroke_count = len(strokes)
+            initial_stroke_count = len(strokes_since)
             start_time = time.time()
             for stroke_data in self.read_data(url_path=url_path):
                 try:
@@ -183,11 +183,11 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
                 if latest_stroke < timestamp:
-                    strokes.append(stroke)
+                    strokes_since.append(stroke)
             end_time = time.time()
-            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes) - initial_stroke_count,
+            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes_since) - initial_stroke_count,
                               end_time - start_time, url_path)
-        return strokes
+        return strokes_since
 
 
 def strokes():
@@ -207,13 +207,13 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
         self.station_builder = station_builder
 
     def get_stations(self):
-        stations = []
+        current_stations = []
         for station_data in self.read_data():
             try:
-                stations.append(self.station_builder.from_data(station_data).build())
+                current_stations.append(self.station_builder.from_data(station_data).build())
             except blitzortung.builder.BuildError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
-        return stations
+        return current_stations
 
     def process(self, data):
         data = cStringIO.StringIO(data)

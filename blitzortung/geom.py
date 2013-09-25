@@ -158,7 +158,7 @@ class Raster(Grid):
         result += 'CELLSIZE %.4f\n' % self.get_x_div()
         result += 'NODATA_VALUE %s\n' % str(self.get_nodata_value())
 
-        cell_to_string = lambda cell: str(cell.get_count()) if cell else '0'
+        cell_to_string = lambda current_cell: str(current_cell.get_count()) if current_cell else '0'
         result += '\n'.join([' '.join([cell_to_string(cell) for cell in row]) for row in self.data[::-1]])
 
         return result

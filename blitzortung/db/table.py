@@ -142,7 +142,8 @@ class Base(object):
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
 
-    def from_timezone_to_bare_utc(self, time_with_tz):
+    @staticmethod
+    def from_timezone_to_bare_utc(time_with_tz):
         return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
 
     def commit(self):

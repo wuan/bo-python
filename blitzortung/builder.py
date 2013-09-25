@@ -49,7 +49,8 @@ class Timestamp(Base):
             self.timestamp = self.__parse_timestamp(timestamp)
         return self
 
-    def __parse_timestamp(self, timestamp_string):
+    @staticmethod
+    def __parse_timestamp(timestamp_string):
         try:
             timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
             return pd.Timestamp(timestamp, tz=pytz.UTC)
@@ -389,10 +390,12 @@ class ExtEvent(RawEvent):
 
 
 class BuilderModule(Module):
+    @staticmethod
     @provides(Stroke)
-    def provide_stroke_builder(self):
+    def provide_stroke_builder():
         return Stroke()
 
+    @staticmethod
     @provides(Station)
-    def provide_station_builder(self):
+    def provide_station_builder():
         return Station()

@@ -54,7 +54,8 @@ class Point(object):
     def __eq__(self, other):
         return self.equal(self.x_coord, other.x_coord) and self.equal(self.y_coord, other.y_coord)
 
-    def equal(self, a, b):
+    @staticmethod
+    def equal(a, b):
         return abs(a - b) < 1e-4
 
     def __str__(self):
