@@ -29,22 +29,22 @@ class Error(Exception):
 #   Public interface and exports.
 #-----------------------------------------------------------------------------
 
-from injector import Injector
+import injector
 
 import builder
 import cache
 import calc
 import config
 import data
+import dataimport
 import db
 import geom
 import files
 import types
 import util
-import dataimport
 
 
-INJECTOR = Injector(
+INJECTOR = injector.Injector(
     [builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.DataImportModule()])
 
 __all__ = [
