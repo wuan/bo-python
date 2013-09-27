@@ -45,7 +45,7 @@ import dataimport
 
 
 INJECTOR = Injector(
-    [builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.WebModule()])
+    [builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.DataImportModule()])
 
 __all__ = [
 

@@ -245,7 +245,7 @@ def raw():
     return INJECTOR.get(Raw)
 
 
-class WebModule(Module):
+class DataImportModule(Module):
     @provides(BlitzortungDataTransformer)
-    def provide_data_format():
+    def provide_data_format(self):
         return BlitzortungDataTransformer()

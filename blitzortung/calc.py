@@ -70,7 +70,7 @@ class SimulatedData(object):
 class CalcModule(Module):
     @singleton
     @provides(SignalVelocity)
-    def provide_signal_velocity():
+    def provide_signal_velocity(self):
         return SignalVelocity()
 
 

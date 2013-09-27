@@ -48,8 +48,7 @@ def config():
 class ConfigModule(Module):
     @singleton
     @provides(ConfigParser.ConfigParser)
-    def provide_config_parser():
-        print "provide config parser"
+    def provide_config_parser(self):
         config_parser = ConfigParser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser

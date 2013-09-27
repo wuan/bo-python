@@ -391,9 +391,9 @@ class ExtEvent(RawEvent):
 
 class BuilderModule(Module):
     @provides(Stroke)
-    def provide_stroke_builder():
+    def provide_stroke_builder(self):
         return Stroke()
 
     @provides(Station)
-    def provide_station_builder():
+    def provide_station_builder(self):
         return Station()

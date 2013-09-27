@@ -1,8 +1,9 @@
 # -*- coding: utf8 -*-
+import ConfigParser
 
 import unittest
 import datetime
-from hamcrest import assert_that, is_, equal_to, none
+from hamcrest import assert_that, is_, equal_to, instance_of
 from mockito import mock, when, verify
 import nose
 import pytz
@@ -62,3 +63,13 @@ class TestConfig(unittest.TestCase):
 
         assert_that(str(self.config), is_(equal_to("Config(user: <username>, pass: **********)")))
 
+
+class TestConfigModule(unittest.TestCase):
+
+    def setUp(self):
+        self.config_module = blitzortung.config.ConfigModule()
+
+    def test_provide_config_parser(self):
+        config_parser = self.config_module.provide_config_parser()
+
+        assert_that(config_parser, is_(instance_of(ConfigParser.ConfigParser)))
