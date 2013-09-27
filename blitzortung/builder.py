@@ -390,12 +390,10 @@ class ExtEvent(RawEvent):
 
 
 class BuilderModule(Module):
-    @staticmethod
     @provides(Stroke)
     def provide_stroke_builder():
         return Stroke()
 
-    @staticmethod
     @provides(Station)
     def provide_station_builder():
         return Station()

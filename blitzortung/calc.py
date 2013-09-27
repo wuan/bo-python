@@ -68,7 +68,6 @@ class SimulatedData(object):
 
 
 class CalcModule(Module):
-    @staticmethod
     @singleton
     @provides(SignalVelocity)
     def provide_signal_velocity():

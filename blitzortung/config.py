@@ -46,10 +46,10 @@ def config():
 
 
 class ConfigModule(Module):
-    @staticmethod
     @singleton
     @provides(ConfigParser.ConfigParser)
     def provide_config_parser():
+        print "provide config parser"
         config_parser = ConfigParser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser
