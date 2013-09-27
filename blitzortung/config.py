@@ -40,7 +40,7 @@ class Config(object):
 
 
 def config():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(Config)
 
