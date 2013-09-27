@@ -73,7 +73,8 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
-        self.set_srid(blitzortung.geom.Geometry.DefaultSrid)
+        self.srid = blitzortung.geom.Geometry.DefaultSrid
+        self.tz = None
         self.set_timezone(Base.DefaultTimezone)
 
         cur = None
@@ -141,7 +142,8 @@ class Base(object):
     def from_bare_utc_to_timezone(self, utc_time):
         return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
 
-    def from_timezone_to_bare_utc(self, time_with_tz):
+    @staticmethod
+    def from_timezone_to_bare_utc(time_with_tz):
         return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
 
     def commit(self):
@@ -501,7 +503,7 @@ class Location(Base):
 
         name = name.replace("'", "''")
 
-        classification = self.size_class(population)
+        classification = self.determine_size_class(population)
 
         if classification is not None:
             self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -511,7 +513,8 @@ class Location(Base):
                          (x, y, name, classification, feature_class, feature_code, country_code, admin_code_1,
                           admin_code_2, population, elevation))
 
-    def size_class(self, n):
+    @staticmethod
+    def determine_size_class(n):
         if n < 1:
             return None
         base = math.floor(math.log(n) / math.log(10)) - 1

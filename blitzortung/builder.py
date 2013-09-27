@@ -49,7 +49,8 @@ class Timestamp(Base):
             self.timestamp = self.__parse_timestamp(timestamp)
         return self
 
-    def __parse_timestamp(self, timestamp_string):
+    @staticmethod
+    def __parse_timestamp(timestamp_string):
         try:
             timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
             return pd.Timestamp(timestamp, tz=pytz.UTC)
@@ -83,8 +84,11 @@ class Stroke(Event):
         super(Stroke, self).__init__()
         self.id_value = -1
         self.altitude = None
+        self.amplitude = None
+        self.type_val = None
+        self.lateral_error = None
+        self.station_count = None
         self.stations = []
-	self.type_val = None
 
     def set_id(self, id_value):
         self.id_value = id_value
@@ -128,7 +132,7 @@ class Stroke(Event):
         self.set_altitude(float(position[2]))
         self.set_amplitude(float(data['str']))
         self.set_lateral_error(float(data['dev']))
-	if 'typ' in data:
+        if 'typ' in data:
             self.set_type(int(data['typ']))
         stations = data['sta']
         self.set_station_count(int(stations[0]))
@@ -144,6 +148,7 @@ class Station(Event):
         self.number = -1
         self.user = -1
         self.name = None
+        self.country = None
         self.status = None
         self.board = None
 
@@ -190,7 +195,8 @@ class Station(Event):
                                         self.x_coord, self.y_coord, self.timestamp, self.status,
                                         self.board)
 
-    def _unquote(self, html_coded_string):
+    @staticmethod
+    def _unquote(html_coded_string):
         return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
 
 
@@ -227,6 +233,8 @@ class RawEvent(Event):
         super(RawEvent, self).__init__()
         self.altitude = 0
         self.amplitude = 0
+        self.x_amplitude = 0
+        self.y_amplitude = 0
         self.angle = 0
 
     def build(self):
@@ -262,7 +270,7 @@ class RawEvent(Event):
                 self.set_x(float(fields[2]))
                 self.set_y(float(fields[3]))
                 self.set_timestamp(' '.join(fields[0:2]))
-                self.timestamp = self.timestamp + datetime.timedelta(seconds=1)
+                self.set_timestamp(self.timestamp + datetime.timedelta(seconds=1), self.get_timestamp_nanoseconds())
                 self.set_altitude(int(fields[4]))
                 self.x_amplitude = float(fields[7])
                 self.y_amplitude = float(fields[8])
@@ -322,8 +330,8 @@ class RawWaveformEvent(Event):
         """ Construct stroke from blitzortung text format data line """
         if string:
             fields = string.split(' ')
-            self.y = float(fields[2])
-            self.x = float(fields[3])
+            self.set_y(float(fields[2]))
+            self.set_x(float(fields[3]))
             self.set_timestamp(' '.join(fields[0:2]))
             self.timestamp += datetime.timedelta(seconds=1)
             if len(fields) >= 8:
@@ -382,10 +390,12 @@ class ExtEvent(RawEvent):
 
 
 class BuilderModule(Module):
+    @staticmethod
     @provides(Stroke)
-    def provide_stroke_builder(self):
+    def provide_stroke_builder():
         return Stroke()
 
+    @staticmethod
     @provides(Station)
-    def provide_station_builder(self):
+    def provide_station_builder():
         return Station()

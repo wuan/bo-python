@@ -42,7 +42,8 @@ class TimeInterval(TimeRange):
     def __str__(self):
         return "['" + str(self.start_time) + "':'" + str(self.end_time) + "'," + str(self.time_delta) + "]"
 
-    def total_seconds(self, time):
+    @staticmethod
+    def total_seconds(time):
         """ return the total seconds of the given time or datetime (relative to midnight) """
 
         if isinstance(time, datetime.datetime):
@@ -311,7 +312,8 @@ class Stroke(Event):
     def get_stations(self):
         return self.stations
 
-    def is_detected_by_user(self):
+    @staticmethod
+    def is_detected_by_user():
         return False
 
     def __str__(self):
@@ -332,8 +334,10 @@ class Histogram(object):
 
             data.get()
 
-            entry = {'center_time': time.get_center_time(), 'count': data.getCount(), 'mean': data.getMean(),
-                     'variance': data.getVariance()}
+            entry = {'center_time': time.get_center_time(),
+                     'count': data.get_count(),
+                     'mean': data.get_mean(),
+                     'variance': data.get_variance()}
 
             self.histogram.append(entry)
 

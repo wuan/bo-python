@@ -156,24 +156,25 @@ class Data(object):
         else:
             return self.get_data(raw_file, start_time, end_time)
 
-    def get_output(self, raw_file, start_time, end_time, long_format=False):
+    @staticmethod
+    def get_output(raw_file, start_time, end_time, long_format=False):
         cmd = ['bo-data', '-i', raw_file, '-s', start_time, '-e', end_time]
         if long_format:
             cmd.append('--long-data')
-        dataPipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        (output, _) = dataPipe.communicate()
+        data_pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        (output, _) = data_pipe.communicate()
 
-        return output.splitlines()
+        return output.splitlines(keepends=False)
 
     def get_data(self, raw_file, start_time, end_time):
-        rawEvents = []
+        raw_events = []
 
         for line in self.get_output(raw_file, start_time, end_time):
             raw_event_builder = blitzortung.builder.RawEvent()
             raw_event_builder.from_string(line)
-            rawEvents.append(raw_event_builder.build())
+            raw_events.append(raw_event_builder.build())
 
-        return rawEvents
+        return raw_events
 
     def list(self):
         for event in self.get():
@@ -185,23 +186,30 @@ class Data(object):
 
 
 class StatisticsData(Data):
+
+    def __init__(self, raw_file_path, time):
+        super(StatisticsData, self).__init__(raw_file_path, time)
+        self.count = 0
+        self.mean = None
+        self.variance = None
+
     def get_data(self, raw_file, start_time, end_time):
         results = raw_file.get_statistical_data()
         self.count = int(results[0])
         self.mean = float(results[1])
         self.variance = float(results[2])
 
-    def getCount(self):
+    def get_count(self):
         if not self.error:
             return self.count
         return 0
 
-    def getMean(self):
+    def get_mean(self):
         if not self.error:
             return self.mean
         return float('nan')
 
-    def getVariance(self):
+    def get_variance(self):
         if not self.error:
             return self.variance
         return float('nan')

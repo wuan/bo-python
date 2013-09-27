@@ -12,7 +12,8 @@ import blitzortung
 
 
 class TestBase(unittest.TestCase):
-    def get_timestamp(self, time_string):
+    @staticmethod
+    def get_timestamp(time_string):
         return pd.Timestamp(np.datetime64(time_string), tz=pytz.UTC)
 
 

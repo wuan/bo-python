@@ -68,9 +68,10 @@ class SimulatedData(object):
 
 
 class CalcModule(Module):
+    @staticmethod
     @singleton
     @provides(SignalVelocity)
-    def provide_signal_velocity(self):
+    def provide_signal_velocity():
         return SignalVelocity()
 
 
@@ -163,7 +164,7 @@ class ThreePointSolver(object):
         (p1, q1) = self.calculate_P_Q(D1, G1)
         (p2, q2) = self.calculate_P_Q(D2, G2)
 
-        (cosine, sine) = self.calculateAngleProjection(phi1, phi2)
+        (cosine, sine) = self.calculate_angle_projection(phi1, phi2)
 
         denominator = q1 * q1 + q2 * q2 - 2 * q1 * q2 * cosine
 
@@ -206,11 +207,13 @@ class ThreePointSolver(object):
         return solutions
 
 
-    def calculateAngleProjection(self, phi1, phi2):
+    @staticmethod
+    def calculate_angle_projection(phi1, phi2):
         angle = phi2 - phi1
         return math.cos(angle), math.sin(angle)
 
-    def hyperbola_radius(self, theta, D, G, phi):
+    @staticmethod
+    def hyperbola_radius(theta, D, G, phi):
         return 0.5 * (G * G - D * D) / (D + G * math.cos(theta - phi))
 
     def is_angle_valid_for_hyperbola(self, angle, D, G, phi):
@@ -225,20 +228,25 @@ class ThreePointSolver(object):
 
         return -asymptotic_angle < angle < asymptotic_angle
 
-    def calculate_asymptotic_angle(self, D, G):
+    @staticmethod
+    def calculate_asymptotic_angle(D, G):
         return math.acos(-D / G)
 
-    def calculate_P_Q(self, D, G):
+    @staticmethod
+    def calculate_P_Q(D, G):
         denominator = G * G - D * D
         return D / denominator, G / denominator
 
-    def square(self, x):
+    @staticmethod
+    def square(x):
         return x * x
 
-    def azimuth_to_angle(self, azimuth):
+    @staticmethod
+    def azimuth_to_angle(azimuth):
         return math.pi / 2 - azimuth
 
-    def angle_to_azimuth(self, angle):
+    @staticmethod
+    def angle_to_azimuth(angle):
         return math.pi / 2 - angle
 
 
@@ -275,6 +283,9 @@ class FitSeed(object):
 
 class FitParameter:
     Time, Longitude, Latitude = range(3)
+
+    def __init__(self):
+        pass
 
 
 class LeastSquareFit(object):

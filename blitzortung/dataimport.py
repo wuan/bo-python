@@ -130,6 +130,10 @@ class BlitzortungStrokeUrlGenerator(object):
     url_path_minute_increment = 10
     url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
 
+    def __init__(self):
+        self.current_time = None
+        self.end_time = None
+
     def get_url_paths(self, latest_time, present_time=None):
         self.current_time = self.__round_time(latest_time)
         if not present_time:
@@ -145,9 +149,9 @@ class BlitzortungStrokeUrlGenerator(object):
 
         return url_paths
 
-    def __round_time(self, time):
-        return time.replace(
-            minute=time.minute // self.url_path_minute_increment * self.url_path_minute_increment,
+    def __round_time(self, time_value):
+        return time_value.replace(
+            minute=time_value.minute // self.url_path_minute_increment * self.url_path_minute_increment,
             second=0,
             microsecond=0)
 
@@ -165,25 +169,25 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
 
     def get_strokes_since(self, latest_stroke):
         self.logger.debug("import strokes since %s" % latest_stroke)
-        strokes = []
+        strokes_since = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
-            initial_stroke_count = len(strokes)
+            initial_stroke_count = len(strokes_since)
             start_time = time.time()
             for stroke_data in self.read_data(url_path=url_path):
-	        try:
+                try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
-	 	except Exception as e:
-		    self.logger.error("%s: %s (%s)" %(e.__class__, e.message, stroke_data))
-		    raise e
+                except Exception as e:
+                    self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
                 if latest_stroke < timestamp:
-                    strokes.append(stroke)
+                    strokes_since.append(stroke)
             end_time = time.time()
-            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes) - initial_stroke_count,
+            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes_since) - initial_stroke_count,
                               end_time - start_time, url_path)
-        return strokes
+        return strokes_since
 
 
 def strokes():
@@ -203,13 +207,13 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
         self.station_builder = station_builder
 
     def get_stations(self):
-        stations = []
+        current_stations = []
         for station_data in self.read_data():
             try:
-                stations.append(self.station_builder.from_data(station_data).build())
+                current_stations.append(self.station_builder.from_data(station_data).build())
             except blitzortung.builder.BuildError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
-        return stations
+        return current_stations
 
     def process(self, data):
         data = cStringIO.StringIO(data)
@@ -242,7 +246,7 @@ def raw():
 
 
 class WebModule(Module):
+    @staticmethod
     @provides(BlitzortungDataTransformer)
-    def provide_data_format(self):
+    def provide_data_format():
         return BlitzortungDataTransformer()
-    
