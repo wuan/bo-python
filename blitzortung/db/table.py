@@ -54,7 +54,6 @@ class Base(object):
 
     def __init__(self, db_connection_pool):
 
-      	print db_connection_pool
         self.db_connection_pool = db_connection_pool
 
         self.schema_name = None
