@@ -1,14 +1,16 @@
 # -*- coding: utf8 -*-
 
 import unittest
-import math
 import datetime
-from hamcrest import assert_that, is_, equal_to
+import urllib2
+from mock import Mock, patch, call
+from hamcrest import assert_that, is_, equal_to, has_item, contains
 
 import blitzortung
 
 
-class DataFormatTest(unittest.TestCase):
+class BlitzortungDataTransformerTest(unittest.TestCase):
+
     def setUp(self):
         self.data_format = blitzortung.dataimport.BlitzortungDataTransformer()
 
@@ -35,6 +37,46 @@ class DataFormatTest(unittest.TestCase):
                                                    u'226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594'],
                                           u'pos': [u'44.162701', u'8.931001', u'0'], u'dev': u'20146', u'str': u'4.75',
                                           u'time': u'10:30:03.644038642', u'date': u'2013-08-08', u'typ': u'0'})))
+
+
+class HttpDataTransportTest(unittest.TestCase):
+
+    def setUp(self):
+        self.config = Mock()
+        self.config.get_username.return_value = '<username>'
+        self.config.get_password.return_value = '<password>'
+
+        self.data_transport = blitzortung.dataimport.HttpDataTransport(self.config)
+
+    @patch('urllib2.HTTPPasswordMgrWithDefaultRealm')
+    @patch('urllib2.HTTPBasicAuthHandler')
+    @patch('urllib2.build_opener')
+    def test_read_from_url(self, build_opener_mock, basic_auth_handler_class_mock, password_manager_class_mock):
+        response = self.data_transport.read_from_url('http://foo.bar/baz')
+
+        password_manager = password_manager_class_mock()
+        assert_that(password_manager.mock_calls, has_item(call.add_password('blitzortung.org', 'foo.bar', '<username>', '<password>')))
+        assert_that(basic_auth_handler_class_mock.mock_calls, has_item(call(password_manager)))
+        handler = basic_auth_handler_class_mock()
+        assert_that(build_opener_mock.mock_calls, has_item(call(handler)))
+        opener = build_opener_mock()
+        url_connection = opener.open.return_value
+        unstripped_response = url_connection.read.return_value
+        stripped_response = unstripped_response.strip.return_value
+        assert_that(response, is_(equal_to(stripped_response)))
+
+        assert_that(url_connection.mock_calls, has_item(call.close()))
+
+    @patch('urllib2.HTTPPasswordMgrWithDefaultRealm')
+    @patch('urllib2.HTTPBasicAuthHandler')
+    @patch('urllib2.build_opener')
+    def test_read_from_url_with_exception(self, build_opener_mock, basic_auth_handler_class_mock, password_manager_class_mock):
+        opener = build_opener_mock()
+        opener.open.side_effect = urllib2.URLError("foo")
+
+        response = self.data_transport.read_from_url('http://foo.bar/baz')
+
+        assert_that(response, is_(None))
 
 
 class StrokesUrlTest(unittest.TestCase):
