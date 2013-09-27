@@ -25,8 +25,8 @@ class Base(object):
 
 
 class Timestamp(Base):
-    timeformat = '%Y-%m-%d %H:%M:%S'
-    timeformat_fractional_seconds = timeformat + '.%f'
+    time_format = '%Y-%m-%d %H:%M:%S'
+    time_format_fractional_seconds = time_format + '.%f'
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
@@ -270,7 +270,7 @@ class RawEvent(Event):
                 self.set_x(float(fields[2]))
                 self.set_y(float(fields[3]))
                 self.set_timestamp(' '.join(fields[0:2]))
-                self.set_timestamp(self.timestamp + datetime.timedelta(seconds=1), self.get_timestamp_nanoseconds())
+                self.set_timestamp(self.timestamp + datetime.timedelta(seconds=1))
                 self.set_altitude(int(fields[4]))
                 self.x_amplitude = float(fields[7])
                 self.y_amplitude = float(fields[8])
