@@ -282,38 +282,6 @@ class Stroke(Event):
         )
 
 
-class Histogram(object):
-    def __init__(self, file_names, time):
-        data = files.StatisticsData(file_names, time)
-
-        self.histogram = []
-        while True:
-
-            data.get()
-
-            entry = {'center_time': time.get_center_time(),
-                     'count': data.get_count(),
-                     'mean': data.get_mean(),
-                     'variance': data.get_variance()}
-
-            self.histogram.append(entry)
-
-            if not time.has_next():
-                break
-
-            time.next()
-
-    def get(self):
-        return self.histogram
-
-
-class AmplitudeHistogram(object):
-    def __init__(self, file_names, time):
-        data = files.HistogramData(file_names, time)
-
-        data.list()
-
-
 class ChannelWaveform(object):
     """
     class for raw data waveform channels

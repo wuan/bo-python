@@ -178,37 +178,3 @@ class Data(object):
         for line in self.get(True):
             print line
 
-
-class StatisticsData(Data):
-
-    def __init__(self, raw_file_path, time):
-        super(StatisticsData, self).__init__(raw_file_path, time)
-        self.count = 0
-        self.mean = None
-        self.variance = None
-
-    def get_data(self, raw_file, start_time, end_time):
-        results = raw_file.get_statistical_data()
-        self.count = int(results[0])
-        self.mean = float(results[1])
-        self.variance = float(results[2])
-
-    def get_count(self):
-        if not self.error:
-            return self.count
-        return 0
-
-    def get_mean(self):
-        if not self.error:
-            return self.mean
-        return float('nan')
-
-    def get_variance(self):
-        if not self.error:
-            return self.variance
-        return float('nan')
-
-
-class HistogramData(Data):
-    def get_data(self, raw_file, start_time, end_time):
-        return raw_file.get_histogram(start_time, end_time)
