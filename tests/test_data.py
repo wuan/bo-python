@@ -34,6 +34,21 @@ class TestTimeRange(unittest.TestCase):
         assert_that(str(self.time_range), is_(equal_to("['2012-03-02 09:50:14':'2012-03-02 11:20:24']")))
 
 
+class TestTimeInterval(unittest.TestCase):
+
+    def setUp(self):
+        self.end_time = datetime.datetime(2013, 9, 28, 11, 30, 0)
+        self.time_interval = blitzortung.data.TimeInterval(self.end_time, datetime.timedelta(minutes=5))
+
+    def test_round_time_rounding_down(self):
+        rounded_time = self.time_interval.round_time(datetime.datetime(2013, 9, 28, 11, 34, 59))
+        assert_that(rounded_time, is_(equal_to(self.end_time)))
+
+    def test_round_time_rounding_up(self):
+        rounded_time = self.time_interval.round_time(datetime.datetime(2013, 9, 28, 11, 35, 0))
+        assert_that(rounded_time, is_(equal_to(datetime.datetime(2013, 9, 28, 11, 35, 0))))
+
+
 class TestEvent(unittest.TestCase):
     def test_time_difference(self):
         now = pd.Timestamp(datetime.datetime.utcnow(), tz=pytz.UTC)
