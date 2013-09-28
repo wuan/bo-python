@@ -315,6 +315,10 @@ class AmplitudeHistogram(object):
 
 
 class ChannelWaveform(object):
+    """
+    class for raw data waveform channels
+    """
+
     def __init__(self, channel_number, amplifier_version, antenna, gain, values, start, bits, shift, conversion_gap,
                  conversion_time, waveform):
         self.channel_number = channel_number
@@ -330,34 +334,68 @@ class ChannelWaveform(object):
         self.waveform = waveform
 
     def get_channel_number(self):
+        """
+        returns the channel number
+        """
         return self.channel_number
 
     def get_amplifier_version(self):
+        """
+        returns the amplifier version used (GREEN is returned for old systems)
+        """
         return self.amplifier_version
 
     def get_antenna(self):
+        """
+        get antenna type index
+        """
         return self.antenna
 
     def get_gain(self):
+        """
+        get gain setting used
+        the two gain values are dot separated
+        """
         return self.gain
 
     def get_values(self):
+        """
+        get number of values recorded
+        """
         return self.values
 
     def get_start(self):
+        """
+        get number of pretrigger samples
+        """
         return self.start
 
     def get_bits(self):
+        """
+        get bits used per sample
+        """
         return self.bits
 
     def get_shift(self):
+        """
+        no clue what this means
+        """
         return self.shift
 
     def get_conversion_gap(self):
+        """
+        get the conversion gap
+        """
         return self.conversion_gap
 
     def get_conversion_time(self):
+        """
+        get the conversion time which is the time between consecutive samples
+        """
         return self.conversion_time
 
     def get_waveform(self):
+        """
+        get array of integer numbers representing the measured waveform
+        """
         return self.waveform
