@@ -151,6 +151,9 @@ class RawWaveformEvent(Event):
 
 
 class Station(Event):
+    """
+    class for station objects
+    """
     def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
         super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
@@ -175,18 +178,33 @@ class Station(Event):
         return not self == other
 
     def get_number(self):
+        """
+        returns the station number
+        """
         return self.number
 
     def get_user(self):
+        """
+        returns the user id for which the station is registered
+        """
         return self.user
 
     def get_name(self):
+        """
+        returns the name of the station
+        """
         return self.name
 
     def get_country(self):
+        """
+        returns the country in which the station resides
+        """
         return self.country
 
     def get_status(self):
+        """
+        get the current station status
+        """
         return self.status
 
     def get_board(self):
@@ -200,6 +218,9 @@ class Station(Event):
 
 
 class StationOffline(object):
+    """
+    class for station offline information objects
+    """
     def __init__(self, id_number, number, begin, end=None):
         self.id_number = id_number
         self.number = number
@@ -207,18 +228,33 @@ class StationOffline(object):
         self.end = end
 
     def get_id(self):
+        """
+        return db id of offline info
+        """
         return self.id_number
 
     def get_number(self):
+        """
+        return number of related station
+        """
         return self.number
 
     def get_begin(self):
+        """
+        return start of offline time
+        """
         return self.begin
 
     def get_end(self):
+        """
+        return end of offline time
+        """
         return self.end
 
     def set_end(self, end):
+        """
+        set end of offline time
+        """
         if not self.end:
             self.end = end
         else:
@@ -227,7 +263,7 @@ class StationOffline(object):
 
 class Stroke(Event):
     """
-    classdocs
+    class for stroke objects
     """
 
     def __init__(self, stroke_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count, stations=None):
@@ -240,27 +276,51 @@ class Stroke(Event):
         self.stations = [] if stations is None else stations
 
     def get_location(self):
+        """
+        return location of the stroke
+        """
         return self
 
     def get_altitude(self):
+        """
+        return altitude of the stroke
+        """
         return self.altitude
 
     def get_amplitude(self):
+        """
+        return amplitude of the stroke
+        """
         return self.amplitude
 
     def get_id(self):
+        """
+        return database id of the stroke (if applicable)
+        """
         return self.stroke_id
 
     def get_lateral_error(self):
+        """
+        return location error in meters
+        """
         return self.lateral_error
 
     def get_station_count(self):
+        """
+        return count of participated stations
+        """
         return self.station_count
 
     def has_participant(self, participant):
+        """
+        returns true if the given participant is contained in the stations list
+        """
         return self.stations.count(participant) > 0
 
     def get_stations(self):
+        """
+        return list of participated stations
+        """
         return self.stations
 
     def __str__(self):

@@ -61,10 +61,11 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(3000000200, event1.ns_difference_to(event4))
         self.assertEqual(-3000000200, event4.ns_difference_to(event1))
 
+
 class TestStroke(unittest.TestCase):
 
     def setUp(self):
-        self.timestamp = pd.Timestamp('now')
+        self.timestamp = pd.Timestamp(pd.Timestamp('2013-09-28 23:23:38.123456').value + 789)
         self.stroke = blitzortung.data.Stroke(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11)
 
     def test_get_id(self):
@@ -96,3 +97,6 @@ class TestStroke(unittest.TestCase):
     def test_with_stations(self):
         self.stroke = blitzortung.data.Stroke(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
         assert_that(self.stroke.get_stations(), is_(equal_to([1, 5, 7, 15])))
+
+    def test_string_represenation(self):
+        assert_that(str(self.stroke), is_(equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")))
