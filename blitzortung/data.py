@@ -132,26 +132,6 @@ class Event(types.Point):
                % (timestamp_string, self.x_coord, self.y_coord)
 
 
-class RawEvent(Event):
-    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude, angle):
-        super(RawEvent, self).__init__(timestamp, x_coord, y_coord)
-        self.altitude = altitude
-        self.amplitude = amplitude
-        self.angle = angle
-
-    def get_altitude(self):
-        return self.altitude
-
-    def get_amplitude(self):
-        return self.amplitude
-
-    def get_angle(self):
-        return self.angle
-
-    def __str__(self):
-        return super(RawEvent, self).__str__() + "%d %.2f %.2f" % (self.altitude, self.amplitude, self.angle)
-
-
 class RawWaveformEvent(Event):
     def __init__(self, timestamp, x_coord, y_coord, altitude, channels):
         super(RawWaveformEvent, self).__init__(timestamp, x_coord, y_coord)
@@ -168,19 +148,6 @@ class RawWaveformEvent(Event):
     def __str__(self):
         return super(RawWaveformEvent, self).__str__() + "%d %d chs" \
                % (self.altitude, len(self.channels))
-
-
-class ExtEvent(RawEvent):
-    def __init__(self, timestamp, x_coord, y_coord, altitude, amplitude, angle, station_number):
-        super(ExtEvent, self).__init__(timestamp, x_coord, y_coord, altitude, amplitude, angle)
-
-        self.station_number = station_number
-
-    def __str__(self):
-        return "%03d %s" % (self.station_number, super(ExtEvent, self).__str__())
-
-    def get_station_number(self):
-        return self.station_number
 
 
 class Station(Event):

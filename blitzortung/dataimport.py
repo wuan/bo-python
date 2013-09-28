@@ -211,7 +211,7 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
         for station_data in self.read_data():
             try:
                 current_stations.append(self.station_builder.from_data(station_data).build())
-            except blitzortung.builder.BuildError:
+            except blitzortung.builder.BuilderError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
         return current_stations
 
