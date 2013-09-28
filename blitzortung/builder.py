@@ -10,6 +10,7 @@ import datetime, pytz
 import math
 import HTMLParser
 from injector import Module, provides
+import itertools
 import numpy as np
 import pandas as pd
 
@@ -280,37 +281,24 @@ class RawEvent(Event):
 
 
 class RawWaveformEvent(Event):
-    def __init__(self):
+    def __init__(self, channel_builder):
         super(RawWaveformEvent, self).__init__()
         self.altitude = 0
-        self.sample_period = 0
-        self.x_values = None
-        self.y_values = None
-        self.angle_offset = 0
+        self.channels = []
+
+        self.channel_builder = channel_builder
 
     def build(self):
-        return blitzortung.data.RawWaveformEvent(self.timestamp, self.x_coord, self.y_coord, self.altitude,
-                                                 self.sample_period, self.x_values, self.y_values,
-                                                 self.angle_offset)
+        return blitzortung.data.RawWaveformEvent(
+            self.timestamp,
+            self.x_coord,
+            self.y_coord,
+            self.altitude,
+            self.channels
+        )
 
     def set_altitude(self, altitude):
         self.altitude = altitude
-        return self
-
-    def set_sample_period(self, sample_period):
-        self.sample_period = sample_period
-        return self
-
-    def set_x_values(self, x_values):
-        self.x_values = x_values
-        return self
-
-    def set_y_values(self, y_values):
-        self.y_values = y_values
-        return self
-
-    def set_angle_offset(self, angle_offset):
-        self.angle_offset = angle_offset
         return self
 
     def from_json(self, json_object):
@@ -329,50 +317,79 @@ class RawWaveformEvent(Event):
     def from_string(self, string):
         """ Construct stroke from blitzortung text format data line """
         if string:
-            fields = string.split(' ')
-            self.set_y(float(fields[2]))
-            self.set_x(float(fields[3]))
-            self.set_timestamp(' '.join(fields[0:2]))
+            field = iter(string.split(' '))
+            self.set_timestamp(field.next() + ' ' + field.next())
             self.timestamp += datetime.timedelta(seconds=1)
-            if len(fields) >= 8:
-                self.number_of_satellites = int(fields[4])
-                self.sample_period = int(fields[8])
+            self.set_y(float(field.next()))
+            self.set_x(float(field.next()))
+            self.set_altitude(int(field.next()))
 
-                number_of_channels = int(fields[5])
-                number_of_samples = int(fields[6])
-                chars_per_sample = int(fields[7]) / 4
-                data = fields[9]
+            self.channels = []
+            while True:
+                try:
+                    self.channel_builder.from_field_iterator(field)
+                except StopIteration:
+                    break
+                self.channels.append(self.channel_builder.build())
 
-                maximum = 0.0
-                maximum_index = 0
-                maximum_values = [0] * number_of_channels
-                current_values = [0] * number_of_channels
-
-                value_offset = -(1 << (chars_per_sample * 4 - 1))
-                for sample in range(0, number_of_samples):
-                    current_sum = 0.0
-                    for channel in range(0, number_of_channels):
-                        index = chars_per_sample * (number_of_channels * sample + channel)
-                        value_string = data[index: index + chars_per_sample]
-                        value = int(value_string, 16) + value_offset
-
-                        current_values[channel] = value
-                        current_sum += value * value
-
-                    if math.sqrt(current_sum) > maximum:
-                        maximum = math.sqrt(current_sum)
-                        maximum_index = sample
-                        maximum_values = list(current_values)
-
-                self.x_amplitude = maximum_values[0]
-                if number_of_channels > 1:
-                    self.y_amplitude = maximum_values[1]
-
-                self.timestamp += np.timedelta64(maximum_index * self.sample_period, 'ns')
-
-            else:
-                raise RuntimeError("not enough data fields for raw event data '%s'" % string)
         return self
+
+
+class ChannelWaveform(object):
+    fields_per_channel = 11
+
+    def __init__(self):
+        self.channel_number = None
+        self.amplifier_version = None
+        self.antenna = None
+        self.gain = None
+        self.values = None
+        self.start = None
+        self.bits = None
+        self.shift = None
+        self.conversion_gap = None
+        self.conversion_time = None
+        self.waveform = None
+
+    def from_field_iterator(self, field):
+        self.channel_number = int(field.next())
+        self.amplifier_version = field.next()
+        self.antenna = int(field.next())
+        self.gain = field.next()
+        self.values = int(field.next())
+        self.start = int(field.next())
+        self.bits = int(field.next())
+        self.shift = int(field.next())
+        self.conversion_gap = int(field.next())
+        self.conversion_time = int(field.next())
+        self.__extract_waveform_from_hex_string(field.next())
+        return self
+
+    def __extract_waveform_from_hex_string(self, waveform_hex_string):
+        hex_character = iter(waveform_hex_string)
+        self.waveform = []
+        bits_per_char = 4
+        chars_per_sample = self.bits / bits_per_char
+        value_offset = -(1 << (chars_per_sample * 4 - 1))
+
+        for _ in range(0, self.values):
+            value_text = "".join(itertools.islice(hex_character, chars_per_sample))
+            value = int(value_text, 16)
+            self.waveform.append(value + value_offset)
+
+    def build(self):
+        return blitzortung.data.ChannelWaveform(
+            self.channel_number,
+            self.amplifier_version,
+            self.antenna,
+            self.gain,
+            self.values,
+            self.start,
+            self.bits,
+            self.shift,
+            self.conversion_gap,
+            self.conversion_time,
+            self.waveform)
 
 
 class ExtEvent(RawEvent):

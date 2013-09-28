@@ -79,7 +79,7 @@ class HttpDataTransport(object):
         return response
 
 
-class BlitzortungDataProvider(object):
+class   BlitzortungDataProvider(object):
     host = 'http://data.blitzortung.org'
     target_url = host + '/Data_%(region)d/Protected/%(url_path)s'
     logger = logging.getLogger(__name__)
@@ -227,10 +227,11 @@ def stations():
 
 
 @singleton
-class Raw(BlitzortungDataProvider):
+class RawSignalsBlitzortungDataProvider(BlitzortungDataProvider):
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
     def __init__(self, data_transport, data_transformer):
-        super(Raw, self).__init__(data_transport, data_transformer, 'raw_data/%(station_id)s/%(hour)02d.log')
+        super(RawSignalsBlitzortungDataProvider, self).__init__(data_transport, data_transformer, 'raw_data/%(station_id)s/%(hour)02d.log')
+        # http://signals.blitzortung.org/Data_1/<station_id>/2013/09/28/20/00.log
 
     def set_station_id(self, station_id):
         self.set_url_parameter('station_id', station_id)

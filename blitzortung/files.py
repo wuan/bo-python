@@ -1,11 +1,5 @@
 # -*- coding: utf8 -*-
 
-"""
-
-@author Andreas Würl
-
-"""
-
 import os
 import subprocess
 import glob

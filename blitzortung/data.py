@@ -153,32 +153,21 @@ class RawEvent(Event):
 
 
 class RawWaveformEvent(Event):
-    def __init__(self, timestamp, x_coord, y_coord, altitude, sample_period, amplitude_x, amplitude_y, angle_offset):
+    def __init__(self, timestamp, x_coord, y_coord, altitude, channels):
         super(RawWaveformEvent, self).__init__(timestamp, x_coord, y_coord)
         self.altitude = altitude
-        self.sample_period = sample_period
-        self.amplitude_x = amplitude_x
-        self.amplitude_y = amplitude_y
-        self.angle_offset = angle_offset
+        self.channels = channels
 
     def get_altitude(self):
         return self.altitude
 
-    def get_sample_period(self):
-        return self.sample_period
+    def get_channels(self):
+        return self.channels
 
-    def get_x_amplitude(self, index):
-        return self.amplitude_x[index]
-
-    def get_y_amplitude(self, index):
-        return self.amplitude_y[index]
-
-    def get_angle_offset(self):
-        return self.angle_offset
 
     def __str__(self):
-        return super(RawWaveformEvent, self).__str__() + "%d %d %s %s %.2f" \
-               % (self.altitude, self.sample_period, str(self.amplitude_x), str(self.amplitude_y), self.angle_offset)
+        return super(RawWaveformEvent, self).__str__() + "%d %d chs" \
+               % (self.altitude, len(self.channels))
 
 
 class ExtEvent(RawEvent):
@@ -238,8 +227,8 @@ class Station(Event):
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-            and -180 <= self.get_x() <= 180 \
-            and -90 < self.get_y() < 90 \
+                   and -180 <= self.get_x() <= 180 \
+                   and -90 < self.get_y() < 90 \
             and self.get_number() > 0
 
 
@@ -318,11 +307,12 @@ class Stroke(Event):
 
     def __str__(self):
         return super(Stroke, self).__str__() + "%s %d %s %.1f %d" % (
-	    str(self.height) if self.height else '-',
-	    self.amplitude,
-	    self.type_val if self.type_val else '-',
-	    self.lateral_error,
-	    self.station_count)
+            str(self.height) if self.height else '-',
+            self.amplitude,
+            self.type_val if self.type_val else '-',
+            self.lateral_error,
+            self.station_count
+        )
 
 
 class Histogram(object):
@@ -355,3 +345,52 @@ class AmplitudeHistogram(object):
         data = files.HistogramData(file_names, time)
 
         data.list()
+
+
+class ChannelWaveform(object):
+    def __init__(self, channel_number, amplifier_version, antenna, gain, values, start, bits, shift, conversion_gap,
+                 conversion_time, waveform):
+        self.channel_number = channel_number
+        self.amplifier_version = amplifier_version
+        self.antenna = antenna
+        self.gain = gain
+        self.values = values
+        self.start = start
+        self.bits = bits
+        self.shift = shift
+        self.conversion_gap = conversion_gap
+        self.conversion_time = conversion_time
+        self.waveform = waveform
+
+    def get_channel_number(self):
+        return self.channel_number
+
+    def get_amplifier_version(self):
+        return self.amplifier_version
+
+    def get_antenna(self):
+        return self.antenna
+
+    def get_gain(self):
+        return self.gain
+
+    def get_values(self):
+        return self.values
+
+    def get_start(self):
+        return self.start
+
+    def get_bits(self):
+        return self.bits
+
+    def get_shift(self):
+        return self.shift
+
+    def get_conversion_gap(self):
+        return self.conversion_gap
+
+    def get_conversion_time(self):
+        return self.conversion_time
+
+    def get_waveform(self):
+        return self.waveform
