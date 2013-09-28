@@ -389,11 +389,3 @@ class ExtEvent(RawEvent):
                                          self.angle, self.station_number)
 
 
-class BuilderModule(Module):
-    @provides(Stroke)
-    def provide_stroke_builder(self):
-        return Stroke()
-
-    @provides(Station)
-    def provide_station_builder(self):
-        return Station()

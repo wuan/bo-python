@@ -45,7 +45,7 @@ import util
 
 
 INJECTOR = injector.Injector(
-    [builder.BuilderModule(), config.ConfigModule(), calc.CalcModule(), db.DbModule(), dataimport.DataImportModule()])
+    [config.ConfigModule(), db.DbModule()])
 
 __all__ = [
 

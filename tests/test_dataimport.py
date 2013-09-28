@@ -107,7 +107,7 @@ class StrokesUrlTest(unittest.TestCase):
         assert_that(urls[1], is_(equal_to('Strokes/2013/08/20/11/50.log')))
         assert_that(urls[2], is_(equal_to('Strokes/2013/08/20/12/00.log')))
 
-    def test_stroke_url_iterator_at_start_of_interval(self):
+    def test_stroke_url_iterator_before_start_of_interval(self):
         self.create_strokes_url_generator(datetime.datetime(2013, 8, 20, 12, 4, 59, 999999))
 
         urls = [url for url in self.strokes_url.get_url_paths(self.start_time, self.present_time)]
