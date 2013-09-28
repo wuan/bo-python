@@ -168,8 +168,8 @@ class StrokeTest(TestBase):
         assert_that(stroke.get_timestamp(), is_(equal_to(self.get_timestamp("2013-08-08 10:30:03.644038642Z"))))
         assert_that(stroke.get_x(), is_(equal_to(8.931001)))
         assert_that(stroke.get_y(), is_(equal_to(44.162701)))
+        assert_that(stroke.get_altitude(), is_(equal_to(0)))
         assert_that(stroke.get_amplitude(), is_(equal_to(4.75)))
-        assert_that(stroke.get_type(), is_(equal_to(0)))
         assert_that(stroke.get_lateral_error(), is_(equal_to(20146)))
         assert_that(stroke.get_station_count(), is_(equal_to(10)))
         assert_that(stroke.get_stations(), is_(equal_to(

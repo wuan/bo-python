@@ -1,5 +1,6 @@
 import unittest
 import datetime
+from hamcrest import assert_that, is_, equal_to
 import numpy as np
 import pandas as pd
 import pytz
@@ -16,18 +17,21 @@ class TestTimeRange(unittest.TestCase):
         self.time_range = blitzortung.data.TimeRange(self.end_time, self.interval)
 
     def test_get_start_and_end_time(self):
-        self.assertEquals(self.time_range.get_start_time(), self.end_time - self.interval)
-
-        self.assertEquals(self.time_range.get_end_time(), self.end_time)
+        assert_that(self.time_range.get_start_time(), is_(equal_to(self.end_time - self.interval)))
+        assert_that(self.time_range.get_end_time(), is_(equal_to(self.end_time)))
+        assert_that(self.time_range.get_end_minute(), is_(equal_to(self.end_time - datetime.timedelta(minutes=1))))
 
     def test_contains(self):
         start_time = self.time_range.get_start_time()
         end_time = self.time_range.get_end_time()
 
-        self.assertTrue(self.time_range.contains(start_time))
-        self.assertFalse(self.time_range.contains(end_time))
-        self.assertFalse(self.time_range.contains(start_time - self.microsecond_delta))
-        self.assertTrue(self.time_range.contains(end_time - self.microsecond_delta))
+        assert_that(self.time_range.contains(start_time))
+        assert_that(not self.time_range.contains(end_time))
+        assert_that(not self.time_range.contains(start_time - self.microsecond_delta))
+        assert_that(self.time_range.contains(end_time - self.microsecond_delta))
+
+    def test_string_representation(self):
+        assert_that(str(self.time_range), is_(equal_to("['2012-03-02 09:50:14':'2012-03-02 11:20:24']")))
 
 
 class TestEvent(unittest.TestCase):
@@ -56,3 +60,39 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(datetime.timedelta(seconds=3), event4.difference_to(event1))
         self.assertEqual(3000000200, event1.ns_difference_to(event4))
         self.assertEqual(-3000000200, event4.ns_difference_to(event1))
+
+class TestStroke(unittest.TestCase):
+
+    def setUp(self):
+        self.timestamp = pd.Timestamp('now')
+        self.stroke = blitzortung.data.Stroke(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11)
+
+    def test_get_id(self):
+        assert_that(self.stroke.get_id(), is_(equal_to(123)))
+
+    def test_get_timestamp(self):
+        assert_that(self.stroke.get_timestamp(), is_(equal_to(self.timestamp)))
+
+    def test_get_location(self):
+        location = self.stroke.get_location()
+        assert_that(location.x_coord, is_(equal_to(11.2)))
+        assert_that(location.y_coord, is_(equal_to(49.3)))
+
+    def test_get_altitude(self):
+        assert_that(self.stroke.get_altitude(), is_(equal_to(2500)))
+
+    def test_get_amplitude(self):
+        assert_that(self.stroke.get_amplitude(), is_(equal_to(10.5)))
+
+    def test_get_lateral_error(self):
+        assert_that(self.stroke.get_lateral_error(), is_(equal_to(5400)))
+
+    def test_get_station_count(self):
+        assert_that(self.stroke.get_station_count(), is_(equal_to(11)))
+
+    def test_get_default_stations(self):
+        assert_that(self.stroke.get_stations(), is_(equal_to([])))
+
+    def test_with_stations(self):
+        self.stroke = blitzortung.data.Stroke(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
+        assert_that(self.stroke.get_stations(), is_(equal_to([1, 5, 7, 15])))

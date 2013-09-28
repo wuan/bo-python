@@ -184,10 +184,10 @@ class Stroke(Base):
 
     CREATE TABLE strokes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point),
         PRIMARY KEY(id));
+    ALTER TABLE strokes ADD COLUMN altitude SMALLINT;
     ALTER TABLE strokes ADD COLUMN region SMALLINT;
     ALTER TABLE strokes ADD COLUMN amplitude REAL;
     ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
-    ALTER TABLE strokes ADD COLUMN type SMALLINT;
     ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
 
     CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
@@ -213,19 +213,19 @@ class Stroke(Base):
 
     def insert(self, stroke, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
-              ' ("timestamp", nanoseconds, geog, region, amplitude, error2d, type, stationcount) ' + \
+              ' ("timestamp", nanoseconds, geog, altitude, region, amplitude, error2d, stationcount) ' + \
               'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), ' + \
-              '%(region)s, %(amplitude)s, %(error2d)s, %(type)s, %(stationcount)s)'
+              '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
 
         parameters = {
             'timestamp': stroke.get_timestamp(),
             'nanoseconds': stroke.get_timestamp().nanosecond,
             'longitude': stroke.get_x(),
             'latitude': stroke.get_y(),
+            'altitude': stroke.get_altitude(),
             'region': region,
             'amplitude': stroke.get_amplitude(),
             'error2d': stroke.get_lateral_error(),
-            'type': stroke.get_type(),
             'stationcount': stroke.get_station_count()
         }
 
@@ -253,8 +253,8 @@ class Stroke(Base):
         stroke_location = shapely.wkb.loads(result['geog'].decode('hex'))
         self.stroke_builder.set_x(stroke_location.x)
         self.stroke_builder.set_y(stroke_location.y)
+        self.stroke_builder.set_altitude(result['altitude'])
         self.stroke_builder.set_amplitude(result['amplitude'])
-        self.stroke_builder.set_type(result['type'])
         self.stroke_builder.set_station_count(result['stationcount'])
         self.stroke_builder.set_lateral_error(result['error2d'])
 
@@ -268,10 +268,9 @@ class Stroke(Base):
 
         query.set_table_name(self.get_full_table_name())
         query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog',
-                           'amplitude', 'type', 'error2d', 'stationcount'])
+                           'altitude', 'amplitude', 'error2d', 'stationcount'])
         query.add_parameters({'srid': self.srid})
 
-        #query.add_condition('geog IS NOT NULL')
         query.parse_args(args)
         return query
 

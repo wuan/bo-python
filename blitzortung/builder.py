@@ -120,9 +120,8 @@ class Stroke(Event):
         return self
 
     def build(self):
-        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.amplitude,
-                                       self.altitude, self.lateral_error, self.type_val, self.station_count,
-                                       self.stations)
+        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
+                                       self.amplitude, self.lateral_error, self.station_count, self.stations)
 
     def from_data(self, data):
         """ Construct stroke from new blitzortung text format data line """
