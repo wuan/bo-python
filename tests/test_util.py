@@ -13,8 +13,7 @@ class TimeIntervalsTest(unittest.TestCase):
 
     def initialize_times(self, end_time):
         self.end_time = end_time
-        end_time = end_time.replace(tzinfo=pytz.UTC)
-        self.start_time = end_time - datetime.timedelta(minutes=25)
+        self.start_time = self.end_time - datetime.timedelta(minutes=25)
 
     def test_time_intervals_generator(self):
         self.initialize_times(datetime.datetime(2013, 8, 20, 12, 9, 0))
