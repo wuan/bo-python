@@ -247,7 +247,6 @@ class Stroke(Base):
         return self.execute(sql, {'region': region}, prepare_result)
 
     def create_object_instance(self, result):
-
         self.stroke_builder.set_id(result['id'])
         self.stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
         stroke_location = shapely.wkb.loads(result['geog'].decode('hex'))

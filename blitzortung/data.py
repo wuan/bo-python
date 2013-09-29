@@ -324,8 +324,8 @@ class Stroke(Event):
         return self.stations
 
     def __str__(self):
-        return super(Stroke, self).__str__() + "%d %.1f %d %d" % (
-            self.altitude,
+        return super(Stroke, self).__str__() + "%s %.1f %d %d" % (
+            str(self.altitude) if self.altitude is not None else '-',
             self.amplitude,
             self.lateral_error,
             self.station_count
