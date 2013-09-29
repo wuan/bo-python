@@ -7,14 +7,23 @@ import time
 
 
 class Timer():
+    """
+    simple timer for repeated time measurements
+    """
     def __init__(self):
         self.start_time = time.time()
         self.lap_time = self.start_time
 
     def read(self):
+        """
+        read time duration of current lap
+        """
         return time.time() - self.start_time
 
     def lap(self):
+        """
+        start a new lap returning the total time of the currently active lap
+        """
         now = time.time()
         lap = now - self.lap_time
         self.lap_time = now
@@ -22,7 +31,9 @@ class Timer():
 
 
 def total_seconds(time):
-    """ return the total seconds of the given time or datetime (relative to midnight) """
+    """
+    return the total seconds of the given time or datetime (relative to midnight)
+    """
 
     if isinstance(time, datetime.datetime):
         return time.hour * 3600 + time.minute * 60 + time.second
@@ -33,6 +44,9 @@ def total_seconds(time):
 
 
 def round_time(time, duration):
+    """
+    round time to a given timedelta duration
+    """
     duration_seconds = total_seconds(duration)
     seconds = (total_seconds(time) // duration_seconds) * duration_seconds
     return time.replace(
@@ -44,6 +58,11 @@ def round_time(time, duration):
 
 
 def time_intervals(start_time, duration, end_time=None):
+    """
+    generator for time interval start times for a specified duration and end time
+
+    if end time is not specified the current time is assumed
+    """
     current_time = round_time(start_time, duration)
     if not end_time:
         end_time = datetime.datetime.utcnow()
