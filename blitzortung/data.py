@@ -51,16 +51,15 @@ class RawWaveformEvent(Event):
     def get_channels(self):
         return self.channels
 
-
     def __str__(self):
-        return super(RawWaveformEvent, self).__str__() + "%d %d chs" \
-               % (self.altitude, len(self.channels))
+        return super(RawWaveformEvent, self).__str__() + "%d %d chs" % (self.altitude, len(self.channels))
 
 
 class Station(Event):
     """
     class for station objects
     """
+
     def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
         super(Station, self).__init__(last_data, x_coord, y_coord)
         self.number = number
@@ -78,7 +77,6 @@ class Station(Event):
             self.number, self.user, self.name, self.country, super(Station, self).__str__())
 
     def __eq__(self, other):
-        #return self.number == other.number and self.short_name == other.short_name and self.location_name == other.location_name and self.country == other.country and self.timestamp == other.timestamp
         return self.number == other.number and self.name == other.name and self.country == other.country
 
     def __ne__(self, other):
@@ -128,6 +126,7 @@ class StationOffline(object):
     """
     class for station offline information objects
     """
+
     def __init__(self, id_number, number, begin, end=None):
         self.id_number = id_number
         self.number = number
@@ -173,7 +172,8 @@ class Stroke(Event):
     class for stroke objects
     """
 
-    def __init__(self, stroke_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count, stations=None):
+    def __init__(self, stroke_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
+                 stations=None):
         super(Stroke, self).__init__(timestamp, x_coord, y_coord)
         self.stroke_id = stroke_id
         self.altitude = altitude

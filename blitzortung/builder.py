@@ -6,11 +6,11 @@
 
 """
 
-import datetime, pytz
-import math
+import datetime
 import HTMLParser
-from injector import Module, provides
 import itertools
+
+import pytz
 import numpy as np
 import pandas as pd
 
@@ -331,5 +331,3 @@ class ChannelWaveform(object):
             self.conversion_gap,
             self.conversion_time,
             self.waveform)
-
-

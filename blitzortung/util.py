@@ -1,9 +1,9 @@
 # -*- coding: utf8 -*-
 
-import os
 import datetime
-import pytz
 import time
+
+import pytz
 
 
 class Timer():
@@ -30,26 +30,26 @@ class Timer():
         return lap
 
 
-def total_seconds(time):
+def total_seconds(time_value):
     """
     return the total seconds of the given time or datetime (relative to midnight)
     """
 
-    if isinstance(time, datetime.datetime):
-        return time.hour * 3600 + time.minute * 60 + time.second
-    elif isinstance(time, datetime.timedelta):
-        return time.seconds + time.days * 24 * 3600
+    if isinstance(time_value, datetime.datetime):
+        return time_value.hour * 3600 + time_value.minute * 60 + time_value.second
+    elif isinstance(time_value, datetime.timedelta):
+        return time_value.seconds + time_value.days * 24 * 3600
     else:
-        raise Exception("unhandled type " + type(time))
+        raise Exception("unhandled type " + type(time_value))
 
 
-def round_time(time, duration):
+def round_time(time_value, duration):
     """
     round time to a given timedelta duration
     """
     duration_seconds = total_seconds(duration)
-    seconds = (total_seconds(time) // duration_seconds) * duration_seconds
-    return time.replace(
+    seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
+    return time_value.replace(
         hour=seconds // 3600,
         minute=seconds // 60 % 60,
         second=seconds % 60,
@@ -72,5 +72,3 @@ def time_intervals(start_time, duration, end_time=None):
     while current_time <= end_time:
         yield current_time
         current_time += duration
-
-

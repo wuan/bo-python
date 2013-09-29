@@ -52,4 +52,3 @@ class ConfigModule(Module):
         config_parser = ConfigParser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser
-
