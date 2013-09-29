@@ -86,7 +86,6 @@ class Stroke(Event):
         self.id_value = -1
         self.altitude = None
         self.amplitude = None
-        self.type_val = None
         self.lateral_error = None
         self.station_count = None
         self.stations = []
@@ -101,10 +100,6 @@ class Stroke(Event):
 
     def set_amplitude(self, amplitude):
         self.amplitude = amplitude
-        return self
-
-    def set_type(self, type_val):
-        self.type_val = type_val
         return self
 
     def set_lateral_error(self, lateral_error):
@@ -132,8 +127,6 @@ class Stroke(Event):
         self.set_altitude(float(position[2]))
         self.set_amplitude(float(data['str']))
         self.set_lateral_error(float(data['dev']))
-        if 'typ' in data:
-            self.set_type(int(data['typ']))
         stations = data['sta']
         self.set_station_count(int(stations[0]))
         self.set_stations([int(station) for station in stations[2].split(',')])
