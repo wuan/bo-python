@@ -61,7 +61,7 @@ class TimeInterval(TimeRange):
         seconds *= delta_seconds
 
         if isinstance(time, datetime.datetime):
-            return time.replace(hour=seconds / 3600, minute=seconds / 60 % 60, second=seconds % 60, microsecond=0)
+            return time.replace(hour=seconds // 3600, minute=seconds // 60 % 60, second=seconds % 60, microsecond=0)
         else:
             return datetime.timedelta(seconds=seconds)
 

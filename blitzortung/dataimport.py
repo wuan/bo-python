@@ -131,29 +131,11 @@ class BlitzortungStrokeUrlGenerator(object):
     url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
 
     def __init__(self):
-        self.current_time = None
-        self.end_time = None
+        self.duration = datetime.timedelta(minutes=self.url_path_minute_increment)
 
-    def get_url_paths(self, latest_time, present_time=None):
-        self.current_time = self.__round_time(latest_time)
-        if not present_time:
-            present_time = datetime.datetime.utcnow()
-            present_time = present_time.replace(tzinfo=pytz.UTC)
-        self.end_time = self.__round_time(present_time)
-
-        url_paths = []
-
-        while self.current_time <= self.end_time:
-            url_paths.append(self.current_time.strftime(self.url_path_format))
-            self.current_time += datetime.timedelta(minutes=self.url_path_minute_increment)
-
-        return url_paths
-
-    def __round_time(self, time_value):
-        return time_value.replace(
-            minute=time_value.minute // self.url_path_minute_increment * self.url_path_minute_increment,
-            second=0,
-            microsecond=0)
+    def get_url_paths(self, start_time, end_time=None):
+        for interval_start_time in blitzortung.util.time_intervals(start_time, self.duration, end_time):
+            yield interval_start_time.strftime(self.url_path_format)
 
 
 @singleton

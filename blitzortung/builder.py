@@ -315,15 +315,15 @@ class ChannelWaveform(object):
 
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
         hex_character = iter(waveform_hex_string)
-        self.waveform = []
+        self.waveform = np.zeros(self.values)
         bits_per_char = 4
         chars_per_sample = self.bits / bits_per_char
         value_offset = -(1 << (chars_per_sample * 4 - 1))
 
-        for _ in range(0, self.values):
+        for index in range(0, self.values):
             value_text = "".join(itertools.islice(hex_character, chars_per_sample))
             value = int(value_text, 16)
-            self.waveform.append(value + value_offset)
+            self.waveform[index] = value + value_offset
 
     def build(self):
         return blitzortung.data.ChannelWaveform(
