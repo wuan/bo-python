@@ -138,7 +138,6 @@ class StrokeTest(TestBase):
         self.builder.set_timestamp(datetime.datetime.utcnow())
         self.builder.set_amplitude(1.0)
         self.builder.set_lateral_error(5.0)
-        self.builder.set_type(-1)
         self.builder.set_station_count(10)
 
         assert_that(self.builder.build().get_id(), is_(equal_to(1234)))
@@ -151,8 +150,8 @@ class StrokeTest(TestBase):
         self.builder.set_x(0.0)
         self.builder.set_y(0.0)
         self.builder.set_amplitude(1.0)
+        self.builder.set_altitude(0)
         self.builder.set_lateral_error(5.0)
-        self.builder.set_type(-1)
         self.builder.set_station_count(10)
 
         assert_that(self.builder.build().get_timestamp(), is_(equal_to(pd.Timestamp(timestamp))))
