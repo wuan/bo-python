@@ -8,47 +8,6 @@ import pytz
 import blitzortung
 
 
-class TestTimeRange(unittest.TestCase):
-    def setUp(self):
-        self.end_time = datetime.datetime(2012, 3, 2, 11, 20, 24)
-        self.interval = datetime.timedelta(hours=1, minutes=30, seconds=10)
-        self.microsecond_delta = datetime.timedelta(microseconds=1)
-
-        self.time_range = blitzortung.data.TimeRange(self.end_time, self.interval)
-
-    def test_get_start_and_end_time(self):
-        assert_that(self.time_range.get_start_time(), is_(equal_to(self.end_time - self.interval)))
-        assert_that(self.time_range.get_end_time(), is_(equal_to(self.end_time)))
-        assert_that(self.time_range.get_end_minute(), is_(equal_to(self.end_time - datetime.timedelta(minutes=1))))
-
-    def test_contains(self):
-        start_time = self.time_range.get_start_time()
-        end_time = self.time_range.get_end_time()
-
-        assert_that(self.time_range.contains(start_time))
-        assert_that(not self.time_range.contains(end_time))
-        assert_that(not self.time_range.contains(start_time - self.microsecond_delta))
-        assert_that(self.time_range.contains(end_time - self.microsecond_delta))
-
-    def test_string_representation(self):
-        assert_that(str(self.time_range), is_(equal_to("['2012-03-02 09:50:14':'2012-03-02 11:20:24']")))
-
-
-class TestTimeInterval(unittest.TestCase):
-
-    def setUp(self):
-        self.end_time = datetime.datetime(2013, 9, 28, 11, 30, 0)
-        self.time_interval = blitzortung.data.TimeInterval(self.end_time, datetime.timedelta(minutes=5))
-
-    def test_round_time_rounding_down(self):
-        rounded_time = self.time_interval.round_time(datetime.datetime(2013, 9, 28, 11, 34, 59))
-        assert_that(rounded_time, is_(equal_to(self.end_time)))
-
-    def test_round_time_rounding_up(self):
-        rounded_time = self.time_interval.round_time(datetime.datetime(2013, 9, 28, 11, 35, 0))
-        assert_that(rounded_time, is_(equal_to(datetime.datetime(2013, 9, 28, 11, 35, 0))))
-
-
 class TestEvent(unittest.TestCase):
     def test_time_difference(self):
         now = pd.Timestamp(datetime.datetime.utcnow(), tz=pytz.UTC)
