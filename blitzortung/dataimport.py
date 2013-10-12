@@ -62,22 +62,20 @@ class HttpDataTransport(object):
 
         auth_info.add_password(None, server_url, self.config.get_username(), self.config.get_password())
 
-        handler = urllib2.HTTPBasicAuthHandler(auth_info)
-        opener = urllib2.build_opener(handler)
-        #opened = urllib2.install_opener(opener)
-        #url_connection = urllib2.urlopen(target_url)
+        auth_handler = urllib2.HTTPBasicAuthHandler(auth_info)
+        url_opener = urllib2.build_opener(auth_handler)
 
         try:
-            url_connection = opener.open(target_url, timeout=60)
+            url_connection = url_opener.open(target_url, timeout=60)
         except urllib2.URLError, error:
             self.logger.debug("%s when opening '%s'\n" % (error, target_url))
             return None
 
-        response = url_connection.read().strip()
+        data_string = url_connection.read().strip()
 
         url_connection.close()
 
-        return response
+        return data_string
 
 
 class BlitzortungDataProvider(object):
