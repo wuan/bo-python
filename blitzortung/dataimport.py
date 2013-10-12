@@ -158,6 +158,9 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
             for stroke_data in self.read_data(url_path=url_path):
                 try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
+                except blitzortung.builder.BuilderError as e:
+                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    continue
                 except Exception as e:
                     self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
                     raise e

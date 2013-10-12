@@ -179,8 +179,8 @@ class Station(Event):
             self.set_board(data['board'])
             self.set_status(data['status'])
             self.set_timestamp(data['last_signal'])
-        except KeyError:
-            raise BuilderError()
+        except (KeyError, ValueError) as e:
+            raise BuilderError(e)
         return self
 
     def build(self):
