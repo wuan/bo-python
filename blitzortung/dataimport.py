@@ -56,12 +56,16 @@ class HttpDataTransport(object):
     def read_from_url(self, target_url):
         parsed_url = urlparse(target_url)
 
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password("blitzortung.org", parsed_url.hostname, self.config.get_username(),
-                                  self.config.get_password())
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+        server_url = "%s://%s/" % (parsed_url.scheme, parsed_url.hostname)
 
+        auth_info = urllib2.HTTPPasswordMgrWithDefaultRealm()
+
+        auth_info.add_password(None, server_url, self.config.get_username(), self.config.get_password())
+
+        handler = urllib2.HTTPBasicAuthHandler(auth_info)
         opener = urllib2.build_opener(handler)
+        #opened = urllib2.install_opener(opener)
+        #url_connection = urllib2.urlopen(target_url)
 
         try:
             url_connection = opener.open(target_url, timeout=60)
