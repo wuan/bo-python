@@ -6,19 +6,16 @@
 
 """
 import logging
-
 import time
 import urllib2
 import datetime
 from urlparse import urlparse
-
-from injector import Module, singleton, provides, inject
-
 import cStringIO
 import gzip
 import HTMLParser
 import shlex
-import pytz
+
+from injector import singleton, inject
 
 import blitzortung
 
@@ -59,24 +56,26 @@ class HttpDataTransport(object):
     def read_from_url(self, target_url):
         parsed_url = urlparse(target_url)
 
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password("blitzortung.org", parsed_url.hostname, self.config.get_username(),
-                                  self.config.get_password())
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+        server_url = "%s://%s/" % (parsed_url.scheme, parsed_url.hostname)
 
-        opener = urllib2.build_opener(handler)
+        auth_info = urllib2.HTTPPasswordMgrWithDefaultRealm()
+
+        auth_info.add_password(None, server_url, self.config.get_username(), self.config.get_password())
+
+        auth_handler = urllib2.HTTPBasicAuthHandler(auth_info)
+        url_opener = urllib2.build_opener(auth_handler)
 
         try:
-            url_connection = opener.open(target_url, timeout=60)
+            url_connection = url_opener.open(target_url, timeout=60)
         except urllib2.URLError, error:
             self.logger.debug("%s when opening '%s'\n" % (error, target_url))
             return None
 
-        response = url_connection.read().strip()
+        data_string = url_connection.read().strip()
 
         url_connection.close()
 
-        return response
+        return data_string
 
 
 class BlitzortungDataProvider(object):
@@ -131,29 +130,11 @@ class BlitzortungStrokeUrlGenerator(object):
     url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
 
     def __init__(self):
-        self.current_time = None
-        self.end_time = None
+        self.duration = datetime.timedelta(minutes=self.url_path_minute_increment)
 
-    def get_url_paths(self, latest_time, present_time=None):
-        self.current_time = self.__round_time(latest_time)
-        if not present_time:
-            present_time = datetime.datetime.utcnow()
-            present_time = present_time.replace(tzinfo=pytz.UTC)
-        self.end_time = self.__round_time(present_time)
-
-        url_paths = []
-
-        while self.current_time <= self.end_time:
-            url_paths.append(self.current_time.strftime(self.url_path_format))
-            self.current_time += datetime.timedelta(minutes=self.url_path_minute_increment)
-
-        return url_paths
-
-    def __round_time(self, time_value):
-        return time_value.replace(
-            minute=time_value.minute // self.url_path_minute_increment * self.url_path_minute_increment,
-            second=0,
-            microsecond=0)
+    def get_url_paths(self, start_time, end_time=None):
+        for interval_start_time in blitzortung.util.time_intervals(start_time, self.duration, end_time):
+            yield interval_start_time.strftime(self.url_path_format)
 
 
 @singleton
@@ -177,6 +158,9 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
             for stroke_data in self.read_data(url_path=url_path):
                 try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
+                except blitzortung.builder.BuilderError as e:
+                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    continue
                 except Exception as e:
                     self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
                     raise e
@@ -211,7 +195,7 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
         for station_data in self.read_data():
             try:
                 current_stations.append(self.station_builder.from_data(station_data).build())
-            except blitzortung.builder.BuildError:
+            except blitzortung.builder.BuilderError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
         return current_stations
 
@@ -227,10 +211,12 @@ def stations():
 
 
 @singleton
-class Raw(BlitzortungDataProvider):
+class RawSignalsBlitzortungDataProvider(BlitzortungDataProvider):
     @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
     def __init__(self, data_transport, data_transformer):
-        super(Raw, self).__init__(data_transport, data_transformer, 'raw_data/%(station_id)s/%(hour)02d.log')
+        super(RawSignalsBlitzortungDataProvider, self).__init__(data_transport, data_transformer,
+                                                                'raw_data/%(station_id)s/%(hour)02d.log')
+        # http://signals.blitzortung.org/Data_1/<station_id>/2013/09/28/20/00.log
 
     def set_station_id(self, station_id):
         self.set_url_parameter('station_id', station_id)
@@ -242,11 +228,4 @@ class Raw(BlitzortungDataProvider):
 def raw():
     from __init__ import INJECTOR
 
-    return INJECTOR.get(Raw)
-
-
-class WebModule(Module):
-    @staticmethod
-    @provides(BlitzortungDataTransformer)
-    def provide_data_format():
-        return BlitzortungDataTransformer()
+    return INJECTOR.get(RawSignalsBlitzortungDataProvider)

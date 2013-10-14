@@ -40,17 +40,15 @@ class Config(object):
 
 
 def config():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(Config)
 
 
 class ConfigModule(Module):
-    @staticmethod
     @singleton
     @provides(ConfigParser.ConfigParser)
-    def provide_config_parser():
+    def provide_config_parser(self):
         config_parser = ConfigParser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser
-

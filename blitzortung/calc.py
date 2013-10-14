@@ -16,7 +16,7 @@ from injector import Module, singleton, provides
 
 import blitzortung.data
 
-
+@singleton
 class SignalVelocity(object):
     """
     class for time/distance conversion regarding the reduced speed of light
@@ -65,14 +65,6 @@ class SimulatedData(object):
         self.event_builder.set_y(self.stroke_location.get_y())
         self.event_builder.set_timestamp(self.timestamp)
         return self.event_builder.build()
-
-
-class CalcModule(Module):
-    @staticmethod
-    @singleton
-    @provides(SignalVelocity)
-    def provide_signal_velocity():
-        return SignalVelocity()
 
 
 class ThreePointSolution(blitzortung.data.Event):
