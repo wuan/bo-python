@@ -18,6 +18,7 @@ class TestBase(unittest.TestCase):
 
 
 class TimestampTest(unittest.TestCase):
+
     def setUp(self):
         self.builder = blitzortung.builder.Timestamp()
 
@@ -55,9 +56,8 @@ class TimestampTest(unittest.TestCase):
         assert_that(timestamp.nanosecond, is_(equal_to(423)))
 
     def test_set_timestamp_from_bad_string(self):
-        raise nose.SkipTest("fix pandas timestamp behavior first")
         timestamp = self.builder.set_timestamp('0000-00-00').build()
-        assert_that(timestamp, is_(pd.Timestamp.NaT))
+        assert_that(timestamp.toordinal(), is_(pd.NaT.toordinal()))
 
     def test_set_timestamp_from_string(self):
         timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423").build()

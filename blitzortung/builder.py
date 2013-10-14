@@ -55,7 +55,7 @@ class Timestamp(Base):
             timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
             return pd.Timestamp(timestamp, tz=pytz.UTC)
         except ValueError:
-            return None
+            return pd.NaT
 
     def build(self):
         return self.timestamp
