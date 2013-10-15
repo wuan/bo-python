@@ -55,7 +55,7 @@ class HttpDataTransportTest(unittest.TestCase):
         response = self.data_transport.read_from_url('http://foo.bar/baz')
 
         password_manager = password_manager_class_mock()
-        assert_that(password_manager.mock_calls, has_item(call.add_password('blitzortung.org', 'foo.bar', '<username>', '<password>')))
+        assert_that(password_manager.mock_calls, has_item(call.add_password(None, 'http://foo.bar/', '<username>', '<password>')))
         assert_that(basic_auth_handler_class_mock.mock_calls, has_item(call(password_manager)))
         handler = basic_auth_handler_class_mock()
         assert_that(build_opener_mock.mock_calls, has_item(call(handler)))
