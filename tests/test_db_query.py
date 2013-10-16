@@ -12,21 +12,21 @@ class IdIntervalTest(unittest.TestCase):
 
         self.assertEqual(id_interval.get_start(), None)
         self.assertEqual(id_interval.get_end(), None)
-        self.assertEqual(str(id_interval), "[None - None]")
+        self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.IdInterval(1234)
 
         self.assertEqual(id_interval.get_start(), 1234)
         self.assertEqual(id_interval.get_end(), None)
-        self.assertEqual(str(id_interval), "[1234 - None]")
+        self.assertEqual(str(id_interval), "[1234 : ]")
 
     def test_start_and_stop_set(self):
         id_interval = blitzortung.db.query.IdInterval(1234, 5678)
 
         self.assertEqual(id_interval.get_start(), 1234)
         self.assertEqual(id_interval.get_end(), 5678)
-        self.assertEqual(str(id_interval), "[1234 - 5678]")
+        self.assertEqual(str(id_interval), "[1234 : 5678]")
 
 
 class TimeIntervalTest(unittest.TestCase):
@@ -36,21 +36,21 @@ class TimeIntervalTest(unittest.TestCase):
 
         self.assertEqual(id_interval.get_start(), None)
         self.assertEqual(id_interval.get_end(), None)
-        self.assertEqual(str(id_interval), "[None - None]")
+        self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010,11,20,11,30,15))
 
         self.assertEqual(id_interval.get_start(), datetime.datetime(2010,11,20,11,30,15))
         self.assertEqual(id_interval.get_end(), None)
-        self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 - None]")
+        self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : ]")
 
     def test_start_and_stop_set(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010,11,20,11,30,15), datetime.datetime(2010,12,5,23,15,59))
 
         self.assertEqual(id_interval.get_start(), datetime.datetime(2010,11,20,11,30,15))
         self.assertEqual(id_interval.get_end(), datetime.datetime(2010,12,5,23,15,59))
-        self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 - 2010-12-05 23:15:59]")
+        self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : 2010-12-05 23:15:59]")
 
 
 class QueryTest(unittest.TestCase):

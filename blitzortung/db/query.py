@@ -22,7 +22,7 @@ class BaseInterval(object):
         return self.end
 
     def __str__(self):
-        return '[' + str(self.start) + ' - ' + str(self.end) + ']'
+        return '[' + (str(self.start) if self.start else '') + ' : ' + (str(self.end) if self.end else '') + ']'
 
 
 class IdInterval(BaseInterval):
