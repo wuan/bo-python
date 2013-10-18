@@ -8,8 +8,6 @@
 
 import sys
 
-print sys.path
-
 import math
 import pyproj
 
