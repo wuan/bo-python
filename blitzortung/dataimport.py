@@ -184,9 +184,9 @@ class StationsBlitzortungDataProvider(BlitzortungDataProvider):
         super(StationsBlitzortungDataProvider, self).__init__(data_transport, data_transformer, 'stations.txt.gz')
         self.station_builder = station_builder
 
-    def get_stations(self):
+    def get_stations(self, region=1):
         current_stations = []
-        for station_data in self.read_data():
+        for station_data in self.read_data(region=region):
             try:
                 current_stations.append(self.station_builder.from_data(station_data).build())
             except blitzortung.builder.BuilderError:

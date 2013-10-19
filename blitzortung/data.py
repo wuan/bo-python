@@ -26,7 +26,7 @@ class Event(types.Point):
 
     def __str__(self):
         timestamp = self.get_timestamp()
-        if timestamp:
+        if timestamp and timestamp.year > 1900:
             timestamp_string = u"%s%03d%s" % (
                 self.get_timestamp().strftime(builder.Timestamp.time_format_fractional_seconds),
                 self.get_timestamp().nanosecond,
