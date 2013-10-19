@@ -247,9 +247,6 @@ class RawWaveformEvent(Event):
         self.set_x(json_object[1])
         self.set_y(json_object[2])
         self.set_altitude(json_object[3])
-        self.set_sample_period(json_object[5])
-        self.set_angle_offset(json_object[7])
-        self.set_x_values(json_object[9][0])
         if len(json_object[9]) > 1:
             self.set_y_values(json_object[9][1])
 

@@ -91,12 +91,6 @@ class BlitzortungDataProvider(object):
             'url_path': url_path if url_path else '',
         }
 
-    def set_url_parameter(self, parameter_key, parameter_value):
-        self.url_parameters[parameter_key] = parameter_value
-
-    def set_region(self, region):
-        self.set_url_parameter('region', region)
-
     def read_data(self, **kwargs):
         url_parameters = self.url_parameters.copy()
         url_parameters.update(kwargs)
@@ -148,14 +142,14 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
         self.url_path_generator = url_path_generator
         self.stroke_builder = stroke_builder
 
-    def get_strokes_since(self, latest_stroke):
+    def get_strokes_since(self, latest_stroke, region=1):
         self.logger.debug("import strokes since %s" % latest_stroke)
         strokes_since = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
             initial_stroke_count = len(strokes_since)
             start_time = time.time()
-            for stroke_data in self.read_data(url_path=url_path):
+            for stroke_data in self.read_data(region=region, url_path=url_path):
                 try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
                 except blitzortung.builder.BuilderError as e:

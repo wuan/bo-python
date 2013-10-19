@@ -15,7 +15,7 @@ class TestClustering(TestCase):
     def test_clustering(self):
         raise nose.SkipTest("implement as an integration test later")
 
-        strokes_db = blitzortung.db.db.stroke()
+        strokes_db = blitzortung.db.stroke()
         now = datetime.datetime.utcnow()
         start_time = now - datetime.timedelta(hours=2)
         time_interval = blitzortung.db.db.TimeInterval(start_time)

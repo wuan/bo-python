@@ -3,6 +3,7 @@
 import unittest
 import datetime
 import urllib2
+from hamcrest.library.collection.is_empty import empty
 from mock import Mock, patch, call
 from hamcrest import assert_that, is_, equal_to, has_item, contains
 
@@ -10,7 +11,6 @@ import blitzortung
 
 
 class BlitzortungDataTransformerTest(unittest.TestCase):
-
     def setUp(self):
         self.data_format = blitzortung.dataimport.BlitzortungDataTransformer()
 
@@ -40,7 +40,6 @@ class BlitzortungDataTransformerTest(unittest.TestCase):
 
 
 class HttpDataTransportTest(unittest.TestCase):
-
     def setUp(self):
         self.config = Mock()
         self.config.get_username.return_value = '<username>'
@@ -55,7 +54,8 @@ class HttpDataTransportTest(unittest.TestCase):
         response = self.data_transport.read_from_url('http://foo.bar/baz')
 
         password_manager = password_manager_class_mock()
-        assert_that(password_manager.mock_calls, has_item(call.add_password(None, 'http://foo.bar/', '<username>', '<password>')))
+        assert_that(password_manager.mock_calls,
+                    has_item(call.add_password(None, 'http://foo.bar/', '<username>', '<password>')))
         assert_that(basic_auth_handler_class_mock.mock_calls, has_item(call(password_manager)))
         handler = basic_auth_handler_class_mock()
         assert_that(build_opener_mock.mock_calls, has_item(call(handler)))
@@ -70,13 +70,80 @@ class HttpDataTransportTest(unittest.TestCase):
     @patch('urllib2.HTTPPasswordMgrWithDefaultRealm')
     @patch('urllib2.HTTPBasicAuthHandler')
     @patch('urllib2.build_opener')
-    def test_read_from_url_with_exception(self, build_opener_mock, basic_auth_handler_class_mock, password_manager_class_mock):
+    def test_read_from_url_with_exception(self, build_opener_mock, basic_auth_handler_class_mock,
+                                          password_manager_class_mock):
         opener = build_opener_mock()
         opener.open.side_effect = urllib2.URLError("foo")
 
         response = self.data_transport.read_from_url('http://foo.bar/baz')
 
         assert_that(response, is_(None))
+
+
+class BlitzortungDataProviderTest(unittest.TestCase):
+    def setUp(self):
+        self.http_data_transport = Mock()
+        self.data_transformer = Mock()
+        self.url_path = "path"
+
+        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.data_transformer,
+                                                                       self.url_path)
+
+    def test_read_data(self):
+        response = u"line1 \nline2\näöü".encode('latin1')
+
+        self.http_data_transport.read_from_url.return_value = response
+        self.data_transformer.transform_entry.side_effect = ['foo', 'bar', 'baz']
+
+        result = self.provider.read_data()
+
+        self.http_data_transport.read_from_url.assert_called_with(
+            'http://data.blitzortung.org/Data_1/Protected/path')
+
+        expected_transformer_calls = \
+            [call(u'line1'), call(u'line2'), call(u'äöü')]
+
+        assert_that(
+            self.data_transformer.transform_entry.call_args_list,
+            equal_to(expected_transformer_calls))
+        assert_that(result, contains('foo', 'bar', 'baz'))
+
+    def test_read_data_for_other_region(self):
+
+        self.http_data_transport.read_from_url.return_value = ''
+
+        self.provider.read_data(region=42)
+
+        self.http_data_transport.read_from_url.assert_called_with(
+            'http://data.blitzortung.org/Data_42/Protected/path')
+
+    def test_read_data_for_keyword_parameter(self):
+
+        self.http_data_transport.read_from_url.return_value = ''
+
+        self.provider.read_data(url_path='foo')
+
+        self.http_data_transport.read_from_url.assert_called_with(
+            'http://data.blitzortung.org/Data_1/Protected/foo')
+
+    def test_read_data_with_empty_response(self):
+
+        self.http_data_transport.read_from_url.return_value = ''
+        result = self.provider.read_data()
+
+        assert_that(result, equal_to([]))
+
+    def test_read_data_with_encoding_exception(self):
+        response = u"line".encode('latin1')
+
+        self.http_data_transport.read_from_url.return_value = response
+        self.data_transformer.transform_entry.side_effect = UnicodeDecodeError("foo", "bar", 10, 20, "baz")
+
+        result = self.provider.read_data()
+
+        assert_that(result, is_(empty()))
+
+
 
 
 class StrokesUrlTest(unittest.TestCase):
