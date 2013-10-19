@@ -144,9 +144,8 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         assert_that(result, is_(empty()))
 
 
-
-
 class StrokesUrlTest(unittest.TestCase):
+
     def create_strokes_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
