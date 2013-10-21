@@ -5,6 +5,7 @@
 @author: awuerl
 
 """
+import os
 import logging
 import time
 import urllib2
@@ -78,31 +79,44 @@ class HttpDataTransport(object):
         return data_string
 
 
+class BlitzortungDataUrl(object):
+    default_host_name = 'data'
+    default_region = 1
+
+    target_url = 'http://%(host_name)s.blitzortung.org/Data_%(region)d/Protected/'
+
+    def build_url(self, url_path, **kwargs):
+        url_parameters = kwargs
+
+        if 'host_name' not in url_parameters:
+            url_parameters['host_name'] = self.default_host_name
+
+        if 'region' not in url_parameters:
+            url_parameters['region'] = self.default_region
+
+        return os.path.join(self.target_url, url_path) % url_parameters
+
+@singleton
 class BlitzortungDataProvider(object):
-    host = 'http://data.blitzortung.org'
-    target_url = host + '/Data_%(region)d/Protected/%(url_path)s'
     logger = logging.getLogger(__name__)
 
-    def __init__(self, http_data_transport, data_transformer, url_path=None):
+    @inject(http_data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
+    def __init__(self, http_data_transport, data_transformer):
         self.http_data_transport = http_data_transport
         self.data_transformer = data_transformer
-        self.url_parameters = {
-            'region': 1,
-            'url_path': url_path if url_path else '',
-        }
 
-    def read_data(self, **kwargs):
-        url_parameters = self.url_parameters.copy()
-        url_parameters.update(kwargs)
+    def read_text(self, target_url):
 
-        target_url = self.target_url % url_parameters
+        return self.http_data_transport.read_from_url(target_url)
 
-        response = self.http_data_transport.read_from_url(target_url)
+    def read_data(self, target_url, post_process=None):
+        response = self.read_text(target_url)
 
         result = []
 
         if response:
-            response = self.process(response)
+            if post_process:
+                response = post_process(response)
 
             for entry_text in response.split('\n'):
                 entry_text = entry_text.strip()
@@ -115,13 +129,11 @@ class BlitzortungDataProvider(object):
 
         return result
 
-    def process(self, data):
-        return data
 
 
-class BlitzortungStrokeUrlGenerator(object):
+class BlitzortungHistoryUrlGenerator(object):
     url_path_minute_increment = 10
-    url_path_format = 'Strokes/%Y/%m/%d/%H/%M.log'
+    url_path_format = '%Y/%m/%d/%H/%M.log'
 
     def __init__(self):
         self.duration = datetime.timedelta(minutes=self.url_path_minute_increment)
@@ -132,13 +144,14 @@ class BlitzortungStrokeUrlGenerator(object):
 
 
 @singleton
-class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
+class StrokesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
-            url_path_generator=BlitzortungStrokeUrlGenerator, stroke_builder=blitzortung.builder.Stroke)
-    def __init__(self, data_transport, data_transformer, url_path_generator, stroke_builder):
-        super(StrokesBlitzortungDataProvider, self).__init__(data_transport, data_transformer, None)
+    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
+            url_path_generator=BlitzortungHistoryUrlGenerator, stroke_builder=blitzortung.builder.Stroke)
+    def __init__(self, data_provider, data_url, url_path_generator, stroke_builder):
+        self.data_provider = data_provider
+        self.data_url = data_url
         self.url_path_generator = url_path_generator
         self.stroke_builder = stroke_builder
 
@@ -149,7 +162,8 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
             initial_stroke_count = len(strokes_since)
             start_time = time.time()
-            for stroke_data in self.read_data(region=region, url_path=url_path):
+            target_url = self.data_url.build_url(os.path.join('Strokes', url_path), region=region)
+            for stroke_data in self.data_provider.read_data(target_url):
                 try:
                     stroke = self.stroke_builder.from_data(stroke_data).build()
                 except blitzortung.builder.BuilderError as e:
@@ -163,8 +177,8 @@ class StrokesBlitzortungDataProvider(BlitzortungDataProvider):
                 if latest_stroke < timestamp:
                     strokes_since.append(stroke)
             end_time = time.time()
-            self.logger.debug("imported %d strokes in %.2fs from %s", len(strokes_since) - initial_stroke_count,
-                              end_time - start_time, url_path)
+            self.logger.debug("imported %d strokes for region %d in %.2fs from %s", len(strokes_since) - initial_stroke_count,
+                              region, end_time - start_time, url_path)
         return strokes_since
 
 
@@ -175,25 +189,27 @@ def strokes():
 
 
 @singleton
-class StationsBlitzortungDataProvider(BlitzortungDataProvider):
+class StationsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
+    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
             station_builder=blitzortung.builder.Station)
-    def __init__(self, data_transport, data_transformer, station_builder):
-        super(StationsBlitzortungDataProvider, self).__init__(data_transport, data_transformer, 'stations.txt.gz')
+    def __init__(self, data_provider, data_url, station_builder):
+        self.data_provider = data_provider
+        self.data_url = data_url
         self.station_builder = station_builder
 
     def get_stations(self, region=1):
         current_stations = []
-        for station_data in self.read_data(region=region):
+        target_url = self.data_url.build_url('stations.txt.gz', region=region)
+        for station_data in self.data_provider.read_data(target_url, post_process=self.post_process):
             try:
                 current_stations.append(self.station_builder.from_data(station_data).build())
             except blitzortung.builder.BuilderError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
         return current_stations
 
-    def process(self, data):
+    def post_process(self, data):
         data = cStringIO.StringIO(data)
         return gzip.GzipFile(fileobj=data).read()
 
@@ -206,17 +222,34 @@ def stations():
 
 @singleton
 class RawSignalsBlitzortungDataProvider(BlitzortungDataProvider):
-    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
-    def __init__(self, data_transport, data_transformer):
-        super(RawSignalsBlitzortungDataProvider, self).__init__(data_transport, data_transformer,
-                                                                'raw_data/%(station_id)s/%(hour)02d.log')
-        # http://signals.blitzortung.org/Data_1/<station_id>/2013/09/28/20/00.log
+    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
+            waveform_builder=blitzortung.builder.RawWaveformEvent)
+    def __init__(self, data_transport, data_transformer, waveform_builder):
+        super(RawSignalsBlitzortungDataProvider, self).__init__(
+            data_transport,
+            data_transformer,
+            base_url='http://signals.blitzortung.org/Data_%(region)d/%(station_id)'
+        )
+        self.waveform_builder = waveform_builder
 
     def set_station_id(self, station_id):
         self.set_url_parameter('station_id', station_id)
 
     def set_hour(self, hour):
         self.set_url_parameter('hour', hour)
+
+    def get_raw_data_since(self, latest_data, region, station_id):
+        self.logger.debug("import raw data since %s" % latest_data)
+
+        raw_data = []
+
+        for url_path in self.url_path_generator.get_url_paths(latest_data):
+            data = self.read_data(url_path, region=region, station_id=station_id)
+            for line in data.split('\n'):
+                self.waveform_builder.from_string(line.strip())
+                raw_data.append(self.waveform_builder.build())
+
+        return raw_data
 
 
 def raw():

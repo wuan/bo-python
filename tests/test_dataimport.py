@@ -3,6 +3,8 @@
 import unittest
 import datetime
 import urllib2
+import pandas as pd
+
 from hamcrest.library.collection.is_empty import empty
 from mock import Mock, patch, call
 from hamcrest import assert_that, is_, equal_to, has_item, contains
@@ -80,14 +82,26 @@ class HttpDataTransportTest(unittest.TestCase):
         assert_that(response, is_(None))
 
 
+class BlitzortungDataUrlTest(unittest.TestCase):
+
+    def setUp(self):
+        self.data_url = blitzortung.dataimport.BlitzortungDataUrl()
+
+    def test_default_values(self):
+        target_url = self.data_url.build_url('url_path')
+        assert_that(target_url, is_(equal_to('http://data.blitzortung.org/Data_1/Protected/url_path')))
+
+    def test_specific_values(self):
+        target_url = self.data_url.build_url('url_path', host_name='foo', region=42)
+        assert_that(target_url, is_(equal_to('http://foo.blitzortung.org/Data_42/Protected/url_path')))
+
+
 class BlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
         self.http_data_transport = Mock()
         self.data_transformer = Mock()
-        self.url_path = "path"
 
-        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.data_transformer,
-                                                                       self.url_path)
+        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.data_transformer)
 
     def test_read_data(self):
         response = u"line1 \nline2\näöü".encode('latin1')
@@ -95,10 +109,10 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         self.http_data_transport.read_from_url.return_value = response
         self.data_transformer.transform_entry.side_effect = ['foo', 'bar', 'baz']
 
-        result = self.provider.read_data()
+        result = self.provider.read_data('target_url')
 
         self.http_data_transport.read_from_url.assert_called_with(
-            'http://data.blitzortung.org/Data_1/Protected/path')
+            'target_url')
 
         expected_transformer_calls = \
             [call(u'line1'), call(u'line2'), call(u'äöü')]
@@ -108,28 +122,9 @@ class BlitzortungDataProviderTest(unittest.TestCase):
             equal_to(expected_transformer_calls))
         assert_that(result, contains('foo', 'bar', 'baz'))
 
-    def test_read_data_for_other_region(self):
-
-        self.http_data_transport.read_from_url.return_value = ''
-
-        self.provider.read_data(region=42)
-
-        self.http_data_transport.read_from_url.assert_called_with(
-            'http://data.blitzortung.org/Data_42/Protected/path')
-
-    def test_read_data_for_keyword_parameter(self):
-
-        self.http_data_transport.read_from_url.return_value = ''
-
-        self.provider.read_data(url_path='foo')
-
-        self.http_data_transport.read_from_url.assert_called_with(
-            'http://data.blitzortung.org/Data_1/Protected/foo')
-
     def test_read_data_with_empty_response(self):
-
         self.http_data_transport.read_from_url.return_value = ''
-        result = self.provider.read_data()
+        result = self.provider.read_data('foo')
 
         assert_that(result, equal_to([]))
 
@@ -139,25 +134,59 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         self.http_data_transport.read_from_url.return_value = response
         self.data_transformer.transform_entry.side_effect = UnicodeDecodeError("foo", "bar", 10, 20, "baz")
 
-        result = self.provider.read_data()
+        result = self.provider.read_data('foo')
 
         assert_that(result, is_(empty()))
 
 
-class StrokesUrlTest(unittest.TestCase):
-
-    def create_strokes_url_generator(self, present_time):
+class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
+    def create_history_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
-        self.strokes_url = blitzortung.dataimport.BlitzortungStrokeUrlGenerator()
+        self.strokes_url = blitzortung.dataimport.BlitzortungHistoryUrlGenerator()
 
     def test_stroke_url_iterator(self):
-        self.create_strokes_url_generator(datetime.datetime(2013, 8, 20, 12, 9, 0))
+        self.create_history_url_generator(datetime.datetime(2013, 8, 20, 12, 9, 0))
 
         urls = [url for url in self.strokes_url.get_url_paths(self.start_time, self.present_time)]
 
         assert_that(urls, contains(
-            'Strokes/2013/08/20/11/40.log',
-            'Strokes/2013/08/20/11/50.log',
-            'Strokes/2013/08/20/12/00.log'
+            '2013/08/20/11/40.log',
+            '2013/08/20/11/50.log',
+            '2013/08/20/12/00.log'
         ))
+
+
+class StrokesBlitzortungDataProviderTest(unittest.TestCase):
+    def setUp(self):
+        self.data_provider = Mock()
+        self.data_url = Mock()
+        self.url_generator = Mock()
+        self.builder = Mock()
+
+        self.provider = blitzortung.dataimport.StrokesBlitzortungDataProvider(
+            self.data_provider,
+            self.data_url,
+            self.url_generator,
+            self.builder
+        )
+        self.provider.read_data = Mock()
+
+    def test_get_strokes_since(self):
+        now = datetime.datetime.utcnow()
+        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        self.url_generator.get_url_paths.return_value = ['path1', 'path2']
+        stroke_data1 = {'one': 1}
+        stroke_data2 = {'two': 2}
+        self.data_provider.read_data.side_effect = [[stroke_data1, stroke_data2], []]
+        stroke1 = Mock()
+        stroke2 = Mock()
+        stroke1.get_timestamp.return_value = pd.Timestamp(now - datetime.timedelta(hours=2))
+        stroke2.get_timestamp.return_value = pd.Timestamp(now)
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = [stroke1, stroke2]
+
+        strokes = self.provider.get_strokes_since(latest_stroke_timestamp)
+
+        assert_that(strokes, contains(stroke2))
+
