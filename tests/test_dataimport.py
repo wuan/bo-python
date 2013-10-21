@@ -3,6 +3,7 @@
 import unittest
 import datetime
 import urllib2
+from nose.tools import raises
 import pandas as pd
 
 from hamcrest.library.collection.is_empty import empty
@@ -122,6 +123,21 @@ class BlitzortungDataProviderTest(unittest.TestCase):
             equal_to(expected_transformer_calls))
         assert_that(result, contains('foo', 'bar', 'baz'))
 
+    def test_read_data_with_post_process(self):
+
+        self.http_data_transport.read_from_url.return_value = "line\n"
+
+        post_process = Mock()
+        post_process.return_value = "processed line\n"
+
+        self.data_transformer.transform_entry.return_value = "transformed"
+
+        result = self.provider.read_data("url_path", post_process=post_process)
+
+        assert_that(post_process.call_args_list, is_(equal_to([call("line\n")])))
+        assert_that(self.data_transformer.transform_entry.call_args_list, is_(equal_to([call("processed line")])))
+        assert_that(result, contains("transformed"))
+
     def test_read_data_with_empty_response(self):
         self.http_data_transport.read_from_url.return_value = ''
         result = self.provider.read_data('foo')
@@ -190,3 +206,64 @@ class StrokesBlitzortungDataProviderTest(unittest.TestCase):
 
         assert_that(strokes, contains(stroke2))
 
+    def test_get_strokes_since_with_builder_error(self):
+        now = datetime.datetime.utcnow()
+        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        self.url_generator.get_url_paths.return_value = ['path']
+        stroke_data = {'one': 1}
+        self.data_provider.read_data.side_effect = [[stroke_data], []]
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
+
+        strokes = self.provider.get_strokes_since(latest_stroke_timestamp)
+
+        assert_that(strokes, is_(empty()))
+
+    @raises(Exception)
+    def test_get_strokes_since_with_generic_exception(self):
+        now = datetime.datetime.utcnow()
+        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        self.url_generator.get_url_paths.return_value = ['path']
+        stroke_data = {'one': 1}
+        self.data_provider.read_data.side_effect = [[stroke_data], []]
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = Exception("foo")
+
+        self.provider.get_strokes_since(latest_stroke_timestamp)
+
+
+class StationsBlitzortungDataProviderTest(unittest.TestCase):
+    def setUp(self):
+        self.data_provider = Mock()
+        self.data_url = Mock()
+        self.builder = Mock()
+
+        self.provider = blitzortung.dataimport.StationsBlitzortungDataProvider(
+            self.data_provider,
+            self.data_url,
+            self.builder
+        )
+        self.provider.read_data = Mock()
+
+    def test_get_stations(self):
+        station_data1 = {'one': 1}
+        station_data2 = {'two': 2}
+        self.data_provider.read_data.side_effect = [[station_data1, station_data2], []]
+        station1 = Mock()
+        station2 = Mock()
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = [station1, station2]
+
+        strokes = self.provider.get_stations()
+
+        assert_that(strokes, contains(station1, station2))
+
+    def test_get_stations_with_builder_error(self):
+        station_data = {'one': 1}
+        self.data_provider.read_data.side_effect = [[station_data], []]
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
+
+        strokes = self.provider.get_stations()
+
+        assert_that(strokes, is_(empty()))

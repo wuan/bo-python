@@ -130,7 +130,6 @@ class BlitzortungDataProvider(object):
         return result
 
 
-
 class BlitzortungHistoryUrlGenerator(object):
     url_path_minute_increment = 10
     url_path_format = '%Y/%m/%d/%H/%M.log'
