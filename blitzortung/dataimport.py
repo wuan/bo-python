@@ -96,6 +96,7 @@ class BlitzortungDataUrl(object):
 
         return os.path.join(self.target_url, url_path) % url_parameters
 
+
 @singleton
 class BlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
@@ -176,7 +177,8 @@ class StrokesBlitzortungDataProvider(object):
                 if latest_stroke < timestamp:
                     strokes_since.append(stroke)
             end_time = time.time()
-            self.logger.debug("imported %d strokes for region %d in %.2fs from %s", len(strokes_since) - initial_stroke_count,
+            self.logger.debug("imported %d strokes for region %d in %.2fs from %s",
+                              len(strokes_since) - initial_stroke_count,
                               region, end_time - start_time, url_path)
         return strokes_since
 
@@ -220,22 +222,15 @@ def stations():
 
 
 @singleton
-class RawSignalsBlitzortungDataProvider(BlitzortungDataProvider):
-    @inject(data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer,
-            waveform_builder=blitzortung.builder.RawWaveformEvent)
-    def __init__(self, data_transport, data_transformer, waveform_builder):
-        super(RawSignalsBlitzortungDataProvider, self).__init__(
-            data_transport,
-            data_transformer,
-            base_url='http://signals.blitzortung.org/Data_%(region)d/%(station_id)'
-        )
+class RawSignalsBlitzortungDataProvider(object):
+
+    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
+            url_path_generator=BlitzortungHistoryUrlGenerator, waveform_builder=blitzortung.builder.RawWaveformEvent)
+    def __init__(self, data_provider, data_url, url_path_generator, waveform_builder):
+        self.data_provider = data_provider
+        self.data_url = data_url
+        self.url_path_generator = url_path_generator
         self.waveform_builder = waveform_builder
-
-    def set_station_id(self, station_id):
-        self.set_url_parameter('station_id', station_id)
-
-    def set_hour(self, hour):
-        self.set_url_parameter('hour', hour)
 
     def get_raw_data_since(self, latest_data, region, station_id):
         self.logger.debug("import raw data since %s" % latest_data)
@@ -243,7 +238,12 @@ class RawSignalsBlitzortungDataProvider(BlitzortungDataProvider):
         raw_data = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_data):
-            data = self.read_data(url_path, region=region, station_id=station_id)
+            data = self.data_provider.read_data(
+                url_path,
+                region=region,
+                station_id=station_id,
+                host='signals')
+
             for line in data.split('\n'):
                 self.waveform_builder.from_string(line.strip())
                 raw_data.append(self.waveform_builder.build())
