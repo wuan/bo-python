@@ -123,3 +123,15 @@ class QueryTest(unittest.TestCase):
     def test_set_limit(self):
         self.query.set_limit(blitzortung.db.query.Limit(10))
         self.assertEqual(str(self.query), "SELECT FROM foo LIMIT 10")
+
+    def test_parse_args_with_id_interval(self):
+        self.query.parse_args([blitzortung.db.query.IdInterval(10, 15)])
+
+        assert_that(str(self.query), is_(equal_to("SELECT FROM foo WHERE id >= 10 AND id < 15")))
+
+    def test_parse_args_with_time_interval(self):
+        self.query.parse_args([blitzortung.db.query.TimeInterval(datetime.datetime(2013, 10, 9, 17, 20), datetime.datetime(2013, 10, 11, 6, 30))])
+
+        assert_that(str(self.query), is_(equal_to(
+            "SELECT FROM foo WHERE \"timestamp\" >= 2013-10-09 17:20:00 AND \"timestamp\" < 2013-10-11 06:30:00"
+        )))
