@@ -1,14 +1,14 @@
 from unittest import TestCase
-from mockito import mock, when, verify
 from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains
 import time
+from mock import Mock
 
 from blitzortung.cache import CacheEntry, ObjectCache
 
 
 class TestCacheEntry(TestCase):
     def setUp(self):
-        self.payload = mock()
+        self.payload = Mock()
         self.cache_entry = CacheEntry(self.payload, time.time() + 10)
 
     def test_is_valid(self):
@@ -120,7 +120,6 @@ class TestObjectCache(TestCase):
         assert_that(self.cache.get(TestObject, bar=argument2, foo=argument1), is_(same_instance(cached_object)))
 
     def test_get_ratio(self):
-
         assert_that(self.cache.get_ratio(), is_(0.0))
 
         self.cache.get(TestObject)

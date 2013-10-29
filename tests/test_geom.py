@@ -1,6 +1,5 @@
 from unittest import TestCase
 import datetime
-from mockito import mock, when, verify
 from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to, none
 import time
 import shapely
