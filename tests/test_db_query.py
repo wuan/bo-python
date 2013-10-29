@@ -120,6 +120,14 @@ class QueryTest(unittest.TestCase):
         self.query.add_order(blitzortung.db.query.Order("baz", True))
         self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar, baz DESC")
 
+    def test_add_parameters(self):
+
+        assert_that(self.query.get_parameters(), is_(equal_to({})))
+
+        self.query.add_parameters({'foo': 'bar', 'baz': 'qux'})
+
+        assert_that(self.query.get_parameters(), is_(equal_to({'foo': 'bar', 'baz': 'qux'})))
+
     def test_set_limit(self):
         self.query.set_limit(blitzortung.db.query.Limit(10))
         self.assertEqual(str(self.query), "SELECT FROM foo LIMIT 10")
