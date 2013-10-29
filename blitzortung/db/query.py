@@ -118,7 +118,7 @@ class Query(object):
         if self.limit:
             sql += 'LIMIT ' + str(self.limit.get_number()) + ' '
 
-        return sql.strip()
+        return sql.strip() % self.parameters
 
     def get_parameters(self):
         return self.parameters
