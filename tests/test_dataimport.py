@@ -11,6 +11,7 @@ from mock import Mock, patch, call
 from hamcrest import assert_that, is_, equal_to, has_item, contains
 
 import blitzortung
+from blitzortung.dataimport import split_quote_aware
 
 
 class BlitzortungDataTransformerTest(unittest.TestCase):
@@ -132,7 +133,7 @@ class BlitzortungDataProviderTest(unittest.TestCase):
 
         self.data_transformer.transform_entry.return_value = "transformed"
 
-        result = self.provider.read_data("url_path", post_process=post_process)
+        result = self.provider.read_data("url_path", pre_process=post_process)
 
         assert_that(post_process.call_args_list, is_(equal_to([call("line\n")])))
         assert_that(self.data_transformer.transform_entry.call_args_list, is_(equal_to([call("processed line")])))
@@ -267,3 +268,11 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         strokes = self.provider.get_stations()
 
         assert_that(strokes, is_(empty()))
+
+
+class TestStringOp(unittest.TestCase):
+
+    def test_split_quote_aware(self):
+
+        parts = [part for part in split_quote_aware('"eins" "zwei drei vier" "fuenf sechs" sieben')]
+        assert_that(parts, is_(equal_to(['eins', 'zwei drei vier', 'fuenf sechs', 'sieben'])))

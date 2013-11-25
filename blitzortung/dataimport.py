@@ -14,11 +14,39 @@ from urlparse import urlparse
 import cStringIO
 import gzip
 import HTMLParser
-import shlex
 
 from injector import singleton, inject
+import pytz
 
 import blitzortung
+
+
+def split_quote_aware(string):
+
+    quoted = False
+    parts = string.split(' ')
+
+    combined_part = ""
+    for part in parts:
+
+        if not quoted and part.startswith('"'):
+            if part.endswith('"'):
+                yield part[1:-1]
+            else:
+                combined_part += part[1:]
+                quoted = True
+        elif part.endswith('"'):
+            yield combined_part + " " + part[:-1]
+            quoted = False
+            combined_part = ""
+        elif quoted:
+            combined_part += " " + part
+        else:
+            yield part
+
+    if combined_part:
+        yield combined_part
+
 
 
 @singleton
@@ -26,14 +54,11 @@ class BlitzortungDataTransformer(object):
     single_value_index = {0: u'date', 1: u'time'}
 
     def transform_entry(self, entry_text):
-        entry_text = entry_text.encode('latin1')
         entry_text = HTMLParser.HTMLParser().unescape(entry_text).replace(u'\xa0', ' ')
-
-        parameters = [parameter.decode('latin1') for parameter in shlex.split(entry_text.encode('latin1'))]
 
         result = {}
 
-        for index, parameter in enumerate(parameters):
+        for index, parameter in enumerate(split_quote_aware(entry_text)):
 
             values = parameter.split(u';')
             if values:
@@ -110,18 +135,16 @@ class BlitzortungDataProvider(object):
 
         return self.http_data_transport.read_from_url(target_url)
 
-    def read_data(self, target_url, post_process=None):
+    def read_data(self, target_url, pre_process=None):
         response = self.read_text(target_url)
 
         result = []
 
         if response:
-            if post_process:
-                response = post_process(response)
+            if pre_process:
+                response = pre_process(response)
 
             for entry_text in response.split('\n'):
-                entry_text = entry_text.strip()
-                entry_text = entry_text.decode('latin1')
                 if entry_text:
                     try:
                         result.append(self.data_transformer.transform_entry(entry_text))
@@ -155,7 +178,9 @@ class StrokesBlitzortungDataProvider(object):
         self.url_path_generator = url_path_generator
         self.stroke_builder = stroke_builder
 
-    def get_strokes_since(self, latest_stroke, region=1):
+    def get_strokes_since(self, latest_stroke=None, region=1):
+        latest_stroke = latest_stroke if latest_stroke else \
+            (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
         self.logger.debug("import strokes since %s" % latest_stroke)
         strokes_since = []
 
@@ -203,14 +228,14 @@ class StationsBlitzortungDataProvider(object):
     def get_stations(self, region=1):
         current_stations = []
         target_url = self.data_url.build_url('stations.txt.gz', region=region)
-        for station_data in self.data_provider.read_data(target_url, post_process=self.post_process):
+        for station_data in self.data_provider.read_data(target_url, pre_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_data(station_data).build())
             except blitzortung.builder.BuilderError:
                 self.logger.debug("error parsing station data '%s'" % station_data)
         return current_stations
 
-    def post_process(self, data):
+    def pre_process(self, data):
         data = cStringIO.StringIO(data)
         return gzip.GzipFile(fileobj=data).read()
 
