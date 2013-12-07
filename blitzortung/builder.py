@@ -83,10 +83,10 @@ class Event(Timestamp):
 
 
 class Stroke(Event):
-    POSITION_REGEX = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
-    TYPE_REGEX = re.compile(r'typ;([0-9\.]+)')
-    DEVIATION_REGEX = re.compile(r'dev;([0-9\.]+)')
-    STATIONS_REGEX = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
+    position_parser = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
+    amplitude_parser = re.compile(r'str;([0-9\.]+)')
+    deviation_parser = re.compile(r'dev;([0-9\.]+)')
+    stations_parser = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
 
     def __init__(self):
         super(Stroke, self).__init__()
@@ -142,14 +142,15 @@ class Stroke(Event):
     def from_line(self, line):
         self.set_timestamp(line[0:29])
 
-        position = self.POSITION_REGEX.findall(line)[0]
+        position = self.position_parser.findall(line)[0]
         self.set_x(float(position[1]))
         self.set_y(float(position[0]))
         self.set_altitude(float(position[2]))
 
-        #type = self.TYPE_REGEX.findall(line)
-        self.set_lateral_error(float(self.DEVIATION_REGEX.findall(line)[0]))
-        stations = self.STATIONS_REGEX.findall(line)[0]
+        self.set_amplitude(self.amplitude_parser.findall(line)[0])
+
+        self.set_lateral_error(float(self.deviation_parser.findall(line)[0]))
+        stations = self.stations_parser.findall(line)[0]
         self.set_station_count(int(stations[0]))
         self.set_stations([int(station) for station in stations[2].split(',')])
 

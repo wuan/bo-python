@@ -233,9 +233,9 @@ class Stroke(Event):
     def __str__(self):
         return super(Stroke, self).__str__() + "%s %.1f %d %d" % (
             str(self.altitude) if self.altitude is not None else '-',
-            self.amplitude,
+            self.amplitude if self.amplitude else 0.0,
             self.lateral_error,
-            self.station_count
+            self.station_count if self.station_count else 0
         )
 
 
