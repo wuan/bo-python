@@ -5,71 +5,21 @@
 @author: awuerl
 
 """
+import StringIO
 import os
 import logging
 import time
 import urllib2
 import datetime
 from urlparse import urlparse
-import cStringIO
 import gzip
 import HTMLParser
+import cStringIO
 
 from injector import singleton, inject
 import pytz
 
 import blitzortung
-
-
-def split_quote_aware(string):
-
-    quoted = False
-    parts = string.split(' ')
-
-    combined_part = ""
-    for part in parts:
-
-        if not quoted and part.startswith('"'):
-            if part.endswith('"'):
-                yield part[1:-1]
-            else:
-                combined_part += part[1:]
-                quoted = True
-        elif part.endswith('"'):
-            yield combined_part + " " + part[:-1]
-            quoted = False
-            combined_part = ""
-        elif quoted:
-            combined_part += " " + part
-        else:
-            yield part
-
-    if combined_part:
-        yield combined_part
-
-
-
-@singleton
-class BlitzortungDataTransformer(object):
-    single_value_index = {0: u'date', 1: u'time'}
-
-    def transform_entry(self, entry_text):
-        entry_text = HTMLParser.HTMLParser().unescape(entry_text).replace(u'\xa0', ' ')
-
-        result = {}
-
-        for index, parameter in enumerate(split_quote_aware(entry_text)):
-
-            values = parameter.split(u';')
-            if values:
-                if len(values) > 1:
-                    parameter_name = unicode(values[0])
-                    result[parameter_name] = values[1] if len(values) == 2 else values[1:]
-                else:
-                    if index in self.single_value_index:
-                        result[self.single_value_index[index]] = values[0]
-
-        return result
 
 
 class HttpDataTransport(object):
@@ -94,10 +44,10 @@ class HttpDataTransport(object):
         try:
             url_connection = url_opener.open(target_url, timeout=60)
         except urllib2.URLError, error:
-            self.logger.debug("%s when opening '%s'\n" % (error, target_url))
+            self.logger.debug("%s when opening '%s'" % (error, target_url))
             return None
 
-        data_string = url_connection.read().strip()
+        data_string = url_connection.read()
 
         url_connection.close()
 
@@ -125,33 +75,28 @@ class BlitzortungDataUrl(object):
 @singleton
 class BlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
+    html_parser = HTMLParser.HTMLParser()
 
-    @inject(http_data_transport=HttpDataTransport, data_transformer=BlitzortungDataTransformer)
-    def __init__(self, http_data_transport, data_transformer):
+    @inject(http_data_transport=HttpDataTransport)
+    def __init__(self, http_data_transport):
         self.http_data_transport = http_data_transport
-        self.data_transformer = data_transformer
 
     def read_text(self, target_url):
-
         return self.http_data_transport.read_from_url(target_url)
 
     def read_data(self, target_url, pre_process=None):
         response = self.read_text(target_url)
 
-        result = []
-
         if response:
             if pre_process:
                 response = pre_process(response)
 
-            for entry_text in response.split('\n'):
-                if entry_text:
-                    try:
-                        result.append(self.data_transformer.transform_entry(entry_text))
-                    except UnicodeDecodeError:
-                        self.logger.debug("decoding error: '%s'" % entry_text)
+            response = self.html_parser.unescape(response.decode('latin1')).replace(u'\xa0', ' ')
 
-        return result
+            for entry_text in response.split('\n'):
+                entry_text = entry_text.strip()
+                if entry_text:
+                    yield entry_text
 
 
 class BlitzortungHistoryUrlGenerator(object):
@@ -188,14 +133,14 @@ class StrokesBlitzortungDataProvider(object):
             initial_stroke_count = len(strokes_since)
             start_time = time.time()
             target_url = self.data_url.build_url(os.path.join('Strokes', url_path), region=region)
-            for stroke_data in self.data_provider.read_data(target_url):
+            for stroke_line in self.data_provider.read_data(target_url):
                 try:
-                    stroke = self.stroke_builder.from_data(stroke_data).build()
+                    stroke = self.stroke_builder.from_line(stroke_line).build()
                 except blitzortung.builder.BuilderError as e:
-                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.message, stroke_line))
                     continue
                 except Exception as e:
-                    self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_data))
+                    self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_line))
                     raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
@@ -228,11 +173,11 @@ class StationsBlitzortungDataProvider(object):
     def get_stations(self, region=1):
         current_stations = []
         target_url = self.data_url.build_url('stations.txt.gz', region=region)
-        for station_data in self.data_provider.read_data(target_url, pre_process=self.pre_process):
+        for station_line in self.data_provider.read_data(target_url, pre_process=self.pre_process):
             try:
-                current_stations.append(self.station_builder.from_data(station_data).build())
+                current_stations.append(self.station_builder.from_line(station_line).build())
             except blitzortung.builder.BuilderError:
-                self.logger.debug("error parsing station data '%s'" % station_data)
+                self.logger.debug("error parsing station data '%s'" % station_line)
         return current_stations
 
     def pre_process(self, data):
@@ -248,6 +193,7 @@ def stations():
 
 @singleton
 class RawSignalsBlitzortungDataProvider(object):
+    logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
             url_path_generator=BlitzortungHistoryUrlGenerator, waveform_builder=blitzortung.builder.RawWaveformEvent)

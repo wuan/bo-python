@@ -9,12 +9,14 @@
 import datetime
 import HTMLParser
 import itertools
+import re
 
 import pytz
 import numpy as np
 import pandas as pd
 
 import blitzortung
+
 
 
 class BuilderError(blitzortung.Error):
@@ -81,6 +83,11 @@ class Event(Timestamp):
 
 
 class Stroke(Event):
+    POSITION_REGEX = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
+    TYPE_REGEX = re.compile(r'typ;([0-9\.]+)')
+    DEVIATION_REGEX = re.compile(r'dev;([0-9\.]+)')
+    STATIONS_REGEX = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
+
     def __init__(self):
         super(Stroke, self).__init__()
         self.id_value = -1
@@ -132,9 +139,32 @@ class Stroke(Event):
         self.set_stations([int(station) for station in stations[2].split(',')])
         return self
 
+    def from_line(self, line):
+        self.set_timestamp(line[0:29])
+
+        position = self.POSITION_REGEX.findall(line)[0]
+        self.set_x(float(position[1]))
+        self.set_y(float(position[0]))
+        self.set_altitude(float(position[2]))
+
+        #type = self.TYPE_REGEX.findall(line)
+        self.set_lateral_error(float(self.DEVIATION_REGEX.findall(line)[0]))
+        stations = self.STATIONS_REGEX.findall(line)[0]
+        self.set_station_count(int(stations[0]))
+        self.set_stations([int(station) for station in stations[2].split(',')])
+
+        return self
+
 
 class Station(Event):
-    html_parser = HTMLParser.HTMLParser()
+    station_parser = re.compile(r'station;([0-9]+)')
+    user_parser = re.compile(r'user;([0-9]+)')
+    city_parser = re.compile(r'city;"([^"]+)"')
+    country_parser = re.compile(r'country;"([^"]+)"')
+    position_parser = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
+    status_parser = re.compile(r'status;"?([^ ]+)"?')
+    board_parser = re.compile(r'board;"?([^ ]+)"?')
+    last_signal_parser = re.compile(r'last_signal;"([-: 0-9]+)" ?')
 
     def __init__(self):
         super(Station, self).__init__()
@@ -183,14 +213,26 @@ class Station(Event):
             raise BuilderError(e)
         return self
 
+    def from_line(self, line):
+        try:
+            self.set_number(int(self.station_parser.findall(line)[0]))
+            self.set_user(int(self.user_parser.findall(line)[0]))
+            self.set_name(self.city_parser.findall(line)[0])
+            self.set_country(self.country_parser.findall(line)[0])
+            pos = self.position_parser.findall(line)[0]
+            self.set_x(float(pos[1]))
+            self.set_y(float(pos[0]))
+            self.set_board(self.board_parser.findall(line)[0])
+            self.set_status(self.status_parser.findall(line)[0])
+            self.set_timestamp(self.last_signal_parser.findall(line)[0])
+        except (KeyError, ValueError, IndexError) as e:
+            raise BuilderError(e)
+        return self
+
     def build(self):
         return blitzortung.data.Station(self.number, self.user, self.name, self.country,
                                         self.x_coord, self.y_coord, self.timestamp, self.status,
                                         self.board)
-
-    @staticmethod
-    def _unquote(html_coded_string):
-        return Station.html_parser.unescape(html_coded_string.replace('&nbsp;', ' '))
 
 
 class StationOffline(Base):

@@ -11,36 +11,6 @@ from mock import Mock, patch, call
 from hamcrest import assert_that, is_, equal_to, has_item, contains
 
 import blitzortung
-from blitzortung.dataimport import split_quote_aware
-
-
-class BlitzortungDataTransformerTest(unittest.TestCase):
-    def setUp(self):
-        self.data_format = blitzortung.dataimport.BlitzortungDataTransformer()
-
-    def test_parse_line(self):
-        result = self.data_format.transform_entry(u'foo;1;2 bar;3;4 baz;"single value"')
-
-        assert_that(result, is_(equal_to({u'baz': u'single value', u'foo': [u'1', u'2'], u'bar': [u'3', u'4']})))
-
-    def test_parse_line_with_space(self):
-        result = self.data_format.transform_entry(u'foo;1;2 "foo bar";3;4')
-
-        assert_that(result, is_(equal_to({u'foo bar': [u'3', u'4'], u'foo': [u'1', u'2']})))
-
-    def test_parse_line_with_html(self):
-        result = self.data_format.transform_entry(u'foo;b&auml;z;&szlig; "f&ouml;o&nbsp;b&auml;r";3;4')
-
-        assert_that(result, is_(equal_to({u'föo bär': [u'3', u'4'], u'foo': [u'bäz', u'ß']})))
-
-    def test_parse_stroke_data_line(self):
-        result = self.data_format.transform_entry(
-            u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594")
-
-        assert_that(result, is_(equal_to({u'sta': [u'10', u'24',
-                                                   u'226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594'],
-                                          u'pos': [u'44.162701', u'8.931001', u'0'], u'dev': u'20146', u'str': u'4.75',
-                                          u'time': u'10:30:03.644038642', u'date': u'2013-08-08', u'typ': u'0'})))
 
 
 class HttpDataTransportTest(unittest.TestCase):
@@ -85,7 +55,6 @@ class HttpDataTransportTest(unittest.TestCase):
 
 
 class BlitzortungDataUrlTest(unittest.TestCase):
-
     def setUp(self):
         self.data_url = blitzortung.dataimport.BlitzortungDataUrl()
 
@@ -101,59 +70,37 @@ class BlitzortungDataUrlTest(unittest.TestCase):
 class BlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
         self.http_data_transport = Mock()
-        self.data_transformer = Mock()
 
-        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.data_transformer)
+        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
 
     def test_read_data(self):
-        response = u"line1 \nline2\näöü".encode('latin1')
+        response = u"line1 \nline2\näöü\n\n"
 
         self.http_data_transport.read_from_url.return_value = response
-        self.data_transformer.transform_entry.side_effect = ['foo', 'bar', 'baz']
 
         result = self.provider.read_data('target_url')
+
+        assert_that(list(result), contains(u'line1', u'line2', u'äöü'))
 
         self.http_data_transport.read_from_url.assert_called_with(
             'target_url')
 
-        expected_transformer_calls = \
-            [call(u'line1'), call(u'line2'), call(u'äöü')]
-
-        assert_that(
-            self.data_transformer.transform_entry.call_args_list,
-            equal_to(expected_transformer_calls))
-        assert_that(result, contains('foo', 'bar', 'baz'))
-
     def test_read_data_with_post_process(self):
-
         self.http_data_transport.read_from_url.return_value = "line\n"
 
-        post_process = Mock()
-        post_process.return_value = "processed line\n"
+        pre_process = Mock()
+        pre_process.return_value = "processed line\n"
 
-        self.data_transformer.transform_entry.return_value = "transformed"
+        result = self.provider.read_data("url_path", pre_process=pre_process)
 
-        result = self.provider.read_data("url_path", pre_process=post_process)
-
-        assert_that(post_process.call_args_list, is_(equal_to([call("line\n")])))
-        assert_that(self.data_transformer.transform_entry.call_args_list, is_(equal_to([call("processed line")])))
-        assert_that(result, contains("transformed"))
+        assert_that(list(result), contains("processed line"))
+        assert_that(pre_process.call_args_list, is_(equal_to([call("line\n")])))
 
     def test_read_data_with_empty_response(self):
         self.http_data_transport.read_from_url.return_value = ''
         result = self.provider.read_data('foo')
 
-        assert_that(result, equal_to([]))
-
-    def test_read_data_with_encoding_exception(self):
-        response = u"line".encode('latin1')
-
-        self.http_data_transport.read_from_url.return_value = response
-        self.data_transformer.transform_entry.side_effect = UnicodeDecodeError("foo", "bar", 10, 20, "baz")
-
-        result = self.provider.read_data('foo')
-
-        assert_that(result, is_(empty()))
+        assert_that(list(result), equal_to([]))
 
 
 class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
@@ -200,12 +147,12 @@ class StrokesBlitzortungDataProviderTest(unittest.TestCase):
         stroke2 = Mock()
         stroke1.get_timestamp.return_value = pd.Timestamp(now - datetime.timedelta(hours=2))
         stroke2.get_timestamp.return_value = pd.Timestamp(now)
-        self.builder.from_data.return_value = self.builder
+        self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = [stroke1, stroke2]
 
         strokes = self.provider.get_strokes_since(latest_stroke_timestamp)
 
-        assert_that(strokes, contains(stroke2))
+        assert_that(list(strokes), contains(stroke2))
 
     def test_get_strokes_since_with_builder_error(self):
         now = datetime.datetime.utcnow()
@@ -226,7 +173,7 @@ class StrokesBlitzortungDataProviderTest(unittest.TestCase):
         latest_stroke_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_url_paths.return_value = ['path']
         stroke_data = {'one': 1}
-        self.data_provider.read_data.side_effect = [[stroke_data], []]
+        self.data_provider.read_line.side_effect = [[stroke_data], []]
         self.builder.from_data.return_value = self.builder
         self.builder.build.side_effect = Exception("foo")
 
@@ -247,30 +194,30 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         self.provider.read_data = Mock()
 
     def test_get_stations(self):
-        station_data1 = {'one': 1}
-        station_data2 = {'two': 2}
+        station_data1 = "station one"
+        station_data2 = "station two"
         self.data_url.build_url.return_value = 'full_url'
         self.data_provider.read_data.side_effect = [[station_data1, station_data2], []]
         station1 = Mock()
         station2 = Mock()
-        self.builder.from_data.return_value = self.builder
+        self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = [station1, station2]
 
-        strokes = self.provider.get_stations()
-        expected_args = [call('full_url', post_process=self.provider.post_process)]
+        stations = self.provider.get_stations()
+        expected_args = [call('full_url', pre_process=self.provider.pre_process)]
         assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
-        assert_that(strokes, contains(station1, station2))
+        assert_that(stations, contains(station1, station2))
 
     def test_get_stations_with_builder_error(self):
         station_data = {'one': 1}
         self.data_provider.read_data.side_effect = [[station_data], []]
-        self.builder.from_data.return_value = self.builder
+        self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
 
         strokes = self.provider.get_stations()
 
-        assert_that(strokes, is_(empty()))
+        assert_that(list(strokes), is_(empty()))
 
 
 class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
@@ -291,14 +238,17 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
     def test_get_raw_data_since(self):
         last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 
-        raw_data1 = {'one': 1}
-        raw_data2 = {'two': 2}
+        raw_data1 = Mock()
+        raw_data2 = Mock()
         self.data_url.build_url.return_value = 'full_url'
-        self.data_provider.read_data.side_effect = [[raw_data1, raw_data2], []]
-        raw1 = Mock()
-        raw2 = Mock()
-        self.builder.from_data.return_value = self.builder
-        self.builder.build.side_effect = [raw1, raw2]
+        self.url_generator.get_url_paths.return_value = ['url_path1', 'url_path2']
+        self.data_provider.read_data.side_effect = [raw_data1, raw_data2],
+        raw11 = Mock()
+        raw12 = Mock()
+        raw21 = Mock()
+        raw22 = Mock()
+        self.builder.from_string.return_value = self.builder
+        self.builder.build.side_effect = [raw11, raw12, raw21, raw22]
 
         region_id = 5
         station_id = 123
@@ -311,9 +261,3 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
         assert_that(strokes, contains(raw1, raw2))
 
 
-class TestStringOp(unittest.TestCase):
-
-    def test_split_quote_aware(self):
-
-        parts = [part for part in split_quote_aware('"eins" "zwei drei vier" "fuenf sechs" sieben')]
-        assert_that(parts, is_(equal_to(['eins', 'zwei drei vier', 'fuenf sechs', 'sieben'])))

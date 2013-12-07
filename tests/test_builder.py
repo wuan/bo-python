@@ -175,6 +175,16 @@ class StrokeTest(TestBase):
                          [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
                           364, 111, 43, 582, 594])))
 
+    def test_build_stroke_from_line(self):
+        stroke_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
+        stroke = self.builder.from_line(stroke_line).build()
+
+        assert_that(stroke.get_timestamp(), is_(equal_to(self.get_timestamp("2013-08-08 10:30:03.644038642Z"))))
+        assert_that(stroke.get_x(), is_(equal_to(8.931001)))
+        assert_that(stroke.get_y(), is_(equal_to(44.162701)))
+        assert_that(stroke.get_altitude(), is_(equal_to(0)))
+
+
 
 class StationTest(TestBase):
     def setUp(self):

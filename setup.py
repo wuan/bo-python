@@ -10,7 +10,7 @@ setup(
     name='blitzortung',
     packages=find_packages(),
     install_requires=['injector', 'pytz', 'dateutils', 'shapely',  'pyproj', 'numpy', 'pandas', 'mockito', 'statsd'],
-    tests_require=['nose', 'mock', 'coverage']
+    tests_require=['nose', 'mock', 'coverage'],
     version=blitzortung.__version__,
     description='blitzortung.org python modules',
     download_url='http://www.tryb.de/andi/blitzortung/',
