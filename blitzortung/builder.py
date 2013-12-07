@@ -18,7 +18,6 @@ import pandas as pd
 import blitzortung
 
 
-
 class BuilderError(blitzortung.Error):
     pass
 
@@ -121,40 +120,30 @@ class Stroke(Event):
         self.stations = stations
         return self
 
+    def from_line(self, line):
+        """ Construct stroke from new blitzortung text format data line """
+        try:
+            self.set_timestamp(line[0:29])
+
+            position = self.position_parser.findall(line)[0]
+            self.set_x(float(position[1]))
+            self.set_y(float(position[0]))
+            self.set_altitude(float(position[2]))
+
+            self.set_amplitude(float(self.amplitude_parser.findall(line)[0]))
+
+            self.set_lateral_error(float(self.deviation_parser.findall(line)[0]))
+            stations = self.stations_parser.findall(line)[0]
+            self.set_station_count(int(stations[0]))
+            self.set_stations([int(station) for station in stations[2].split(',')])
+        except (KeyError, ValueError, IndexError) as e:
+            raise BuilderError(e)
+
+        return self
+
     def build(self):
         return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
                                        self.amplitude, self.lateral_error, self.station_count, self.stations)
-
-    def from_data(self, data):
-        """ Construct stroke from new blitzortung text format data line """
-        self.set_timestamp(data['date'] + ' ' + data['time'])
-        position = data['pos']
-        self.set_x(float(position[1]))
-        self.set_y(float(position[0]))
-        self.set_altitude(float(position[2]))
-        self.set_amplitude(float(data['str']))
-        self.set_lateral_error(float(data['dev']))
-        stations = data['sta']
-        self.set_station_count(int(stations[0]))
-        self.set_stations([int(station) for station in stations[2].split(',')])
-        return self
-
-    def from_line(self, line):
-        self.set_timestamp(line[0:29])
-
-        position = self.position_parser.findall(line)[0]
-        self.set_x(float(position[1]))
-        self.set_y(float(position[0]))
-        self.set_altitude(float(position[2]))
-
-        self.set_amplitude(self.amplitude_parser.findall(line)[0])
-
-        self.set_lateral_error(float(self.deviation_parser.findall(line)[0]))
-        stations = self.stations_parser.findall(line)[0]
-        self.set_station_count(int(stations[0]))
-        self.set_stations([int(station) for station in stations[2].split(',')])
-
-        return self
 
 
 class Station(Event):
@@ -198,22 +187,6 @@ class Station(Event):
     def set_status(self, status):
         self.status = status
 
-    def from_data(self, data):
-        try:
-            self.set_number(int(data['station']))
-            self.set_user(int(data['user']))
-            self.set_name(data['city'])
-            self.set_country(data['country'])
-            pos = data['pos']
-            self.set_x(float(pos[1]))
-            self.set_y(float(pos[0]))
-            self.set_board(data['board'])
-            self.set_status(data['status'])
-            self.set_timestamp(data['last_signal'])
-        except (KeyError, ValueError) as e:
-            raise BuilderError(e)
-        return self
-
     def from_line(self, line):
         try:
             self.set_number(int(self.station_parser.findall(line)[0]))
@@ -224,7 +197,7 @@ class Station(Event):
             self.set_x(float(pos[1]))
             self.set_y(float(pos[0]))
             self.set_board(self.board_parser.findall(line)[0])
-            self.set_status(self.status_parser.findall(line)[0])
+            #self.set_status(self.status_parser.findall(line)[0])
             self.set_timestamp(self.last_signal_parser.findall(line)[0])
         except (KeyError, ValueError, IndexError) as e:
             raise BuilderError(e)

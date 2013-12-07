@@ -35,9 +35,8 @@ class HttpDataTransportTest(unittest.TestCase):
         assert_that(build_opener_mock.mock_calls, has_item(call(handler)))
         opener = build_opener_mock()
         url_connection = opener.open.return_value
-        unstripped_response = url_connection.read.return_value
-        stripped_response = unstripped_response.strip.return_value
-        assert_that(response, is_(equal_to(stripped_response)))
+        expected_response = url_connection.read.return_value
+        assert_that(response, is_(equal_to(expected_response)))
 
         assert_that(url_connection.mock_calls, has_item(call.close()))
 
@@ -74,7 +73,7 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
 
     def test_read_data(self):
-        response = u"line1 \nline2\näöü\n\n"
+        response = u"line1 \nline2\näöü\n\n".encode('latin1')
 
         self.http_data_transport.read_from_url.return_value = response
 

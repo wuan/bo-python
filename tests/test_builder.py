@@ -18,7 +18,6 @@ class TestBase(unittest.TestCase):
 
 
 class TimestampTest(unittest.TestCase):
-
     def setUp(self):
         self.builder = blitzortung.builder.Timestamp()
 
@@ -156,13 +155,9 @@ class StrokeTest(TestBase):
 
         assert_that(self.builder.build().get_timestamp(), is_(equal_to(pd.Timestamp(timestamp))))
 
-    def test_build_stroke_from_data(self):
-        stroke_data = {u'sta': [u'10', u'24',
-                                u'226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594'],
-                       u'pos': [u'44.162701', u'8.931001', u'0'], u'dev': u'20146', u'str': u'4.75',
-                       'time': u'10:30:03.644038642', 'date': u'2013-08-08', u'typ': u'0'}
-
-        stroke = self.builder.from_data(stroke_data).build()
+    def test_build_stroke_from_line(self):
+        stroke_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
+        stroke = self.builder.from_line(stroke_line).build()
 
         assert_that(stroke.get_timestamp(), is_(equal_to(self.get_timestamp("2013-08-08 10:30:03.644038642Z"))))
         assert_that(stroke.get_x(), is_(equal_to(8.931001)))
@@ -172,18 +167,8 @@ class StrokeTest(TestBase):
         assert_that(stroke.get_lateral_error(), is_(equal_to(20146)))
         assert_that(stroke.get_station_count(), is_(equal_to(10)))
         assert_that(stroke.get_stations(), is_(equal_to(
-                         [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
-                          364, 111, 43, 582, 594])))
-
-    def test_build_stroke_from_line(self):
-        stroke_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
-        stroke = self.builder.from_line(stroke_line).build()
-
-        assert_that(stroke.get_timestamp(), is_(equal_to(self.get_timestamp("2013-08-08 10:30:03.644038642Z"))))
-        assert_that(stroke.get_x(), is_(equal_to(8.931001)))
-        assert_that(stroke.get_y(), is_(equal_to(44.162701)))
-        assert_that(stroke.get_altitude(), is_(equal_to(0)))
-
+            [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
+             364, 111, 43, 582, 594])))
 
 
 class StationTest(TestBase):
@@ -197,18 +182,10 @@ class StationTest(TestBase):
         assert_that(self.builder.status, is_(none()))
         assert_that(self.builder.board, is_(none()))
 
-    def test_build_station_from_data(self):
-        data = {u'status': u'0', u'city': u'Musterdörfl', u'last_signal': u'2012-02-10 14:39:47.410492569',
-                u'last_stroke': u'0000-00-00',
-                u'input_firmware': [u'1.9_/_May_13_201', u'1.9_/_May_13_201', u'', u'', u'', u''],
-                u'distance': u'71.474273030335',
-                u'strokes': [u'0', u'0', u'0', u'0', u'0', u'0', u'0', u'5879', u'0'], u'country': u'Germany',
-                u'firmware': u'STM32F4', u'myblitz': u'N', u'pos': [u'49.5435', u'9.7314', u'130'],
-                u'input_board': [u'5.7', u'5.7', u'', u'', u'', u''], u'signals': u'100', u'station': u'364',
-                u'input_gain': [u'7.7', u'7.7', u'7.7', u'7.7', u'7.7', u'7.7'], u'board': u'6.8',
-                u'input_antenna': [u'', u'', u'', u'', u'', u''], u'user': u'1'}
+    def test_build_station_from_line(self):
+        line = u'station;364 user;1 city;"Musterdörfl" country;"Germany" pos;49.5435;9.7314;432 board;6.8 firmware;"WT 6.20.2 / 31e" status; 30 distance;71.474188743479 myblitz;N input_board;;;;;; input_firmware;"31e";"31e";"";"";"";"" input_gain;7.7;7.7;7.7;7.7;7.7;7.7 input_antenna;10;10;;;; last_signal;"2012-02-10 13:39:47" signals;3133 last_stroke;"2013-10-04 21:03:34" strokes;0;0;0;4;6;66.6667;752;3983;18.8802'
 
-        station = self.builder.from_data(data).build()
+        station = self.builder.from_line(line).build()
 
         assert_that(station.get_number(), is_(equal_to(364)))
         assert_that(station.get_user(), is_(equal_to(1)))
@@ -216,7 +193,7 @@ class StationTest(TestBase):
         assert_that(station.get_country(), is_(equal_to('Germany')))
         assert_that(station.get_x(), is_(equal_to(9.7314)))
         assert_that(station.get_y(), is_(equal_to(49.5435)))
-        assert_that(station.get_timestamp(), is_(equal_to(self.get_timestamp("2012-02-10T14:39:47.410492569Z"))))
+        assert_that(station.get_timestamp(), is_(equal_to(self.get_timestamp("2012-02-10T14:39:47"))))
         assert_that(station.get_board(), is_(equal_to(u'6.8')))
 
 
@@ -271,7 +248,6 @@ class StationOffline(unittest.TestCase):
 
 
 class RawWaveformEventTest(unittest.TestCase):
-
     def setUp(self):
         self.builder = blitzortung.builder.RawWaveformEvent(blitzortung.builder.ChannelWaveform())
 
@@ -305,7 +281,6 @@ class RawWaveformEventTest(unittest.TestCase):
 
 
 class ChannelWaveformTest(unittest.TestCase):
-
     def setUp(self):
         self.builder = blitzortung.builder.ChannelWaveform()
 
