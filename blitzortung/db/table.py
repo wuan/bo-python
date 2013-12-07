@@ -95,7 +95,7 @@ class Base(object):
     def __del__(self):
         try:
             self.db_connection_pool.putconn(self.conn)
-        except psycopg2.pool.PoolError:
+        except (psycopg2.pool.PoolError, AttributeError):
             pass
 
     def is_connected(self):

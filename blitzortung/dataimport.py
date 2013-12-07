@@ -263,14 +263,25 @@ class RawSignalsBlitzortungDataProvider(object):
         raw_data = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_data):
-            data = self.data_provider.read_data(
-                url_path,
+
+            target_url = self.data_url.build_url(
+                os.path.join('Strokes', url_path),
                 region=region,
-                station_id=station_id,
                 host='signals')
 
+            data = self.data_provider.read_data(
+                target_url,
+                region=region,
+                station_id=station_id,
+                host='signals'
+            )
+
             for line in data.split('\n'):
-                self.waveform_builder.from_string(line.strip())
+                try:
+                    self.waveform_builder.from_string(line.strip())
+                except blitzortung.builder.BuilderError:
+                    self.logger.debug("error parsing raw data '%s'" % line)
+                    continue
                 raw_data.append(self.waveform_builder.build())
 
         return raw_data

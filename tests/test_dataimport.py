@@ -249,6 +249,7 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
     def test_get_stations(self):
         station_data1 = {'one': 1}
         station_data2 = {'two': 2}
+        self.data_url.build_url.return_value = 'full_url'
         self.data_provider.read_data.side_effect = [[station_data1, station_data2], []]
         station1 = Mock()
         station2 = Mock()
@@ -256,6 +257,8 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.build.side_effect = [station1, station2]
 
         strokes = self.provider.get_stations()
+        expected_args = [call('full_url', post_process=self.provider.post_process)]
+        assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
         assert_that(strokes, contains(station1, station2))
 
@@ -268,6 +271,44 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         strokes = self.provider.get_stations()
 
         assert_that(strokes, is_(empty()))
+
+
+class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
+    def setUp(self):
+        self.data_provider = Mock()
+        self.data_url = Mock()
+        self.url_generator = Mock()
+        self.builder = Mock()
+
+        self.provider = blitzortung.dataimport.RawSignalsBlitzortungDataProvider(
+            self.data_provider,
+            self.data_url,
+            self.url_generator,
+            self.builder
+        )
+        self.provider.read_data = Mock()
+
+    def test_get_raw_data_since(self):
+        last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+
+        raw_data1 = {'one': 1}
+        raw_data2 = {'two': 2}
+        self.data_url.build_url.return_value = 'full_url'
+        self.data_provider.read_data.side_effect = [[raw_data1, raw_data2], []]
+        raw1 = Mock()
+        raw2 = Mock()
+        self.builder.from_data.return_value = self.builder
+        self.builder.build.side_effect = [raw1, raw2]
+
+        region_id = 5
+        station_id = 123
+        strokes = self.provider.get_raw_data_since(last_data, region_id, station_id)
+
+        assert_that(self.data_)
+        expected_args = [call('full_url', post_process=self.provider.post_process)]
+        assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
+
+        assert_that(strokes, contains(raw1, raw2))
 
 
 class TestStringOp(unittest.TestCase):
