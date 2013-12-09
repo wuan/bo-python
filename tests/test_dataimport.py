@@ -15,52 +15,45 @@ import blitzortung
 
 class HttpDataTransportTest(unittest.TestCase):
     def setUp(self):
-        self.config = Mock()
+        self.config = Mock(name='config')
         self.config.get_username.return_value = '<username>'
         self.config.get_password.return_value = '<password>'
+        self.session = Mock(name='session')
+        self.response = Mock(name='response')
+        self.session.get.return_value = self.response
 
-        self.data_transport = blitzortung.dataimport.HttpDataTransport(self.config)
+        self.data_transport = blitzortung.dataimport.HttpDataTransport(self.config, self.session)
 
-    @patch('urllib2.HTTPPasswordMgrWithDefaultRealm')
-    @patch('urllib2.HTTPBasicAuthHandler')
-    @patch('urllib2.build_opener')
-    def test_read_from_url(self, build_opener_mock, basic_auth_handler_class_mock, password_manager_class_mock):
-        response = self.data_transport.read_from_url('http://foo.bar/baz')
+    def test_read_lines_from_url(self):
+        self.response.status_code = 200
+        self.response.iter_lines.return_value = ['line1\n', 'line2\n']
 
-        password_manager = password_manager_class_mock()
-        assert_that(password_manager.mock_calls,
-                    has_item(call.add_password(None, 'http://foo.bar/', '<username>', '<password>')))
-        assert_that(basic_auth_handler_class_mock.mock_calls, has_item(call(password_manager)))
-        handler = basic_auth_handler_class_mock()
-        assert_that(build_opener_mock.mock_calls, has_item(call(handler)))
-        opener = build_opener_mock()
-        url_connection = opener.open.return_value
-        expected_response = url_connection.read.return_value
-        assert_that(response, is_(equal_to(expected_response)))
+        line_generator = self.data_transport.read_lines_from_url('http://foo.bar/baz')
 
-        assert_that(url_connection.mock_calls, has_item(call.close()))
+        assert_that(list(line_generator), contains('line1', 'line2'))
+        self.session.get.assert_called_with(
+            'http://foo.bar/baz',
+            auth=('<username>', '<password>'),
+            stream=True)
 
-    @patch('urllib2.HTTPPasswordMgrWithDefaultRealm')
-    @patch('urllib2.HTTPBasicAuthHandler')
-    @patch('urllib2.build_opener')
-    def test_read_from_url_with_exception(self, build_opener_mock, basic_auth_handler_class_mock,
-                                          password_manager_class_mock):
-        opener = build_opener_mock()
-        opener.open.side_effect = urllib2.URLError("foo")
+    def test_read_lines_from_url_with_post_process(self):
 
-        response = self.data_transport.read_from_url('http://foo.bar/baz')
+        self.response.status_code = 200
+        self.response.content = 'content'
 
-        assert_that(response, is_(None))
+        post_process = Mock(name='post_process')
+        post_process.return_value = 'processed\nlines\n'
 
-    def test_read_data_with_post_process(self):
+        line_generator = self.data_transport.read_lines_from_url('http://foo.bar/baz', post_process=post_process)
 
-        pre_process = Mock()
-        pre_process.return_value = "processed line\n"
+        assert_that(list(line_generator), contains('processed', 'lines'))
 
-        result = self.provider.read_data("url_path", post_process=pre_process)
+    def test_read_from_url_with_error(self):
+        self.response.status_code = 404
 
-        assert_that(list(result), contains("processed line"))
-        assert_that(pre_process.call_args_list, is_(equal_to([call("line\n")])))
+        response = self.data_transport.read_lines_from_url('http://foo.bar/baz')
+
+        assert_that(list(response), is_([]))
 
 
 class BlitzortungDataUrlTest(unittest.TestCase):
@@ -79,9 +72,8 @@ class BlitzortungDataUrlTest(unittest.TestCase):
 class BlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
         self.http_data_transport = Mock(name="data_transport")
-        self.session = Mock(name="session")
 
-        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.session)
+        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
 
     def test_read_data(self):
         response = [u"line1 ", u"line2", u"äöü".encode('latin1')]
@@ -203,7 +195,7 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.build.side_effect = [station1, station2]
 
         stations = self.provider.get_stations()
-        expected_args = [call('full_url', pre_process=self.provider.pre_process)]
+        expected_args = [call('full_url', post_process=self.provider.pre_process)]
         assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
         assert_that(stations, contains(station1, station2))

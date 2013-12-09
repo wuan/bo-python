@@ -41,7 +41,8 @@ class HttpDataTransport(object):
         if post_process:
             response_text = post_process(response.content)
             for line in response_text.split('\n'):
-                yield line[:-1]
+                if line:
+                    yield line
         else:
             for html_line in response.iter_lines():
                 yield html_line[:-1]
