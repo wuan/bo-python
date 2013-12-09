@@ -57,7 +57,7 @@ class HttpDataTransportTest(unittest.TestCase):
         pre_process = Mock()
         pre_process.return_value = "processed line\n"
 
-        result = self.provider.read_data("url_path", pre_process=pre_process)
+        result = self.provider.read_data("url_path", post_process=pre_process)
 
         assert_that(list(result), contains("processed line"))
         assert_that(pre_process.call_args_list, is_(equal_to([call("line\n")])))

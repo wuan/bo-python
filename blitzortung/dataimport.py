@@ -74,8 +74,11 @@ class BlitzortungDataProvider(object):
     def __init__(self, http_data_transport):
         self.http_data_transport = http_data_transport
 
-    def read_data(self, target_url, pre_process=None):
-        for line in self.http_data_transport.read_lines_from_url(target_url, post_process=pre_process):
+    def read_lines_from_url(self, target_url, post_process):
+        return self.http_data_transport.read_lines_from_url(target_url, post_process=post_process)
+
+    def read_data(self, target_url, post_process=None):
+        for line in self.read_lines_from_url(target_url, post_process=post_process):
             line = self.html_parser.unescape(line.decode('latin1')).replace(u'\xa0', ' ')
             yield line
 
@@ -154,7 +157,7 @@ class StationsBlitzortungDataProvider(object):
     def get_stations(self, region=1):
         current_stations = []
         target_url = self.data_url.build_url('stations.txt.gz', region=region)
-        for station_line in self.data_provider.read_data(target_url, pre_process=self.pre_process):
+        for station_line in self.data_provider.read_data(target_url, post_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_line(station_line).build())
             except blitzortung.builder.BuilderError:
