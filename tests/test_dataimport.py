@@ -52,6 +52,16 @@ class HttpDataTransportTest(unittest.TestCase):
 
         assert_that(response, is_(None))
 
+    def test_read_data_with_post_process(self):
+
+        pre_process = Mock()
+        pre_process.return_value = "processed line\n"
+
+        result = self.provider.read_data("url_path", pre_process=pre_process)
+
+        assert_that(list(result), contains("processed line"))
+        assert_that(pre_process.call_args_list, is_(equal_to([call("line\n")])))
+
 
 class BlitzortungDataUrlTest(unittest.TestCase):
     def setUp(self):
@@ -68,35 +78,25 @@ class BlitzortungDataUrlTest(unittest.TestCase):
 
 class BlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
-        self.http_data_transport = Mock()
+        self.http_data_transport = Mock(name="data_transport")
+        self.session = Mock(name="session")
 
-        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
+        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport, self.session)
 
     def test_read_data(self):
-        response = u"line1 \nline2\näöü\n\n".encode('latin1')
+        response = [u"line1 ", u"line2", u"äöü".encode('latin1')]
 
-        self.http_data_transport.read_from_url.return_value = response
+        self.http_data_transport.read_lines_from_url.return_value = response
 
         result = self.provider.read_data('target_url')
 
-        assert_that(list(result), contains(u'line1', u'line2', u'äöü'))
+        assert_that(list(result), contains(u'line1 ', u'line2', u'äöü'))
 
-        self.http_data_transport.read_from_url.assert_called_with(
-            'target_url')
-
-    def test_read_data_with_post_process(self):
-        self.http_data_transport.read_from_url.return_value = "line\n"
-
-        pre_process = Mock()
-        pre_process.return_value = "processed line\n"
-
-        result = self.provider.read_data("url_path", pre_process=pre_process)
-
-        assert_that(list(result), contains("processed line"))
-        assert_that(pre_process.call_args_list, is_(equal_to([call("line\n")])))
+        self.http_data_transport.read_lines_from_url.assert_called_with(
+            'target_url', post_process=None)
 
     def test_read_data_with_empty_response(self):
-        self.http_data_transport.read_from_url.return_value = ''
+        self.http_data_transport.read_lines_from_url.return_value = []
         result = self.provider.read_data('foo')
 
         assert_that(list(result), equal_to([]))
@@ -237,15 +237,17 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
     def test_get_raw_data_since(self):
         last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 
-        raw_data1 = Mock()
-        raw_data2 = Mock()
+        raw_data1 = Mock(name='raw_data1')
+        raw_data2 = Mock(name='raw_data2')
         self.data_url.build_url.return_value = 'full_url'
         self.url_generator.get_url_paths.return_value = ['url_path1', 'url_path2']
-        self.data_provider.read_data.side_effect = [raw_data1, raw_data2],
-        raw11 = Mock()
-        raw12 = Mock()
-        raw21 = Mock()
-        raw22 = Mock()
+        self.data_provider.read_data.side_effect = [raw_data1, raw_data2]
+        raw_data1.split.side_effect = ["line11", "line12"]
+        raw_data2.split.side_effect = ["line21", "line22"]
+        raw11 = Mock(name='raw11')
+        raw12 = Mock(name='raw12')
+        raw21 = Mock(name='raw21')
+        raw22 = Mock(name='raw22')
         self.builder.from_string.return_value = self.builder
         self.builder.build.side_effect = [raw11, raw12, raw21, raw22]
 

@@ -1,23 +1,16 @@
 # -*- coding: utf8 -*-
 
-"""
-
-@author: awuerl
-
-"""
-import StringIO
 import os
 import logging
 import time
-import urllib2
 import datetime
-from urlparse import urlparse
 import gzip
 import HTMLParser
-import cStringIO
+import io
 
 from injector import singleton, inject
 import pytz
+from requests import Session
 
 import blitzortung
 
@@ -26,32 +19,32 @@ class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
 
     @inject(config=blitzortung.config.Config)
-    def __init__(self, config):
+    def __init__(self, config, session=None):
         self.config = config
+        self.session = session if session else Session()
 
-    def read_from_url(self, target_url):
-        parsed_url = urlparse(target_url)
+    def __del__(self):
+        if self.session:
+            self.logger.info("close http session '%s'" % self.session)
+            self.session.close()
 
-        server_url = "%s://%s/" % (parsed_url.scheme, parsed_url.hostname)
+    def read_lines_from_url(self, target_url, post_process=None):
+        response = self.session.get(
+            target_url,
+            auth=(self.config.get_username(), self.config.get_password()),
+            stream=True)
 
-        auth_info = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        if response.status_code != 200:
+            self.logger.debug("http status %d for get '%s" % (response.status_code, target_url))
+            return
 
-        auth_info.add_password(None, server_url, self.config.get_username(), self.config.get_password())
-
-        auth_handler = urllib2.HTTPBasicAuthHandler(auth_info)
-        url_opener = urllib2.build_opener(auth_handler)
-
-        try:
-            url_connection = url_opener.open(target_url, timeout=60)
-        except urllib2.URLError, error:
-            self.logger.debug("%s when opening '%s'" % (error, target_url))
-            return None
-
-        data_string = url_connection.read()
-
-        url_connection.close()
-
-        return data_string
+        if post_process:
+            response_text = post_process(response.content)
+            for line in response_text.split('\n'):
+                yield line[:-1]
+        else:
+            for html_line in response.iter_lines():
+                yield html_line[:-1]
 
 
 class BlitzortungDataUrl(object):
@@ -81,22 +74,10 @@ class BlitzortungDataProvider(object):
     def __init__(self, http_data_transport):
         self.http_data_transport = http_data_transport
 
-    def read_text(self, target_url):
-        return self.http_data_transport.read_from_url(target_url)
-
     def read_data(self, target_url, pre_process=None):
-        response = self.read_text(target_url)
-
-        if response:
-            if pre_process:
-                response = pre_process(response)
-
-            response = self.html_parser.unescape(response.decode('latin1')).replace(u'\xa0', ' ')
-
-            for entry_text in response.split('\n'):
-                entry_text = entry_text.strip()
-                if entry_text:
-                    yield entry_text
+        for line in self.http_data_transport.read_lines_from_url(target_url, post_process=pre_process):
+            line = self.html_parser.unescape(line.decode('latin1')).replace(u'\xa0', ' ')
+            yield line
 
 
 class BlitzortungHistoryUrlGenerator(object):
@@ -181,7 +162,7 @@ class StationsBlitzortungDataProvider(object):
         return current_stations
 
     def pre_process(self, data):
-        data = cStringIO.StringIO(data)
+        data = io.BytesIO(data)
         return gzip.GzipFile(fileobj=data).read()
 
 
