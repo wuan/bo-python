@@ -135,7 +135,7 @@ class Stroke(Event):
             self.set_lateral_error(float(self.deviation_parser.findall(line)[0]))
             stations = self.stations_parser.findall(line)[0]
             self.set_station_count(int(stations[0]))
-            self.set_stations([int(station) for station in stations[2].split(',')])
+            self.set_stations([int(station) for station in stations[2].split(',') if station])
         except (KeyError, ValueError, IndexError) as e:
             raise BuilderError(e)
 
