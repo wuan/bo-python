@@ -46,7 +46,7 @@ class Event(types.Point):
         else:
             timestamp_string = u"NaT"
 
-        return u"%s %.4f %.4f " \
+        return u"%s %.4f %.4f" \
                % (timestamp_string, self.x_coord, self.y_coord)
 
 
@@ -127,11 +127,8 @@ class Station(Event):
         return self.board
 
     def is_valid(self):
-        return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-                   and -180 <= self.get_x() <= 180 \
-                   and -90 < self.get_y() < 90 \
-                   and self.get_number() > 0 \
-                   and self.get_timestamp() is not None and self.get_timestamp().year > 1900
+        return super(Station, self).is_valid \
+            and self.get_number() > 0
 
 
 class StationOffline(object):
@@ -243,7 +240,7 @@ class Stroke(Event):
         return self.stations
 
     def __str__(self):
-        return super(Stroke, self).__str__() + "%s %.1f %d %d" % (
+        return super(Stroke, self).__str__() + " %s %.1f %d %d" % (
             str(self.altitude) if self.altitude is not None else '-',
             self.amplitude if self.amplitude else 0.0,
             self.lateral_error,

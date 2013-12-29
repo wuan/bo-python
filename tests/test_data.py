@@ -8,13 +8,14 @@ import pytz
 import blitzortung
 
 
-class TestEvent(unittest.TestCase):
-
+class EventBaseTest(unittest.TestCase):
     def setUp(self):
         self.not_a_time = pd.NaT
         self.now_time = pd.Timestamp(datetime.datetime.utcnow(), tz=pytz.UTC)
         self.later_time = pd.Timestamp(np.datetime64(self.now_time.value + 100, 'ns'), tz=pytz.UTC)
 
+
+class TestEvent(EventBaseTest):
     def test_create_and_get_values(self):
         event = blitzortung.data.Event(self.now_time, 11, 49)
         assert_that(event.get_timestamp(), is_(self.now_time))
@@ -40,7 +41,6 @@ class TestEvent(unittest.TestCase):
         self.assertFalse(event2 <= event1)
 
     def test_time_difference(self):
-
         event1 = blitzortung.data.Event(self.now_time, 11, 49)
         event2 = blitzortung.data.Event(self.later_time, 11, 49)
 
@@ -84,9 +84,7 @@ class TestEvent(unittest.TestCase):
         self.assertFalse(event.is_valid())
 
 
-
 class TestStroke(unittest.TestCase):
-
     def setUp(self):
         self.timestamp = pd.Timestamp(pd.Timestamp('2013-09-28 23:23:38.123456').value + 789)
         self.stroke = blitzortung.data.Stroke(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
@@ -126,3 +124,29 @@ class TestStroke(unittest.TestCase):
 
     def test_string_represenation(self):
         assert_that(str(self.stroke), is_(equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")))
+
+
+class TestStation(unittest.TestCase):
+    def setUp(self):
+        self.timestamp = pd.Timestamp(pd.Timestamp('2013-09-28 23:23:38').value)
+        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, self.timestamp,
+                                                '<status>', '<board>')
+
+    def test_str(self):
+        assert_that(str(self.station),
+                    is_("123/ 45 '<name>' '<country>' 2013-09-28 23:23:38.000000000 11.2000 49.4000"))
+
+    def test_get_number(self):
+        assert_that(self.station.get_number(), is_(123))
+
+    def test_get_user(self):
+        assert_that(self.station.get_user(), is_(45))
+
+    def test_get_name(self):
+        assert_that(self.station.get_name(), is_('<name>'))
+
+    def test_get_country(self):
+        assert_that(self.station.get_country(), is_('<country>'))
+
+    def test_get_status(self):
+        assert_that(self.station.get_country(), is_('<country>'))
