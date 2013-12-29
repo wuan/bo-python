@@ -21,12 +21,20 @@ class Event(types.Point):
     def has_same_location(self, other):
         return super(Event, self).__eq__(other)
 
+    def is_valid(self):
+        return (self.get_x() != 0.0 or self.get_y() != 0.0) \
+                   and -180 <= self.get_x() <= 180 \
+                   and -90 < self.get_y() < 90 \
+            and self.has_valid_timestamp()
+
+    def has_valid_timestamp(self):
+        return self.timestamp is not None and self.timestamp.year > 1900
+
     def __lt__(self, other):
         return self.timestamp.value < other.timestamp.value
 
     def __str__(self):
-        timestamp = self.get_timestamp()
-        if timestamp and timestamp.year > 1900:
+        if self.has_valid_timestamp():
             timestamp_string = u"%s%03d%s" % (
                 self.get_timestamp().strftime(builder.Timestamp.time_format_fractional_seconds),
                 self.get_timestamp().nanosecond,
@@ -119,7 +127,8 @@ class Station(Event):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
                    and -180 <= self.get_x() <= 180 \
                    and -90 < self.get_y() < 90 \
-            and self.get_number() > 0
+                   and self.get_number() > 0 \
+                   and self.get_timestamp() is not None and self.get_timestamp().year > 1900
 
 
 class StationOffline(object):
