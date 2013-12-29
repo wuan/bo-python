@@ -200,7 +200,8 @@ class RawSignalsBlitzortungDataProvider(object):
                 host_name='signals')
 
             for raw_event_line in self.data_provider.read_data(target_url):
-                raw_data.append(self.waveform_builder.from_string(raw_event_line).build())
+                #raw_data.append(self.waveform_builder.from_string(raw_event_line).build())
+                raw_data.append(raw_event_line)
 
         return raw_data
 
