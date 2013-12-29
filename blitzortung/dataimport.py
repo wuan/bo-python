@@ -52,7 +52,7 @@ class BlitzortungDataUrl(object):
     default_host_name = 'data'
     default_region = 1
 
-    target_url = 'http://%(host_name)s.blitzortung.org/Data_%(region)d/Protected/'
+    target_url = 'http://%(host_name)s.blitzortung.org/Data_%(region)d'
 
     def build_url(self, url_path, **kwargs):
         url_parameters = kwargs
@@ -117,7 +117,7 @@ class StrokesBlitzortungDataProvider(object):
         for url_path in self.url_path_generator.get_url_paths(latest_stroke):
             initial_stroke_count = len(strokes_since)
             start_time = time.time()
-            target_url = self.data_url.build_url(os.path.join('Strokes', url_path), region=region)
+            target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
             for stroke_line in self.data_provider.read_data(target_url):
                 try:
                     stroke = self.stroke_builder.from_line(stroke_line).build()
@@ -157,7 +157,7 @@ class StationsBlitzortungDataProvider(object):
 
     def get_stations(self, region=1):
         current_stations = []
-        target_url = self.data_url.build_url('stations.txt.gz', region=region)
+        target_url = self.data_url.build_url('Protected/stations.txt.gz', region=region)
         for station_line in self.data_provider.read_data(target_url, post_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_line(station_line).build())
@@ -194,26 +194,13 @@ class RawSignalsBlitzortungDataProvider(object):
         raw_data = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_data):
-
             target_url = self.data_url.build_url(
-                os.path.join('Strokes', url_path),
+                os.path.join(str(station_id), url_path),
                 region=region,
-                host='signals')
+                host_name='signals')
 
-            data = self.data_provider.read_data(
-                target_url,
-                region=region,
-                station_id=station_id,
-                host='signals'
-            )
-
-            for line in data.split('\n'):
-                try:
-                    self.waveform_builder.from_string(line.strip())
-                except blitzortung.builder.BuilderError:
-                    self.logger.debug("error parsing raw data '%s'" % line)
-                    continue
-                raw_data.append(self.waveform_builder.build())
+            for raw_event_line in self.data_provider.read_data(target_url):
+                raw_data.append(self.waveform_builder.from_string(raw_event_line).build())
 
         return raw_data
 

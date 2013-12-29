@@ -65,6 +65,9 @@ class RawWaveformEvent(Event):
     def __str__(self):
         return super(RawWaveformEvent, self).__str__() + "%d %d chs" % (self.altitude, len(self.channels))
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class Station(Event):
     """
@@ -127,7 +130,7 @@ class Station(Event):
         return self.board
 
     def is_valid(self):
-        return super(Station, self).is_valid \
+        return super(Station, self).is_valid() \
             and self.get_number() > 0
 
 

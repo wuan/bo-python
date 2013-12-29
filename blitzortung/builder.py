@@ -10,6 +10,7 @@ import datetime
 import HTMLParser
 import itertools
 import re
+from injector import singleton, inject
 
 import pytz
 import numpy as np
@@ -237,58 +238,6 @@ class StationOffline(Base):
         return blitzortung.data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
 
-class RawWaveformEvent(Event):
-    def __init__(self, channel_builder):
-        super(RawWaveformEvent, self).__init__()
-        self.altitude = 0
-        self.channels = []
-
-        self.channel_builder = channel_builder
-
-    def build(self):
-        return blitzortung.data.RawWaveformEvent(
-            self.timestamp,
-            self.x_coord,
-            self.y_coord,
-            self.altitude,
-            self.channels
-        )
-
-    def set_altitude(self, altitude):
-        self.altitude = altitude
-        return self
-
-    def from_json(self, json_object):
-        self.set_timestamp(json_object[0])
-        self.set_x(json_object[1])
-        self.set_y(json_object[2])
-        self.set_altitude(json_object[3])
-        if len(json_object[9]) > 1:
-            self.set_y_values(json_object[9][1])
-
-        return self
-
-    def from_string(self, string):
-        """ Construct stroke from blitzortung text format data line """
-        if string:
-            field = iter(string.split(' '))
-            self.set_timestamp(field.next() + ' ' + field.next())
-            self.timestamp += datetime.timedelta(seconds=1)
-            self.set_y(float(field.next()))
-            self.set_x(float(field.next()))
-            self.set_altitude(int(field.next()))
-
-            self.channels = []
-            while True:
-                try:
-                    self.channel_builder.from_field_iterator(field)
-                except StopIteration:
-                    break
-                self.channels.append(self.channel_builder.build())
-
-        return self
-
-
 class ChannelWaveform(object):
     fields_per_channel = 11
 
@@ -344,3 +293,58 @@ class ChannelWaveform(object):
             self.conversion_gap,
             self.conversion_time,
             self.waveform)
+
+
+class RawWaveformEvent(Event):
+    @inject(channel_builder=ChannelWaveform)
+    def __init__(self, channel_builder):
+        super(RawWaveformEvent, self).__init__()
+        self.altitude = 0
+        self.channels = []
+
+        self.channel_builder = channel_builder
+
+    def build(self):
+        return blitzortung.data.RawWaveformEvent(
+            self.timestamp,
+            self.x_coord,
+            self.y_coord,
+            self.altitude,
+            self.channels
+        )
+
+    def set_altitude(self, altitude):
+        self.altitude = altitude
+        return self
+
+    def from_json(self, json_object):
+        self.set_timestamp(json_object[0])
+        self.set_x(json_object[1])
+        self.set_y(json_object[2])
+        self.set_altitude(json_object[3])
+        if len(json_object[9]) > 1:
+            self.set_y_values(json_object[9][1])
+
+        return self
+
+    def from_string(self, string):
+        """ Construct stroke from blitzortung text format data line """
+        if string:
+            field = iter(string.split(' '))
+            self.set_timestamp(field.next() + ' ' + field.next())
+            self.timestamp += datetime.timedelta(seconds=1)
+            self.set_y(float(field.next()))
+            self.set_x(float(field.next()))
+            self.set_altitude(int(field.next()))
+
+            self.channels = []
+            while True:
+                try:
+                    self.channel_builder.from_field_iterator(field)
+                except StopIteration:
+                    break
+                self.channels.append(self.channel_builder.build())
+
+        return self
+
+
