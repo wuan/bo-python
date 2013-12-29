@@ -231,11 +231,11 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
 
         raw_data1 = Mock(name='raw_data1')
         raw_data2 = Mock(name='raw_data2')
-        self.data_url.build_url.return_value = 'full_url'
+        self.data_url.build_url.side_effect = ['full_url1', 'full_url2']
         self.url_generator.get_url_paths.return_value = ['url_path1', 'url_path2']
         self.data_provider.read_data.side_effect = [raw_data1, raw_data2]
-        raw_data1.split.side_effect = ["line11", "line12"]
-        raw_data2.split.side_effect = ["line21", "line22"]
+        raw_data1.split.return_value = ["line11", "line12"]
+        raw_data2.split.return_value = ["line21", "line22"]
         raw11 = Mock(name='raw11')
         raw12 = Mock(name='raw12')
         raw21 = Mock(name='raw21')
@@ -247,10 +247,11 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
         station_id = 123
         strokes = self.provider.get_raw_data_since(last_data, region_id, station_id)
 
-        assert_that(self.data_)
-        expected_args = [call('full_url', post_process=self.provider.post_process)]
+        expected_args = [
+            call('full_url1', host='signals', region=5, station_id=123),
+            call('full_url2', host='signals', region=5, station_id=123)]
         assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
-        assert_that(strokes, contains(raw1, raw2))
+        assert_that(strokes, contains(raw11, raw12, raw21, raw22))
 
 

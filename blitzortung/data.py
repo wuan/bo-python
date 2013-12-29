@@ -33,6 +33,9 @@ class Event(types.Point):
     def __lt__(self, other):
         return self.timestamp.value < other.timestamp.value
 
+    def __le__(self, other):
+        return self.timestamp.value <= other.timestamp.value
+
     def __str__(self):
         if self.has_valid_timestamp():
             timestamp_string = u"%s%03d%s" % (
