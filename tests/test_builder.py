@@ -13,8 +13,8 @@ import blitzortung
 
 class TestBase(unittest.TestCase):
     @staticmethod
-    def get_timestamp(time_string):
-        return pd.Timestamp(np.datetime64(time_string), tz=pytz.UTC)
+    def get_timestamp(timestamp_string):
+        return pd.Timestamp(np.datetime64(timestamp_string + 'Z', 'ns'), tz=pytz.UTC)
 
 
 class TimestampTest(unittest.TestCase):
@@ -208,7 +208,7 @@ class StationTest(TestBase):
         assert_that(station.get_country(), is_(equal_to('Germany')))
         assert_that(station.get_x(), is_(equal_to(9.7314)))
         assert_that(station.get_y(), is_(equal_to(49.5435)))
-        assert_that(station.get_timestamp(), is_(equal_to(self.get_timestamp("2012-02-10T14:39:47"))))
+        assert_that(station.get_timestamp(), is_(equal_to(self.get_timestamp("2012-02-10T13:39:47"))))
         assert_that(station.get_board(), is_(equal_to(u'6.8')))
 
     def test_build_station_offline(self):
