@@ -49,6 +49,10 @@ class Event(types.Point):
         return u"%s %.4f %.4f" \
                % (timestamp_string, self.x_coord, self.y_coord)
 
+    def get_uuid(self):
+        return u"%s-%05.0f-%05.0f" \
+               % (str(self.get_timestamp().value), self.x_coord * 100, self.y_coord * 100)
+
 
 class RawWaveformEvent(Event):
     def __init__(self, timestamp, x_coord, y_coord, altitude, channels):

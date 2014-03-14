@@ -13,10 +13,12 @@ import pytz
 from requests import Session
 
 import blitzortung
+from blitzortung.builder import BuilderError
 
 
 class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
+    TIMEOUT_SECONDS = 20
 
     @inject(config=blitzortung.config.Config)
     def __init__(self, config, session=None):
@@ -32,7 +34,8 @@ class HttpDataTransport(object):
         response = self.session.get(
             target_url,
             auth=(self.config.get_username(), self.config.get_password()),
-            stream=True)
+            stream=True,
+            timeout=self.TIMEOUT_SECONDS)
 
         if response.status_code != 200:
             self.logger.debug("http status %d for get '%s" % (response.status_code, target_url))
@@ -199,9 +202,7 @@ class RawSignalsBlitzortungDataProvider(object):
                 region=region,
                 host_name='signals')
 
-            for raw_event_line in self.data_provider.read_data(target_url):
-                #raw_data.append(self.waveform_builder.from_string(raw_event_line).build())
-                raw_data.append(raw_event_line)
+            raw_data += self.data_provider.read_data(target_url)
 
         return raw_data
 

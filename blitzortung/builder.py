@@ -330,20 +330,23 @@ class RawWaveformEvent(Event):
     def from_string(self, string):
         """ Construct stroke from blitzortung text format data line """
         if string:
-            field = iter(string.split(' '))
-            self.set_timestamp(field.next() + ' ' + field.next())
-            self.timestamp += datetime.timedelta(seconds=1)
-            self.set_y(float(field.next()))
-            self.set_x(float(field.next()))
-            self.set_altitude(int(field.next()))
+            try:
+                field = iter(string.split(' '))
+                self.set_timestamp(field.next() + ' ' + field.next())
+                self.timestamp += datetime.timedelta(seconds=1)
+                self.set_y(float(field.next()))
+                self.set_x(float(field.next()))
+                self.set_altitude(int(field.next()))
 
-            self.channels = []
-            while True:
-                try:
-                    self.channel_builder.from_field_iterator(field)
-                except StopIteration:
-                    break
-                self.channels.append(self.channel_builder.build())
+                self.channels = []
+                while True:
+                    try:
+                        self.channel_builder.from_field_iterator(field)
+                    except StopIteration:
+                        break
+                    self.channels.append(self.channel_builder.build())
+            except ValueError, e:
+                raise BuilderError(e)
 
         return self
 

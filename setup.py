@@ -9,7 +9,7 @@ import blitzortung
 setup(
     name='blitzortung',
     packages=find_packages(),
-    install_requires=['injector', 'pytz', 'dateutils', 'shapely',  'pyproj', 'numpy', 'pandas', 'mockito', 'statsd'],
+    install_requires=['injector', 'pytz', 'dateutils', 'shapely',  'pyproj', 'numpy', 'pandas', 'statsd'],
     tests_require=['nose', 'mock', 'coverage'],
     version=blitzortung.__version__,
     description='blitzortung.org python modules',

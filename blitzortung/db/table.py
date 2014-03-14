@@ -587,6 +587,8 @@ class ServiceLog(Base):
     """
         CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT,
             address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
+
+            CREATE INDEX servicelog_timestamp ON servicelog USING btree("timestamp");
     """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
