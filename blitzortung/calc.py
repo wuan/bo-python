@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from injector import Module, singleton, provides
 
-import blitzortung.data
+from . import data, builder, types
 
 @singleton
 class SignalVelocity(object):
@@ -40,16 +40,16 @@ class SignalVelocity(object):
 
 class SimulatedData(object):
     def __init__(self, x_coord_or_point, y_coord=None):
-        self.stroke_location = blitzortung.types.Point(x_coord_or_point, y_coord)
+        self.stroke_location = types.Point(x_coord_or_point, y_coord)
         self.signal_velocity = SignalVelocity()
-        self.event_builder = blitzortung.builder.Event()
+        self.event_builder = builder.Event()
         self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
 
     def get_timestamp(self):
         return self.timestamp
 
     def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset=0.0):
-        event_location = blitzortung.types.Point(x_coord_or_point, y_coord)
+        event_location = types.Point(x_coord_or_point, y_coord)
         distance = self.stroke_location.distance_to(event_location)
 
         nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
@@ -67,7 +67,7 @@ class SimulatedData(object):
         return self.event_builder.build()
 
 
-class ThreePointSolution(blitzortung.data.Event):
+class ThreePointSolution(data.Event):
     def __init__(self, reference_event, azimuth, distance, signal_velocity):
         location = reference_event.geodesic_shift(azimuth, distance)
         distance = reference_event.distance_to(location)
@@ -112,7 +112,7 @@ class ThreePointSolver(object):
             raise ValueError("ThreePointSolution requires three events")
 
         self.events = events
-        from blitzortung import INJECTOR
+        from . import INJECTOR
 
         self.signal_velocity = INJECTOR.get(SignalVelocity)
 
@@ -141,7 +141,7 @@ class ThreePointSolver(object):
             solutions = {}
             for solution in self.solutions:
                 solutions[solution] = solution.get_total_residual_time_of(self.events)
-                print "      3PointSolution:", solution, solutions[solution]
+                print("      3PointSolution:", solution, solutions[solution])
             return min(solutions, key=solutions.get)
         elif solution_count == 1:
             return self.solutions[0]
@@ -165,7 +165,7 @@ class ThreePointSolver(object):
         solutions = []
 
         if root_argument < 0.0 or denominator == 0.0:
-            print "%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2)
+            print("%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2))
             return solutions
 
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
@@ -267,7 +267,7 @@ class FitSeed(object):
 
         if self.solutions:
             for solution, residual_time in self.solutions.iteritems():
-                print "%.1f %s" % (residual_time, str(solution))
+                print("%.1f %s" % (residual_time, str(solution)))
             return min(self.solutions, key=self.solutions.get)
         else:
             return None
@@ -379,7 +379,7 @@ class LeastSquareFit(object):
         return measured_runtime - distance_runtime
 
     def get_location(self):
-        return blitzortung.types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
+        return types.Point(self.parameters[FitParameter.Longitude], self.parameters[FitParameter.Latitude])
 
     def get_timestamp(self):
         return pd.Timestamp(self.time_reference.value + int(round(self.parameters[FitParameter.Time] * 1000, 0)))
@@ -409,7 +409,7 @@ class LeastSquareFit(object):
         return self.successful
 
     def get_solution(self):
-        builder = blitzortung.builder.Event()
+        builder = builder.Event()
 
         location = self.get_location()
         builder.set_x(location.get_x())

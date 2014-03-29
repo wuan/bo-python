@@ -2,13 +2,16 @@
 
 from __future__ import unicode_literals
 
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 from injector import Module, singleton, provides, inject
 
 @singleton
 class Config(object):
-    @inject(config_parser=ConfigParser.ConfigParser)
+    @inject(config_parser=configparser.ConfigParser)
     def __init__(self, config_parser):
         self.config_parser = config_parser
 
@@ -47,8 +50,8 @@ def config():
 
 class ConfigModule(Module):
     @singleton
-    @provides(ConfigParser.ConfigParser)
+    @provides(configparser.ConfigParser)
     def provide_config_parser(self):
-        config_parser = ConfigParser.ConfigParser()
+        config_parser = configparser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser

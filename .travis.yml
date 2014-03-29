@@ -1,0 +1,47 @@
+language: python
+
+
+matrix:
+    fast_finish: true
+    include:
+    - python: 2.6
+      env:
+      - FULL_DEPS=true
+      - JOB_NAME: "26"
+    - python: 2.7
+      env:
+      - FULL_DEPS=true
+      - JOB_NAME: "27"
+    - python: 3.3
+      env:
+      - FULL_DEPS=true
+      - JOB_NAME: "33"
+    - python: 3.4
+      env:
+      - FULL_DEPS=true
+      - JOB_NAME: "34"
+
+# allow importing from site-packages,
+# so apt-get python-x works for system pythons
+# That's 2.7/3.2 on Ubuntu 12.04
+virtualenv:
+  system_site_packages: true
+
+before_install:
+  - echo "before_install"
+  - echo $VIRTUAL_ENV
+  - df -h
+  - date
+  - pwd
+  - uname -a
+  - python -V
+
+install:
+  - echo "install"
+
+script:
+  - echo "script"
+  - nosetests
+
+after_script:
+  - echo "install"

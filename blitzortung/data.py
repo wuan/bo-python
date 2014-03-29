@@ -1,10 +1,14 @@
 # -*- coding: utf8 -*-
 
-import builder
-import types
+from __future__ import unicode_literals
+from . import types
 
 
 class Event(types.Point):
+
+    time_format = '%Y-%m-%d %H:%M:%S'
+    time_format_fractional_seconds = time_format + '.%f'
+
     def __init__(self, timestamp, x_coord_or_point, y_coord=None):
         super(Event, self).__init__(x_coord_or_point, y_coord)
         self.timestamp = timestamp
@@ -38,19 +42,22 @@ class Event(types.Point):
 
     def __str__(self):
         if self.has_valid_timestamp():
-            timestamp_string = u"%s%03d%s" % (
-                self.get_timestamp().strftime(builder.Timestamp.time_format_fractional_seconds),
+            timestamp_string = "%s%03d%s" % (
+                self.get_timestamp().strftime(self.time_format_fractional_seconds),
                 self.get_timestamp().nanosecond,
                 self.timestamp.strftime('%z')
             )
         else:
-            timestamp_string = u"NaT"
+            timestamp_string = "NaT"
 
-        return u"%s %.4f %.4f" \
+        return "%s %.4f %.4f" \
                % (timestamp_string, self.x_coord, self.y_coord)
 
+    def __hash__(self):
+        return super(Event, self).__hash__() ^ hash(self.timestamp)
+
     def get_uuid(self):
-        return u"%s-%05.0f-%05.0f" \
+        return "%s-%05.0f-%05.0f" \
                % (str(self.get_timestamp().value), self.x_coord * 100, self.y_coord * 100)
 
 
@@ -88,10 +95,7 @@ class Station(Event):
         self.board = board
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
-
-    def __unicode__(self):
-        return u"%3d/%3d '%s' '%s' %s" % (
+        return "%3d/%3d '%s' '%s' %s" % (
             self.number, self.user, self.name, self.country, super(Station, self).__str__())
 
     def __eq__(self, other):

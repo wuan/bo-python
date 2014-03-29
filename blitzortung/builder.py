@@ -7,7 +7,6 @@
 """
 
 import datetime
-import HTMLParser
 import itertools
 import re
 from injector import singleton, inject
@@ -17,6 +16,8 @@ import numpy as np
 import pandas as pd
 
 import blitzortung
+from . import data
+from blitzortung.util import next_element
 
 
 class BuilderError(blitzortung.Error):
@@ -28,8 +29,6 @@ class Base(object):
 
 
 class Timestamp(Base):
-    time_format = '%Y-%m-%d %H:%M:%S'
-    time_format_fractional_seconds = time_format + '.%f'
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
@@ -255,24 +254,25 @@ class ChannelWaveform(object):
         self.waveform = None
 
     def from_field_iterator(self, field):
-        self.channel_number = int(field.next())
-        self.amplifier_version = field.next()
-        self.antenna = int(field.next())
-        self.gain = field.next()
-        self.values = int(field.next())
-        self.start = int(field.next())
-        self.bits = int(field.next())
-        self.shift = int(field.next())
-        self.conversion_gap = int(field.next())
-        self.conversion_time = int(field.next())
-        self.__extract_waveform_from_hex_string(field.next())
+        self.channel_number = int(next_element(field))
+        self.amplifier_version = next_element(field)
+        self.antenna = int(next_element(field))
+        self.gain = next_element(field)
+        self.values = int(next_element(field))
+        self.start = int(next_element(field))
+        self.bits = int(next_element(field))
+        self.shift = int(next_element(field))
+        self.conversion_gap = int(next_element(field))
+        self.conversion_time = int(next_element(field))
+        self.__extract_waveform_from_hex_string(next_element(field))
         return self
+
 
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
         hex_character = iter(waveform_hex_string)
         self.waveform = np.zeros(self.values)
         bits_per_char = 4
-        chars_per_sample = self.bits / bits_per_char
+        chars_per_sample = self.bits // bits_per_char
         value_offset = -(1 << (chars_per_sample * 4 - 1))
 
         for index in range(0, self.values):
@@ -281,7 +281,7 @@ class ChannelWaveform(object):
             self.waveform[index] = value + value_offset
 
     def build(self):
-        return blitzortung.data.ChannelWaveform(
+        return data.ChannelWaveform(
             self.channel_number,
             self.amplifier_version,
             self.antenna,
@@ -332,11 +332,11 @@ class RawWaveformEvent(Event):
         if string:
             try:
                 field = iter(string.split(' '))
-                self.set_timestamp(field.next() + ' ' + field.next())
+                self.set_timestamp(next_element(field) + ' ' + next_element(field))
                 self.timestamp += datetime.timedelta(seconds=1)
-                self.set_y(float(field.next()))
-                self.set_x(float(field.next()))
-                self.set_altitude(int(field.next()))
+                self.set_y(float(next_element(field)))
+                self.set_x(float(next_element(field)))
+                self.set_altitude(int(next_element(field)))
 
                 self.channels = []
                 while True:
@@ -345,7 +345,7 @@ class RawWaveformEvent(Event):
                     except StopIteration:
                         break
                     self.channels.append(self.channel_builder.build())
-            except ValueError, e:
+            except ValueError as e:
                 raise BuilderError(e)
 
         return self

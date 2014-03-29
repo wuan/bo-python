@@ -1,11 +1,17 @@
 # -*- coding: utf8 -*-
-import ConfigParser
 
+import sys
 import unittest
 from hamcrest import assert_that, is_, equal_to, instance_of, contains, same_instance, has_item
 from mock import Mock, call, patch
 
 import blitzortung
+
+config_parser_module = "ConfigParser" if sys.version < '3' else "configparser"
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 
 class TestConfig(unittest.TestCase):
@@ -71,7 +77,7 @@ class TestConfigModule(unittest.TestCase):
     def setUp(self):
         self.config_module = blitzortung.config.ConfigModule()
 
-    @patch('ConfigParser.ConfigParser')
+    @patch(config_parser_module + '.ConfigParser')
     def test_provide_config_parser(self, config_parser_class_mock):
         config_parser = self.config_module.provide_config_parser()
 

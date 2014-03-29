@@ -165,7 +165,7 @@ class Query(object):
                     self.set_limit(arg)
 
                 else:
-                    print 'WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg))
+                    print('WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg)))
 
     def get_results(self, cursor, object_creator):
 

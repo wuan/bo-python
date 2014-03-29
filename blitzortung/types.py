@@ -62,3 +62,6 @@ class Point(object):
 
     def __str__(self):
         return "(%.4f, %.4f)" % (self.x_coord, self.y_coord)
+
+    def __hash__(self):
+        return hash(self.x_coord) ^ hash(self.y_coord)

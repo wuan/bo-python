@@ -5,7 +5,7 @@ import pandas as pd
 
 from mock import Mock, MagicMock, patch, call
 
-import blitzortung
+import blitzortung.calc
 
 
 class TestSignalVelocity(unittest.TestCase):
@@ -224,8 +224,8 @@ class TestLeastSquareFit(unittest.TestCase):
             self.fit.perform_fit_step()
 
             parameter_string = ["%.3f" % self.fit.parameters[index] for index in range(0, len(self.fit.parameters))]
-            print "%.1f, %.3f %s" % (
-            self.fit.get_least_square_sum(), self.fit.get_least_square_change(), ' '.join(parameter_string))
+            print("%.1f, %.3f %s" % (
+                self.fit.get_least_square_sum(), self.fit.get_least_square_change(), ' '.join(parameter_string)))
 
         stroke_location = self.fit.get_location()
         self.assertAlmostEqual(11.3, stroke_location.get_x(), 4)

@@ -1,11 +1,15 @@
 # -*- coding: utf8 -*-
 
+#from __future__ import unicode_literals
 import os
 import logging
 import time
 import datetime
 import gzip
-import HTMLParser
+try:
+    from html.parser import HTMLParser
+except ImportError:
+    from HTMLParser import HTMLParser
 import io
 
 from injector import singleton, inject
@@ -72,7 +76,7 @@ class BlitzortungDataUrl(object):
 @singleton
 class BlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
-    html_parser = HTMLParser.HTMLParser()
+    html_parser = HTMLParser()
 
     @inject(http_data_transport=HttpDataTransport)
     def __init__(self, http_data_transport):
@@ -125,10 +129,10 @@ class StrokesBlitzortungDataProvider(object):
                 try:
                     stroke = self.stroke_builder.from_line(stroke_line).build()
                 except blitzortung.builder.BuilderError as e:
-                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.message, stroke_line))
+                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.args, stroke_line))
                     continue
                 except Exception as e:
-                    self.logger.error("%s: %s (%s)" % (e.__class__, e.message, stroke_line))
+                    self.logger.error("%s: %s (%s)" % (e.__class__, e.args, stroke_line))
                     raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0

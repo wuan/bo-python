@@ -4,7 +4,8 @@ from hamcrest import assert_that, is_, instance_of, is_not, same_instance, conta
 import time
 import shapely
 
-import blitzortung
+import blitzortung.geom
+import blitzortung.types
 
 
 class GeometryForTest(blitzortung.geom.Geometry):

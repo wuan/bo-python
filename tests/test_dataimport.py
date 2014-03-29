@@ -1,8 +1,8 @@
 # -*- coding: utf8 -*-
 
+from __future__ import unicode_literals
 import unittest
 import datetime
-import urllib2
 from nose.tools import raises
 import pandas as pd
 
@@ -11,6 +11,8 @@ from mock import Mock, patch, call
 from hamcrest import assert_that, is_, equal_to, has_item, contains
 
 import blitzortung
+import blitzortung.dataimport
+import blitzortung.builder
 
 
 class HttpDataTransportTest(unittest.TestCase):
@@ -34,6 +36,7 @@ class HttpDataTransportTest(unittest.TestCase):
         self.session.get.assert_called_with(
             'http://foo.bar/baz',
             auth=('<username>', '<password>'),
+            timeout=20,
             stream=True)
 
     def test_read_lines_from_url_with_post_process(self):
@@ -75,7 +78,7 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
 
     def test_read_data(self):
-        response = [u"line1 ", u"line2", u"äöü".encode('latin1')]
+        response = [b"line1 ", b"line2", "äöü".encode('latin1')]
 
         self.http_data_transport.read_lines_from_url.return_value = response
 
@@ -150,7 +153,7 @@ class StrokesBlitzortungDataProviderTest(unittest.TestCase):
         self.url_generator.get_url_paths.return_value = ['path']
         stroke_data = {'one': 1}
         self.data_provider.read_data.side_effect = [[stroke_data], []]
-        self.builder.from_data.return_value = self.builder
+        self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
 
         strokes = self.provider.get_strokes_since(latest_stroke_timestamp)

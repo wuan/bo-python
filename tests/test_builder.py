@@ -3,12 +3,11 @@
 import unittest
 import datetime
 from hamcrest import assert_that, is_, equal_to, none
-import nose
 import pytz
 import numpy as np
 import pandas as pd
 
-import blitzortung
+import blitzortung.builder
 
 
 class TestBase(unittest.TestCase):

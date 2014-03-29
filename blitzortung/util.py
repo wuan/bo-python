@@ -1,8 +1,9 @@
 # -*- coding: utf8 -*-
 
+import sys
+
 import datetime
 import time
-
 import pytz
 
 
@@ -72,3 +73,6 @@ def time_intervals(start_time, duration, end_time=None):
     while current_time <= end_time:
         yield current_time
         current_time += duration
+
+
+next_element = (lambda iterator: iterator.next()) if sys.version < '3' else (lambda iterator: next(iterator))

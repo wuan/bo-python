@@ -31,17 +31,8 @@ class Error(Exception):
 
 import injector
 
-import builder
-import cache
-import calc
-import config
-import data
-import dataimport
-import db
-import geom
-import files
-import types
-import util
+from . import config
+from . import db
 
 
 INJECTOR = injector.Injector(

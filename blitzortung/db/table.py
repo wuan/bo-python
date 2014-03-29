@@ -65,7 +65,7 @@ class Base(object):
             try:
                 self.conn.reset()
             except psycopg2.OperationalError:
-                print "reconnect to db"
+                print("reconnect to db")
                 self.db_connection_pool.putconn(self.conn, close=True)
                 continue
             break
@@ -80,8 +80,8 @@ class Base(object):
         cur = None
         try:
             cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        except psycopg2.DatabaseError, e:
-            print e
+        except psycopg2.DatabaseError as e:
+            print(e)
 
             if self.conn:
                 try:

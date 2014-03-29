@@ -1,7 +1,7 @@
 import unittest
 import math
 
-import blitzortung
+import blitzortung.types
 
 
 class PointTest(unittest.TestCase):

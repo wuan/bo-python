@@ -6,6 +6,7 @@ import pandas as pd
 import pytz
 
 import blitzortung
+import blitzortung.data
 
 
 class EventBaseTest(unittest.TestCase):

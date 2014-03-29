@@ -5,7 +5,8 @@ import nose
 import numpy as np
 import fastcluster
 
-import blitzortung
+import blitzortung.db
+import blitzortung.db.query
 
 
 class TestClustering(TestCase):
@@ -18,7 +19,7 @@ class TestClustering(TestCase):
         strokes_db = blitzortung.db.stroke()
         now = datetime.datetime.utcnow()
         start_time = now - datetime.timedelta(hours=2)
-        time_interval = blitzortung.db.db.TimeInterval(start_time)
+        time_interval = blitzortung.db.query.TimeInterval(start_time)
         strokes = strokes_db.select(time_interval)
 
         self.clustering = blitzortung.clustering.Clustering(strokes)
@@ -36,5 +37,5 @@ class TestClustering(TestCase):
         dist = fastcluster.pdist(data)
         result = fastcluster.linkage(dist).tolist()
 
-        print result
+        print(result)
 
