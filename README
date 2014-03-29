@@ -7,4 +7,7 @@ Requires numpy >= 1.7 and pandas >= 0.9 to have a finally usable 64 bit timestam
 
 Requires injector.
 
+Optional dependencies:
+  * scipy / fastcluster
+
  -- Andreas Würl <blitzortung@tryb.de>  Sun, 29 Jan 2012 15:20:33 +0000
