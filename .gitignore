@@ -1,3 +1,5 @@
 .idea
 .coverage
 nosetests.xml
+*.pyc
+/coverage_report
