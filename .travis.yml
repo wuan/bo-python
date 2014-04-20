@@ -37,7 +37,13 @@ before_install:
   - python -V
 
 install:
+  - pip install --upgrade pip
+  - pip install --upgrade setuptools
+  - echo "before requirements"
+  - pip list
   - pip install -r requirements.txt
+  - echo "after requirements"
+  - pip list
 
 script:
   - nosetests
