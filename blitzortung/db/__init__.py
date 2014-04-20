@@ -13,8 +13,8 @@ try:
 except ImportError:
     psycopg2 = None
 
-import blitzortung
-import blitzortung.db
+import blitzortung.config
+import blitzortung.db.table
 
 
 class DbModule(Module):

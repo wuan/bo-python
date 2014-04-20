@@ -146,7 +146,7 @@ class StrokesBlitzortungDataProvider(object):
 
 
 def strokes():
-    from __init__ import INJECTOR
+    from blitzortung import INJECTOR
 
     return INJECTOR.get(StrokesBlitzortungDataProvider)
 

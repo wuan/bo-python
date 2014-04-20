@@ -9,6 +9,7 @@ import pandas as pd
 
 import blitzortung.geom
 from blitzortung.db.query import Limit, Center, Query, RasterQuery
+import blitzortung.builder
 
 
 try:
