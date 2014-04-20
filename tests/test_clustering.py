@@ -25,6 +25,7 @@ class TestClustering(TestCase):
         self.clustering = blitzortung.clustering.Clustering(strokes)
 
     def test_basic_clustering(self):
+        raise nose.SkipTest("implement as an integration test later")
         data = [
             [1.0, 2.0],
             [2.0, 1.0],
