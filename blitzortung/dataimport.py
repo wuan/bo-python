@@ -22,7 +22,7 @@ from blitzortung.builder import BuilderError
 
 class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
-    TIMEOUT_SECONDS = 20
+    TIMEOUT_SECONDS = 60
 
     @inject(config=blitzortung.config.Config)
     def __init__(self, config, session=None):
