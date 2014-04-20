@@ -8,6 +8,8 @@ python:
 
 before_install:
   - python -V
+  - sudo apt-get update -qq
+  - sudo apt-get install libblas-dev
   - pip list
 
 install:
