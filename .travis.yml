@@ -7,9 +7,8 @@ python:
     - 3.3
 
 before_install:
-  - python -V
   - sudo apt-get update -qq
-  - sudo apt-get install libblas-dev
+  - sudo apt-get install libblas-dev liblapack-dev
   - pip list
 
 install:
