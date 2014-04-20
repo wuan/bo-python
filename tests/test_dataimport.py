@@ -36,7 +36,7 @@ class HttpDataTransportTest(unittest.TestCase):
         self.session.get.assert_called_with(
             'http://foo.bar/baz',
             auth=('<username>', '<password>'),
-            timeout=20,
+            timeout=60,
             stream=True)
 
     def test_read_lines_from_url_with_post_process(self):
@@ -256,6 +256,6 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
         expected_args = [call('full_url1'), call('full_url2')]
         assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
-        assert_that(strokes, contains(raw11, raw12, raw21, raw22))
+        assert_that(strokes, contains("line11", "line12", "line21", "line22"))
 
 
