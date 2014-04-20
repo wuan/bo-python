@@ -37,10 +37,9 @@ before_install:
   - python -V
 
 install:
-  - echo "install"
+  - pip install -r requirements.txt
 
 script:
-  - echo "script"
   - nosetests
 
 after_script:
