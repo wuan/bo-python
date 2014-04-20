@@ -3,7 +3,10 @@ import datetime
 
 import nose
 import numpy as np
-import fastcluster
+try:
+    import fastcluster
+except ImportError:
+    fastcluster = None
 
 import blitzortung.db
 import blitzortung.db.query
@@ -14,7 +17,8 @@ class TestClustering(TestCase):
         pass
 
     def test_clustering(self):
-        raise nose.SkipTest("implement as an integration test later")
+        if not fastcluster:
+            raise nose.SkipTest("implement as an integration test later")
 
         strokes_db = blitzortung.db.stroke()
         now = datetime.datetime.utcnow()
@@ -25,7 +29,8 @@ class TestClustering(TestCase):
         self.clustering = blitzortung.clustering.Clustering(strokes)
 
     def test_basic_clustering(self):
-        raise nose.SkipTest("implement as an integration test later")
+        if not fastcluster:
+            raise nose.SkipTest("implement as an integration test later")
         data = [
             [1.0, 2.0],
             [2.0, 1.0],
