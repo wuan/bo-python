@@ -12,9 +12,9 @@ import itertools
 import collections
 import numpy as np
 import pandas as pd
-from injector import Module, singleton, provides
+from injector import singleton
 
-from . import data, builder, types
+from blitzortung import data, builder, types
 
 @singleton
 class SignalVelocity(object):
