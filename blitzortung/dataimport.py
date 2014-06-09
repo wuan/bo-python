@@ -136,7 +136,7 @@ class StrokesBlitzortungDataProvider(object):
                     raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
-                if latest_stroke < timestamp:
+                if repr(timestamp) != 'NaT' and latest_stroke < timestamp:
                     strokes_since.append(stroke)
             end_time = time.time()
             self.logger.debug("imported %d strokes for region %d in %.2fs from %s",
