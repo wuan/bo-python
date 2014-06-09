@@ -15,6 +15,7 @@ import io
 from injector import singleton, inject
 import pytz
 from requests import Session
+import pandas as pd
 
 import blitzortung
 from blitzortung.builder import BuilderError
@@ -136,7 +137,7 @@ class StrokesBlitzortungDataProvider(object):
                     raise e
                 timestamp = stroke.get_timestamp()
                 timestamp.nanoseconds = 0
-                if repr(timestamp) != 'NaT' and latest_stroke < timestamp:
+                if not pd.isnull(timestamp) and latest_stroke < timestamp:
                     strokes_since.append(stroke)
             end_time = time.time()
             self.logger.debug("imported %d strokes for region %d in %.2fs from %s",
