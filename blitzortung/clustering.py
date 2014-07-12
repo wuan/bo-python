@@ -1,6 +1,6 @@
 import bitarray
 import numpy as np
-import scipy.cluster
+#import scipy.cluster
 import fastcluster
 
 import blitzortung
@@ -16,7 +16,7 @@ class Clustering(object):
             coordinates[index][0] = event.get_x()
             coordinates[index][1] = event.get_y()
 
-        self.result = scipy.cluster.hierarchy.linkage(coordinates)
+        self.result = fastcluster.linkage(coordinates)
         self.clusters = [[value for value in cluster] for cluster in self.result]
 
         print(self.clusters)

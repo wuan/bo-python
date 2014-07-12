@@ -15,6 +15,8 @@ import blitzortung.clustering
 
 class TestClustering(TestCase):
     def setUp(self):
+        if not fastcluster:
+            raise nose.SkipTest("module fastcluster not available")
         pass
 
     def test_clustering(self):
