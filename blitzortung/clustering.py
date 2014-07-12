@@ -4,7 +4,7 @@ import scipy.cluster
 import fastcluster
 
 import blitzortung
-import geom
+import blitzortung.geom
 
 
 class Clustering(object):
@@ -19,10 +19,10 @@ class Clustering(object):
         self.result = scipy.cluster.hierarchy.linkage(coordinates)
         self.clusters = [[value for value in cluster] for cluster in self.result]
 
-        print self.clusters
+        print(self.clusters)
 
 
-class ClusterContainer(geom.Grid):
+class ClusterContainer(blitzortung.geom.Grid):
     """ class for clustering via a 2-d-tree """
 
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=blitzortung.geom.Geometry.DefaultSrid):

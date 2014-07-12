@@ -10,6 +10,7 @@ except ImportError:
 
 import blitzortung.db
 import blitzortung.db.query
+import blitzortung.clustering
 
 
 class TestClustering(TestCase):
@@ -27,6 +28,7 @@ class TestClustering(TestCase):
         strokes = strokes_db.select(time_interval)
 
         self.clustering = blitzortung.clustering.Clustering(strokes)
+        print(str(self.clustering))
 
     def test_basic_clustering(self):
         if not fastcluster:

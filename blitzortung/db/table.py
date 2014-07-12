@@ -20,6 +20,8 @@ try:
 except ImportError:
     psycopg2 = None
 
+import binascii
+
 from abc import ABCMeta, abstractmethod
 
 
@@ -250,7 +252,7 @@ class Stroke(Base):
     def create_object_instance(self, result):
         self.stroke_builder.set_id(result['id'])
         self.stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        stroke_location = shapely.wkb.loads(result['geog'].decode('hex'))
+        stroke_location = shapely.wkb.loads(binascii.unhexlify(result['geog']))
         self.stroke_builder.set_x(stroke_location.x)
         self.stroke_builder.set_y(stroke_location.y)
         self.stroke_builder.set_altitude(result['altitude'])
