@@ -1,6 +1,5 @@
 # -*- coding: utf8 -*-
 import datetime
-import binascii
 import shapely.geometry.base
 import shapely.wkb
 
@@ -146,15 +145,14 @@ class Query(object):
                 elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
                     if arg.is_valid:
-
-                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                                           {'envelope': binascii.hexlify(shapely.wkb.dumps(arg.envelope))})
+                        self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
+                                           {'envelope': shapely.wkb.dumps(arg.envelope, hex=True)})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition(
-                                'ST_Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ' +
+                                'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
                                 'ST_Transform(geog::geometry, %(srid)s))',
-                                {'geometry': binascii.hexlify(shapely.wkb.dumps(arg))})
+                                {'geometry': shapely.wkb.dumps(arg, hex=True)})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -187,8 +185,8 @@ class RasterQuery(Query):
         env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                               {'envelope': shapely.wkb.dumps(env).encode('hex'), 'envelope_srid': raster.get_srid()})
+            self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
+                               {'envelope': shapely.wkb.dumps(env, hex=True), 'envelope_srid': raster.get_srid()})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
