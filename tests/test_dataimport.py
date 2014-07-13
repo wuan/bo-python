@@ -78,7 +78,7 @@ class BlitzortungDataProviderTest(unittest.TestCase):
         self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
 
     def test_read_data(self):
-        response = [b"line1 ", b"line2", "äöü".encode('latin1')]
+        response = [b"line1 ", b"line2", "äöü".encode('utf8')]
 
         self.http_data_transport.read_lines_from_url.return_value = response
 

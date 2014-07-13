@@ -62,15 +62,15 @@ class BaseTest(unittest.TestCase):
         assert_that(self.base.is_connected(), is_(False))
 
     def test_table_name(self):
-        assert_that(self.base.get_table_name(), is_(none()))
+        assert_that(self.base.get_table_name(), is_(""))
 
         self.base.set_table_name("foo")
 
         assert_that(self.base.get_table_name(), is_("foo"))
 
     def test_full_table_name(self):
-        assert_that(self.base.get_full_table_name(), is_(none()))
-        assert_that(self.base.get_schema_name(), is_(none()))
+        assert_that(self.base.get_full_table_name(), is_(""))
+        assert_that(self.base.get_schema_name(), is_(""))
 
         self.base.set_table_name("foo")
 
