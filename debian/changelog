@@ -4,6 +4,8 @@ python-blitzortung (1.3.0) unstable; urgency=low
   * split up db classes
   * added time interval generator
   * removed obsolete code
+  * renamed stroke to strike
+  * python 3 compatibility
 
  -- Andreas Wuerl <blitzortung@tryb.de>  THu, 16 Sep 2013 21:09:12 +0200
 
