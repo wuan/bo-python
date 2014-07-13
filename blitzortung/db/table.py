@@ -615,7 +615,7 @@ class ServiceLog(Base):
 
         self.execute(sql, parameters)
 
-    def get_latest_time(self, region=1):
+    def get_latest_time(self):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 

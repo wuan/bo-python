@@ -407,7 +407,7 @@ class LeastSquareFit(object):
         return self.successful
 
     def get_solution(self):
-        event_builder = event_builder.Event()
+        event_builder = builder.Event()
 
         location = self.get_location()
         event_builder.set_x(location.get_x())

@@ -14,7 +14,7 @@ except ImportError:
     psycopg2 = None
 
 import blitzortung.config
-import blitzortung.db.table
+from . import table
 
 
 class DbModule(Module):

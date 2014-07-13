@@ -8,6 +8,7 @@ import datetime
 import json
 import pandas as pd
 
+import blitzortung.builder
 import blitzortung
 
 
