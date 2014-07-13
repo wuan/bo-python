@@ -48,7 +48,7 @@ class HttpDataTransport(object):
 
         if post_process:
             response_text = post_process(response.content)
-            for line in response_text.split('\n'):
+            for line in response_text.splitlines():
                 if line:
                     yield line
         else:
@@ -147,7 +147,7 @@ class StrokesBlitzortungDataProvider(object):
 
 
 def strokes():
-    from blitzortung import INJECTOR
+    from . import INJECTOR
 
     return INJECTOR.get(StrokesBlitzortungDataProvider)
 
@@ -175,11 +175,12 @@ class StationsBlitzortungDataProvider(object):
 
     def pre_process(self, data):
         data = io.BytesIO(data)
-        return gzip.GzipFile(fileobj=data).read()
+        out_data = gzip.GzipFile(fileobj=data).read()
+        return out_data
 
 
 def stations():
-    from __init__ import INJECTOR
+    from . import INJECTOR
 
     return INJECTOR.get(StationsBlitzortungDataProvider)
 
@@ -213,6 +214,6 @@ class RawSignalsBlitzortungDataProvider(object):
 
 
 def raw():
-    from __init__ import INJECTOR
+    from . import INJECTOR
 
     return INJECTOR.get(RawSignalsBlitzortungDataProvider)
