@@ -2,6 +2,7 @@
 import datetime
 import shapely.geometry.base
 import shapely.wkb
+import psycopg2
 
 import blitzortung
 
@@ -145,14 +146,14 @@ class Query(object):
                 elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
                     if arg.is_valid:
-                        self.add_condition('ST_GeomFromWKB(E%(envelope)s, %(srid)s) && geog',
-                                           {'envelope': shapely.wkb.dumps(arg.envelope, hex=True)})
+                        self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
+                                           {'envelope': psycopg2.Binary(shapely.wkb.dumps(arg.envelope))})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition(
-                                'ST_Intersects(ST_GeomFromWKB(E%(geometry)s, %(srid)s), ' +
+                                'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
                                 'ST_Transform(geog::geometry, %(srid)s))',
-                                {'geometry': shapely.wkb.dumps(arg, hex=True)})
+                                {'geometry': psycopg2.Binary(shapely.wkb.dumps(arg))})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -185,8 +186,8 @@ class RasterQuery(Query):
         env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_GeomFromWKB(E%(envelope)s, %(envelope_srid)s) && geog',
-                               {'envelope': shapely.wkb.dumps(env, hex=True), 'envelope_srid': raster.get_srid()})
+            self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
+                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)), 'envelope_srid': raster.get_srid()})
         else:
             raise ValueError("invalid Raster geometry in db.Stroke.select()")
 
