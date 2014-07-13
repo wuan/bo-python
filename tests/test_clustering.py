@@ -21,13 +21,13 @@ class TestClustering(TestCase):
         if not fastcluster:
             raise nose.SkipTest("implement as an integration test later")
 
-        strokes_db = blitzortung.db.stroke()
+        strikes_db = blitzortung.db.strike()
         now = datetime.datetime.utcnow()
         start_time = now - datetime.timedelta(hours=2)
         time_interval = blitzortung.db.query.TimeInterval(start_time)
-        strokes = strokes_db.select(time_interval)
+        strikes = strikes_db.select(time_interval)
 
-        self.clustering = blitzortung.clustering.Clustering(strokes)
+        self.clustering = blitzortung.clustering.Clustering(strikes)
         print(str(self.clustering))
 
     def test_basic_clustering(self):

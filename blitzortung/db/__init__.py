@@ -30,10 +30,10 @@ class DbModule(Module):
         return connection_pool
 
 
-def stroke():
+def strike():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.Stroke)
+    return INJECTOR.get(blitzortung.db.table.Strike)
 
 
 def station():

@@ -100,12 +100,12 @@ class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
     def create_history_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
-        self.strokes_url = blitzortung.dataimport.BlitzortungHistoryUrlGenerator()
+        self.strikes_url = blitzortung.dataimport.BlitzortungHistoryUrlGenerator()
 
-    def test_stroke_url_iterator(self):
+    def test_strike_url_iterator(self):
         self.create_history_url_generator(datetime.datetime(2013, 8, 20, 12, 9, 0))
 
-        urls = [url for url in self.strokes_url.get_url_paths(self.start_time, self.present_time)]
+        urls = [url for url in self.strikes_url.get_url_paths(self.start_time, self.present_time)]
 
         assert_that(urls, contains(
             '2013/08/20/11/40.log',
@@ -114,14 +114,14 @@ class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
         ))
 
 
-class StrokesBlitzortungDataProviderTest(unittest.TestCase):
+class StrikesBlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
         self.data_provider = Mock()
         self.data_url = Mock()
         self.url_generator = Mock()
         self.builder = Mock()
 
-        self.provider = blitzortung.dataimport.StrokesBlitzortungDataProvider(
+        self.provider = blitzortung.dataimport.StrikesBlitzortungDataProvider(
             self.data_provider,
             self.data_url,
             self.url_generator,
@@ -129,48 +129,48 @@ class StrokesBlitzortungDataProviderTest(unittest.TestCase):
         )
         self.provider.read_data = Mock()
 
-    def test_get_strokes_since(self):
+    def test_get_strikes_since(self):
         now = datetime.datetime.utcnow()
-        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_url_paths.return_value = ['path1', 'path2']
-        stroke_data1 = {'one': 1}
-        stroke_data2 = {'two': 2}
-        self.data_provider.read_data.side_effect = [[stroke_data1, stroke_data2], []]
-        stroke1 = Mock()
-        stroke2 = Mock()
-        stroke1.get_timestamp.return_value = pd.Timestamp(now - datetime.timedelta(hours=2))
-        stroke2.get_timestamp.return_value = pd.Timestamp(now)
+        strike_data1 = {'one': 1}
+        strike_data2 = {'two': 2}
+        self.data_provider.read_data.side_effect = [[strike_data1, strike_data2], []]
+        strike1 = Mock()
+        strike2 = Mock()
+        strike1.get_timestamp.return_value = pd.Timestamp(now - datetime.timedelta(hours=2))
+        strike2.get_timestamp.return_value = pd.Timestamp(now)
         self.builder.from_line.return_value = self.builder
-        self.builder.build.side_effect = [stroke1, stroke2]
+        self.builder.build.side_effect = [strike1, strike2]
 
-        strokes = self.provider.get_strokes_since(latest_stroke_timestamp)
+        strikes = self.provider.get_strikes_since(latest_strike_timestamp)
 
-        assert_that(list(strokes), contains(stroke2))
+        assert_that(list(strikes), contains(strike2))
 
-    def test_get_strokes_since_with_builder_error(self):
+    def test_get_strikes_since_with_builder_error(self):
         now = datetime.datetime.utcnow()
-        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_url_paths.return_value = ['path']
-        stroke_data = {'one': 1}
-        self.data_provider.read_data.side_effect = [[stroke_data], []]
+        strike_data = {'one': 1}
+        self.data_provider.read_data.side_effect = [[strike_data], []]
         self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
 
-        strokes = self.provider.get_strokes_since(latest_stroke_timestamp)
+        strikes = self.provider.get_strikes_since(latest_strike_timestamp)
 
-        assert_that(strokes, is_(empty()))
+        assert_that(strikes, is_(empty()))
 
     @raises(Exception)
-    def test_get_strokes_since_with_generic_exception(self):
+    def test_get_strikes_since_with_generic_exception(self):
         now = datetime.datetime.utcnow()
-        latest_stroke_timestamp = now - datetime.timedelta(hours=1)
+        latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_url_paths.return_value = ['path']
-        stroke_data = {'one': 1}
-        self.data_provider.read_line.side_effect = [[stroke_data], []]
+        strike_data = {'one': 1}
+        self.data_provider.read_line.side_effect = [[strike_data], []]
         self.builder.from_data.return_value = self.builder
         self.builder.build.side_effect = Exception("foo")
 
-        self.provider.get_strokes_since(latest_stroke_timestamp)
+        self.provider.get_strikes_since(latest_strike_timestamp)
 
 
 class StationsBlitzortungDataProviderTest(unittest.TestCase):
@@ -208,9 +208,9 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
 
-        strokes = self.provider.get_stations()
+        strikes = self.provider.get_stations()
 
-        assert_that(list(strokes), is_(empty()))
+        assert_that(list(strikes), is_(empty()))
 
 
 class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
@@ -243,7 +243,7 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
 
         region_id = 5
         station_id = 123
-        strokes = self.provider.get_raw_data_since(last_data, region_id, station_id)
+        strikes = self.provider.get_raw_data_since(last_data, region_id, station_id)
 
         expected_args = [call(last_data)]
         assert_that(self.url_generator.get_url_paths.call_args_list, is_(equal_to(expected_args)))
@@ -256,6 +256,6 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
         expected_args = [call('full_url1'), call('full_url2')]
         assert_that(self.data_provider.read_data.call_args_list, is_(equal_to(expected_args)))
 
-        assert_that(strokes, contains("line11", "line12", "line21", "line22"))
+        assert_that(strikes, contains("line11", "line12", "line21", "line22"))
 
 

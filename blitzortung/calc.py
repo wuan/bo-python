@@ -40,7 +40,7 @@ class SignalVelocity(object):
 
 class SimulatedData(object):
     def __init__(self, x_coord_or_point, y_coord=None):
-        self.stroke_location = types.Point(x_coord_or_point, y_coord)
+        self.strike_location = types.Point(x_coord_or_point, y_coord)
         self.signal_velocity = SignalVelocity()
         self.event_builder = builder.Event()
         self.timestamp = pd.Timestamp(datetime.datetime.utcnow())
@@ -50,7 +50,7 @@ class SimulatedData(object):
 
     def get_event_at(self, x_coord_or_point, y_coord=None, distance_offset=0.0):
         event_location = types.Point(x_coord_or_point, y_coord)
-        distance = self.stroke_location.distance_to(event_location)
+        distance = self.strike_location.distance_to(event_location)
 
         nanosecond_offset = self.signal_velocity.get_distance_time(distance + distance_offset)
 
@@ -61,8 +61,8 @@ class SimulatedData(object):
         return self.event_builder.build()
 
     def get_source_event(self):
-        self.event_builder.set_x(self.stroke_location.get_x())
-        self.event_builder.set_y(self.stroke_location.get_y())
+        self.event_builder.set_x(self.strike_location.get_x())
+        self.event_builder.set_y(self.strike_location.get_y())
         self.event_builder.set_timestamp(self.timestamp)
         return self.event_builder.build()
 

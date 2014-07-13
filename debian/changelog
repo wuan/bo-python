@@ -15,7 +15,7 @@ python-blitzortung (1.2.0) unstable; urgency=low
 
 python-blitzortung (1.1.0) unstable; urgency=low
 
-  * added calc module with functions for stroke location
+  * added calc module with functions for strike location
   * added global dependency injection
   * refactored package interplay
   * clean up of builder and data

@@ -187,15 +187,15 @@ class StationOffline(object):
             raise ValueError('cannot overwrite end of StationOffline when already set')
 
 
-class Stroke(Event):
+class Strike(Event):
     """
-    class for stroke objects
+    class for strike objects
     """
 
-    def __init__(self, stroke_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
+    def __init__(self, strike_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
                  stations=None):
-        super(Stroke, self).__init__(timestamp, x_coord, y_coord)
-        self.stroke_id = stroke_id
+        super(Strike, self).__init__(timestamp, x_coord, y_coord)
+        self.strike_id = strike_id
         self.altitude = altitude
         self.amplitude = amplitude
         self.lateral_error = lateral_error
@@ -204,27 +204,27 @@ class Stroke(Event):
 
     def get_location(self):
         """
-        return location of the stroke
+        return location of the strike
         """
         return self
 
     def get_altitude(self):
         """
-        return altitude of the stroke
+        return altitude of the strike
         """
         return self.altitude
 
     def get_amplitude(self):
         """
-        return amplitude of the stroke
+        return amplitude of the strike
         """
         return self.amplitude
 
     def get_id(self):
         """
-        return database id of the stroke (if applicable)
+        return database id of the strike (if applicable)
         """
-        return self.stroke_id
+        return self.strike_id
 
     def get_lateral_error(self):
         """
@@ -251,7 +251,7 @@ class Stroke(Event):
         return self.stations
 
     def __str__(self):
-        return super(Stroke, self).__str__() + " %s %.1f %d %d" % (
+        return super(Strike, self).__str__() + " %s %.1f %d %d" % (
             str(self.altitude) if self.altitude is not None else '-',
             self.amplitude if self.amplitude else 0.0,
             self.lateral_error,

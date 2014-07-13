@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+
 import datetime
 import shapely.geometry.base
 import shapely.wkb
@@ -156,7 +157,7 @@ class Query(object):
                                 {'geometry': psycopg2.Binary(shapely.wkb.dumps(arg))})
 
                     else:
-                        raise ValueError("invalid geometry in db.Stroke.select()")
+                        raise ValueError("invalid geometry in db.Strike.select()")
 
                 elif isinstance(arg, Order):
                     self.add_order(arg)
@@ -169,12 +170,12 @@ class Query(object):
 
     def get_results(self, cursor, object_creator):
 
-        resulting_strokes = []
+        resulting_strikes = []
         if cursor.rowcount > 0:
             for result in cursor:
-                resulting_strokes.append(object_creator(result))
+                resulting_strikes.append(object_creator(result))
 
-        return resulting_strokes
+        return resulting_strikes
 
 
 class RasterQuery(Query):
@@ -189,7 +190,7 @@ class RasterQuery(Query):
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
                                {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)), 'envelope_srid': raster.get_srid()})
         else:
-            raise ValueError("invalid Raster geometry in db.Stroke.select()")
+            raise ValueError("invalid Raster geometry in db.Strike.select()")
 
     def __str__(self):
         sql = 'SELECT '

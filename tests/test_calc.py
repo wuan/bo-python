@@ -46,9 +46,9 @@ class ThreePointSolutionTest(unittest.TestCase):
 
         timestamp = self.center_event.get_timestamp()
         total_nanoseconds = timestamp.value - self.signal_velocity.get_distance_time(100000)
-        stroke_timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
+        strike_timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
 
-        self.assertEqual(stroke_timestamp, solution.get_timestamp())
+        self.assertEqual(strike_timestamp, solution.get_timestamp())
 
 
 class ThreePointSolverTest(unittest.TestCase):
@@ -175,9 +175,9 @@ class TestFitSeed(unittest.TestCase):
 
 class TestLeastSquareFit(unittest.TestCase):
     def setUp(self):
-        self.stroke_location = blitzortung.types.Point(11.3, 49.5)
+        self.strike_location = blitzortung.types.Point(11.3, 49.5)
 
-        self.simulated_data = blitzortung.calc.SimulatedData(self.stroke_location)
+        self.simulated_data = blitzortung.calc.SimulatedData(self.strike_location)
         self.source_event = self.simulated_data.get_source_event()
 
         self.timestamp = self.simulated_data.get_timestamp()
@@ -227,9 +227,9 @@ class TestLeastSquareFit(unittest.TestCase):
             print("%.1f, %.3f %s" % (
                 self.fit.get_least_square_sum(), self.fit.get_least_square_change(), ' '.join(parameter_string)))
 
-        stroke_location = self.fit.get_location()
-        self.assertAlmostEqual(11.3, stroke_location.get_x(), 4)
-        self.assertAlmostEqual(49.5, stroke_location.get_y(), 4)
+        strike_location = self.fit.get_location()
+        self.assertAlmostEqual(11.3, strike_location.get_x(), 4)
+        self.assertAlmostEqual(49.5, strike_location.get_y(), 4)
         
         
 

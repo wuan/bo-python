@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 
+from __future__ import print_function
 import os
 import subprocess
 import glob
@@ -172,9 +173,9 @@ class Data(object):
 
     def list(self):
         for event in self.get():
-            print event
+            print(event)
 
     def list_long(self):
         for line in self.get(True):
-            print line
+            print(line)
 
