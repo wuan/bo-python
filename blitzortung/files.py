@@ -46,8 +46,8 @@ class Raw(object):
             args += ['-s', start_time]
         if end_time:
             args += ['-e', end_time]
-        dataPipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
-        (output, _) = dataPipe.communicate()
+        data_pipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
+        (output, _) = data_pipe.communicate()
         return json.loads(output)
 
 

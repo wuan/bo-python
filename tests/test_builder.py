@@ -61,16 +61,10 @@ class TimestampTest(unittest.TestCase):
         timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423").build()
 
         self.assert_timestamp(timestamp)
-        assert_that(timestamp.nanosecond, is_(equal_to(423)))
-        assert_that(timestamp.tzinfo, is_(equal_to(pytz.UTC)))
-
-    def test_set_timestamp_from_string(self):
-        timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423")
-
-        timestamp = self.builder.build()
         self.assert_timestamp_base(timestamp)
         assert_that(timestamp.microsecond, is_(equal_to(96651)))
         assert_that(timestamp.nanosecond, is_(equal_to(423)))
+        assert_that(timestamp.tzinfo, is_(equal_to(pytz.UTC)))
 
     def test_set_timestamp_from_millisecond_string(self):
         timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096").build()

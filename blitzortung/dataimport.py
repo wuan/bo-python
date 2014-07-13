@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 
 #from __future__ import unicode_literals
+import html
 import os
 import logging
 import time
@@ -91,7 +92,7 @@ class BlitzortungDataProvider(object):
 
     def read_data(self, target_url, post_process=None):
         for line in self.read_lines_from_url(target_url, post_process=post_process):
-            line = self.html_parser.unescape(line.decode('latin1')).replace(u'\xa0', ' ')
+            line = html.unescape(line.decode('utf8')).replace(u'\xa0', ' ')
             yield line
 
 
@@ -176,7 +177,8 @@ class StationsBlitzortungDataProvider(object):
                 self.logger.debug("error parsing station data '%s'" % station_line)
         return current_stations
 
-    def pre_process(self, data):
+    @staticmethod
+    def pre_process(data):
         data = io.BytesIO(data)
         out_data = gzip.GzipFile(fileobj=data).read()
         return out_data

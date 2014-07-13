@@ -57,8 +57,8 @@ class Base(object):
 
         self.db_connection_pool = db_connection_pool
 
-        self.schema_name = None
-        self.table_name = None
+        self.schema_name = ""
+        self.table_name = ""
 
         while True:
             self.conn = self.db_connection_pool.getconn()

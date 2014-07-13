@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #   Copyright (c) 2011, Andreas Wuerl. All rights reserved.
 #
 #   See the LICENSE file for details.
@@ -50,7 +50,7 @@ __all__ = [
 
     'db.strike', 'db.station', 'db.stationOffline', 'db.location',  # database access
 
-    'Error', # custom exceptions
+    'Error',  # custom exceptions
 
     'files.Raw', 'files.Data',
 

@@ -9,7 +9,7 @@
 import datetime
 import itertools
 import re
-from injector import singleton, inject
+from injector import inject
 
 import pytz
 import numpy as np
@@ -246,7 +246,7 @@ class ChannelWaveform(object):
         self.gain = None
         self.values = None
         self.start = None
-        self.bits = None
+        self.bits = 0
         self.shift = None
         self.conversion_gap = None
         self.conversion_time = None
@@ -265,7 +265,6 @@ class ChannelWaveform(object):
         self.conversion_time = int(next_element(field))
         self.__extract_waveform_from_hex_string(next_element(field))
         return self
-
 
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
         hex_character = iter(waveform_hex_string)

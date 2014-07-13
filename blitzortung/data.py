@@ -5,7 +5,6 @@ from . import types
 
 
 class Event(types.Point):
-
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 
@@ -27,9 +26,9 @@ class Event(types.Point):
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-                   and -180 <= self.get_x() <= 180 \
-                   and -90 < self.get_y() < 90 \
-            and self.has_valid_timestamp()
+               and -180 <= self.get_x() <= 180 \
+               and -90 < self.get_y() < 90 \
+               and self.has_valid_timestamp()
 
     def has_valid_timestamp(self):
         return self.timestamp is not None and self.timestamp.year > 1900
@@ -139,7 +138,7 @@ class Station(Event):
 
     def is_valid(self):
         return super(Station, self).is_valid() \
-            and self.get_number() > 0
+               and self.get_number() > 0
 
 
 class StationOffline(object):

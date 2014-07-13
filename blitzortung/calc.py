@@ -16,6 +16,7 @@ from injector import singleton
 
 from blitzortung import data, builder, types
 
+
 @singleton
 class SignalVelocity(object):
     """
@@ -148,13 +149,13 @@ class ThreePointSolver(object):
         else:
             return None
 
-    def solve(self, D1, G1, azimuth1, D2, G2, azimuth2):
+    def solve(self, d1, g1, azimuth1, d2, g2, azimuth2):
 
         phi1 = self.azimuth_to_angle(azimuth1)
         phi2 = self.azimuth_to_angle(azimuth2)
 
-        (p1, q1) = self.calculate_P_Q(D1, G1)
-        (p2, q2) = self.calculate_P_Q(D2, G2)
+        (p1, q1) = self.calculate_p_q(d1, g1)
+        (p2, q2) = self.calculate_p_q(d2, g2)
 
         (cosine, sine) = self.calculate_angle_projection(phi1, phi2)
 
@@ -165,7 +166,7 @@ class ThreePointSolver(object):
         solutions = []
 
         if root_argument < 0.0 or denominator == 0.0:
-            print("%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (D1, G1, azimuth1, D2, G2, azimuth2))
+            print("%.1f %.1f %.1f°, %.1f %.1f %.1f°" % (d1, g1, azimuth1, d2, g2, azimuth2))
             return solutions
 
         part_1 = (-p1 * q1 + p2 * q1 + (p1 - p2) * q2 * cosine) / denominator
@@ -180,15 +181,15 @@ class ThreePointSolver(object):
             solution_angles.append(-math.acos(part_1 - part_2))
 
         for solution_angle in solution_angles:
-            if self.is_angle_valid_for_hyperbola(solution_angle, D1, G1, phi1) and \
-                    self.is_angle_valid_for_hyperbola(solution_angle, D2, G2, phi2):
+            if self.is_angle_valid_for_hyperbola(solution_angle, d1, g1, phi1) and \
+                    self.is_angle_valid_for_hyperbola(solution_angle, d2, g2, phi2):
 
-                solution_distance = self.hyperbola_radius(solution_angle, D1, G1, 0)
+                solution_distance = self.hyperbola_radius(solution_angle, d1, g1, 0)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
                 solution_a = ThreePointSolution(self.events[0], solution_azimuth, solution_distance,
                                                 self.signal_velocity)
 
-                solution_distance = self.hyperbola_radius(solution_angle, D2, G2, phi2 - phi1)
+                solution_distance = self.hyperbola_radius(solution_angle, d2, g2, phi2 - phi1)
                 solution_azimuth = self.angle_to_azimuth(solution_angle + phi1)
                 solution_b = ThreePointSolution(self.events[0], solution_azimuth, solution_distance,
                                                 self.signal_velocity)
@@ -198,17 +199,16 @@ class ThreePointSolver(object):
 
         return solutions
 
-
     @staticmethod
     def calculate_angle_projection(phi1, phi2):
         angle = phi2 - phi1
         return math.cos(angle), math.sin(angle)
 
     @staticmethod
-    def hyperbola_radius(theta, D, G, phi):
-        return 0.5 * (G * G - D * D) / (D + G * math.cos(theta - phi))
+    def hyperbola_radius(theta, d, g, phi):
+        return 0.5 * (g * g - d * d) / (d + g * math.cos(theta - phi))
 
-    def is_angle_valid_for_hyperbola(self, angle, D, G, phi):
+    def is_angle_valid_for_hyperbola(self, angle, d, g, phi):
         angle -= phi
 
         if angle <= math.pi:
@@ -216,18 +216,18 @@ class ThreePointSolver(object):
         if angle > math.pi:
             angle -= 2 * math.pi
 
-        asymptotic_angle = self.calculate_asymptotic_angle(D, G)
+        asymptotic_angle = self.calculate_asymptotic_angle(d, g)
 
         return -asymptotic_angle < angle < asymptotic_angle
 
     @staticmethod
-    def calculate_asymptotic_angle(D, G):
-        return math.acos(-D / G)
+    def calculate_asymptotic_angle(d, g):
+        return math.acos(-d / g)
 
     @staticmethod
-    def calculate_P_Q(D, G):
-        denominator = G * G - D * D
-        return D / denominator, G / denominator
+    def calculate_p_q(d, g):
+        denominator = g * g - d * d
+        return d / denominator, g / denominator
 
     @staticmethod
     def square(x):
@@ -374,8 +374,6 @@ class LeastSquareFit(object):
 
         measured_runtime = self.calculate_time_value(event.get_timestamp()) - self.parameters[FitParameter.Time]
 
-        #print "%.3f - %.3f = %.3f : %.3f %d %d" %(measured_runtime, distance_runtime, measured_runtime - distance_runtime, self.calculate_time_value(event.get_timestamp()), self.time_reference.value, event.get_timestamp().value)
-
         return measured_runtime - distance_runtime
 
     def get_location(self):
@@ -409,14 +407,14 @@ class LeastSquareFit(object):
         return self.successful
 
     def get_solution(self):
-        builder = builder.Event()
+        event_builder = event_builder.Event()
 
         location = self.get_location()
-        builder.set_x(location.get_x())
-        builder.set_y(location.get_y())
-        builder.set_timestamp(self.get_timestamp())
+        event_builder.set_x(location.get_x())
+        event_builder.set_y(location.get_y())
+        event_builder.set_timestamp(self.get_timestamp())
 
-        return builder.build()
+        return event_builder.build()
 
     def get_number_of_iterations(self):
         return self.iteration_count

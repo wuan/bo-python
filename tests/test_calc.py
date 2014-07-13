@@ -89,7 +89,6 @@ class ThreePointSolverTest(unittest.TestCase):
 
         self.assertEqual(location, solutions[0])
 
-
     def test_solve_with_two_solutions(self):
         location = blitzortung.types.Point(11.1, 49.1)
         self.prepare_solution(location.get_x(), location.get_y())
@@ -230,8 +229,4 @@ class TestLeastSquareFit(unittest.TestCase):
         strike_location = self.fit.get_location()
         self.assertAlmostEqual(11.3, strike_location.get_x(), 4)
         self.assertAlmostEqual(49.5, strike_location.get_y(), 4)
-        
-        
-
-
         

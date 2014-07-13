@@ -6,6 +6,7 @@ import shapely.wkb
 import psycopg2
 
 import blitzortung
+import blitzortung.geom
 
 
 class BaseInterval(object):
@@ -65,7 +66,7 @@ class Query(object):
         self.conditions = []
         self.groups = []
         self.parameters = {}
-        self.table_name = None
+        self.table_name = ""
         self.columns = []
         self.limit = None
         self.order = []
@@ -188,7 +189,8 @@ class RasterQuery(Query):
 
         if env.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
-                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)), 'envelope_srid': raster.get_srid()})
+                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)),
+                                'envelope_srid': raster.get_srid()})
         else:
             raise ValueError("invalid Raster geometry in db.Strike.select()")
 

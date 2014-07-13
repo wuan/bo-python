@@ -9,6 +9,7 @@ except ImportError:
 
 from injector import Module, singleton, provides, inject
 
+
 @singleton
 class Config(object):
     @inject(config_parser=configparser.ConfigParser)
