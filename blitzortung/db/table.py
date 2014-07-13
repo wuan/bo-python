@@ -170,7 +170,7 @@ class Base(object):
         pass
 
     def create_results(self, cursor, _):
-        return [self.create_object_instance(value) for value in cursor.fetchall()]
+        return [self.create_object_instance(value) for value in cursor]
 
     def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -318,8 +318,7 @@ class Stroke(Base):
 
             result = [0] * value_count
 
-            raw_result = cursor.fetchall()
-            for bin_data in raw_result:
+            for bin_data in cursor:
                 result[bin_data[0] + value_count - 1] = bin_data[1]
 
             return result
@@ -576,7 +575,7 @@ class Location(Base):
             def build_results(cursor, _):
                 locations = []
                 if cursor.rowcount > 0:
-                    for result in cursor.fetchall():
+                    for result in cursor:
                         location = {'name': result['name'], 'distance': result['distance'],
                                     'azimuth': result['azimuth']}
                         locations.append(location)

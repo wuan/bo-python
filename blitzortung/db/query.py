@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 import datetime
+import binascii
 import shapely.geometry.base
 import shapely.wkb
 
@@ -147,13 +148,13 @@ class Query(object):
                     if arg.is_valid:
 
                         self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                                           {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+                                           {'envelope': binascii.hexlify(shapely.wkb.dumps(arg.envelope))})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition(
-                                'Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ' +
+                                'ST_Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ' +
                                 'ST_Transform(geog::geometry, %(srid)s))',
-                                {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                                {'geometry': binascii.hexlify(shapely.wkb.dumps(arg))})
 
                     else:
                         raise ValueError("invalid geometry in db.Stroke.select()")
@@ -171,7 +172,7 @@ class Query(object):
 
         resulting_strokes = []
         if cursor.rowcount > 0:
-            for result in cursor.fetchall():
+            for result in cursor:
                 resulting_strokes.append(object_creator(result))
 
         return resulting_strokes
@@ -209,7 +210,7 @@ class RasterQuery(Query):
         self.raster.clear()
 
         if cursor.rowcount > 0:
-            for result in cursor.fetchall():
+            for result in cursor:
                 self.raster.set(result['rx'], result['ry'],
                                 blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster
