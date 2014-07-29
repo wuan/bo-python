@@ -94,7 +94,7 @@ class Station(Event):
         self.board = board
 
     def __str__(self):
-        return "%3d/%3d '%s' '%s' %s" % (
+        return u"%3d/%3d '%s' '%s' %s" % (
             self.number, self.user, self.name, self.country, super(Station, self).__str__())
 
     def __eq__(self, other):
