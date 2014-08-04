@@ -60,5 +60,6 @@ __all__ = [
 
     'util.Timer',
 
-    'dataimport.StrokesBlitzortungDataProvider', 'dataimport.StrokesBlitzortungDataProvider',
+    'dataimport.StrokesBlitzortungDataProvider', 'dataimport.StrokesBlitzortungDataProvider', 'dataimport.raw'
 ]
+
