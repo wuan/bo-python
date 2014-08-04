@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 
+from __future__ import print_function
 import os
 import subprocess
 import glob
@@ -7,6 +8,7 @@ import datetime
 import json
 import pandas as pd
 
+import blitzortung.builder
 import blitzortung
 
 
@@ -45,8 +47,8 @@ class Raw(object):
             args += ['-s', start_time]
         if end_time:
             args += ['-e', end_time]
-        dataPipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
-        (output, _) = dataPipe.communicate()
+        data_pipe = subprocess.Popen(args + list(additional_args), stdout=subprocess.PIPE)
+        (output, _) = data_pipe.communicate()
         return json.loads(output)
 
 
@@ -172,9 +174,9 @@ class Data(object):
 
     def list(self):
         for event in self.get():
-            print event
+            print(event)
 
     def list_long(self):
         for line in self.get(True):
-            print line
+            print(line)
 

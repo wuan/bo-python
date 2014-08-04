@@ -13,12 +13,13 @@ try:
 except ImportError:
     psycopg2 = None
 
-import blitzortung
-import blitzortung.db
+import blitzortung.config
+from . import table
 
 
 class DbModule(Module):
-    def cleanup(self, connection_pool):
+    @staticmethod
+    def cleanup(connection_pool):
         connection_pool.closeall()
 
     @singleton
@@ -30,10 +31,10 @@ class DbModule(Module):
         return connection_pool
 
 
-def stroke():
+def strike():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.Stroke)
+    return INJECTOR.get(blitzortung.db.table.Strike)
 
 
 def station():

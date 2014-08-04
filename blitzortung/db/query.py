@@ -1,9 +1,12 @@
 # -*- coding: utf8 -*-
+
 import datetime
 import shapely.geometry.base
 import shapely.wkb
+import psycopg2
 
 import blitzortung
+import blitzortung.geom
 
 
 class BaseInterval(object):
@@ -63,7 +66,7 @@ class Query(object):
         self.conditions = []
         self.groups = []
         self.parameters = {}
-        self.table_name = None
+        self.table_name = ""
         self.columns = []
         self.limit = None
         self.order = []
@@ -145,18 +148,17 @@ class Query(object):
                 elif isinstance(arg, shapely.geometry.base.BaseGeometry):
 
                     if arg.is_valid:
-
-                        self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(srid)s) && geog',
-                                           {'envelope': shapely.wkb.dumps(arg.envelope).encode('hex')})
+                        self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
+                                           {'envelope': psycopg2.Binary(shapely.wkb.dumps(arg.envelope))})
 
                         if not arg.equals(arg.envelope):
                             self.add_condition(
-                                'Intersects(ST_SetSRID(CAST(%(geometry)s AS geometry), %(srid)s), ' +
+                                'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
                                 'ST_Transform(geog::geometry, %(srid)s))',
-                                {'geometry': shapely.wkb.dumps(arg).encode('hex')})
+                                {'geometry': psycopg2.Binary(shapely.wkb.dumps(arg))})
 
                     else:
-                        raise ValueError("invalid geometry in db.Stroke.select()")
+                        raise ValueError("invalid geometry in db.Strike.select()")
 
                 elif isinstance(arg, Order):
                     self.add_order(arg)
@@ -169,12 +171,12 @@ class Query(object):
 
     def get_results(self, cursor, object_creator):
 
-        resulting_strokes = []
+        resulting_strikes = []
         if cursor.rowcount > 0:
-            for result in cursor.fetchall():
-                resulting_strokes.append(object_creator(result))
+            for result in cursor:
+                resulting_strikes.append(object_creator(result))
 
-        return resulting_strokes
+        return resulting_strikes
 
 
 class RasterQuery(Query):
@@ -186,10 +188,11 @@ class RasterQuery(Query):
         env = self.raster.get_env()
 
         if env.is_valid:
-            self.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                               {'envelope': shapely.wkb.dumps(env).encode('hex'), 'envelope_srid': raster.get_srid()})
+            self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
+                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)),
+                                'envelope_srid': raster.get_srid()})
         else:
-            raise ValueError("invalid Raster geometry in db.Stroke.select()")
+            raise ValueError("invalid Raster geometry in db.Strike.select()")
 
     def __str__(self):
         sql = 'SELECT '
@@ -209,7 +212,7 @@ class RasterQuery(Query):
         self.raster.clear()
 
         if cursor.rowcount > 0:
-            for result in cursor.fetchall():
+            for result in cursor:
                 self.raster.set(result['rx'], result['ry'],
                                 blitzortung.geom.RasterElement(result['count'], result['timestamp']))
         return self.raster

@@ -5,7 +5,6 @@ from . import types
 
 
 class Event(types.Point):
-
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 
@@ -27,9 +26,9 @@ class Event(types.Point):
 
     def is_valid(self):
         return (self.get_x() != 0.0 or self.get_y() != 0.0) \
-                   and -180 <= self.get_x() <= 180 \
-                   and -90 < self.get_y() < 90 \
-            and self.has_valid_timestamp()
+               and -180 <= self.get_x() <= 180 \
+               and -90 < self.get_y() < 90 \
+               and self.has_valid_timestamp()
 
     def has_valid_timestamp(self):
         return self.timestamp is not None and self.timestamp.year > 1900
@@ -95,7 +94,7 @@ class Station(Event):
         self.board = board
 
     def __str__(self):
-        return "%3d/%3d '%s' '%s' %s" % (
+        return u"%3d/%3d '%s' '%s' %s" % (
             self.number, self.user, self.name, self.country, super(Station, self).__str__())
 
     def __eq__(self, other):
@@ -139,7 +138,7 @@ class Station(Event):
 
     def is_valid(self):
         return super(Station, self).is_valid() \
-            and self.get_number() > 0
+               and self.get_number() > 0
 
 
 class StationOffline(object):
@@ -187,15 +186,15 @@ class StationOffline(object):
             raise ValueError('cannot overwrite end of StationOffline when already set')
 
 
-class Stroke(Event):
+class Strike(Event):
     """
-    class for stroke objects
+    class for strike objects
     """
 
-    def __init__(self, stroke_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
+    def __init__(self, strike_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
                  stations=None):
-        super(Stroke, self).__init__(timestamp, x_coord, y_coord)
-        self.stroke_id = stroke_id
+        super(Strike, self).__init__(timestamp, x_coord, y_coord)
+        self.strike_id = strike_id
         self.altitude = altitude
         self.amplitude = amplitude
         self.lateral_error = lateral_error
@@ -204,27 +203,27 @@ class Stroke(Event):
 
     def get_location(self):
         """
-        return location of the stroke
+        return location of the strike
         """
         return self
 
     def get_altitude(self):
         """
-        return altitude of the stroke
+        return altitude of the strike
         """
         return self.altitude
 
     def get_amplitude(self):
         """
-        return amplitude of the stroke
+        return amplitude of the strike
         """
         return self.amplitude
 
     def get_id(self):
         """
-        return database id of the stroke (if applicable)
+        return database id of the strike (if applicable)
         """
-        return self.stroke_id
+        return self.strike_id
 
     def get_lateral_error(self):
         """
@@ -251,7 +250,7 @@ class Stroke(Event):
         return self.stations
 
     def __str__(self):
-        return super(Stroke, self).__str__() + " %s %.1f %d %d" % (
+        return super(Strike, self).__str__() + " %s %.1f %d %d" % (
             str(self.altitude) if self.altitude is not None else '-',
             self.amplitude if self.amplitude else 0.0,
             self.lateral_error,

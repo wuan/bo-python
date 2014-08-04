@@ -62,15 +62,15 @@ class BaseTest(unittest.TestCase):
         assert_that(self.base.is_connected(), is_(False))
 
     def test_table_name(self):
-        assert_that(self.base.get_table_name(), is_(none()))
+        assert_that(self.base.get_table_name(), is_(""))
 
         self.base.set_table_name("foo")
 
         assert_that(self.base.get_table_name(), is_("foo"))
 
     def test_full_table_name(self):
-        assert_that(self.base.get_full_table_name(), is_(none()))
-        assert_that(self.base.get_schema_name(), is_(none()))
+        assert_that(self.base.get_full_table_name(), is_(""))
+        assert_that(self.base.get_schema_name(), is_(""))
 
         self.base.set_table_name("foo")
 
@@ -107,7 +107,7 @@ class BaseTest(unittest.TestCase):
 
         assert_that(self.base.from_bare_utc_to_timezone(utc_time), is_(equal_to(time)))
 
-    def test_from_bare_utc_to_timezone(self):
+    def test_from_timezone_to_bare_utc(self):
         self.base.set_timezone(pytz.timezone("CET"))
 
         time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))

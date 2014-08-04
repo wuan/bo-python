@@ -132,7 +132,7 @@ class Raster(Grid):
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid, no_data=None):
         super(Raster, self).__init__(x_min, x_max, y_min, y_max, x_div, y_div, srid)
         self.no_data = no_data if no_data else RasterElement(0, None)
-        self.data = None
+        self.data = []
         self.clear()
 
     def clear(self):
@@ -233,4 +233,3 @@ class RasterElement(object):
 
     def __repr__(self):
         return "RasterElement(%d, %s)" % (self.count, str(self.timestamp))
-

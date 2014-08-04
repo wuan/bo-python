@@ -15,6 +15,7 @@ import io
 from injector import singleton, inject
 import pytz
 from requests import Session
+import pandas as pd
 
 import blitzortung
 from blitzortung.builder import BuilderError
@@ -22,7 +23,7 @@ from blitzortung.builder import BuilderError
 
 class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
-    TIMEOUT_SECONDS = 20
+    TIMEOUT_SECONDS = 60
 
     @inject(config=blitzortung.config.Config)
     def __init__(self, config, session=None):
@@ -31,8 +32,11 @@ class HttpDataTransport(object):
 
     def __del__(self):
         if self.session:
-            self.logger.info("close http session '%s'" % self.session)
-            self.session.close()
+            try:
+                self.logger.info("close http session '%s'" % self.session)
+                self.session.close()
+            except ReferenceError:
+                pass
 
     def read_lines_from_url(self, target_url, post_process=None):
         response = self.session.get(
@@ -47,7 +51,7 @@ class HttpDataTransport(object):
 
         if post_process:
             response_text = post_process(response.content)
-            for line in response_text.split('\n'):
+            for line in response_text.splitlines():
                 if line:
                     yield line
         else:
@@ -87,7 +91,7 @@ class BlitzortungDataProvider(object):
 
     def read_data(self, target_url, post_process=None):
         for line in self.read_lines_from_url(target_url, post_process=post_process):
-            line = self.html_parser.unescape(line.decode('latin1')).replace(u'\xa0', ' ')
+            line = self.html_parser.unescape(line.decode('utf8')).replace(u'\xa0', ' ')
             yield line
 
 
@@ -104,51 +108,51 @@ class BlitzortungHistoryUrlGenerator(object):
 
 
 @singleton
-class StrokesBlitzortungDataProvider(object):
+class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            url_path_generator=BlitzortungHistoryUrlGenerator, stroke_builder=blitzortung.builder.Stroke)
-    def __init__(self, data_provider, data_url, url_path_generator, stroke_builder):
+            url_path_generator=BlitzortungHistoryUrlGenerator, strike_builder=blitzortung.builder.Strike)
+    def __init__(self, data_provider, data_url, url_path_generator, strike_builder):
         self.data_provider = data_provider
         self.data_url = data_url
         self.url_path_generator = url_path_generator
-        self.stroke_builder = stroke_builder
+        self.strike_builder = strike_builder
 
-    def get_strokes_since(self, latest_stroke=None, region=1):
-        latest_stroke = latest_stroke if latest_stroke else \
+    def get_strikes_since(self, latest_strike=None, region=1):
+        latest_strike = latest_strike if latest_strike else \
             (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
-        self.logger.debug("import strokes since %s" % latest_stroke)
-        strokes_since = []
+        self.logger.debug("import strikes since %s" % latest_strike)
+        strikes_since = []
 
-        for url_path in self.url_path_generator.get_url_paths(latest_stroke):
-            initial_stroke_count = len(strokes_since)
+        for url_path in self.url_path_generator.get_url_paths(latest_strike):
+            initial_strike_count = len(strikes_since)
             start_time = time.time()
             target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
-            for stroke_line in self.data_provider.read_data(target_url):
+            for strike_line in self.data_provider.read_data(target_url):
                 try:
-                    stroke = self.stroke_builder.from_line(stroke_line).build()
+                    strike = self.strike_builder.from_line(strike_line).build()
                 except blitzortung.builder.BuilderError as e:
-                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.args, stroke_line))
+                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     continue
                 except Exception as e:
-                    self.logger.error("%s: %s (%s)" % (e.__class__, e.args, stroke_line))
+                    self.logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     raise e
-                timestamp = stroke.get_timestamp()
+                timestamp = strike.get_timestamp()
                 timestamp.nanoseconds = 0
-                if latest_stroke < timestamp:
-                    strokes_since.append(stroke)
+                if not pd.isnull(timestamp) and latest_strike < timestamp:
+                    strikes_since.append(strike)
             end_time = time.time()
-            self.logger.debug("imported %d strokes for region %d in %.2fs from %s",
-                              len(strokes_since) - initial_stroke_count,
+            self.logger.debug("imported %d strikes for region %d in %.2fs from %s",
+                              len(strikes_since) - initial_strike_count,
                               region, end_time - start_time, url_path)
-        return strokes_since
+        return strikes_since
 
 
-def strokes():
-    from __init__ import INJECTOR
+def strikes():
+    from . import INJECTOR
 
-    return INJECTOR.get(StrokesBlitzortungDataProvider)
+    return INJECTOR.get(StrikesBlitzortungDataProvider)
 
 
 @singleton
@@ -172,13 +176,15 @@ class StationsBlitzortungDataProvider(object):
                 self.logger.debug("error parsing station data '%s'" % station_line)
         return current_stations
 
-    def pre_process(self, data):
+    @staticmethod
+    def pre_process(data):
         data = io.BytesIO(data)
-        return gzip.GzipFile(fileobj=data).read()
+        out_data = gzip.GzipFile(fileobj=data).read()
+        return out_data
 
 
 def stations():
-    from __init__ import INJECTOR
+    from . import INJECTOR
 
     return INJECTOR.get(StationsBlitzortungDataProvider)
 
@@ -212,6 +218,6 @@ class RawSignalsBlitzortungDataProvider(object):
 
 
 def raw():
-    from __init__ import INJECTOR
+    from . import INJECTOR
 
     return INJECTOR.get(RawSignalsBlitzortungDataProvider)

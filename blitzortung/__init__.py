@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #   Copyright (c) 2011, Andreas Wuerl. All rights reserved.
 #
 #   See the LICENSE file for details.
@@ -40,7 +40,7 @@ INJECTOR = injector.Injector(
 
 __all__ = [
 
-    'builder.Stroke', 'builder.Station',
+    'builder.Strike', 'builder.Station',
 
     'calc.ObjectCache'
 
@@ -48,9 +48,9 @@ __all__ = [
 
     'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
 
-    'db.stroke', 'db.station', 'db.stationOffline', 'db.location',  # database access
+    'db.strike', 'db.station', 'db.stationOffline', 'db.location',  # database access
 
-    'Error', # custom exceptions
+    'Error',  # custom exceptions
 
     'files.Raw', 'files.Data',
 
@@ -60,6 +60,5 @@ __all__ = [
 
     'util.Timer',
 
-    'dataimport.StrokesBlitzortungDataProvider', 'dataimport.StrokesBlitzortungDataProvider', 'dataimport.raw'
+    'dataimport.StrikesBlitzortungDataProvider', 'dataimport.raw'
 ]
-

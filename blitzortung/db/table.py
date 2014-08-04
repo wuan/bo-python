@@ -9,6 +9,7 @@ import pandas as pd
 
 import blitzortung.geom
 from blitzortung.db.query import Limit, Center, Query, RasterQuery
+import blitzortung.builder
 
 
 try:
@@ -56,8 +57,8 @@ class Base(object):
 
         self.db_connection_pool = db_connection_pool
 
-        self.schema_name = None
-        self.table_name = None
+        self.schema_name = ""
+        self.table_name = ""
 
         while True:
             self.conn = self.db_connection_pool.getconn()
@@ -167,7 +168,7 @@ class Base(object):
         pass
 
     def create_results(self, cursor, _):
-        return [self.create_object_instance(value) for value in cursor.fetchall()]
+        return [self.create_object_instance(value) for value in cursor]
 
     def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -176,57 +177,57 @@ class Base(object):
                 return build_result(cursor, self.create_object_instance)
 
 
-class Stroke(Base):
+class Strike(Base):
     """
-    stroke db access class
+    strike db access class
 
     database table creation (as db user blitzortung, database blitzortung):
 
-    CREATE TABLE strokes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point),
+    CREATE TABLE strikes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point),
         PRIMARY KEY(id));
-    ALTER TABLE strokes ADD COLUMN altitude SMALLINT;
-    ALTER TABLE strokes ADD COLUMN region SMALLINT;
-    ALTER TABLE strokes ADD COLUMN amplitude REAL;
-    ALTER TABLE strokes ADD COLUMN error2d SMALLINT;
-    ALTER TABLE strokes ADD COLUMN stationcount SMALLINT;
+    ALTER TABLE strikes ADD COLUMN altitude SMALLINT;
+    ALTER TABLE strikes ADD COLUMN region SMALLINT;
+    ALTER TABLE strikes ADD COLUMN amplitude REAL;
+    ALTER TABLE strikes ADD COLUMN error2d SMALLINT;
+    ALTER TABLE strikes ADD COLUMN stationcount SMALLINT;
 
-    CREATE INDEX strokes_timestamp ON strokes USING btree("timestamp");
-    CREATE INDEX strokes_region_timestamp ON strokes USING btree(region, "timestamp");
-    CREATE INDEX strokes_id_timestamp ON strokes USING btree(id, "timestamp");
-    CREATE INDEX strokes_geog ON strokes USING gist(geog);
-    CREATE INDEX strokes_timestamp_geog ON strokes USING gist("timestamp", geog);
-    CREATE INDEX strokes_id_timestamp_geog ON strokes USING gist(id, "timestamp", geog);
+    CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
+    CREATE INDEX strikes_region_timestamp ON strikes USING btree(region, "timestamp");
+    CREATE INDEX strikes_id_timestamp ON strikes USING btree(id, "timestamp");
+    CREATE INDEX strikes_geog ON strikes USING gist(geog);
+    CREATE INDEX strikes_timestamp_geog ON strikes USING gist("timestamp", geog);
+    CREATE INDEX strikes_id_timestamp_geog ON strikes USING gist(id, "timestamp", geog);
 
     empty the table with the following commands:
 
-    DELETE FROM strokes;
-    ALTER SEQUENCE strokes_id_seq RESTART 1;
+    DELETE FROM strikes;
+    ALTER SEQUENCE strikes_id_seq RESTART 1;
 
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, stroke_builder=blitzortung.builder.Stroke)
-    def __init__(self, db_connection_pool, stroke_builder):
-        super(Stroke, self).__init__(db_connection_pool)
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, strike_builder=blitzortung.builder.Strike)
+    def __init__(self, db_connection_pool, strike_builder):
+        super(Strike, self).__init__(db_connection_pool)
 
-        self.set_table_name('strokes')
-        self.stroke_builder = stroke_builder
+        self.set_table_name('strikes')
+        self.strike_builder = strike_builder
 
-    def insert(self, stroke, region=1):
+    def insert(self, strike, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
               ' ("timestamp", nanoseconds, geog, altitude, region, amplitude, error2d, stationcount) ' + \
               'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), ' + \
               '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
 
         parameters = {
-            'timestamp': stroke.get_timestamp(),
-            'nanoseconds': stroke.get_timestamp().nanosecond,
-            'longitude': stroke.get_x(),
-            'latitude': stroke.get_y(),
-            'altitude': stroke.get_altitude(),
+            'timestamp': strike.get_timestamp(),
+            'nanoseconds': strike.get_timestamp().nanosecond,
+            'longitude': strike.get_x(),
+            'latitude': strike.get_y(),
+            'altitude': strike.get_altitude(),
             'region': region,
-            'amplitude': stroke.get_amplitude(),
-            'error2d': stroke.get_lateral_error(),
-            'stationcount': stroke.get_station_count()
+            'amplitude': strike.get_amplitude(),
+            'error2d': strike.get_lateral_error(),
+            'stationcount': strike.get_station_count()
         }
 
         self.execute(sql, parameters)
@@ -247,17 +248,17 @@ class Stroke(Base):
         return self.execute(sql, {'region': region}, prepare_result)
 
     def create_object_instance(self, result):
-        self.stroke_builder.set_id(result['id'])
-        self.stroke_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        stroke_location = shapely.wkb.loads(result['geog'].decode('hex'))
-        self.stroke_builder.set_x(stroke_location.x)
-        self.stroke_builder.set_y(stroke_location.y)
-        self.stroke_builder.set_altitude(result['altitude'])
-        self.stroke_builder.set_amplitude(result['amplitude'])
-        self.stroke_builder.set_station_count(result['stationcount'])
-        self.stroke_builder.set_lateral_error(result['error2d'])
+        self.strike_builder.set_id(result['id'])
+        self.strike_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
+        strike_location = shapely.wkb.loads(result['geog'], hex=True)
+        self.strike_builder.set_x(strike_location.x)
+        self.strike_builder.set_y(strike_location.y)
+        self.strike_builder.set_altitude(result['altitude'])
+        self.strike_builder.set_amplitude(result['amplitude'])
+        self.strike_builder.set_station_count(result['stationcount'])
+        self.strike_builder.set_lateral_error(result['error2d'])
 
-        return self.stroke_builder.build()
+        return self.strike_builder.build()
 
     def select_query(self, args, query=None):
         """ build up query object for select statement """
@@ -315,8 +316,7 @@ class Stroke(Base):
 
             result = [0] * value_count
 
-            raw_result = cursor.fetchall()
-            for bin_data in raw_result:
+            for bin_data in cursor:
                 result[bin_data[0] + value_count - 1] = bin_data[1]
 
             return result
@@ -387,7 +387,7 @@ class Station(Base):
         self.station_builder.set_user(result['user'])
         self.station_builder.set_name(result['name'])
         self.station_builder.set_country(result['country'])
-        location = shapely.wkb.loads(result['geog'].decode('hex'))
+        location = shapely.wkb.loads(result['geog'], hex=True)
         self.station_builder.set_x(location.x)
         self.station_builder.set_y(location.y)
         self.station_builder.set_timestamp(self.fix_timezone(result['begin']))
@@ -573,7 +573,7 @@ class Location(Base):
             def build_results(cursor, _):
                 locations = []
                 if cursor.rowcount > 0:
-                    for result in cursor.fetchall():
+                    for result in cursor:
                         location = {'name': result['name'], 'distance': result['distance'],
                                     'azimuth': result['azimuth']}
                         locations.append(location)
@@ -615,7 +615,7 @@ class ServiceLog(Base):
 
         self.execute(sql, parameters)
 
-    def get_latest_time(self, region=1):
+    def get_latest_time(self):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 

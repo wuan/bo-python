@@ -9,14 +9,13 @@
 import datetime
 import itertools
 import re
-from injector import singleton, inject
+from injector import inject
 
 import pytz
 import numpy as np
 import pandas as pd
 
-import blitzortung
-from . import data
+import blitzortung.data
 from blitzortung.util import next_element
 
 
@@ -81,14 +80,14 @@ class Event(Timestamp):
         return blitzortung.data.Event(self.timestamp, self.x_coord, self.y_coord)
 
 
-class Stroke(Event):
+class Strike(Event):
     position_parser = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
     amplitude_parser = re.compile(r'str;([0-9\.]+)')
     deviation_parser = re.compile(r'dev;([0-9\.]+)')
     stations_parser = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
 
     def __init__(self):
-        super(Stroke, self).__init__()
+        super(Strike, self).__init__()
         self.id_value = -1
         self.altitude = None
         self.amplitude = None
@@ -121,7 +120,7 @@ class Stroke(Event):
         return self
 
     def from_line(self, line):
-        """ Construct stroke from new blitzortung text format data line """
+        """ Construct strike from new blitzortung text format data line """
         try:
             self.set_timestamp(line[0:29])
 
@@ -142,7 +141,7 @@ class Stroke(Event):
         return self
 
     def build(self):
-        return blitzortung.data.Stroke(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
+        return blitzortung.data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
                                        self.amplitude, self.lateral_error, self.station_count, self.stations)
 
 
@@ -247,7 +246,7 @@ class ChannelWaveform(object):
         self.gain = None
         self.values = None
         self.start = None
-        self.bits = None
+        self.bits = 0
         self.shift = None
         self.conversion_gap = None
         self.conversion_time = None
@@ -267,7 +266,6 @@ class ChannelWaveform(object):
         self.__extract_waveform_from_hex_string(next_element(field))
         return self
 
-
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
         hex_character = iter(waveform_hex_string)
         self.waveform = np.zeros(self.values)
@@ -281,7 +279,7 @@ class ChannelWaveform(object):
             self.waveform[index] = value + value_offset
 
     def build(self):
-        return data.ChannelWaveform(
+        return blitzortung.data.ChannelWaveform(
             self.channel_number,
             self.amplifier_version,
             self.antenna,
@@ -328,7 +326,7 @@ class RawWaveformEvent(Event):
         return self
 
     def from_string(self, string):
-        """ Construct stroke from blitzortung text format data line """
+        """ Construct strike from blitzortung text format data line """
         if string:
             try:
                 field = iter(string.split(' '))
