@@ -197,9 +197,9 @@ class RasterQuery(Query):
     def __str__(self):
         sql = 'SELECT '
 
-        sql += 'TRUNC((ST_X(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_x_min()) + ') /' + str(
+        sql += 'TRUNC((x - ' + str(self.raster.get_x_min()) + ') /' + str(
             self.raster.get_x_div()) + ') AS rx, '
-        sql += 'TRUNC((ST_Y(ST_TRANSFORM(geog, %(srid)s)) - ' + str(self.raster.get_y_min()) + ') /' + str(
+        sql += 'TRUNC((y - ' + str(self.raster.get_y_min()) + ') /' + str(
             self.raster.get_y_div()) + ') AS ry, '
         sql += 'count(*) AS count, max("timestamp") as "timestamp" FROM ('
         sql += Query.__str__(self)
