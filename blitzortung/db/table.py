@@ -250,9 +250,8 @@ class Strike(Base):
     def create_object_instance(self, result):
         self.strike_builder.set_id(result['id'])
         self.strike_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        strike_location = shapely.wkb.loads(result['geog'], hex=True)
-        self.strike_builder.set_x(strike_location.x)
-        self.strike_builder.set_y(strike_location.y)
+        self.strike_builder.set_x(result['x'])
+        self.strike_builder.set_y(result['y'])
         self.strike_builder.set_altitude(result['altitude'])
         self.strike_builder.set_amplitude(result['amplitude'])
         self.strike_builder.set_station_count(result['stationcount'])
@@ -267,8 +266,9 @@ class Strike(Base):
             query = Query()
 
         query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_Transform(geog::geometry, %(srid)s) AS geog',
-                           'altitude', 'amplitude', 'error2d', 'stationcount'])
+        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
+                           'ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y', 'altitude', 'amplitude', 'error2d',
+                           'stationcount'])
         query.add_parameters({'srid': self.srid})
 
         query.parse_args(args)

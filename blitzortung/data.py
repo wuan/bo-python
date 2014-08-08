@@ -41,11 +41,8 @@ class Event(types.Point):
 
     def __str__(self):
         if self.has_valid_timestamp():
-            timestamp_string = "%s%03d%s" % (
-                self.get_timestamp().strftime(self.time_format_fractional_seconds),
-                self.get_timestamp().nanosecond,
-                self.timestamp.strftime('%z')
-            )
+            timestamp_string = self.get_timestamp().strftime(self.time_format_fractional_seconds + 'XXX%z')
+            timestamp_string = timestamp_string.replace('XXX', "%03d" % self.get_timestamp().nanosecond)
         else:
             timestamp_string = "NaT"
 

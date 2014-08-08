@@ -9,6 +9,7 @@
 import datetime
 import itertools
 import re
+import types
 from injector import inject
 
 import pytz
@@ -38,12 +39,12 @@ class Timestamp(Base):
     def set_timestamp(self, timestamp, nanoseconds=0):
         if not timestamp:
             self.timestamp = None
-        elif isinstance(timestamp, pd.Timestamp):
+        elif type(timestamp) == pd.Timestamp:
             if nanoseconds:
                 self.timestamp = pd.Timestamp(timestamp.value + nanoseconds, tz=timestamp.tzinfo)
             else:
                 self.timestamp = timestamp
-        elif isinstance(timestamp, datetime.datetime):
+        elif type(timestamp) == datetime.datetime:
             total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
             self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
         else:
@@ -196,7 +197,7 @@ class Station(Event):
             self.set_x(float(pos[1]))
             self.set_y(float(pos[0]))
             self.set_board(self.board_parser.findall(line)[0])
-            #self.set_status(self.status_parser.findall(line)[0])
+            # self.set_status(self.status_parser.findall(line)[0])
             self.set_timestamp(self.last_signal_parser.findall(line)[0])
         except (KeyError, ValueError, IndexError) as e:
             raise BuilderError(e)
