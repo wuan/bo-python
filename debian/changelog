@@ -1,3 +1,9 @@
+python-blitzortung (1.4.0) unstable; urgency=low
+
+  * speed optimizations
+
+ -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 11 Aug 2014 20:27:23 +0200
+
 python-blitzortung (1.3.0) unstable; urgency=low
 
   * refactored and adapted blitzortung data import to new format
@@ -7,7 +13,7 @@ python-blitzortung (1.3.0) unstable; urgency=low
   * renamed stroke to strike
   * python 3 compatibility
 
- -- Andreas Wuerl <blitzortung@tryb.de>  THu, 11 Aug 2014 20:27:23 +0200
+ -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 11 Aug 2014 20:27:23 +0200
 
 python-blitzortung (1.2.0) unstable; urgency=low
 

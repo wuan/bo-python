@@ -168,7 +168,7 @@ class Base(object):
         pass
 
     def create_results(self, cursor, _):
-        return [self.create_object_instance(value) for value in cursor]
+        return tuple(self.create_object_instance(value) for value in cursor)
 
     def execute(self, sql_statement, parameters=None, build_result=None):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -324,7 +324,7 @@ class Strike(Base):
         return self.execute(str(query), query.get_parameters(), prepare_result)
 
     def select_execute(self, query):
-        return self.execute(str(query), query.get_parameters(), query.get_results)
+        return self.execute(str(query), query.get_parameters(), query.get_result)
 
 
 class Station(Base):
@@ -571,12 +571,13 @@ class Location(Base):
             }
 
             def build_results(cursor, _):
-                locations = []
-                if cursor.rowcount > 0:
-                    for result in cursor:
-                        location = {'name': result['name'], 'distance': result['distance'],
-                                    'azimuth': result['azimuth']}
-                        locations.append(location)
+                locations = tuple(
+                    {
+                        'name': result['name'],
+                        'distance': result['distance'],
+                        'azimuth': result['azimuth']
+                    } for result in cursor
+                )
 
                 return locations
 

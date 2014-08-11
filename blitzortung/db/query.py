@@ -169,14 +169,8 @@ class Query(object):
                 else:
                     print('WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg)))
 
-    def get_results(self, cursor, object_creator):
-
-        resulting_strikes = []
-        if cursor.rowcount > 0:
-            for result in cursor:
-                resulting_strikes.append(object_creator(result))
-
-        return resulting_strikes
+    def get_result(self, cursor, object_creator):
+        return tuple(object_creator(result) for result in cursor)
 
 
 class RasterQuery(Query):
@@ -207,14 +201,14 @@ class RasterQuery(Query):
 
         return sql
 
-    def get_results(self, cursor, _):
+    def get_result(self, cursor, _):
 
         self.raster.clear()
 
-        if cursor.rowcount > 0:
-            for result in cursor:
-                self.raster.set(result['rx'], result['ry'],
-                                blitzortung.geom.RasterElement(result['count'], result['timestamp']))
+        for result in cursor:
+            self.raster.set(result['rx'], result['ry'],
+                            blitzortung.geom.RasterElement(result['count'], result['timestamp']))
+
         return self.raster
 
 

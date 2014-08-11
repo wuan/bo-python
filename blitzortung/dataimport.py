@@ -18,7 +18,6 @@ from requests import Session
 import pandas as pd
 
 import blitzortung
-from blitzortung.builder import BuilderError
 
 
 class HttpDataTransport(object):

@@ -206,7 +206,7 @@ class Raster(Grid):
                                           int(cell.get_count()),
                                           -(reference_time - cell.get_timestamp()).seconds])
 
-        return reduced_array
+        return tuple(reduced_array)
 
 
 class RasterElement(object):
