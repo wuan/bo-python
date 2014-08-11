@@ -12,6 +12,7 @@ python-blitzortung (1.3.0) unstable; urgency=low
   * removed obsolete code
   * renamed stroke to strike
   * python 3 compatibility
+  * improved stroke select performance
 
  -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 11 Aug 2014 20:27:23 +0200
 
