@@ -202,9 +202,9 @@ class Raster(Grid):
         for row_index, row in enumerate(self.data[::-1]):
             for column_index, cell in enumerate(row):
                 if cell:
-                    reduced_array.append([column_index, row_index,
+                    reduced_array.append((column_index, row_index,
                                           int(cell.get_count()),
-                                          -(reference_time - cell.get_timestamp()).seconds])
+                                          -(reference_time - cell.get_timestamp()).seconds))
 
         return tuple(reduced_array)
 
