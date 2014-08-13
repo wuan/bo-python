@@ -2,6 +2,9 @@
 
 from __future__ import unicode_literals
 from . import types
+import math
+import numpy
+from blitzortung.geom import GridElement
 
 
 class Event(types.Point):
@@ -340,3 +343,89 @@ class ChannelWaveform(object):
         get array of integer numbers representing the measured waveform
         """
         return self.waveform
+
+
+class GridData(object):
+    """ class for grid characteristics"""
+
+    def __init__(self, grid, no_data=None):
+        self.grid = grid
+        self.no_data = no_data if no_data else GridElement(0, None)
+        self.data = []
+        self.clear()
+
+    def clear(self):
+        self.data = numpy.empty((self.grid.get_y_bin_count(), self.grid.get_x_bin_count()), dtype=type(self.no_data))
+
+    def get_grid(self):
+        return self.grid
+
+    def set(self, x_index, y_index, value):
+        try:
+            self.data[y_index][x_index] = value
+        except IndexError:
+            pass
+
+    def get(self, x_index, y_index):
+        return self.data[y_index][x_index]
+
+    def get_nodata_value(self):
+        return self.no_data
+
+    def to_arcgrid(self):
+        result = 'NCOLS %d\n' % self.grid.get_x_bin_count()
+        result += 'NROWS %d\n' % self.grid.get_y_bin_count()
+        result += 'XLLCORNER %.4f\n' % self.grid.get_x_min()
+        result += 'YLLCORNER %.4f\n' % self.grid.get_y_min()
+        result += 'CELLSIZE %.4f\n' % self.grid.get_x_div()
+        result += 'NODATA_VALUE %s\n' % str(self.get_nodata_value())
+
+        cell_to_string = lambda current_cell: str(current_cell.get_count()) if current_cell else '0'
+        result += '\n'.join([' '.join([cell_to_string(cell) for cell in row]) for row in self.data[::-1]])
+
+        return result
+
+    def to_map(self):
+        chars = " .-o*O8"
+        maximum = 0
+        total = 0
+
+        for row in self.data[::-1]:
+            for cell in row:
+                if cell:
+                    total += cell.get_count()
+                    if maximum < cell.get_count():
+                        maximum = cell.get_count()
+
+        if maximum > len(chars):
+            divider = float(maximum) / (len(chars) - 1)
+        else:
+            divider = 1
+
+        result = (self.grid.get_x_bin_count() + 2) * '-' + '\n'
+        for row in self.data[::-1]:
+            result += "|"
+            for cell in row:
+                if cell:
+                    index = int(math.floor((cell.get_count() - 1) / divider + 1))
+                else:
+                    index = 0
+                result += chars[index]
+            result += "|\n"
+
+        result += (self.grid.get_x_bin_count() + 2) * '-' + '\n'
+        result += 'total count: %d, max per area: %d' % (total, maximum)
+        return result
+
+    def to_reduced_array(self, reference_time):
+
+        reduced_array = []
+
+        for row_index, row in enumerate(self.data[::-1]):
+            for column_index, cell in enumerate(row):
+                if cell:
+                    reduced_array.append((column_index, row_index,
+                                          int(cell.get_count()),
+                                          -(reference_time - cell.get_timestamp()).seconds))
+
+        return tuple(reduced_array)

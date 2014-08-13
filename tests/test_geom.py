@@ -162,9 +162,9 @@ total count: 0, max per area: 0""")))
         assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(())))
 
     def add_raster_data(self):
-        self.raster.set(0, 0, blitzortung.geom.RasterElement(5, self.reference_time - datetime.timedelta(minutes=2)))
-        self.raster.set(1, 1, blitzortung.geom.RasterElement(10, self.reference_time - datetime.timedelta(seconds=10)))
-        self.raster.set(4, 2, blitzortung.geom.RasterElement(20, self.reference_time - datetime.timedelta(hours=1)))
+        self.raster.set(0, 0, blitzortung.geom.GridElement(5, self.reference_time - datetime.timedelta(minutes=2)))
+        self.raster.set(1, 1, blitzortung.geom.GridElement(10, self.reference_time - datetime.timedelta(seconds=10)))
+        self.raster.set(4, 2, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
 
     def test_raster_to_arcgrid(self):
         self.add_raster_data()
@@ -196,14 +196,14 @@ total count: 35, max per area: 20""")))
         )))
 
     def test_raster_set_outside_valid_index_value_does_not_throw_exception(self):
-        self.raster.set(1000, 0, blitzortung.geom.RasterElement(20, self.reference_time - datetime.timedelta(hours=1)))
+        self.raster.set(1000, 0, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
         assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(())))
 
 
 class TestRasterElement(TestCase):
     def setUp(self):
         self.timestamp = datetime.datetime(2013, 9, 6, 21, 36, 0, 123456)
-        self.raster_element = blitzortung.geom.RasterElement(1234, self.timestamp)
+        self.raster_element = blitzortung.geom.GridElement(1234, self.timestamp)
 
     def test_get_count(self):
         assert_that(self.raster_element.get_count(), is_(equal_to(1234)))
@@ -212,7 +212,7 @@ class TestRasterElement(TestCase):
         assert_that(self.raster_element.get_timestamp(), is_(equal_to(self.timestamp)))
 
     def test_comparison(self):
-        other_raster_element = blitzortung.geom.RasterElement(10, self.timestamp)
+        other_raster_element = blitzortung.geom.GridElement(10, self.timestamp)
 
         assert_that(other_raster_element < self.raster_element)
         assert_that(self.raster_element > other_raster_element)

@@ -73,6 +73,65 @@ class TimeIntervalTest(unittest.TestCase):
 class QueryTest(unittest.TestCase):
     def setUp(self):
         self.query = blitzortung.db.query.Query()
+
+    def test_initialization(self):
+        self.assertEqual(str(self.query), "")
+
+    def test_add_group_by(self):
+        self.query.add_group_by('bar')
+        self.assertEqual(str(self.query), "GROUP BY bar")
+        self.query.add_group_by('baz')
+        self.assertEqual(str(self.query), "GROUP BY bar, baz")
+
+    def test_add_condition(self):
+        self.query.add_condition("qux")
+        self.assertEqual(str(self.query), "WHERE qux")
+
+        self.query.add_condition("quux")
+        self.assertEqual(str(self.query), "WHERE qux AND quux")
+
+    def test_add_condition_with_parameters(self):
+        self.query.add_condition("column LIKE %(name)s", {'name': '<name>'})
+        assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s")))
+        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>'})))
+
+        self.query.add_condition("other LIKE %(type)s", {'type': '<type>'})
+        assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s AND other LIKE %(type)s")))
+        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>', 'type': '<type>'})))
+
+    def test_add_order(self):
+        self.query.add_order(blitzortung.db.query.Order("bar"))
+        self.assertEqual(str(self.query), "ORDER BY bar")
+
+        self.query.add_order(blitzortung.db.query.Order("baz", True))
+        self.assertEqual(str(self.query), "ORDER BY bar, baz DESC")
+
+    def test_set_limit(self):
+        self.query.set_limit(blitzortung.db.query.Limit(10))
+        self.assertEqual(str(self.query), "LIMIT 10")
+
+    def test_parse_args_with_id_interval(self):
+        self.query.parse_args([blitzortung.db.query.IdInterval(10, 15)])
+
+        assert_that(str(self.query), is_(equal_to("WHERE id >= %(start_id)s AND id < %(end_id)s")))
+        assert_that(self.query.get_parameters(), is_(equal_to({'start_id': 10, 'end_id': 15})))
+
+    def test_parse_args_with_time_interval(self):
+        self.query.parse_args([blitzortung.db.query.TimeInterval(
+            datetime.datetime(2013, 10, 9, 17, 20),
+            datetime.datetime(2013, 10, 11, 6, 30))])
+
+        assert_that(str(self.query), is_(equal_to(
+            "WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s"
+        )))
+        assert_that(self.query.get_parameters(), is_(equal_to({
+            'start_time': datetime.datetime(2013, 10, 9, 17, 20),
+            'end_time': datetime.datetime(2013, 10, 11, 6, 30)})))
+
+
+class SelectQueryTest(unittest.TestCase):
+    def setUp(self):
+        self.query = blitzortung.db.query.SelectQuery()
         self.query.set_table_name("foo")
 
     def test_initialization(self):
@@ -82,7 +141,7 @@ class QueryTest(unittest.TestCase):
         self.assertEqual(str(self.query), "SELECT FROM foo")
 
     def test_set_columns(self):
-        self.query.set_columns(['bar', 'baz'])
+        self.query.set_columns('bar', 'baz')
         self.assertEqual(str(self.query), "SELECT bar, baz FROM foo")
 
     def test_add_column(self):
@@ -91,34 +150,12 @@ class QueryTest(unittest.TestCase):
         self.query.add_column('baz')
         self.assertEqual(str(self.query), "SELECT bar, baz FROM foo")
 
-    def test_add_group_by(self):
-        self.query.add_group_by('bar')
-        self.assertEqual(str(self.query), "SELECT FROM foo GROUP BY bar")
-        self.query.add_group_by('baz')
-        self.assertEqual(str(self.query), "SELECT FROM foo GROUP BY bar, baz")
-
     def test_add_condition(self):
         self.query.add_condition("qux")
         self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux")
 
         self.query.add_condition("quux")
         self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux AND quux")
-
-    def test_add_condition_with_parameters(self):
-        self.query.add_condition("column LIKE %(name)s", {'name': '<name>'})
-        assert_that(str(self.query), is_(equal_to("SELECT FROM foo WHERE column LIKE %(name)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>'})))
-
-        self.query.add_condition("other LIKE %(type)s", {'type': '<type>'})
-        assert_that(str(self.query), is_(equal_to("SELECT FROM foo WHERE column LIKE %(name)s AND other LIKE %(type)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>', 'type': '<type>'})))
-
-    def test_add_order(self):
-        self.query.add_order(blitzortung.db.query.Order("bar"))
-        self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar")
-
-        self.query.add_order(blitzortung.db.query.Order("baz", True))
-        self.assertEqual(str(self.query), "SELECT FROM foo ORDER BY bar, baz DESC")
 
     def test_add_parameters(self):
         assert_that(self.query.get_parameters(), is_(equal_to({})))
@@ -127,24 +164,3 @@ class QueryTest(unittest.TestCase):
 
         assert_that(self.query.get_parameters(), is_(equal_to({'foo': 'bar', 'baz': 'qux'})))
 
-    def test_set_limit(self):
-        self.query.set_limit(blitzortung.db.query.Limit(10))
-        self.assertEqual(str(self.query), "SELECT FROM foo LIMIT 10")
-
-    def test_parse_args_with_id_interval(self):
-        self.query.parse_args([blitzortung.db.query.IdInterval(10, 15)])
-
-        assert_that(str(self.query), is_(equal_to("SELECT FROM foo WHERE id >= %(start_id)s AND id < %(end_id)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'start_id': 10, 'end_id': 15})))
-
-    def test_parse_args_with_time_interval(self):
-        self.query.parse_args([blitzortung.db.query.TimeInterval(
-            datetime.datetime(2013, 10, 9, 17, 20),
-            datetime.datetime(2013, 10, 11, 6, 30))])
-
-        assert_that(str(self.query), is_(equal_to(
-            "SELECT FROM foo WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s"
-        )))
-        assert_that(self.query.get_parameters(), is_(equal_to({
-            'start_time': datetime.datetime(2013, 10, 9, 17, 20),
-            'end_time': datetime.datetime(2013, 10, 11, 6, 30)})))

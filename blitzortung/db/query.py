@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 
+from __future__ import print_function
 import datetime
 import shapely.geometry.base
 import shapely.wkb
@@ -62,50 +63,38 @@ class Query(object):
     """
 
     def __init__(self):
-        self.sql = ''
         self.conditions = []
         self.groups = []
         self.parameters = {}
-        self.table_name = ""
-        self.columns = []
         self.limit = None
         self.order = []
 
-    def set_table_name(self, table_name):
-        self.table_name = table_name
-
-    def set_columns(self, columns):
-        self.columns = columns
-
-    def add_column(self, column):
-        self.columns.append(column)
-
     def add_group_by(self, group_by):
         self.groups.append(group_by)
+        return self
 
     def add_order(self, order):
         self.order.append(order if isinstance(order, Order) else Order(order))
+        return self
 
     def set_limit(self, limit):
         if self.limit:
             raise RuntimeError("overriding Query.limit")
         self.limit = limit
+        return self
 
     def add_condition(self, condition, parameters=None):
         self.conditions.append(condition)
         if parameters:
             self.parameters.update(parameters)
+        return self
 
     def add_parameters(self, parameters):
         self.parameters.update(parameters)
+        return self
 
     def __str__(self):
-        sql = 'SELECT '
-
-        if self.columns:
-            sql += ', '.join(self.columns) + ' '
-
-        sql += 'FROM ' + self.table_name + ' '
+        sql = ""
 
         if self.conditions:
             sql += 'WHERE ' + ' AND '.join(self.conditions) + ' '
@@ -168,16 +157,61 @@ class Query(object):
 
                 else:
                     print('WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg)))
-
-    def get_result(self, cursor, object_creator):
-        return tuple(object_creator(result) for result in cursor)
+        return self
 
 
-class RasterQuery(Query):
+class SelectQuery(Query):
+    def __init__(self):
+        super(SelectQuery, self).__init__()
+        self.table_name = ""
+        self.columns = []
+
+    def set_table_name(self, table_name):
+        self.table_name = table_name
+        return self
+
+    def set_columns(self, *columns):
+        self.columns = columns
+        return self
+
+    def add_column(self, column):
+        self.columns.append(column)
+        return self
+
+    def __str__(self):
+
+        sql = 'SELECT '
+
+        if self.columns:
+            sql += ', '.join(self.columns) + ' '
+
+        sql += 'FROM ' + self.table_name + ' '
+
+        sql += super(SelectQuery, self).__str__()
+
+        return sql.strip()
+
+
+class GridQuery(SelectQuery):
     def __init__(self, raster):
-        super(RasterQuery, self).__init__()
+        super(GridQuery, self).__init__()
 
         self.raster = raster
+
+        self.add_parameters({
+            'srid': raster.get_srid(),
+            'xmin': raster.get_x_min(),
+            'xdiv': raster.get_x_div(),
+            'ymin': raster.get_y_min(),
+            'ydiv': raster.get_y_div(),
+        })
+
+        self.set_columns(
+            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s) AS rx',
+            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s) AS ry',
+            'count(*) AS count',
+            'max("timestamp") as "timestamp"'
+        )
 
         env = self.raster.get_env()
 
@@ -189,27 +223,11 @@ class RasterQuery(Query):
             raise ValueError("invalid Raster geometry in db.Strike.select()")
 
     def __str__(self):
-        sql = 'SELECT '
+        sql = super(GridQuery, self).__str__()
 
-        sql += 'TRUNC((x - ' + str(self.raster.get_x_min()) + ') /' + str(
-            self.raster.get_x_div()) + ') AS rx, '
-        sql += 'TRUNC((y - ' + str(self.raster.get_y_min()) + ') /' + str(
-            self.raster.get_y_div()) + ') AS ry, '
-        sql += 'count(*) AS count, max("timestamp") as "timestamp" FROM ('
-        sql += Query.__str__(self)
-        sql += ') AS ' + self.table_name + ' GROUP BY rx, ry'
+        sql += ' GROUP BY rx, ry'
 
         return sql
-
-    def get_result(self, cursor, _):
-
-        self.raster.clear()
-
-        for result in cursor:
-            self.raster.set(result['rx'], result['ry'],
-                            blitzortung.geom.RasterElement(result['count'], result['timestamp']))
-
-        return self.raster
 
 
 class Order(object):
@@ -250,3 +268,4 @@ class Center(object):
 
     def get_point(self):
         return self.center
+

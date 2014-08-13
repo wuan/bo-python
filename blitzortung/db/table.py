@@ -6,9 +6,13 @@ import shapely.wkb
 import shapely.geometry
 import shapely.geometry.base
 import pandas as pd
+from blitzortung.data import GridData
 
 import blitzortung.geom
-from blitzortung.db.query import Limit, Center, Query, RasterQuery
+from blitzortung.db.query import Limit, Center, Query, GridQuery, SelectQuery
+from . import mapper
+from . import query_builder
+
 import blitzortung.builder
 
 
@@ -205,12 +209,15 @@ class Strike(Base):
 
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, strike_builder=blitzortung.builder.Strike)
-    def __init__(self, db_connection_pool, strike_builder):
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
+            strike_mapper=mapper.Strike)
+    def __init__(self, db_connection_pool, query_builder, strike_mapper):
         super(Strike, self).__init__(db_connection_pool)
 
+        self.query_builder = query_builder
+        self.strike_mapper = strike_mapper
+
         self.set_table_name('strikes')
-        self.strike_builder = strike_builder
 
     def insert(self, strike, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
@@ -248,49 +255,34 @@ class Strike(Base):
         return self.execute(sql, {'region': region}, prepare_result)
 
     def create_object_instance(self, result):
-        self.strike_builder.set_id(result['id'])
-        self.strike_builder.set_timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
-        self.strike_builder.set_x(result['x'])
-        self.strike_builder.set_y(result['y'])
-        self.strike_builder.set_altitude(result['altitude'])
-        self.strike_builder.set_amplitude(result['amplitude'])
-        self.strike_builder.set_station_count(result['stationcount'])
-        self.strike_builder.set_lateral_error(result['error2d'])
-
-        return self.strike_builder.build()
-
-    def select_query(self, args, query=None):
-        """ build up query object for select statement """
-
-        if not query:
-            query = Query()
-
-        query.set_table_name(self.get_full_table_name())
-        query.set_columns(['id', '"timestamp"', 'nanoseconds', 'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
-                           'ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y', 'altitude', 'amplitude', 'error2d',
-                           'stationcount'])
-        query.add_parameters({'srid': self.srid})
-
-        query.parse_args(args)
-        return query
+        return self.strike_mapper.create_object(result, timestamp=self.tz)
 
     def select(self, *args):
         """ build up query """
 
-        query = self.select_query(args)
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), *args)
 
-        return self.select_execute(query)
+        return self.execute(str(query), query.get_parameters(), self.create_results)
 
-    def select_raster(self, raster, *args):
+    def select_grid(self, grid, *args):
         """ build up raster query """
 
-        query = self.select_query(args, RasterQuery(raster))
+        query = self.query_builder.grid_query(self.table_name, grid, *args)
 
-        return self.select_execute(query)
+        def prepare_results(cursor, _):
+            raster_data = GridData(grid)
+
+            for result in cursor:
+                raster_data.set(result['rx'], result['ry'],
+                                blitzortung.geom.GridElement(result['count'], result['timestamp']))
+
+            return raster_data
+
+        return self.execute(str(query), query.get_parameters(), prepare_results)
 
     def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
-        query = Query()
+        query = SelectQuery()
         query.set_table_name(self.get_full_table_name())
         query.add_column("-extract(epoch from clock_timestamp() + interval '%(offset)s minutes'"
                          " - \"timestamp\")::int/60/%(binsize)s as interval")
@@ -323,9 +315,6 @@ class Strike(Base):
 
         return self.execute(str(query), query.get_parameters(), prepare_result)
 
-    def select_execute(self, query):
-        return self.execute(str(query), query.get_parameters(), query.get_result)
-
 
 class Station(Base):
     """
@@ -348,12 +337,12 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_builder=blitzortung.builder.Station)
-    def __init__(self, db_connection_pool, station_builder):
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_mapper=mapper.Station)
+    def __init__(self, db_connection_pool, station_mapper):
         super(Station, self).__init__(db_connection_pool)
 
         self.set_table_name('stations')
-        self.station_builder = station_builder
+        self.station_mapper = station_mapper
 
     def insert(self, station, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -383,16 +372,7 @@ class Station(Base):
         return self.execute(sql, {'region': region}, self.create_results)
 
     def create_object_instance(self, result):
-        self.station_builder.set_number(result['number'])
-        self.station_builder.set_user(result['user'])
-        self.station_builder.set_name(result['name'])
-        self.station_builder.set_country(result['country'])
-        location = shapely.wkb.loads(result['geog'], hex=True)
-        self.station_builder.set_x(location.x)
-        self.station_builder.set_y(location.y)
-        self.station_builder.set_timestamp(self.fix_timezone(result['begin']))
-
-        return self.station_builder.build()
+        return self.station_mapper.create_object(result)
 
 
 class StationOffline(Base):
@@ -417,12 +397,12 @@ class StationOffline(Base):
     """
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool,
-            station_offline_builder=blitzortung.builder.StationOffline)
-    def __init__(self, db_connection_pool, station_offline_builder):
+            station_offline_mapper=mapper.StationOffline)
+    def __init__(self, db_connection_pool, station_offline_mapper):
         super(StationOffline, self).__init__(db_connection_pool)
 
         self.set_table_name('stations_offline')
-        self.station_offline_builder = station_offline_builder
+        self.station_offline_mapper = station_offline_mapper
 
     def insert(self, station_offline, region=1):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
@@ -441,12 +421,7 @@ class StationOffline(Base):
         return self.execute(sql, (region,), self.create_results)
 
     def create_object_instance(self, result):
-        self.station_offline_builder.set_id(result['id'])
-        self.station_offline_builder.set_number(result['number'])
-        self.station_offline_builder.set_begin(result['begin'])
-        self.station_offline_builder.set_end(result['end'])
-
-        return self.station_offline_builder.build()
+        return self.station_offline_mapper.create_object(result)
 
 
 class Location(Base):
