@@ -209,6 +209,8 @@ class Strike(Base):
 
     """
 
+    TABLE_NAME = 'strikes'
+
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
             strike_mapper=mapper.Strike)
     def __init__(self, db_connection_pool, query_builder, strike_mapper):
@@ -217,7 +219,7 @@ class Strike(Base):
         self.query_builder = query_builder
         self.strike_mapper = strike_mapper
 
-        self.set_table_name('strikes')
+        self.set_table_name(self.TABLE_NAME)
 
     def insert(self, strike, region=1):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
@@ -282,26 +284,11 @@ class Strike(Base):
 
     def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
-        query = SelectQuery()
-        query.set_table_name(self.get_full_table_name())
-        query.add_column("-extract(epoch from clock_timestamp() + interval '%(offset)s minutes'"
-                         " - \"timestamp\")::int/60/%(binsize)s as interval")
-        query.add_column("count(*)")
-        query.add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
-                            " - interval '%(minutes)s minutes')")
-        query.add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ")
-
-        if region:
-            query.add_condition("region = %(region)s")
-
-        if envelope and envelope.get_env().is_valid:
-            query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                                {'envelope': shapely.wkb.dumps(envelope.get_env()).encode('hex'),
-                                 'envelope_srid': envelope.get_srid()})
-
-        query.add_group_by("interval")
-        query.add_order("interval")
-        query.add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
+        query = self.query_builder.histogram_query(
+            self.get_full_table_name(),
+            minutes, minute_offset, binsize,
+            region, envelope
+        )
 
         def prepare_result(cursor, _):
             value_count = minutes / binsize

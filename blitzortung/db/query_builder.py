@@ -1,3 +1,5 @@
+import psycopg2
+import shapely.wkb
 from .query import SelectQuery, GridQuery
 
 
@@ -15,3 +17,27 @@ class Strike(object):
         return GridQuery(grid) \
             .set_table_name(table_name) \
             .parse_args(args)
+
+    def histogram_query(self, table_name, minutes, minute_offset, binsize, region=None, envelope=None):
+
+        query = SelectQuery() \
+            .set_table_name(table_name) \
+            .add_column("-extract(epoch from clock_timestamp() + interval '%(offset)s minutes'"
+                        " - \"timestamp\")::int/60/%(binsize)s as interval") \
+            .add_column("count(*)") \
+            .add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
+                           " - interval '%(minutes)s minutes')") \
+            .add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ") \
+            .add_group_by("interval") \
+            .add_order("interval") \
+            .add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
+
+        if region:
+            query.add_condition("region = %(region)s")
+
+        if envelope and envelope.get_env().is_valid:
+            query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
+                                {'envelope': psycopg2.Binary(shapely.wkb.dumps(envelope.get_env())),
+                                 'envelope_srid': envelope.get_srid()})
+
+        return query

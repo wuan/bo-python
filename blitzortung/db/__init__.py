@@ -17,6 +17,8 @@ import blitzortung.config
 
 from . import table
 from . import query
+from . import mapper
+from . import query_builder
 
 
 class DbModule(Module):
