@@ -2,7 +2,7 @@ from unittest import TestCase
 import datetime
 from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to, none
 import time
-import shapely
+import shapely.geometry
 
 import blitzortung.geom
 import blitzortung.types
@@ -125,79 +125,6 @@ class TestGrid(TestCase):
 
     def test_repr(self):
         assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000), y: -3.0000..2.0000 (1.2500))")))
-
-
-class TestRaster(TestCase):
-    def setUp(self):
-        self.reference_time = datetime.datetime.utcnow()
-        self.raster = blitzortung.geom.Raster(-5, 4, -3, 2, 0.5, 1.25)
-
-    def test_empty_raster(self):
-        for x_index in range(0, self.raster.get_x_bin_count()):
-            for y_index in range(0, self.raster.get_y_bin_count()):
-                assert_that(self.raster.get(x_index, y_index), is_(none()))
-
-    def test_empty_raster_to_arcgrid(self):
-        assert_that(self.raster.to_arcgrid(), is_(equal_to("""NCOLS 18
-NROWS 4
-XLLCORNER -5.0000
-YLLCORNER -3.0000
-CELLSIZE 0.5000
-NODATA_VALUE 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0""")))
-
-    def test_empty_raster_to_map(self):
-        assert_that(self.raster.to_map(), is_(equal_to("""--------------------
-|                  |
-|                  |
-|                  |
-|                  |
---------------------
-total count: 0, max per area: 0""")))
-
-    def test_empty_raster_to_reduced_array(self):
-        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(())))
-
-    def add_raster_data(self):
-        self.raster.set(0, 0, blitzortung.geom.GridElement(5, self.reference_time - datetime.timedelta(minutes=2)))
-        self.raster.set(1, 1, blitzortung.geom.GridElement(10, self.reference_time - datetime.timedelta(seconds=10)))
-        self.raster.set(4, 2, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
-
-    def test_raster_to_arcgrid(self):
-        self.add_raster_data()
-        assert_that(self.raster.to_arcgrid(), is_(equal_to("""NCOLS 18
-NROWS 4
-XLLCORNER -5.0000
-YLLCORNER -3.0000
-CELLSIZE 0.5000
-NODATA_VALUE 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 20 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0""")))
-
-    def test_raster_to_map(self):
-        self.add_raster_data()
-        assert_that(self.raster.to_map(), is_(equal_to("""--------------------
-|                  |
-|    8             |
-| o                |
-|-                 |
---------------------
-total count: 35, max per area: 20""")))
-
-    def test_raster_to_reduced_array(self):
-        self.add_raster_data()
-        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(
-            ((4, 1, 20, -3600), (1, 2, 10, -10), (0, 3, 5, -120))
-        )))
-
-    def test_raster_set_outside_valid_index_value_does_not_throw_exception(self):
-        self.raster.set(1000, 0, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
-        assert_that(self.raster.to_reduced_array(self.reference_time), is_(equal_to(())))
 
 
 class TestRasterElement(TestCase):

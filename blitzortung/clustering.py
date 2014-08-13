@@ -1,4 +1,3 @@
-import bitarray
 import numpy as np
 #import scipy.cluster
 import fastcluster
