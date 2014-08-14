@@ -1,6 +1,7 @@
 python-blitzortung (1.4.0) unstable; urgency=low
 
   * speed optimizations
+  * db module refactoring
 
  -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 11 Aug 2014 20:27:23 +0200
 
