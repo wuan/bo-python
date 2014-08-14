@@ -1,13 +1,11 @@
 # -*- coding: utf8 -*-
 
 from __future__ import print_function
+
 import datetime
 import shapely.geometry.base
 import shapely.wkb
 import psycopg2
-
-import blitzortung
-import blitzortung.geom
 
 
 class BaseInterval(object):
@@ -179,7 +177,6 @@ class SelectQuery(Query):
         return self
 
     def __str__(self):
-
         sql = 'SELECT '
 
         if self.columns:
