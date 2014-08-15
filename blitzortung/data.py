@@ -422,10 +422,9 @@ class GridData(object):
         reduced_array = []
 
         for row_index, row in enumerate(self.data[::-1]):
-            for column_index, cell in enumerate(row):
-                if cell:
-                    reduced_array.append((column_index, row_index,
-                                          int(cell.get_count()),
-                                          -(reference_time - cell.get_timestamp()).seconds))
+            reduced_array += tuple((column_index, row_index,
+                                    int(cell.get_count()),
+                                    -(reference_time - cell.get_timestamp()).seconds) for column_index, cell in
+                                   enumerate(row) if cell)
 
         return tuple(reduced_array)

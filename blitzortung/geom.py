@@ -8,6 +8,7 @@
 
 import math
 from abc import ABCMeta, abstractmethod
+import pyproj
 
 import shapely.geometry
 
@@ -124,6 +125,44 @@ class Grid(Envelope):
         return 'Grid(x: %.4f..%.4f (%.4f), y: %.4f..%.4f (%.4f))' % (
             self.get_x_min(), self.get_x_max(), self.get_x_div(),
             self.get_y_min(), self.get_y_max(), self.get_y_div())
+
+
+class GridFactory(object):
+
+    WGS84 = pyproj.Proj(init='epsg:4326')
+
+    def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys):
+        self.min_lon = min_lon
+        self.max_lon = max_lon
+        self.min_lat = min_lat
+        self.max_lat = max_lat
+        self.coord_sys = coord_sys
+
+        self.grid_data = {}
+
+    @staticmethod
+    def fix_max(minimum, maximum, delta):
+        return minimum + math.floor((maximum - minimum) / delta) * delta
+
+    def get_for(self, base_length):
+        if base_length not in self.grid_data:
+            ref_lon = (self.min_lon + self.max_lon) / 2.0
+            ref_lat = (self.min_lat + self.max_lat) / 2.0
+
+            utm_x, utm_y = pyproj.transform(self.WGS84, self.coord_sys, ref_lon, ref_lat)
+            lon_d, lat_d = pyproj.transform(self.coord_sys, self.WGS84, utm_x + base_length, utm_y + base_length)
+
+            delta_lon = lon_d - ref_lon
+            delta_lat = lat_d - ref_lat
+
+            max_lon = self.fix_max(self.min_lon, self.max_lon, delta_lon)
+            max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)
+
+            self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
+                                                                delta_lon, delta_lat,
+                                                                Geometry.DefaultSrid)
+
+        return self.grid_data[base_length]
 
 
 class GridElement(object):
