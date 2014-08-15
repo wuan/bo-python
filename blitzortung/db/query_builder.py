@@ -33,7 +33,7 @@ class Strike(object):
             .add_parameters({'minutes': minutes, 'offset': minute_offset, 'binsize': binsize})
 
         if region:
-            query.add_condition("region = %(region)s")
+            query.add_condition("region = %(region)s", {'region': region})
 
         if envelope and envelope.get_env().is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
