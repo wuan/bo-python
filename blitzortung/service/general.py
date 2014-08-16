@@ -15,9 +15,11 @@ def create_time_interval(minute_length, minute_offset):
 
 
 class TimingState(object):
-    def __init__(self, statsd_client):
+    def __init__(self, name, statsd_client):
         self.statsd_client = statsd_client
+
         self.reference_time = time.time()
+        self.info_text = name + ": "
 
     def get_seconds(self, reference_time=None):
         return time.time() - (reference_time if reference_time else self.reference_time)
@@ -36,3 +38,9 @@ class TimingState(object):
 
     def log_incr(self, key):
         self.statsd_client.incr(key)
+
+    def add_info_text(self, info_text):
+        self.info_text += info_text
+
+    def get_info_text(self):
+        return self.info_text

@@ -9,7 +9,7 @@ from general import TimingState, create_time_interval
 
 class StrikeState(TimingState):
     def __init__(self, statsd_client, end_time):
-        super(StrikeState, self).__init__(statsd_client)
+        super(StrikeState, self).__init__("strikes", statsd_client)
         self.end_time = end_time
 
     def get_end_time(self):
@@ -37,7 +37,7 @@ class StrikeQuery(object):
         return strikes_result, state
 
     def strike_build_results(self, query_result, state):
-        print("strikes_query: %.03fs #%d" % (state.get_seconds(), len(query_result)))
+        state.add_info_text("query #%d %.03fs" % (len(query_result), state.get_seconds()))
         state.log_timing('strikes.query')
 
         reference_time = time.time()
@@ -58,7 +58,7 @@ class StrikeQuery(object):
         if strikes:
             result['next'] = query_result[-1][0] + 1
 
-        print("strikes_build_result: %.03fs" % state.get_seconds(reference_time))
+        state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
         state.log_timing('strikes.build_result', reference_time)
         return result
 
@@ -83,8 +83,9 @@ class StrikeQuery(object):
         }
         final_result.update(strikes_result)
 
-        print("strikes_total: %.03fs" % state.get_seconds())
+        state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes.total')
+        print(state.get_info_text())
 
         return final_result
 

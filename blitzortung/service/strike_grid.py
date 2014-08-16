@@ -10,7 +10,7 @@ from general import create_time_interval, TimingState
 
 class StrikeGridState(TimingState):
     def __init__(self, statsd_client, grid_parameters, end_time):
-        super(StrikeGridState, self).__init__(statsd_client)
+        super(StrikeGridState, self).__init__("strikes_grid", statsd_client)
         self.grid_parameters = grid_parameters
         self.end_time = end_time
 
@@ -33,7 +33,6 @@ class StrikeGridQuery(object):
 
         query = self.strike_query_builder.grid_query(blitzortung.db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval)
-        print(str(query))
         grid_query = connection.runQuery(str(query), query.get_parameters())
         grid_query.addCallback(self.build_strikes_grid_result, state=state)
         grid_query.addErrback(log.err)
@@ -41,7 +40,7 @@ class StrikeGridQuery(object):
 
     @staticmethod
     def build_strikes_grid_result(results, state):
-        print("strikes_grid_query: %.03fs #%d %s" % (state.get_seconds(), len(results), state.get_grid_parameters()))
+        state.add_info_text("query #%d %.03fs %s" % (len(results), state.get_seconds(), state.get_grid_parameters()))
         state.log_timing('strikes_grid.query')
 
         reference_time = time.time()
@@ -55,7 +54,7 @@ class StrikeGridQuery(object):
                 -(end_time - result['timestamp']).seconds
             ) for result in results
         )
-        print("strikes_grid_result: %.03fs" % state.get_seconds(reference_time))
+        state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
         state.log_timing('strikes_grid.build_result', reference_time)
 
         return strikes_grid_result
@@ -85,7 +84,9 @@ class StrikeGridQuery(object):
                     'xc': grid_parameters.get_x_bin_count(),
                     'yc': grid_parameters.get_y_bin_count(), 't': end_time.strftime("%Y%m%dT%H:%M:%S"),
                     'h': histogram_data}
-        print("strikes_grid_total: %.03fs" % state.get_seconds())
+        state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
+        print(state.get_info_text())
+
         return response
 
