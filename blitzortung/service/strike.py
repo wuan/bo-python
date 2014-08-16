@@ -4,7 +4,7 @@ from twisted.internet.defer import gatherResults
 from twisted.python import log
 
 import blitzortung
-from general import TimingState, create_time_interval
+from .general import TimingState, create_time_interval
 
 
 class StrikeState(TimingState):
@@ -37,7 +37,7 @@ class StrikeQuery(object):
         return strikes_result, state
 
     def strike_build_results(self, query_result, state):
-        state.add_info_text("query #%d %.03fs" % (len(query_result), state.get_seconds()))
+        state.add_info_text("query %.03fs #%d" % (state.get_seconds(), len(query_result)))
         state.log_timing('strikes.query')
 
         reference_time = time.time()

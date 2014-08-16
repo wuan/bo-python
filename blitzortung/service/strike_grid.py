@@ -5,7 +5,7 @@ from twisted.python import log
 
 import blitzortung
 
-from general import create_time_interval, TimingState
+from .general import create_time_interval, TimingState
 
 
 class StrikeGridState(TimingState):
@@ -40,7 +40,7 @@ class StrikeGridQuery(object):
 
     @staticmethod
     def build_strikes_grid_result(results, state):
-        state.add_info_text("query #%d %.03fs %s" % (len(results), state.get_seconds(), state.get_grid_parameters()))
+        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.get_grid_parameters()))
         state.log_timing('strikes_grid.query')
 
         reference_time = time.time()
