@@ -1,6 +1,16 @@
 # -*- coding: utf8 -*-
 
-#from __future__ import unicode_literals
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import os
 import logging
 import time
@@ -17,14 +27,13 @@ import pytz
 from requests import Session
 import pandas as pd
 
-import blitzortung
-
+from . import builder, config, util
 
 class HttpDataTransport(object):
     logger = logging.getLogger(__name__)
     TIMEOUT_SECONDS = 60
 
-    @inject(config=blitzortung.config.Config)
+    @inject(config=config.Config)
     def __init__(self, config, session=None):
         self.config = config
         self.session = session if session else Session()
@@ -102,7 +111,7 @@ class BlitzortungHistoryUrlGenerator(object):
         self.duration = datetime.timedelta(minutes=self.url_path_minute_increment)
 
     def get_url_paths(self, start_time, end_time=None):
-        for interval_start_time in blitzortung.util.time_intervals(start_time, self.duration, end_time):
+        for interval_start_time in util.time_intervals(start_time, self.duration, end_time):
             yield interval_start_time.strftime(self.url_path_format)
 
 
@@ -111,7 +120,7 @@ class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            url_path_generator=BlitzortungHistoryUrlGenerator, strike_builder=blitzortung.builder.Strike)
+            url_path_generator=BlitzortungHistoryUrlGenerator, strike_builder=builder.Strike)
     def __init__(self, data_provider, data_url, url_path_generator, strike_builder):
         self.data_provider = data_provider
         self.data_url = data_url
@@ -131,7 +140,7 @@ class StrikesBlitzortungDataProvider(object):
             for strike_line in self.data_provider.read_data(target_url):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
-                except blitzortung.builder.BuilderError as e:
+                except builder.BuilderError as e:
                     self.logger.warn("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     continue
                 except Exception as e:
@@ -159,7 +168,7 @@ class StationsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            station_builder=blitzortung.builder.Station)
+            station_builder=builder.Station)
     def __init__(self, data_provider, data_url, station_builder):
         self.data_provider = data_provider
         self.data_url = data_url
@@ -171,7 +180,7 @@ class StationsBlitzortungDataProvider(object):
         for station_line in self.data_provider.read_data(target_url, post_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_line(station_line).build())
-            except blitzortung.builder.BuilderError:
+            except builder.BuilderError:
                 self.logger.debug("error parsing station data '%s'" % station_line)
         return current_stations
 
@@ -193,7 +202,7 @@ class RawSignalsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            url_path_generator=BlitzortungHistoryUrlGenerator, waveform_builder=blitzortung.builder.RawWaveformEvent)
+            url_path_generator=BlitzortungHistoryUrlGenerator, waveform_builder=builder.RawWaveformEvent)
     def __init__(self, data_provider, data_url, url_path_generator, waveform_builder):
         self.data_provider = data_provider
         self.data_url = data_url
