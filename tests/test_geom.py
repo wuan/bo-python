@@ -1,7 +1,20 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2011-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 from unittest import TestCase
 import datetime
-from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains, equal_to, none
-import time
+
+from hamcrest import assert_that, is_, equal_to
 import shapely.geometry
 
 import blitzortung.geom

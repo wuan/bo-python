@@ -1,11 +1,27 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import unittest
 import math
 import datetime
-import pandas as pd
 
-from mock import Mock, MagicMock, patch, call
+import pandas as pd
+from mock import MagicMock, call
+
+import blitzortung.builder
 
 import blitzortung.calc
+import blitzortung.types
 
 
 class TestSignalVelocity(unittest.TestCase):
@@ -213,8 +229,8 @@ class TestLeastSquareFit(unittest.TestCase):
         self.assertAlmostEqual(-43.601, self.fit.get_residual_time_at(self.events[0]))
 
     def test_leastsquare_fit(self):
-        #for event in self.events:
-        #    print event, "%.1f %.3f" % (self.source_event.distance_to(event)/1000.0, self.source_event.ns_difference_to(event)/1000.0)
+        # for event in self.events:
+        # print event, "%.1f %.3f" % (self.source_event.distance_to(event)/1000.0, self.source_event.ns_difference_to(event)/1000.0)
 
         #for parameter_value in self.fit.parameters.items():
         #    print parameter_value
@@ -229,4 +245,3 @@ class TestLeastSquareFit(unittest.TestCase):
         strike_location = self.fit.get_location()
         self.assertAlmostEqual(11.3, strike_location.get_x(), 4)
         self.assertAlmostEqual(49.5, strike_location.get_y(), 4)
-        
