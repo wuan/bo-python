@@ -8,6 +8,7 @@ try:
 except ImportError:
     raise nose.SkipTest("module fastcluster not available")
 
+import blitzortung.builder
 import blitzortung.db
 import blitzortung.db.query
 import blitzortung.clustering
@@ -21,14 +22,18 @@ class TestClustering(TestCase):
         if not fastcluster:
             raise nose.SkipTest("implement as an integration test later")
 
+        print("retrieve strikes")
         strikes_db = blitzortung.db.strike()
         now = datetime.datetime.utcnow()
-        start_time = now - datetime.timedelta(hours=2)
+        start_time = now - datetime.timedelta(minutes=10)
         time_interval = blitzortung.db.query.TimeInterval(start_time)
         strikes = strikes_db.select(time_interval)
 
-        self.clustering = blitzortung.clustering.Clustering(strikes)
-        print(str(self.clustering))
+        self.clustering = blitzortung.clustering.Clustering(blitzortung.builder.StrikeCluster())
+
+        clusters = self.clustering.build_clusters(strikes, time_interval)
+
+        print("{} clusters found". format(len(clusters)))
 
     def test_basic_clustering(self):
         if not fastcluster:
