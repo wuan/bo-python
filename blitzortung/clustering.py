@@ -14,7 +14,6 @@ You should have received a copy of the GNU Affero General Public License along w
 from __future__ import print_function
 
 import numpy as np
-# import scipy.cluster
 from scipy.spatial import ConvexHull
 
 from shapely.geometry.polygon import LinearRing
