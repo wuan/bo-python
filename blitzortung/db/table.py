@@ -1,20 +1,28 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import math
 
 from injector import inject
 import pytz
-import shapely.wkb
-import shapely.geometry
-import shapely.geometry.base
 import pandas as pd
 from blitzortung.data import GridData
 
-import blitzortung.geom
-from blitzortung.db.query import Limit, Center, Query, GridQuery, SelectQuery
+from .. import geom
+
+from . import query
 from . import mapper
 from . import query_builder
-
-import blitzortung.builder
-
 
 try:
     import psycopg2
@@ -78,7 +86,7 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
-        self.srid = blitzortung.geom.Geometry.DefaultSrid
+        self.srid = geom.Geometry.DefaultSrid
         self.tz = None
         self.set_timezone(Base.DefaultTimezone)
 
@@ -276,7 +284,7 @@ class Strike(Base):
 
             for result in cursor:
                 raster_data.set(result['rx'], result['ry'],
-                                blitzortung.geom.GridElement(result['count'], result['timestamp']))
+                                geom.GridElement(result['count'], result['timestamp']))
 
             return raster_data
 
@@ -495,9 +503,9 @@ class Location(Base):
 
         for arg in args:
             if arg:
-                if isinstance(arg, Center):
+                if isinstance(arg, query.Center):
                     self.center = arg
-                elif isinstance(arg, Limit):
+                elif isinstance(arg, query.Limit):
                     self.limit = arg
 
         if self.is_connected():

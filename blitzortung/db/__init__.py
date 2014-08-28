@@ -1,6 +1,15 @@
 # -*- coding: utf8 -*-
 
-""" classes for database access """
+"""
+Copyright (C) 2012-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
 
 from injector import Module, provides, singleton, inject
 import atexit
@@ -13,12 +22,9 @@ try:
 except ImportError:
     psycopg2 = None
 
-import blitzortung.config
+from .. import config
 
-from . import table
-from . import query
-from . import mapper
-from . import query_builder
+from . import query, query_builder, mapper, table
 
 
 class DbModule(Module):
@@ -28,7 +34,7 @@ class DbModule(Module):
 
     @singleton
     @provides(psycopg2.pool.ThreadedConnectionPool)
-    @inject(config=blitzortung.config.Config)
+    @inject(config=config.Config)
     def provide_psycopg2_connection_pool(self, config):
         connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
         atexit.register(self.cleanup, connection_pool)
@@ -38,28 +44,28 @@ class DbModule(Module):
 def strike():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.Strike)
+    return INJECTOR.get(table.Strike)
 
 
 def station():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.Station)
+    return INJECTOR.get(table.Station)
 
 
 def station_offline():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.StationOffline)
+    return INJECTOR.get(table.StationOffline)
 
 
 def location():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.Location)
+    return INJECTOR.get(table.Location)
 
 
 def servicelog():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(blitzortung.db.table.ServiceLog)
+    return INJECTOR.get(table.ServiceLog)

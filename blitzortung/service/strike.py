@@ -1,9 +1,22 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import time
 from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-import blitzortung
+from .. import db, geom
 from .general import TimingState, create_time_interval
 
 
@@ -17,7 +30,7 @@ class StrikeState(TimingState):
 
 
 class StrikeQuery(object):
-    @inject(strike_query_builder=blitzortung.db.query_builder.Strike, strike_mapper=blitzortung.db.mapper.Strike)
+    @inject(strike_query_builder=db.query_builder.Strike, strike_mapper=db.mapper.Strike)
     def __init__(self, strike_query_builder, strike_mapper):
         self.strike_query_builder = strike_query_builder
         self.strike_mapper = strike_mapper
@@ -26,10 +39,10 @@ class StrikeQuery(object):
         time_interval = create_time_interval(minute_length, minute_offset)
         state = StrikeState(statsd_client, time_interval.get_end())
 
-        id_interval = blitzortung.db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
-        order = blitzortung.db.query.Order('id')
-        query = self.strike_query_builder.select_query(blitzortung.db.table.Strike.TABLE_NAME,
-                                                       blitzortung.geom.Geometry.DefaultSrid, time_interval,
+        id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
+        order = db.query.Order('id')
+        query = self.strike_query_builder.select_query(db.table.Strike.TABLE_NAME,
+                                                       geom.Geometry.DefaultSrid, time_interval,
                                                        id_interval, order)
 
         strikes_result = connection.runQuery(str(query), query.get_parameters())
