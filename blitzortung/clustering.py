@@ -14,6 +14,7 @@ You should have received a copy of the GNU Affero General Public License along w
 from __future__ import print_function
 
 import numpy as np
+import pyproj
 from scipy.spatial import ConvexHull
 
 from shapely.geometry.polygon import LinearRing
@@ -23,11 +24,11 @@ import six
 
 
 class Clustering(object):
-    distance_limit = 0.1
+    distance_limit = 5000
+    geod = pyproj.Geod(ellps='WGS84', units='m')
 
     def __init__(self, cluster_builder):
         self.cluster_builder = cluster_builder
-
 
     def build_clusters(self, events, time_interval):
         event_count = len(events)
@@ -38,7 +39,7 @@ class Clustering(object):
             clustered_points, points = self.initialize_clusters(event_count, events)
 
             print("calculate clusters")
-            dist = fastcluster.pdist(points)
+            dist = fastcluster.pdist(points, lambda u, v: self.geod.inv(u[0], u[1], v[0], v[1])[2])
             results = fastcluster.linkage(dist)
 
             print("apply results")
@@ -94,7 +95,7 @@ class Clustering(object):
             if distance > self.distance_limit:
                 break
 
-            print("{} + {} -> {} ({:.4f}, #{})".format(index_1, index_2, index, distance, cluster_size))
+            #print("{} + {} -> {} ({:.4f}, #{})".format(index_1, index_2, index, distance, cluster_size))
             clusters[index] = clusters[index_1] + clusters[index_2]
             del clusters[index_1]
             del clusters[index_2]
