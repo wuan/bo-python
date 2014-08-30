@@ -20,11 +20,12 @@ import pytz
 import numpy as np
 import pandas as pd
 
-import blitzortung.data
-from blitzortung.util import next_element
+from . import Error
+from . import data
+from .util import next_element
 
 
-class BuilderError(blitzortung.Error):
+class BuilderError(Error):
     pass
 
 
@@ -82,7 +83,7 @@ class Event(Timestamp):
         return self
 
     def build(self):
-        return blitzortung.data.Event(self.timestamp, self.x_coord, self.y_coord)
+        return data.Event(self.timestamp, self.x_coord, self.y_coord)
 
 
 class Strike(Event):
@@ -146,8 +147,44 @@ class Strike(Event):
         return self
 
     def build(self):
-        return blitzortung.data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
-                                       self.amplitude, self.lateral_error, self.station_count, self.stations)
+        return data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
+                           self.amplitude, self.lateral_error, self.station_count, self.stations)
+
+
+class StrikeCluster(object):
+    """
+    class for strike cluster objects
+    """
+
+    def __init__(self):
+        self.cluster_id = -1
+        self.start_time = None
+        self.end_time = None
+        self.shape = None
+        self.strike_count = 0
+
+    def with_id(self, cluster_id):
+        self.cluster_id = cluster_id
+        return self
+
+    def with_start_time(self, start_time):
+        self.start_time = start_time
+        return self
+
+    def with_end_time(self, end_time):
+        self.end_time = end_time
+        return self
+
+    def with_shape(self, shape):
+        self.shape = shape
+        return self
+
+    def with_strike_count(self, strike_count):
+        self.strike_count = strike_count
+        return self
+
+    def build(self):
+        return data.StrikeCluster(self.cluster_id, self.start_time, self.end_time, self.shape, self.strike_count)
 
 
 class Station(Event):
@@ -208,9 +245,9 @@ class Station(Event):
         return self
 
     def build(self):
-        return blitzortung.data.Station(self.number, self.user, self.name, self.country,
-                                        self.x_coord, self.y_coord, self.timestamp, self.status,
-                                        self.board)
+        return data.Station(self.number, self.user, self.name, self.country,
+                            self.x_coord, self.y_coord, self.timestamp, self.status,
+                            self.board)
 
 
 class StationOffline(Base):
@@ -238,7 +275,7 @@ class StationOffline(Base):
         return self
 
     def build(self):
-        return blitzortung.data.StationOffline(self.id_value, self.number, self.begin, self.end)
+        return data.StationOffline(self.id_value, self.number, self.begin, self.end)
 
 
 class ChannelWaveform(object):
@@ -284,7 +321,7 @@ class ChannelWaveform(object):
             self.waveform[index] = value + value_offset
 
     def build(self):
-        return blitzortung.data.ChannelWaveform(
+        return data.ChannelWaveform(
             self.channel_number,
             self.amplifier_version,
             self.antenna,
@@ -308,7 +345,7 @@ class RawWaveformEvent(Event):
         self.channel_builder = channel_builder
 
     def build(self):
-        return blitzortung.data.RawWaveformEvent(
+        return data.RawWaveformEvent(
             self.timestamp,
             self.x_coord,
             self.y_coord,

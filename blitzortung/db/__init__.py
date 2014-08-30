@@ -47,6 +47,12 @@ def strike():
     return INJECTOR.get(table.Strike)
 
 
+def strike_cluster():
+    from blitzortung import INJECTOR
+
+    return INJECTOR.get(table.StrikeCluster)
+
+
 def station():
     from blitzortung import INJECTOR
 
