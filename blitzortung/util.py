@@ -16,12 +16,14 @@ import sys
 import datetime
 import time
 import pytz
+from six.moves import range
 
 
 class Timer():
     """
     simple timer for repeated time measurements
     """
+
     def __init__(self):
         self.start_time = time.time()
         self.lap_time = self.start_time

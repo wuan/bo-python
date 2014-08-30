@@ -17,6 +17,7 @@ from hamcrest import assert_that, is_, close_to
 
 import nose
 import numpy as np
+import scipy.spatial.distance
 
 try:
     import fastcluster
@@ -27,6 +28,7 @@ import blitzortung.builder
 import blitzortung.db
 import blitzortung.db.query
 import blitzortung.clustering
+import blitzortung.util
 
 
 class TestClustering(TestCase):
@@ -64,6 +66,8 @@ class TestClustering(TestCase):
         data = np.array(data)
 
         dist = fastcluster.pdist(data)
+        other_dist = blitzortung.clustering.pdist(data)
+        dist_square = scipy.spatial.distance.squareform(dist)
         result = fastcluster.linkage(dist).tolist()
 
         assert_that(int(result[0][0]), is_(0))

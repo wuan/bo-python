@@ -12,6 +12,7 @@ You should have received a copy of the GNU Affero General Public License along w
 """
 
 from __future__ import print_function
+import math
 
 import numpy as np
 import pyproj
@@ -22,9 +23,11 @@ from shapely.geometry.polygon import LinearRing
 import fastcluster
 import six
 
+from .pdist import pdist
+
 
 class Clustering(object):
-    distance_limit = 5000
+    distance_limit = 5
     geod = pyproj.Geod(ellps='WGS84', units='m')
 
     def __init__(self, cluster_builder):
@@ -35,17 +38,12 @@ class Clustering(object):
 
         clusters = []
         if events:
-            print("initialize data")
             clustered_points, points = self.initialize_clusters(event_count, events)
 
-            print("calculate clusters")
-            dist = fastcluster.pdist(points, lambda u, v: self.geod.inv(u[0], u[1], v[0], v[1])[2])
+            dist = pdist(points)
             results = fastcluster.linkage(dist)
 
-            print("apply results")
             self.apply_results(results, clustered_points)
-
-            print("reduced {} events to {} clusters".format(event_count, len(clustered_points)))
 
             self.cluster_builder \
                 .with_start_time(time_interval.get_start()) \
@@ -72,6 +70,9 @@ class Clustering(object):
                         .with_shape(shape)
                         .build())
 
+            print("build_clusters: {} events -> {} clusters -> {} filtered".format(event_count, len(clustered_points),
+                                                                                   len(clusters)))
+
         return clusters
 
     def initialize_clusters(self, event_count, events):
@@ -95,7 +96,7 @@ class Clustering(object):
             if distance > self.distance_limit:
                 break
 
-            #print("{} + {} -> {} ({:.4f}, #{})".format(index_1, index_2, index, distance, cluster_size))
+            # print("{} + {} -> {} ({:.4f}, #{})".format(index_1, index_2, index, distance, cluster_size))
             clusters[index] = clusters[index_1] + clusters[index_2]
             del clusters[index_1]
             del clusters[index_2]
@@ -105,5 +106,6 @@ class Clustering(object):
             index += 1
 
     def get_clustered_strikes(self, event_count, clusters):
-        return tuple(value for key, value in six.iteritems(clusters) if key > event_count)
+        return tuple(value for index, value in six.iteritems(clusters) if index > event_count)
+
 

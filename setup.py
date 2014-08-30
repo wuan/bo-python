@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
+from Cython.Build import cythonize
+import numpy as np
 
 import blitzortung
 
 setup(
     name='blitzortung',
     packages=find_packages(),
+    ext_modules=cythonize("blitzortung/clustering/pdist.pyx"),
+    include_dirs=[np.get_include()],
     install_requires=['injector', 'pytz', 'dateutils', 'shapely',  'pyproj', 'numpy', 'pandas', 'statsd'],
     tests_require=['nose', 'mock', 'coverage'],
     version=blitzortung.__version__,
@@ -15,7 +19,6 @@ setup(
     author='Andreas Wuerl',
     author_email='blitzortung@tryb.de',
     url='http://www.blitzortung.org/',
-#    packages=['blitzortung'],
     license='GPL-3 License',
     long_description="""a library providing python classes for blitzortung operation""",
     platforms='OS Independent',
