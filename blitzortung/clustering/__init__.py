@@ -1,2 +1,2 @@
-from .base import Clustering, pdist_py
+from .base import Clustering
 from blitzortung.clustering.pdist import pdist
