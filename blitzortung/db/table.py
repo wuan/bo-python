@@ -331,8 +331,8 @@ class StrikeCluster(Base):
 
     empty the table with the following commands:
 
-    DELETE FROM strikes;
-    ALTER SEQUENCE strikes_id_seq RESTART 1;
+    DELETE FROM strike_clusters;
+    ALTER SEQUENCE strike_clusters_id_seq RESTART 1;
 
     """
 
@@ -374,7 +374,7 @@ class StrikeCluster(Base):
             else:
                 return None
 
-        return self.execute(sql, prepare_result)
+        return self.execute(sql, build_result=prepare_result)
 
     def create_object_instance(self, result):
         return self.strike_mapper.create_object(result, timestamp=self.tz)

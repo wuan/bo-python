@@ -70,8 +70,12 @@ class Clustering(object):
                         .with_shape(shape)
                         .build())
 
-            print("build_clusters: {} events -> {} clusters -> {} filtered".format(event_count, len(clustered_points),
-                                                                                   len(clusters)))
+            print("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
+                  .format(time_interval.get_start(),
+                          time_interval.get_end() - time_interval.get_start(),
+                          event_count,
+                          len(clustered_points),
+                          len(clusters)))
 
         return clusters
 
