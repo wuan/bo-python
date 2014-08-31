@@ -19,7 +19,7 @@ install:
   # install deps
   - sudo conda init
   - sudo conda update conda --yes
-  - deps='pip numpy pandas scipy twisted requests nose mock coverage numpydoc sphinx'
+  - deps='pip numpy pandas scipy twisted requests nose mock coverage pyhamcrest numpydoc sphinx psycopg2 pyproj shapely lockfile'
   - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
 
@@ -29,6 +29,7 @@ install:
   #-# pip install --upgrade scipy
   - pip install -r requirements.txt
   - pip install --upgrade fastcluster
+  - python setup.py build_ext --inplace
   #- pip install twisted
   #- pip list
 
