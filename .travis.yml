@@ -19,19 +19,15 @@ install:
   # install deps
   - sudo conda init
   - sudo conda update conda --yes
-  - deps='pip numpy pandas scipy twisted requests nose numpydoc sphinx'
+  - deps='pip numpy pandas scipy requests nose numpydoc sphinx'
   - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
 
-  #- pip install --upgrade setuptools
-  #- pip list
-  #- pip install --upgrade numpy
-  #-# pip install --upgrade scipy
   - pip install -r requirements.txt
   - pip install --upgrade fastcluster
+  - pip install twisted
   - python setup.py build_ext --inplace
-  #- pip install twisted
-  #- pip list
+  - pip list
 
 script:
   - nosetests
