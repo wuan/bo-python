@@ -54,7 +54,10 @@ class TestClustering(TestCase):
         cluster = clusters[0]
         assert_that(cluster.get_start_time(), is_(time_interval.get_start()))
         assert_that(cluster.get_end_time(), is_(time_interval.get_end()))
-        assert_that(str(cluster.get_shape()), is_("LINEARRING (11.05 51.12, 11 51, 11.05 51.05, 11.05 51.12)"))
+        shape = cluster.get_shape()
+        xy_arrays = shape.coords.xy
+        assert_that(xy_arrays[0].tolist(), is_([11.05, 11.0, 11.05, 11.05]))
+        assert_that(xy_arrays[1].tolist(), is_([51.12, 51.0, 51.05, 51.12]))
         assert_that(cluster.get_strike_count(), is_(3))
 
     def test_basic_clustering(self):
