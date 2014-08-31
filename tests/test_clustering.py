@@ -35,8 +35,7 @@ class TestClustering(TestCase):
         pass
 
     def test_clustering(self):
-        if not fastcluster:
-            raise nose.SkipTest("implement as an integration test later")
+        raise nose.SkipTest("create unittest later")
 
         print("retrieve strikes")
         strikes_db = blitzortung.db.strike()
