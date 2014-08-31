@@ -8,13 +8,14 @@ python:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install libblas-dev liblapack-dev gfortran
-  - pip uninstall -y numpy ||true
   - pip list
 
 install:
   - pip install --upgrade pip
   - pip install --upgrade setuptools
   - pip list
+  - pip install --upgrade numpy
+  - pip install --upgrade scipy
   - pip install -r requirements.txt
   - pip install twisted
   - pip list
