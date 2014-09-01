@@ -61,8 +61,6 @@ class TestClustering(TestCase):
         assert_that(cluster.get_strike_count(), is_(3))
 
     def test_basic_clustering(self):
-        if not fastcluster:
-            raise nose.SkipTest("implement as an integration test later")
         data = [
             [1.0, 2.0],
             [2.0, 1.0],

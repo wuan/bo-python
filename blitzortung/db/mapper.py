@@ -36,7 +36,7 @@ class Strike(ObjectMapper):
         self.strike_builder.set_id(result['id'])
         timestamp_value = result['timestamp']
         self.strike_builder.set_timestamp(
-            timestamp_value.astimezone(timezone) if timestamp_value else None, result['nanoseconds'])
+            timezone.normalize(timestamp_value.astimezone(timezone)) if timestamp_value else None, result['nanoseconds'])
         self.strike_builder.set_x(result['x'])
         self.strike_builder.set_y(result['y'])
         self.strike_builder.set_altitude(result['altitude'])
