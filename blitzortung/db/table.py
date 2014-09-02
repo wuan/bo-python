@@ -322,7 +322,7 @@ class StrikeCluster(Base):
 
     CREATE TABLE strike_clusters (id bigserial, start_time timestamptz, end_time timestamptz, geog GEOGRAPHY(LineString),
         PRIMARY KEY(id));
-    ALTER TABLE strikes ADD COLUMN strike_count INT;
+    ALTER TABLE strike_clusters ADD COLUMN strike_count INT;
 
     CREATE INDEX strike_clusters_end_time ON strike_clusters USING btree(end_time);
     CREATE INDEX strike_clusters_id_end_time ON strike_clusters USING btree(id, end_time);
