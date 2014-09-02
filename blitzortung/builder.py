@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 import blitzortung.data
-from blitzortung.util import next_element
+from blitzortung.util import next_element, force_range
 
 
 class BuilderError(blitzortung.Error):
@@ -109,7 +109,7 @@ class Strike(Event):
         return self
 
     def set_lateral_error(self, lateral_error):
-        self.lateral_error = lateral_error if lateral_error > 0 else 0
+        self.lateral_error = force_range(0, lateral_error, 32767)
         return self
 
     def set_station_count(self, station_count):

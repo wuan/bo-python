@@ -75,4 +75,7 @@ def time_intervals(start_time, duration, end_time=None):
         current_time += duration
 
 
+def force_range(lower_limit, value, upper_limit):
+    return lower_limit if value < lower_limit else upper_limit if value > upper_limit else value
+
 next_element = (lambda iterator: iterator.next()) if sys.version < '3' else (lambda iterator: next(iterator))
