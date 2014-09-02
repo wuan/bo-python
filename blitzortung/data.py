@@ -1,5 +1,16 @@
 # -*- coding: utf8 -*-
 
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 from __future__ import unicode_literals
 from . import types
 import math
@@ -256,6 +267,34 @@ class Strike(Event):
             self.lateral_error,
             self.station_count if self.station_count else 0
         )
+
+
+class StrikeCluster(object):
+    """
+    class for strike cluster objects
+    """
+
+    def __init__(self, cluster_id, start_time, end_time, shape, strike_count):
+        self.cluster_id = cluster_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.shape = shape
+        self.strike_count = strike_count
+
+    def get_id(self):
+        return self.cluster_id
+
+    def get_start_time(self):
+        return self.start_time
+
+    def get_end_time(self):
+        return self.end_time
+
+    def get_shape(self):
+        return self.shape
+
+    def get_strike_count(self):
+        return self.strike_count
 
 
 class ChannelWaveform(object):

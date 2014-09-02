@@ -1,9 +1,22 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2012-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 from injector import inject
 import time
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-import blitzortung
+from .. import db
 
 from .general import create_time_interval, TimingState
 
@@ -22,7 +35,7 @@ class StrikeGridState(TimingState):
 
 
 class StrikeGridQuery(object):
-    @inject(strike_query_builder=blitzortung.db.query_builder.Strike)
+    @inject(strike_query_builder=db.query_builder.Strike)
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
 
@@ -31,7 +44,7 @@ class StrikeGridQuery(object):
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval.get_end())
 
-        query = self.strike_query_builder.grid_query(blitzortung.db.table.Strike.TABLE_NAME, grid_parameters,
+        query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval)
         grid_query = connection.runQuery(str(query), query.get_parameters())
         grid_query.addCallback(self.build_strikes_grid_result, state=state)

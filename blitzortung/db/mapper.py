@@ -1,3 +1,16 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 from abc import abstractmethod
 from injector import inject
 import pytz
@@ -32,6 +45,25 @@ class Strike(ObjectMapper):
         self.strike_builder.set_lateral_error(result['error2d'])
 
         return self.strike_builder.build()
+
+
+class StrikeCluster(ObjectMapper):
+    @inject(strike_cluster_builder=blitzortung.builder.StrikeCluster)
+    def __init__(self, strike_cluster_builder):
+        self.strike_cluster_builder = strike_cluster_builder
+
+    def create_object(self, result, **kwargs):
+        timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
+
+        self.strike_cluster_builder.set_id(result['id'])
+        start_time = result['start_time']
+        self.strike_cluster_builder.set_start_time(start_time.astimezone(timezone) if start_time else None)
+        end_time = result['end_time']
+        self.strike_cluster_builder.set_end_time(end_time.astimezone(timezone) if end_time else None)
+        self.strike_cluster_builder.set_shape(shapely.wkb.loads(result['geog'], hex=True))
+        self.strike_cluster_builder.set_strike_count(result['strike_count'])
+
+        return self.strike_cluster_builder.build()
 
 
 class Station(ObjectMapper):

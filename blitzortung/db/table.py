@@ -1,27 +1,37 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2010-2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import math
 
 from injector import inject
 import pytz
-import shapely.wkb
-import shapely.geometry
-import shapely.geometry.base
 import pandas as pd
+import shapely.wkb
+
 from blitzortung.data import GridData
 
-import blitzortung.geom
-from blitzortung.db.query import Limit, Center, Query, GridQuery, SelectQuery
+from .. import geom
+
+from . import query
 from . import mapper
 from . import query_builder
-
-import blitzortung.builder
-
 
 try:
     import psycopg2
     import psycopg2.pool
     import psycopg2.extras
     import psycopg2.extensions
-except ImportError:
+except ImportError as e:
     psycopg2 = None
 
 from abc import ABCMeta, abstractmethod
@@ -78,7 +88,7 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
-        self.srid = blitzortung.geom.Geometry.DefaultSrid
+        self.srid = geom.Geometry.DefaultSrid
         self.tz = None
         self.set_timezone(Base.DefaultTimezone)
 
@@ -99,7 +109,8 @@ class Base(object):
 
     def __del__(self):
         try:
-            self.db_connection_pool.putconn(self.conn)
+            if not self.conn.closed:
+                self.db_connection_pool.putconn(self.conn)
         except (psycopg2.pool.PoolError, AttributeError):
             pass
 
@@ -276,7 +287,7 @@ class Strike(Base):
 
             for result in cursor:
                 raster_data.set(result['rx'], result['ry'],
-                                blitzortung.geom.GridElement(result['count'], result['timestamp']))
+                                geom.GridElement(result['count'], result['timestamp']))
 
             return raster_data
 
@@ -302,6 +313,114 @@ class Strike(Base):
 
         return self.execute(str(query), query.get_parameters(), prepare_result)
 
+
+class StrikeCluster(Base):
+    """
+    strike db access class
+
+    database table creation (as db user blitzortung, database blitzortung):
+
+    CREATE TABLE strike_clusters (id bigserial, start_time timestamptz, end_time timestamptz, geog GEOGRAPHY(LineString),
+        PRIMARY KEY(id));
+    ALTER TABLE strikes ADD COLUMN strike_count INT;
+
+    CREATE INDEX strike_clusters_end_time ON strike_clusters USING btree(end_time);
+    CREATE INDEX strike_clusters_id_end_time ON strike_clusters USING btree(id, end_time);
+    CREATE INDEX strike_clusters_geog ON strike_clusters USING gist(geog);
+    CREATE INDEX strike_clusters_end_time_geog ON strike_clusters USING gist(end_time, geog);
+
+    empty the table with the following commands:
+
+    DELETE FROM strike_clusters;
+    ALTER SEQUENCE strike_clusters_id_seq RESTART 1;
+
+    """
+
+    TABLE_NAME = 'strike_clusters'
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
+            strike_cluster_mapper=mapper.StrikeCluster)
+    def __init__(self, db_connection_pool, query_builder, strike_cluster_mapper):
+        super(StrikeCluster, self).__init__(db_connection_pool)
+
+        self.query_builder = query_builder
+        self.strike_cluster_mapper = strike_cluster_mapper
+
+        self.set_table_name(self.TABLE_NAME)
+
+    def insert(self, strike_cluster):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + \
+              ' (start_time, end_time, geog, strike_count) ' + \
+              'VALUES (%(start_time)s, %(end_time)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
+
+        parameters = {
+            'start_time': strike_cluster.get_start_time(),
+            'end_time': strike_cluster.get_end_time(),
+            'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.get_shape())),
+            'srid': self.get_srid(),
+            'strike_count': strike_cluster.get_strike_count()
+        }
+
+        self.execute(sql, parameters)
+
+    def get_latest_time(self):
+        sql = 'SELECT end_time FROM ' + self.get_full_table_name() + \
+              ' ORDER BY end_time DESC LIMIT 1'
+
+        def prepare_result(cursor, _):
+            if cursor.rowcount == 1:
+                result = cursor.fetchone()
+                return self.fix_timezone(result['end_time'])
+            else:
+                return None
+
+        return self.execute(sql, build_result=prepare_result)
+
+    def create_object_instance(self, result):
+        return self.strike_mapper.create_object(result, timestamp=self.tz)
+
+    def select(self, *args):
+        """ build up query """
+
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), *args)
+
+        return self.execute(str(query), query.get_parameters(), self.create_results)
+
+    def select_grid(self, grid, *args):
+        """ build up raster query """
+
+        query = self.query_builder.grid_query(self.table_name, grid, *args)
+
+        def prepare_results(cursor, _):
+            raster_data = GridData(grid)
+
+            for result in cursor:
+                raster_data.set(result['rx'], result['ry'],
+                                geom.GridElement(result['count'], result['timestamp']))
+
+            return raster_data
+
+        return self.execute(str(query), query.get_parameters(), prepare_results)
+
+    def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
+
+        query = self.query_builder.histogram_query(
+            self.get_full_table_name(),
+            minutes, minute_offset, binsize,
+            region, envelope
+        )
+
+        def prepare_result(cursor, _):
+            value_count = minutes / binsize
+
+            result = [0] * value_count
+
+            for bin_data in cursor:
+                result[bin_data[0] + value_count - 1] = bin_data[1]
+
+            return result
+
+        return self.execute(str(query), query.get_parameters(), prepare_result)
 
 class Station(Base):
     """
@@ -495,9 +614,9 @@ class Location(Base):
 
         for arg in args:
             if arg:
-                if isinstance(arg, Center):
+                if isinstance(arg, query.Center):
                     self.center = arg
-                elif isinstance(arg, Limit):
+                elif isinstance(arg, query.Limit):
                     self.limit = arg
 
         if self.is_connected():
