@@ -14,7 +14,8 @@ You should have received a copy of the GNU Affero General Public License along w
 from unittest import TestCase
 import datetime
 
-from hamcrest import assert_that, is_, equal_to
+from hamcrest import assert_that, is_, equal_to, close_to
+import pyproj
 import shapely.geometry
 
 import blitzortung.geom
@@ -138,6 +139,47 @@ class TestGrid(TestCase):
 
     def test_repr(self):
         assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000), y: -3.0000..2.0000 (1.2500))")))
+
+
+class TestGridFactory(TestCase):
+    def setUp(self):
+        self.base_proj = pyproj.Proj(init='epsg:4326')
+        self.proj = pyproj.Proj(init='epsg:32633')
+        self.grid_factory = blitzortung.geom.GridFactory(10, 11, 52, 53, self.proj)
+        self.base_length = 5000
+
+    def test_get_for_srid(self):
+        grid = self.grid_factory.get_for(self.base_length)
+
+        assert_that(grid.get_srid(), is_(4326))
+
+    def test_grid_boundaries(self):
+        grid = self.grid_factory.get_for(self.base_length)
+
+        x_div = grid.get_x_div()
+        y_div = grid.get_y_div()
+
+        assert_that(grid.get_x_min(), is_(10))
+        assert_that(grid.get_y_min(), is_(52))
+        assert_that(grid.get_x_max(), is_(close_to(10.964855970781894, 1e-10)))
+        assert_that(grid.get_y_max(), is_(close_to(52.99942586979069, 1e-10)))
+        assert_that(x_div, is_(close_to(0.06891828362727814, 1e-10)))
+        assert_that(y_div, is_(close_to(0.04759170808527102, 1e-10)))
+
+        x_0, y_0 = pyproj.transform(self.base_proj, self.proj, 10.5, 52.5)
+        x_1, y_1 = pyproj.transform(self.base_proj, self.proj, 10.5 + x_div, 52.5 + y_div)
+
+        assert_that(x_1 - x_0, is_(close_to(self.base_length, 1e-4)))
+        assert_that(y_1 - y_0, is_(close_to(self.base_length, 1e-4)))
+
+    def test_get_for_cache(self):
+        grid_1 = self.grid_factory.get_for(self.base_length)
+        grid_2 = self.grid_factory.get_for(self.base_length)
+
+        assert_that(grid_1, is_(grid_2))
+
+
+
 
 
 class TestRasterElement(TestCase):

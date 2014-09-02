@@ -17,6 +17,7 @@ from hamcrest import assert_that, is_, equal_to, none
 import numpy as np
 import pandas as pd
 import pytz
+import shapely.geometry
 
 import blitzortung
 import blitzortung.data
@@ -139,6 +140,33 @@ class TestStrike(unittest.TestCase):
 
     def test_string_represenation(self):
         assert_that(str(self.strike), is_(equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")))
+
+
+class TestStrikeCluster(unittest.TestCase):
+    def setUp(self):
+        self.id_value = 1234
+        self.end_time = datetime.datetime.utcnow()
+        self.start_time = self.end_time - datetime.timedelta(minutes=10)
+        self.shape = shapely.geometry.LinearRing()
+        self.strike_count = 4231
+
+        self.strike_cluster = blitzortung.data.StrikeCluster(self.id_value, self.start_time, self.end_time, self.shape,
+                                                             self.strike_count)
+
+    def test_get_id(self):
+        assert_that(self.strike_cluster.get_id(), is_(self.id_value))
+
+    def test_get_start_time(self):
+        assert_that(self.strike_cluster.get_start_time(), is_(self.start_time))
+
+    def test_get_end_time(self):
+        assert_that(self.strike_cluster.get_end_time(), is_(self.end_time))
+
+    def test_get_shape(self):
+        assert_that(self.strike_cluster.get_shape(), is_(self.shape))
+
+    def test_get_strike_count(self):
+        assert_that(self.strike_cluster.get_strike_count(), is_(self.strike_count))
 
 
 class TestStation(unittest.TestCase):

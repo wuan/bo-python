@@ -24,6 +24,14 @@ class ObjectMapper(object):
     def create_object(self, result, **kwargs):
         pass
 
+    def convert_to_timezone(self, timestamp, target_timezone=None):
+        if timestamp is not None:
+            target_timezone = target_timezone if target_timezone is not None else pytz.UTC
+            timestamp = timestamp.astimezone(target_timezone)
+            if target_timezone != pytz.UTC:
+                timestamp = target_timezone.normalize(timestamp)
+        return timestamp
+
 
 class Strike(ObjectMapper):
     @inject(strike_builder=blitzortung.builder.Strike)
@@ -34,9 +42,9 @@ class Strike(ObjectMapper):
         timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
 
         self.strike_builder.set_id(result['id'])
-        timestamp_value = result['timestamp']
         self.strike_builder.set_timestamp(
-            timestamp_value.astimezone(timezone) if timestamp_value else None, result['nanoseconds'])
+            self.convert_to_timezone(result['timestamp'], timezone),
+            result['nanoseconds'])
         self.strike_builder.set_x(result['x'])
         self.strike_builder.set_y(result['y'])
         self.strike_builder.set_altitude(result['altitude'])
@@ -56,10 +64,10 @@ class StrikeCluster(ObjectMapper):
         timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
 
         self.strike_cluster_builder.set_id(result['id'])
-        start_time = result['start_time']
-        self.strike_cluster_builder.set_start_time(start_time.astimezone(timezone) if start_time else None)
-        end_time = result['end_time']
-        self.strike_cluster_builder.set_end_time(end_time.astimezone(timezone) if end_time else None)
+        self.strike_cluster_builder.set_start_time(
+            self.convert_to_timezone(result['start_time'], timezone))
+        self.strike_cluster_builder.set_end_time(
+            self.convert_to_timezone(result['end_time'], timezone))
         self.strike_cluster_builder.set_shape(shapely.wkb.loads(result['geog'], hex=True))
         self.strike_cluster_builder.set_strike_count(result['strike_count'])
 
@@ -81,8 +89,8 @@ class Station(ObjectMapper):
         location = shapely.wkb.loads(result['geog'], hex=True)
         self.station_builder.set_x(location.x)
         self.station_builder.set_y(location.y)
-        timestamp_value = result['begin']
-        self.station_builder.set_timestamp(timestamp_value.astimezone(timezone) if timestamp_value else None)
+        self.station_builder.set_timestamp(
+            self.convert_to_timezone(result['begin'], timezone))
 
         return self.station_builder.build()
 

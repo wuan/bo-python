@@ -133,7 +133,6 @@ class Grid(Envelope):
 
 
 class GridFactory(object):
-
     WGS84 = pyproj.Proj(init='epsg:4326')
 
     def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys):
@@ -164,8 +163,8 @@ class GridFactory(object):
             max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)
 
             self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
-                                                                delta_lon, delta_lat,
-                                                                Geometry.DefaultSrid)
+                                               delta_lon, delta_lat,
+                                               Geometry.DefaultSrid)
 
         return self.grid_data[base_length]
 

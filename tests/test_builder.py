@@ -17,6 +17,7 @@ from hamcrest import assert_that, is_, equal_to, none
 import pytz
 import numpy as np
 import pandas as pd
+import shapely.geometry
 
 import blitzortung.builder
 
@@ -134,7 +135,7 @@ class StrikeTest(TestBase):
 
     def test_set_id(self):
         self.builder.set_id(1234)
-        assert_that(self.builder.id_value, 1234)
+        assert_that(self.builder.id_value, is_(1234))
 
         self.builder.set_x(0.0)
         self.builder.set_y(0.0)
@@ -200,6 +201,52 @@ class StrikeTest(TestBase):
         assert_that(strike.get_stations(), is_(equal_to(
             [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
              364, 111, 43, 582, 594])))
+
+
+class StrikeClusterTest(TestBase):
+    def setUp(self):
+        self.builder = blitzortung.builder.StrikeCluster()
+
+        self.end_time = datetime.datetime.utcnow()
+        self.start_time = self.end_time - datetime.timedelta(minutes=10)
+        self.shape = shapely.geometry.LinearRing()
+
+    def test_default_values(self):
+        assert_that(self.builder.cluster_id, is_(equal_to(-1)))
+        assert_that(self.builder.start_time, is_(none()))
+        assert_that(self.builder.end_time, is_(none()))
+        assert_that(self.builder.shape, is_(none()))
+        assert_that(self.builder.strike_count, is_(equal_to(0)))
+
+    def test_with_id(self):
+        self.builder.with_id(1234)
+        assert_that(self.builder.cluster_id, is_(equal_to(1234)))
+
+        assert_that(self.builder.build().get_id(), is_(equal_to(1234)))
+
+    def test_with_start_time(self):
+        self.builder.with_start_time(self.start_time)
+        assert_that(self.builder.start_time, is_(self.start_time))
+
+        assert_that(self.builder.build().get_start_time(), is_(equal_to(self.start_time)))
+
+    def test_with_end_time(self):
+        self.builder.with_end_time(self.end_time)
+        assert_that(self.builder.end_time, is_(self.end_time))
+
+        assert_that(self.builder.build().get_end_time(), is_(equal_to(self.end_time)))
+
+    def test_with_shape(self):
+        self.builder.with_shape(self.shape)
+        assert_that(self.builder.shape, is_(self.shape))
+
+        assert_that(self.builder.build().get_shape(), is_(equal_to(self.shape)))
+
+    def test_with_strike_count(self):
+        self.builder.with_strike_count(42)
+        assert_that(self.builder.cluster_id, 42)
+
+        assert_that(self.builder.build().get_strike_count(), is_(equal_to(42)))
 
 
 class StationTest(TestBase):

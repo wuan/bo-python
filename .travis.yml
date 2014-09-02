@@ -8,15 +8,25 @@ python:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install libblas-dev liblapack-dev gfortran
-  - pip uninstall -y numpy ||true
   - pip list
 
 install:
-  - pip install --upgrade pip
-  - pip install --upgrade setuptools
-  - pip list
+  #
+  - sudo pip install --upgrade pip
+  - sudo pip install --upgrade setuptools
+  # Install conda
+  - sudo pip install conda
+  # install deps
+  - sudo conda init
+  - sudo conda update conda --yes
+  - deps='pip numpy pandas scipy cython pytz shapely requests nose mock coverage sphinx'
+  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
+  - export PATH=$HOME/py/bin:$PATH
+
   - pip install -r requirements.txt
+  - pip install --upgrade fastcluster
   - pip install twisted
+  - python setup.py build_ext --inplace
   - pip list
 
 script:

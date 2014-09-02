@@ -13,7 +13,7 @@ def pdist(np.ndarray[double, ndim=2] data not None):
     cdef unsigned int i, j, index = 0
     for i in range(number_of_points - 1):
         for j in range(i + 1, number_of_points):
-            distances[index] = distance(data[i, 0], data[i, 1], data[j, 0], data[j, 1])
+            distances[index] = distance_(data[i, 0], data[i, 1], data[j, 0], data[j, 1])
             index += 1
 
     return distances
@@ -33,7 +33,10 @@ cdef unsigned int choose(unsigned int n, unsigned int k):
     else:
         return 0
 
-cdef double distance(double lambda_1, double phi_1, double lambda_2, double phi_2):
+def distance(lamba_1, phi_1, lambda_2, phi_2):
+    return distance_(lamba_1, phi_1, lambda_2, phi_2)
+
+cdef double distance_(double lambda_1, double phi_1, double lambda_2, double phi_2):
     cdef double to_rad = 3.1415 / 180.0
     cdef double cos_lambda_1 = cos(to_rad * lambda_1)
     cdef double sin_lambda_1 = sin(to_rad * lambda_1)

@@ -363,7 +363,7 @@ class RawWaveformEvent(Event):
         self.set_y(json_object[2])
         self.set_altitude(json_object[3])
         if len(json_object[9]) > 1:
-            self.set_y_values(json_object[9][1])
+            self.set_y(json_object[9][1])
 
         return self
 

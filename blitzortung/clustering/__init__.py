@@ -1,2 +1,2 @@
 from .base import Clustering
-from blitzortung.clustering.pdist import pdist
+from .pdist import pdist, distance
