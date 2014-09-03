@@ -162,15 +162,15 @@ class StrikeTest(TestBase):
 
     def test_set_lateral_error_lower_limit(self):
         self.builder.set_lateral_error(-1)
-	assert_that(self.builder.build().get_lateral_error(), is_(0))
+        assert_that(self.builder.build().get_lateral_error(), is_(0))
         self.builder.set_lateral_error(0)
-	assert_that(self.builder.build().get_lateral_error(), is_(0))
+        assert_that(self.builder.build().get_lateral_error(), is_(0))
 
     def test_set_lateral_error_upper_limit(self):
         self.builder.set_lateral_error(32767)
-	assert_that(self.builder.build().get_lateral_error(), is_(32767))
+        assert_that(self.builder.build().get_lateral_error(), is_(32767))
         self.builder.set_lateral_error(32768)
-	assert_that(self.builder.build().get_lateral_error(), is_(32767))
+        assert_that(self.builder.build().get_lateral_error(), is_(32767))
 
     def test_build_strike_from_line(self):
         strike_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
