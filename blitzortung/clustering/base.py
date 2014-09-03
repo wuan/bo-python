@@ -12,6 +12,7 @@ You should have received a copy of the GNU Affero General Public License along w
 """
 
 from __future__ import print_function
+import logging
 import six
 
 import numpy as np
@@ -27,6 +28,7 @@ class Clustering(object):
 
     def __init__(self, cluster_builder):
         self.cluster_builder = cluster_builder
+        self.logger = logging.getLogger(str(self.__class__))
 
     def build_clusters(self, events, time_interval):
         event_count = len(events)
@@ -65,12 +67,12 @@ class Clustering(object):
                         .with_shape(shape)
                         .build())
 
-            print("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
-                  .format(time_interval.get_start(),
-                          time_interval.get_end() - time_interval.get_start(),
-                          event_count,
-                          len(clustered_points),
-                          len(clusters)))
+            self.logger.info("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
+                             .format(time_interval.get_start(),
+                                     time_interval.get_end() - time_interval.get_start(),
+                                     event_count,
+                                     len(clustered_points),
+                                     len(clusters)))
 
         return clusters
 
