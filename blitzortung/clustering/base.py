@@ -39,6 +39,9 @@ class Clustering(object):
         if events:
             clustered_points, points = self.initialize_clusters(event_count, events)
 
+            if len(points) < 3:
+                return []
+
             distances = pdist(points)
             results = fastcluster.linkage(distances)
 
