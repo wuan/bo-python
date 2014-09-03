@@ -131,10 +131,9 @@ class StrikesBlitzortungDataProvider(object):
         latest_strike = latest_strike if latest_strike else \
             (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
         self.logger.debug("import strikes since %s" % latest_strike)
-        strikes_since = []
 
         for url_path in self.url_path_generator.get_url_paths(latest_strike):
-            initial_strike_count = len(strikes_since)
+            strike_count = 0
             start_time = time.time()
             target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
             for strike_line in self.data_provider.read_data(target_url):
@@ -149,12 +148,12 @@ class StrikesBlitzortungDataProvider(object):
                 timestamp = strike.get_timestamp()
                 timestamp.nanoseconds = 0
                 if not pd.isnull(timestamp) and latest_strike < timestamp:
-                    strikes_since.append(strike)
+                    strike_count += 1
+                    yield strike
             end_time = time.time()
             self.logger.debug("imported %d strikes for region %d in %.2fs from %s",
-                              len(strikes_since) - initial_strike_count,
+                              strike_count,
                               region, end_time - start_time, url_path)
-        return strikes_since
 
 
 def strikes():

@@ -2,4 +2,6 @@
 .coverage
 nosetests.xml
 *.pyc
+*.c
+/build
 /coverage_report

@@ -7,6 +7,8 @@
 """
 blitzortung python modules
 """
+import logging
+
 __version__ = '1.4.0'
 
 #-----------------------------------------------------------------------------
@@ -62,3 +64,6 @@ __all__ = [
 
     'dataimport.StrikesBlitzortungDataProvider', 'dataimport.raw'
 ]
+
+root_logger = logging.getLogger(__name__)
+root_logger.setLevel(logging.WARN)
