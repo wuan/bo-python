@@ -167,7 +167,7 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
 
-        strikes = self.provider.get_strikes_since(latest_strike_timestamp)
+        strikes = list(self.provider.get_strikes_since(latest_strike_timestamp))
 
         assert_that(strikes, is_(empty()))
 
@@ -181,7 +181,7 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.from_data.return_value = self.builder
         self.builder.build.side_effect = Exception("foo")
 
-        self.provider.get_strikes_since(latest_strike_timestamp)
+        list(self.provider.get_strikes_since(latest_strike_timestamp))
 
 
 class StationsBlitzortungDataProviderTest(unittest.TestCase):

@@ -48,7 +48,7 @@ class TestClustering(TestCase):
         now = datetime.datetime.utcnow()
         time_interval = blitzortung.db.query.TimeInterval(now - datetime.timedelta(minutes=10), now)
 
-        clusters = self.clustering.build_clusters(events, time_interval)
+        clusters = list(self.clustering.build_clusters(events, time_interval))
 
         assert_that(len(clusters), is_(1))
         cluster = clusters[0]
