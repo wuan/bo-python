@@ -13,6 +13,7 @@ You should have received a copy of the GNU Affero General Public License along w
 
 from __future__ import print_function
 import logging
+from scipy.spatial.qhull import QhullError
 import six
 
 import numpy as np
@@ -28,12 +29,13 @@ class Clustering(object):
 
     def __init__(self, cluster_builder):
         self.cluster_builder = cluster_builder
-        self.logger = logging.getLogger(str(self.__class__))
+        self.logger = logging.getLogger("{}.{}".format(__name__, self.__class__.__name__))
 
     def build_clusters(self, events, time_interval):
         event_count = len(events)
 
-        clusters = []
+        cluster_count = 0
+
         if events:
             clustered_points, points = self.initialize_clusters(event_count, events)
 
@@ -53,28 +55,28 @@ class Clustering(object):
                     for index, strike in enumerate(clustered_strikes):
                         points[index][0] = strike.get_x()
                         points[index][1] = strike.get_y()
-                    hull = ConvexHull(points)
+                    try:
+                        hull = ConvexHull(points)
+                    except QhullError:
+                        self.logger.error("".join(str(points).splitlines()))
+                        continue
 
-                    shape_points = []
-                    for vertex in hull.vertices:
-                        shape_points.append([points[vertex, 0], points[vertex, 1]])
+                    shape_points = [[points[vertex, 0], points[vertex, 1]] for vertex in hull.vertices]
 
                     shape = LinearRing(shape_points)
 
-                    clusters.append(
-                        self.cluster_builder
-                        .with_strike_count(cluster_points)
-                        .with_shape(shape)
-                        .build())
+                    cluster_count += 1
+
+                    yield self.cluster_builder \
+                        .with_strike_count(cluster_points) \
+                        .with_shape(shape).build()
 
             self.logger.info("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
                              .format(time_interval.get_start(),
                                      time_interval.get_end() - time_interval.get_start(),
                                      event_count,
                                      len(clustered_points),
-                                     len(clusters)))
-
-        return clusters
+                                     cluster_count))
 
     def initialize_clusters(self, event_count, events):
         points = np.ndarray([event_count, 2])
