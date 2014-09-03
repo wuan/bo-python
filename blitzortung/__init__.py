@@ -66,3 +66,4 @@ __all__ = [
 ]
 
 root_logger = logging.getLogger(__name__)
+root_logger.setLevel(logging.WARN)
