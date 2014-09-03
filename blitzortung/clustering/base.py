@@ -71,7 +71,7 @@ class Clustering(object):
                         .with_strike_count(cluster_points) \
                         .with_shape(shape).build()
 
-            self.logger.info("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
+            self.logger.debug("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
                              .format(time_interval.get_start(),
                                      time_interval.get_end() - time_interval.get_start(),
                                      event_count,
