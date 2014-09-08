@@ -32,7 +32,7 @@ class StrikeClusterTest(unittest.TestCase):
         query = self.query_builder.select_query("<table_name>", self.srid, self.end_time, self.interval_duration, 6,
                                                 self.interval_duration)
 
-        assert_that(str(query), is_("SELECT \"timestamp\", stroke_count, ST_Transform(geog::geometry, %(srid)s) FROM <table_name> WHERE \"timestamp\" in (%(timestamps) s) AND interval_seconds=%(interval_seconds)s"))
+        assert_that(str(query), is_("SELECT id, \"timestamp\", stroke_count, ST_Transform(geog::geometry, %(srid)s) FROM <table_name> WHERE \"timestamp\" in (%(timestamps)s) AND interval_seconds=%(interval_seconds)s"))
         parameters = query.get_parameters()
         assert_that(parameters.keys(), contains_inanyorder('timestamps', 'srid', 'interval_seconds'))
         assert_that(list(parameters['timestamps']),
