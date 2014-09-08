@@ -74,6 +74,12 @@ class TimeIntervalTest(unittest.TestCase):
         self.assertEqual(id_interval.get_end(), datetime.datetime(2010, 12, 5, 23, 15, 59))
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : 2010-12-05 23:15:59]")
 
+    def test_get_duration(self):
+        id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15),
+                                                        datetime.datetime(2010, 11, 20, 11, 40, 15))
+
+        self.assertEqual(id_interval.get_duration(), datetime.timedelta(minutes=10))
+
     @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):
         blitzortung.db.query.TimeInterval("asdf")

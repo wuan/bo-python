@@ -274,21 +274,21 @@ class StrikeCluster(object):
     class for strike cluster objects
     """
 
-    def __init__(self, cluster_id, start_time, end_time, shape, strike_count):
+    def __init__(self, cluster_id, timestamp, interval_seconds, shape, strike_count):
         self.cluster_id = cluster_id
-        self.start_time = start_time
-        self.end_time = end_time
+        self.timestamp = timestamp
+        self.interval_seconds = interval_seconds
         self.shape = shape
         self.strike_count = strike_count
 
     def get_id(self):
         return self.cluster_id
 
-    def get_start_time(self):
-        return self.start_time
+    def get_timestamp(self):
+        return self.timestamp
 
-    def get_end_time(self):
-        return self.end_time
+    def get_interval_seconds(self):
+        return self.interval_seconds
 
     def get_shape(self):
         return self.shape

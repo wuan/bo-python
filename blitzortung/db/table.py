@@ -207,7 +207,7 @@ class Strike(Base):
     ALTER TABLE strikes ADD COLUMN stationcount SMALLINT;
 
     CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
-    CREATE INDEX strikes_region_timestamp ON strikes USING btree(region, "timestamp");
+    CREATE INDEX strikes_region_timestamp_nanoseconds ON strikes USING btree(region, "timestamp", nanoseconds);
     CREATE INDEX strikes_id_timestamp ON strikes USING btree(id, "timestamp");
     CREATE INDEX strikes_geog ON strikes USING gist(geog);
     CREATE INDEX strikes_timestamp_geog ON strikes USING gist("timestamp", geog);
@@ -320,14 +320,14 @@ class StrikeCluster(Base):
 
     database table creation (as db user blitzortung, database blitzortung):
 
-    CREATE TABLE strike_clusters (id bigserial, start_time timestamptz, end_time timestamptz, geog GEOGRAPHY(LineString),
+    CREATE TABLE strike_clusters (id bigserial, "timestamp" timestamptz, interval_seconds SMALLINT, geog GEOGRAPHY(LineString),
         PRIMARY KEY(id));
     ALTER TABLE strike_clusters ADD COLUMN strike_count INT;
 
-    CREATE INDEX strike_clusters_end_time ON strike_clusters USING btree(end_time);
-    CREATE INDEX strike_clusters_id_end_time ON strike_clusters USING btree(id, end_time);
+    CREATE INDEX strike_clusters_timestamp_interval_seconds ON strike_clusters USING btree("timestamp", interval_seconds);
+    CREATE INDEX strike_clusters_id_timestamp_interval_seconds ON strike_clusters USING btree(id, "timestamp", interval_seconds);
     CREATE INDEX strike_clusters_geog ON strike_clusters USING gist(geog);
-    CREATE INDEX strike_clusters_end_time_geog ON strike_clusters USING gist(end_time, geog);
+    CREATE INDEX strike_clusters_timestamp_interval_seconds_geog ON strike_clusters USING gist("timestamp", interval_seconds, geog);
 
     empty the table with the following commands:
 
@@ -350,12 +350,12 @@ class StrikeCluster(Base):
 
     def insert(self, strike_cluster):
         sql = 'INSERT INTO ' + self.get_full_table_name() + \
-              ' (start_time, end_time, geog, strike_count) ' + \
-              'VALUES (%(start_time)s, %(end_time)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
+              ' ("timestamp", interval_seconds, geog, strike_count) ' + \
+              'VALUES (%(timestamp)s, %(interval_seconds)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
 
         parameters = {
-            'start_time': strike_cluster.get_start_time(),
-            'end_time': strike_cluster.get_end_time(),
+            'timestamp': strike_cluster.get_timestamp(),
+            'interval_seconds': strike_cluster.get_interval_seconds(),
             'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.get_shape())),
             'srid': self.get_srid(),
             'strike_count': strike_cluster.get_strike_count()
@@ -363,9 +363,11 @@ class StrikeCluster(Base):
 
         self.execute(sql, parameters)
 
-    def get_latest_time(self):
-        sql = 'SELECT end_time FROM ' + self.get_full_table_name() + \
-              ' ORDER BY end_time DESC LIMIT 1'
+    def get_latest_time(self, interval_seconds=10):
+        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
+              ' WHERE interval_seconds=%(interval_seconds)s ORDER BY "timestamp" DESC LIMIT 1'
+
+        print(sql)
 
         def prepare_result(cursor, _):
             if cursor.rowcount == 1:
@@ -374,7 +376,7 @@ class StrikeCluster(Base):
             else:
                 return None
 
-        return self.execute(sql, build_result=prepare_result)
+        return self.execute(sql, {'interval_seconds': interval_seconds}, build_result=prepare_result)
 
     def create_object_instance(self, result):
         return self.strike_mapper.create_object(result, timestamp=self.tz)

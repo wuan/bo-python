@@ -65,6 +65,9 @@ class TimeInterval(BaseInterval):
 
         super(TimeInterval, self).__init__(start, end)
 
+    def get_duration(self):
+        return self.end - self.start
+
 
 class Query(object):
     """

@@ -207,14 +207,14 @@ class StrikeClusterTest(TestBase):
     def setUp(self):
         self.builder = blitzortung.builder.StrikeCluster()
 
-        self.end_time = datetime.datetime.utcnow()
-        self.start_time = self.end_time - datetime.timedelta(minutes=10)
+        self.timestamp = datetime.datetime.utcnow()
+        self.seconds_interval = 10 * 60
         self.shape = shapely.geometry.LinearRing()
 
     def test_default_values(self):
         assert_that(self.builder.cluster_id, is_(equal_to(-1)))
-        assert_that(self.builder.start_time, is_(none()))
-        assert_that(self.builder.end_time, is_(none()))
+        assert_that(self.builder.seconds_interval, is_(0))
+        assert_that(self.builder.timestamp, is_(none()))
         assert_that(self.builder.shape, is_(none()))
         assert_that(self.builder.strike_count, is_(equal_to(0)))
 
@@ -224,17 +224,17 @@ class StrikeClusterTest(TestBase):
 
         assert_that(self.builder.build().get_id(), is_(equal_to(1234)))
 
-    def test_with_start_time(self):
-        self.builder.with_start_time(self.start_time)
-        assert_that(self.builder.start_time, is_(self.start_time))
+    def test_with_timestamp(self):
+        self.builder.with_timestamp(self.timestamp)
+        assert_that(self.builder.timestamp, is_(self.timestamp))
 
-        assert_that(self.builder.build().get_start_time(), is_(equal_to(self.start_time)))
+        assert_that(self.builder.build().get_timestamp(), is_(equal_to(self.timestamp)))
 
-    def test_with_end_time(self):
-        self.builder.with_end_time(self.end_time)
-        assert_that(self.builder.end_time, is_(self.end_time))
+    def test_with_seconds_interval(self):
+        self.builder.with_seconds_interval(self.seconds_interval)
+        assert_that(self.builder.seconds_interval, is_(self.seconds_interval))
 
-        assert_that(self.builder.build().get_end_time(), is_(equal_to(self.end_time)))
+        assert_that(self.builder.build().get_interval_seconds(), is_(equal_to(self.seconds_interval)))
 
     def test_with_shape(self):
         self.builder.with_shape(self.shape)

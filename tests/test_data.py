@@ -145,22 +145,22 @@ class TestStrike(unittest.TestCase):
 class TestStrikeCluster(unittest.TestCase):
     def setUp(self):
         self.id_value = 1234
-        self.end_time = datetime.datetime.utcnow()
-        self.start_time = self.end_time - datetime.timedelta(minutes=10)
+        self.timestamp = datetime.datetime.utcnow()
+        self.seconds_interval = 10 * 60
         self.shape = shapely.geometry.LinearRing()
         self.strike_count = 4231
 
-        self.strike_cluster = blitzortung.data.StrikeCluster(self.id_value, self.start_time, self.end_time, self.shape,
+        self.strike_cluster = blitzortung.data.StrikeCluster(self.id_value, self.timestamp, self.seconds_interval, self.shape,
                                                              self.strike_count)
 
     def test_get_id(self):
         assert_that(self.strike_cluster.get_id(), is_(self.id_value))
 
-    def test_get_start_time(self):
-        assert_that(self.strike_cluster.get_start_time(), is_(self.start_time))
+    def test_get_timestamp(self):
+        assert_that(self.strike_cluster.get_timestamp(), is_(self.timestamp))
 
-    def test_get_end_time(self):
-        assert_that(self.strike_cluster.get_end_time(), is_(self.end_time))
+    def test_get_seconds_interval(self):
+        assert_that(self.strike_cluster.get_interval_seconds(), is_(self.seconds_interval))
 
     def test_get_shape(self):
         assert_that(self.strike_cluster.get_shape(), is_(self.shape))

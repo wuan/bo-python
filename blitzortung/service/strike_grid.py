@@ -39,13 +39,17 @@ class StrikeGridQuery(object):
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters, minute_length, minute_offset, connection, statsd_client):
+    def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval.get_end())
 
         query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval)
+
+        if count_threshold > 1:
+            query.add_condition("count >= %(count_threshold)s", {'count_threshold': count_threshold})
+
         grid_query = connection.runQuery(str(query), query.get_parameters())
         grid_query.addCallback(self.build_strikes_grid_result, state=state)
         grid_query.addErrback(log.err)
@@ -58,7 +62,7 @@ class StrikeGridQuery(object):
 
         reference_time = time.time()
         y_bin_count = state.get_grid_parameters().get_y_bin_count()
-        end_time = state.get_end_time()
+        end_time = state.get_timestamp()
         strikes_grid_result = tuple(
             (
                 result['rx'],
@@ -90,7 +94,7 @@ class StrikeGridQuery(object):
         state.log_incr('strikes_grid')
 
         grid_parameters = state.get_grid_parameters()
-        end_time = state.get_end_time()
+        end_time = state.get_timestamp()
         response = {'r': grid_data, 'xd': round(grid_parameters.get_x_div(), 6),
                     'yd': round(grid_parameters.get_y_div(), 6),
                     'x0': round(grid_parameters.get_x_min(), 4), 'y1': round(grid_parameters.get_y_max(), 4),

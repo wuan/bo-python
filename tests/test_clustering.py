@@ -52,8 +52,8 @@ class TestClustering(TestCase):
 
         assert_that(len(clusters), is_(1))
         cluster = clusters[0]
-        assert_that(cluster.get_start_time(), is_(time_interval.get_start()))
-        assert_that(cluster.get_end_time(), is_(time_interval.get_end()))
+        assert_that(cluster.get_timestamp(), is_(time_interval.get_end()))
+        assert_that(cluster.get_interval_seconds(), is_(10 * 60))
         shape = cluster.get_shape()
         xy_arrays = shape.coords.xy
         assert_that(xy_arrays[0].tolist(), is_([11.05, 11.0, 11.05, 11.05]))
