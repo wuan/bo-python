@@ -33,6 +33,7 @@ class Clustering(object):
         self.logger = logging.getLogger("{}.{}".format(__name__, self.__class__.__name__))
 
     def build_clusters(self, events, time_interval):
+        events = list(events)
         event_count = len(events)
 
         cluster_count = 0

@@ -54,3 +54,31 @@ class Strike(object):
                                  'envelope_srid': envelope.get_srid()})
 
         return query
+
+
+class StrikeCluster(object):
+    def select_query(self, table_name, srid, timestamp, interval_duration, interval_count, interval_offset=None):
+        end_time = timestamp
+        start_time = timestamp - (interval_count - 1) * interval_offset - interval_duration
+
+        query = SelectQuery() \
+            .set_table_name(table_name) \
+            .add_column("id") \
+            .add_column("\"timestamp\"") \
+            .add_column("stroke_count") \
+            .add_column("ST_Transform(geog::geometry, %(srid)s)") \
+            .add_parameters({'srid': srid}) \
+            .add_condition("\"timestamp\" in (%(timestamps) s)",
+                           {'timestamps':
+                                self.get_timestamps(start_time, end_time, interval_duration, interval_offset)}) \
+            .add_condition("interval_seconds=%(interval_seconds)s",
+                           {'interval_seconds': interval_duration.total_seconds()})
+
+        return query
+
+    def get_timestamps(self, start_time, end_time, interval_duration, interval_offset):
+        final_time = start_time + interval_duration
+        current_time = end_time
+        while current_time >= final_time:
+            yield current_time
+            current_time -= interval_offset
