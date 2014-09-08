@@ -375,7 +375,6 @@ class StrikeCluster(Base):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' WHERE interval_seconds=%(interval_seconds)s ORDER BY "timestamp" DESC LIMIT 1'
 
-        print(sql)
         parameters = {'interval_seconds': interval_seconds}
         return self.execute_single(sql, parameters,
                                    lambda result: self.fix_timezone(result['timestamp']))
