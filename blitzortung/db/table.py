@@ -379,14 +379,14 @@ class StrikeCluster(Base):
         return self.execute_single(sql, parameters,
                                    lambda result: self.fix_timezone(result['timestamp']))
 
-    def select(self, timestamp, interval_duration, interval_count, interval_offset):
+    def select(self, timestamp, interval_duration, interval_count=1, interval_offset=None):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), interval_duration,
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), timestamp, interval_duration,
                                                 interval_count, interval_offset)
 
-        return self.execute(str(query), query.get_parameters(), self.strike_cluster_mapper.create_object,
-                            timezone=self.tz)
+        return self.execute_many(str(query), query.get_parameters(), self.strike_cluster_mapper.create_object,
+                            timezone=self.tz, interval_seconds=interval_duration.seconds)
 
 
 class Station(Base):

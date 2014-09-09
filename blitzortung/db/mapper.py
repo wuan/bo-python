@@ -63,12 +63,12 @@ class StrikeCluster(ObjectMapper):
     def create_object(self, result, **kwargs):
         timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
 
-        self.strike_cluster_builder.set_id(result['id'])
-        self.strike_cluster_builder.set_timestamp(
-            self.convert_to_timezone(result['timestamp'], timezone))
-        self.strike_cluster_builder.set_interval_seconds(kwargs['interval_seconds'])
-        self.strike_cluster_builder.set_shape(shapely.wkb.loads(result['geog'], hex=True))
-        self.strike_cluster_builder.set_strike_count(result['strike_count'])
+        self.strike_cluster_builder\
+            .with_id(result['id'])\
+            .with_timestamp(self.convert_to_timezone(result['timestamp'], timezone))\
+            .with_interval_seconds(kwargs['interval_seconds'])\
+            .with_shape(shapely.wkb.loads(result['geom'], hex=True))\
+            .with_strike_count(result['strike_count'])
 
         return self.strike_cluster_builder.build()
 

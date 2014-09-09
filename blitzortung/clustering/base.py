@@ -51,7 +51,7 @@ class Clustering(object):
 
             self.cluster_builder \
                 .with_timestamp(time_interval.get_end()) \
-                .with_seconds_interval(time_interval.get_duration().seconds)
+                .with_interval_seconds(time_interval.get_duration().seconds)
 
             for clustered_strikes in self.get_clustered_strikes(event_count, clustered_points):
                 cluster_points = len(clustered_strikes)

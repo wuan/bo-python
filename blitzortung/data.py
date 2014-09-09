@@ -15,6 +15,7 @@ from __future__ import unicode_literals
 from . import types
 import math
 import numpy
+from shapely.geometry import mapping
 from blitzortung.geom import GridElement
 
 
@@ -295,6 +296,9 @@ class StrikeCluster(object):
 
     def get_strike_count(self):
         return self.strike_count
+
+    def __str__(self):
+        return "StrikeCluster({}, {}, {}, {}, {})".format(self.cluster_id, self.timestamp, self.interval_seconds, mapping(self.shape), self.strike_count)
 
 
 class ChannelWaveform(object):
