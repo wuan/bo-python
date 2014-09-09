@@ -67,7 +67,6 @@ class StrikeCluster(object):
             .set_table_name(table_name) \
             .add_column("id") \
             .add_column("\"timestamp\"") \
-            .add_column("interval_seconds") \
             .add_column("ST_Transform(geog::geometry, %(srid)s) as geom") \
             .add_column("strike_count") \
             .add_parameters({'srid': srid}) \
