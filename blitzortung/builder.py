@@ -159,7 +159,7 @@ class StrikeCluster(object):
     def __init__(self):
         self.cluster_id = -1
         self.timestamp = None
-        self.seconds_interval = 0
+        self.interval_seconds = 0
         self.shape = None
         self.strike_count = 0
 
@@ -171,8 +171,8 @@ class StrikeCluster(object):
         self.timestamp = timestamp
         return self
 
-    def with_seconds_interval(self, seconds_interval):
-        self.seconds_interval = seconds_interval
+    def with_interval_seconds(self, interval_seconds):
+        self.interval_seconds = interval_seconds
         return self
 
     def with_shape(self, shape):
@@ -184,7 +184,7 @@ class StrikeCluster(object):
         return self
 
     def build(self):
-        return data.StrikeCluster(self.cluster_id, self.timestamp, self.seconds_interval, self.shape, self.strike_count)
+        return data.StrikeCluster(self.cluster_id, self.timestamp, self.interval_seconds, self.shape, self.strike_count)
 
 
 class Station(Event):

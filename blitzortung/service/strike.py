@@ -53,7 +53,7 @@ class StrikeQuery(object):
         state.log_timing('strikes.query')
 
         reference_time = time.time()
-        end_time = state.get_timestamp()
+        end_time = state.get_end_time()
         strikes = tuple(
             (
                 (end_time - strike.get_timestamp()).seconds,
@@ -90,7 +90,7 @@ class StrikeQuery(object):
         histogram_result = result[1]
 
         final_result = {
-            't': state.get_timestamp().strftime("%Y%m%dT%H:%M:%S"),
+            't': state.get_end_time().strftime("%Y%m%dT%H:%M:%S"),
             'h': histogram_result
         }
         final_result.update(strikes_result)

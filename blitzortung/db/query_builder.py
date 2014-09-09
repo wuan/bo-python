@@ -10,6 +10,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
+import datetime
 
 import psycopg2
 import shapely.wkb
@@ -57,20 +58,23 @@ class Strike(object):
 
 
 class StrikeCluster(object):
-    def select_query(self, table_name, srid, timestamp, interval_duration, interval_count, interval_offset=None):
+    def select_query(self, table_name, srid, timestamp, interval_duration, interval_count=1, interval_offset=None):
         end_time = timestamp
-        start_time = timestamp - (interval_count - 1) * interval_offset - interval_duration
+        interval_offset = interval_duration if interval_offset is None or interval_offset.total_seconds() <= 0 else interval_offset
+        start_time = timestamp - interval_offset * (interval_count - 1) - interval_duration
 
         query = SelectQuery() \
             .set_table_name(table_name) \
             .add_column("id") \
             .add_column("\"timestamp\"") \
-            .add_column("stroke_count") \
-            .add_column("ST_Transform(geog::geometry, %(srid)s)") \
+            .add_column("ST_Transform(geog::geometry, %(srid)s) as geom") \
+            .add_column("strike_count") \
             .add_parameters({'srid': srid}) \
-            .add_condition("\"timestamp\" in (%(timestamps) s)",
+            .add_condition("\"timestamp\" in (%(timestamps)s)",
                            {'timestamps':
-                                self.get_timestamps(start_time, end_time, interval_duration, interval_offset)}) \
+                                ",".join(str(timestamp) for timestamp in
+                                         self.get_timestamps(start_time, end_time, interval_duration,
+                                                             interval_offset))}) \
             .add_condition("interval_seconds=%(interval_seconds)s",
                            {'interval_seconds': interval_duration.total_seconds()})
 

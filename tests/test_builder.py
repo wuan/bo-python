@@ -213,7 +213,7 @@ class StrikeClusterTest(TestBase):
 
     def test_default_values(self):
         assert_that(self.builder.cluster_id, is_(equal_to(-1)))
-        assert_that(self.builder.seconds_interval, is_(0))
+        assert_that(self.builder.interval_seconds, is_(0))
         assert_that(self.builder.timestamp, is_(none()))
         assert_that(self.builder.shape, is_(none()))
         assert_that(self.builder.strike_count, is_(equal_to(0)))
@@ -231,8 +231,8 @@ class StrikeClusterTest(TestBase):
         assert_that(self.builder.build().get_timestamp(), is_(equal_to(self.timestamp)))
 
     def test_with_seconds_interval(self):
-        self.builder.with_seconds_interval(self.seconds_interval)
-        assert_that(self.builder.seconds_interval, is_(self.seconds_interval))
+        self.builder.with_interval_seconds(self.seconds_interval)
+        assert_that(self.builder.interval_seconds, is_(self.seconds_interval))
 
         assert_that(self.builder.build().get_interval_seconds(), is_(equal_to(self.seconds_interval)))
 
