@@ -105,8 +105,11 @@ class Station(Event):
         self.board = board
 
     def __str__(self):
-        return u"%3d/%3d '%s' '%s' %s" % (
-            self.number, self.user, self.name, self.country, super(Station, self).__str__())
+        offline_since = self.get_timestamp()
+        status_char = "*" if offline_since is None else "-"
+        status_text = "" if offline_since is None else "offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+        return u"%s%3d/%3d '%s' '%s' (%.4f, %.4f) %s" % (
+            status_char, self.number, self.user, self.name, self.country, self.get_x(), self.get_y(), status_text)
 
     def __eq__(self, other):
         return self.number == other.number and self.name == other.name and self.country == other.country
@@ -150,6 +153,9 @@ class Station(Event):
     def is_valid(self):
         return super(Station, self).is_valid() \
                and self.get_number() > 0
+
+    def is_offline(self):
+        return self.timestamp is not None
 
 
 class StationOffline(object):
