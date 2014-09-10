@@ -27,6 +27,7 @@ from .pdist import pdist
 class Clustering(object):
     distance_limit = 10
     coordinate_accuracy = 0.01
+    buffer_size = 0.02
     coordinate_precision = 4
 
     def __init__(self, cluster_builder):
@@ -42,7 +43,7 @@ class Clustering(object):
         if events:
             clustered_points, points = self.initialize_clusters(event_count, events)
 
-            if len(points) < 3:
+            if len(points) < 4:
                 return
 
             distances = pdist(points)
@@ -74,7 +75,12 @@ class Clustering(object):
                         ] for vertex in hull.vertices]
 
                     shape = LinearRing(shape_points)
+                    shape = shape.buffer(self.buffer_size)
                     shape = shape.simplify(self.coordinate_accuracy, preserve_topology=False)
+                    shape = shape.exterior
+
+                    if shape is None:
+                        continue
 
                     cluster_count += 1
 
