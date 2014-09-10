@@ -70,9 +70,9 @@ class StrikeCluster(object):
             .add_column("ST_Transform(geog::geometry, %(srid)s) as geom") \
             .add_column("strike_count") \
             .add_parameters({'srid': srid}) \
-            .add_condition("\"timestamp\" in (%(timestamps)s)",
+            .add_condition("\"timestamp\" in %(timestamps)s",
                            {'timestamps':
-                                ",".join(str(timestamp) for timestamp in
+                                tuple(str(timestamp) for timestamp in
                                          self.get_timestamps(start_time, end_time, interval_duration,
                                                              interval_offset))}) \
             .add_condition("interval_seconds=%(interval_seconds)s",
