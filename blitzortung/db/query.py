@@ -16,7 +16,10 @@ from __future__ import print_function
 import datetime
 import shapely.geometry.base
 import shapely.wkb
-import psycopg2
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 
 
 class BaseInterval(object):

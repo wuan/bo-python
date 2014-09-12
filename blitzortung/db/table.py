@@ -32,7 +32,8 @@ try:
     import psycopg2.extras
     import psycopg2.extensions
 except ImportError as e:
-    psycopg2 = None
+    from . import create_psycopg2_dummy
+    psycopg2 = create_psycopg2_dummy()
 
 from abc import ABCMeta, abstractmethod
 

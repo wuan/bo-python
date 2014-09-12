@@ -11,7 +11,10 @@ You should have received a copy of the GNU Affero General Public License along w
 
 """
 
-import psycopg2
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 import shapely.wkb
 from .query import SelectQuery, GridQuery
 

@@ -14,13 +14,21 @@ You should have received a copy of the GNU Affero General Public License along w
 from injector import Module, provides, singleton, inject
 import atexit
 
+def create_psycopg2_dummy():
+    class Dummy(object):
+        pass
+    dummy = Dummy()
+    dummy.pool = Dummy()
+    dummy.pool.ThreadedConnectionPool = Dummy
+    return dummy
+
 try:
     import psycopg2
     import psycopg2.pool
     import psycopg2.extras
     import psycopg2.extensions
 except ImportError:
-    psycopg2 = None
+    psycopg2 = create_psycopg2_dummy()
 
 from .. import config
 
