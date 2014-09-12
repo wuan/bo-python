@@ -21,7 +21,7 @@ from .query import SelectQuery, GridQuery
 
 
 class Strike(object):
-    def select_query(self, table_name, srid, region=None, *args):
+    def select_query(self, table_name, srid, *args, **kwargs):
         query = SelectQuery() \
             .set_table_name(table_name) \
             .set_columns('id', '"timestamp"', 'nanoseconds', 'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
@@ -30,8 +30,8 @@ class Strike(object):
             .add_parameters({'srid': srid}) \
             .parse_args(args)
 
-        if region:
-            query.add_condition("region = %(region)s", {'region': region})
+        if 'region' in kwargs:
+            query.add_condition("region = %(region)s", {'region': kwargs['region']})
 
         return query
 

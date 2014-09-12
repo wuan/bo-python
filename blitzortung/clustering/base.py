@@ -89,11 +89,11 @@ class Clustering(object):
                         .with_shape(shape).build()
 
             self.logger.debug("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
-                             .format(time_interval.get_start(),
-                                     time_interval.get_end() - time_interval.get_start(),
-                                     event_count,
-                                     len(clustered_points),
-                                     cluster_count))
+                              .format(time_interval.get_start(),
+                                      time_interval.get_end() - time_interval.get_start(),
+                                      event_count,
+                                      len(clustered_points),
+                                      cluster_count))
 
     def initialize_clusters(self, event_count, events):
         points = np.ndarray([event_count, 2])
