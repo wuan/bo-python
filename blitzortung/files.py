@@ -156,7 +156,7 @@ class Data(object):
 
         self.error = False
 
-        raw_file = self.raw_file_path.get_url_paths(start.date())
+        raw_file = self.raw_file_path.get_paths(start.date())
 
         if long_format:
             return self.get_output(raw_file, start_time, end_time, True)

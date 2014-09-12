@@ -111,12 +111,12 @@ class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
     def create_history_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
-        self.strikes_url = blitzortung.dataimport.BlitzortungHistoryUrlGenerator()
+        self.strikes_url = blitzortung.dataimport.BlitzortungDataPathGenerator()
 
     def test_strike_url_iterator(self):
         self.create_history_url_generator(datetime.datetime(2013, 8, 20, 12, 9, 0))
 
-        urls = [url for url in self.strikes_url.get_url_paths(self.start_time, self.present_time)]
+        urls = [url for url in self.strikes_url.get_paths(self.start_time, self.present_time)]
 
         assert_that(urls, contains(
             '2013/08/20/11/40.log',

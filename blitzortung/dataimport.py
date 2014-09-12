@@ -103,15 +103,12 @@ class BlitzortungDataProvider(object):
             yield line
 
 
-class BlitzortungHistoryUrlGenerator(object):
-    url_path_minute_increment = 10
+class BlitzortungDataPathGenerator(object):
+    time_granularity = datetime.timedelta(minutes=10)
     url_path_format = '%Y/%m/%d/%H/%M.log'
 
-    def __init__(self):
-        self.duration = datetime.timedelta(minutes=self.url_path_minute_increment)
-
-    def get_url_paths(self, start_time, end_time=None):
-        for interval_start_time in util.time_intervals(start_time, self.duration, end_time):
+    def get_paths(self, start_time, end_time=None):
+        for interval_start_time in util.time_intervals(start_time, self.time_granularity, end_time):
             yield interval_start_time.strftime(self.url_path_format)
 
 
@@ -120,7 +117,7 @@ class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            url_path_generator=BlitzortungHistoryUrlGenerator, strike_builder=builder.Strike)
+            url_path_generator=BlitzortungDataPathGenerator, strike_builder=builder.Strike)
     def __init__(self, data_provider, data_url, url_path_generator, strike_builder):
         self.data_provider = data_provider
         self.data_url = data_url
@@ -132,7 +129,7 @@ class StrikesBlitzortungDataProvider(object):
             (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
         self.logger.debug("import strikes since %s" % latest_strike)
 
-        for url_path in self.url_path_generator.get_url_paths(latest_strike):
+        for url_path in self.url_path_generator.get_paths(latest_strike):
             strike_count = 0
             start_time = time.time()
             target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
@@ -201,7 +198,7 @@ class RawSignalsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
     @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
-            url_path_generator=BlitzortungHistoryUrlGenerator, waveform_builder=builder.RawWaveformEvent)
+            url_path_generator=BlitzortungDataPathGenerator, waveform_builder=builder.RawWaveformEvent)
     def __init__(self, data_provider, data_url, url_path_generator, waveform_builder):
         self.data_provider = data_provider
         self.data_url = data_url
@@ -213,7 +210,7 @@ class RawSignalsBlitzortungDataProvider(object):
 
         raw_data = []
 
-        for url_path in self.url_path_generator.get_url_paths(latest_data):
+        for url_path in self.url_path_generator.get_paths(latest_data):
             target_url = self.data_url.build_url(
                 os.path.join(str(station_id), url_path),
                 region=region,
