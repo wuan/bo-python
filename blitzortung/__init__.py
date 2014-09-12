@@ -1,9 +1,9 @@
 # -*- coding: utf8 -*-
 # -----------------------------------------------------------------------------
-#   Copyright (c) 2011, Andreas Wuerl. All rights reserved.
+# Copyright (c) 2011, Andreas Wuerl. All rights reserved.
 #
-#   See the LICENSE file for details.
-#-----------------------------------------------------------------------------
+# See the LICENSE file for details.
+# -----------------------------------------------------------------------------
 """
 blitzortung python modules
 """
@@ -11,8 +11,8 @@ import logging
 
 __version__ = '1.4.0'
 
-#-----------------------------------------------------------------------------
-#  Constants.
+# -----------------------------------------------------------------------------
+# Constants.
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
@@ -67,3 +67,17 @@ __all__ = [
 
 root_logger = logging.getLogger(__name__)
 root_logger.setLevel(logging.WARN)
+
+
+def set_parent_logger(logger):
+    logger.parent = root_logger
+
+
+def set_log_level(log_level):
+    root_logger.setLevel(log_level)
+
+
+def add_log_handler(log_handler):
+    root_logger.addHandler(log_handler)
+
+

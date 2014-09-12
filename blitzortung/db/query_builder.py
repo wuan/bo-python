@@ -10,6 +10,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
+import datetime
 
 try:
     import psycopg2
@@ -20,14 +21,19 @@ from .query import SelectQuery, GridQuery
 
 
 class Strike(object):
-    def select_query(self, table_name, srid, *args):
-        return SelectQuery() \
+    def select_query(self, table_name, srid, region=None, *args):
+        query = SelectQuery() \
             .set_table_name(table_name) \
             .set_columns('id', '"timestamp"', 'nanoseconds', 'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
                          'ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y', 'altitude', 'amplitude', 'error2d',
                          'stationcount') \
             .add_parameters({'srid': srid}) \
             .parse_args(args)
+
+        if region:
+            query.add_condition("region = %(region)s", {'region': region})
+
+        return query
 
     def grid_query(self, table_name, grid, *args):
         return GridQuery(grid) \
@@ -57,3 +63,34 @@ class Strike(object):
                                  'envelope_srid': envelope.get_srid()})
 
         return query
+
+
+class StrikeCluster(object):
+    def select_query(self, table_name, srid, timestamp, interval_duration, interval_count=1, interval_offset=None):
+        end_time = timestamp
+        interval_offset = interval_duration if interval_offset is None or interval_offset.total_seconds() <= 0 else interval_offset
+        start_time = timestamp - interval_offset * (interval_count - 1) - interval_duration
+
+        query = SelectQuery() \
+            .set_table_name(table_name) \
+            .add_column("id") \
+            .add_column("\"timestamp\"") \
+            .add_column("ST_Transform(geog::geometry, %(srid)s) as geom") \
+            .add_column("strike_count") \
+            .add_parameters({'srid': srid}) \
+            .add_condition("\"timestamp\" in %(timestamps)s",
+                           {'timestamps':
+                                tuple(str(timestamp) for timestamp in
+                                         self.get_timestamps(start_time, end_time, interval_duration,
+                                                             interval_offset))}) \
+            .add_condition("interval_seconds=%(interval_seconds)s",
+                           {'interval_seconds': interval_duration.total_seconds()})
+
+        return query
+
+    def get_timestamps(self, start_time, end_time, interval_duration, interval_offset):
+        final_time = start_time + interval_duration
+        current_time = end_time
+        while current_time >= final_time:
+            yield current_time
+            current_time -= interval_offset

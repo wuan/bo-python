@@ -171,13 +171,18 @@ class TestStrikeCluster(unittest.TestCase):
 
 class TestStation(unittest.TestCase):
     def setUp(self):
-        self.timestamp = pd.Timestamp(pd.Timestamp('2013-09-28 23:23:38').value)
+        self.timestamp = pd.Timestamp(pd.Timestamp('2013-09-28 23:23:38').value).replace(tzinfo=pytz.UTC)
         self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, self.timestamp,
                                                 '<status>', '<board>')
 
-    def test_str(self):
+    def test_online_str(self):
+        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, None, '<status>', '<board>')
         assert_that(str(self.station),
-                    is_("123/ 45 '<name>' '<country>' 2013-09-28 23:23:38.000000000 11.2000 49.4000"))
+                    is_("*123/ 45 '<name>' '<country>' (11.2000, 49.4000)"))
+
+    def test_offline_str(self):
+        assert_that(str(self.station),
+                    is_("-123/ 45 '<name>' '<country>' (11.2000, 49.4000) offline since 2013-09-28 23:23 UTC"))
 
     def test_get_number(self):
         assert_that(self.station.get_number(), is_(123))

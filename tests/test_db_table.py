@@ -58,7 +58,7 @@ class BaseTest(unittest.TestCase):
                           call.getconn().reset(),
                           call.getconn().set_client_encoding('UTF8'),
                           call.getconn().cursor(),
-                          call.getconn().cursor().execute("SET TIME ZONE 'UTC'"),
+                          call.getconn().cursor().execute_many("SET TIME ZONE 'UTC'"),
                           call.getconn().cursor(cursor_factory=psycopg2.extras.DictCursor),
                           call.getconn().cursor().close()]
         self.connection_pool.has_calls(expected_calls)

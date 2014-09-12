@@ -41,9 +41,8 @@ class StrikeQuery(object):
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
-        query = self.strike_query_builder.select_query(db.table.Strike.TABLE_NAME,
-                                                       geom.Geometry.DefaultSrid, time_interval,
-                                                       id_interval, order)
+        query = self.strike_query_builder.select_query(db.table.Strike.TABLE_NAME, geom.Geometry.DefaultSrid,
+                                                       time_interval, order, id_interval)
 
         strikes_result = connection.runQuery(str(query), query.get_parameters())
         strikes_result.addCallback(self.strike_build_results, state=state)
@@ -54,7 +53,7 @@ class StrikeQuery(object):
         state.log_timing('strikes.query')
 
         reference_time = time.time()
-        end_time = state.get_timestamp()
+        end_time = state.get_end_time()
         strikes = tuple(
             (
                 (end_time - strike.get_timestamp()).seconds,
@@ -91,7 +90,7 @@ class StrikeQuery(object):
         histogram_result = result[1]
 
         final_result = {
-            't': state.get_timestamp().strftime("%Y%m%dT%H:%M:%S"),
+            't': state.get_end_time().strftime("%Y%m%dT%H:%M:%S"),
             'h': histogram_result
         }
         final_result.update(strikes_result)

@@ -26,12 +26,16 @@ from .pdist import pdist
 
 class Clustering(object):
     distance_limit = 10
+    coordinate_accuracy = 0.01
+    buffer_size = 0.02
+    coordinate_precision = 4
 
     def __init__(self, cluster_builder):
         self.cluster_builder = cluster_builder
         self.logger = logging.getLogger("{}.{}".format(__name__, self.__class__.__name__))
 
     def build_clusters(self, events, time_interval):
+        events = list(events)
         event_count = len(events)
 
         cluster_count = 0
@@ -49,7 +53,7 @@ class Clustering(object):
 
             self.cluster_builder \
                 .with_timestamp(time_interval.get_end()) \
-                .with_seconds_interval(time_interval.get_duration().seconds)
+                .with_interval_seconds(time_interval.get_duration().seconds)
 
             for clustered_strikes in self.get_clustered_strikes(event_count, clustered_points):
                 cluster_points = len(clustered_strikes)
@@ -64,9 +68,19 @@ class Clustering(object):
                         self.logger.error("".join(str(points).splitlines()))
                         continue
 
-                    shape_points = [[points[vertex, 0], points[vertex, 1]] for vertex in hull.vertices]
+                    shape_points = [
+                        [
+                            round(points[vertex, 0], self.coordinate_precision),
+                            round(points[vertex, 1], self.coordinate_precision)
+                        ] for vertex in hull.vertices]
 
                     shape = LinearRing(shape_points)
+                    shape = shape.buffer(self.buffer_size)
+                    shape = shape.simplify(self.coordinate_accuracy, preserve_topology=False)
+                    shape = shape.exterior
+
+                    if shape is None:
+                        continue
 
                     cluster_count += 1
 

@@ -11,6 +11,9 @@ You should have received a copy of the GNU Affero General Public License along w
 
 """
 
+from __future__ import print_function
+import logging
+
 import math
 
 from injector import inject
@@ -25,6 +28,7 @@ from .. import geom
 from . import query
 from . import mapper
 from . import query_builder
+from blitzortung.logger import get_logger_name
 
 try:
     import psycopg2
@@ -70,6 +74,7 @@ class Base(object):
 
     def __init__(self, db_connection_pool):
 
+        self.logger = logging.getLogger(get_logger_name(self.__class__))
         self.db_connection_pool = db_connection_pool
 
         self.schema_name = ""
@@ -96,8 +101,8 @@ class Base(object):
         cur = None
         try:
             cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        except psycopg2.DatabaseError as e:
-            print(e)
+        except psycopg2.DatabaseError as error:
+            self.logger.error(error)
 
             if self.conn:
                 try:
@@ -179,18 +184,27 @@ class Base(object):
     def select(self, *args):
         pass
 
-    @abstractmethod
-    def create_object_instance(self, result):
-        pass
-
-    def create_results(self, cursor, _):
-        return tuple(self.create_object_instance(value) for value in cursor)
-
-    def execute(self, sql_statement, parameters=None, build_result=None):
+    def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_statement, parameters)
-            if build_result:
-                return build_result(cursor, self.create_object_instance)
+            if factory_method:
+                method = factory_method(cursor, **factory_method_args)
+                return method
+
+    def execute_single(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        def single_cursor_factory(cursor):
+            if cursor.rowcount == 1:
+                return factory_method(cursor.fetchone(), **factory_method_args)
+
+        base = self.execute(sql_statement, parameters, single_cursor_factory)
+        return base
+
+    def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(sql_statement, parameters)
+            if factory_method:
+                for value in cursor:
+                    yield factory_method(value, **factory_method_args)
 
 
 class Strike(Base):
@@ -258,25 +272,19 @@ class Strike(Base):
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
 
-        def prepare_result(cursor, _):
-            if cursor.rowcount == 1:
-                result = cursor.fetchone()
-                total_nanoseconds = pd.Timestamp(self.fix_timezone(result['timestamp'])).value + result['nanoseconds']
-                return pd.Timestamp(total_nanoseconds, tz=self.tz)
-            else:
-                return None
+        def prepare_result(result):
+            total_nanoseconds = pd.Timestamp(self.fix_timezone(result['timestamp'])).value + result['nanoseconds']
+            return pd.Timestamp(total_nanoseconds, tz=self.tz)
 
-        return self.execute(sql, {'region': region}, prepare_result)
-
-    def create_object_instance(self, result):
-        return self.strike_mapper.create_object(result, timestamp=self.tz)
+        parameters = {'region': region}
+        return self.execute_single(sql, parameters, prepare_result)
 
     def select(self, *args):
         """ build up query """
 
         query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), *args)
 
-        return self.execute(str(query), query.get_parameters(), self.create_results)
+        return self.execute_many(str(query), query.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
 
     def select_grid(self, grid, *args):
         """ build up raster query """
@@ -292,7 +300,7 @@ class Strike(Base):
 
             return raster_data
 
-        return self.execute(str(query), query.get_parameters(), prepare_results)
+        return self.execute_base(str(query), query.get_parameters(), prepare_results)
 
     def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
@@ -339,7 +347,7 @@ class StrikeCluster(Base):
 
     TABLE_NAME = 'strike_clusters'
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.StrikeCluster,
             strike_cluster_mapper=mapper.StrikeCluster)
     def __init__(self, db_connection_pool, query_builder, strike_cluster_mapper):
         super(StrikeCluster, self).__init__(db_connection_pool)
@@ -364,66 +372,23 @@ class StrikeCluster(Base):
 
         self.execute(sql, parameters)
 
-    def get_latest_time(self, interval_seconds=10):
+    def get_latest_time(self, interval_seconds=600):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
               ' WHERE interval_seconds=%(interval_seconds)s ORDER BY "timestamp" DESC LIMIT 1'
 
-        print(sql)
+        parameters = {'interval_seconds': interval_seconds}
+        return self.execute_single(sql, parameters,
+                                   lambda result: self.fix_timezone(result['timestamp']))
 
-        def prepare_result(cursor, _):
-            if cursor.rowcount == 1:
-                result = cursor.fetchone()
-                return self.fix_timezone(result['end_time'])
-            else:
-                return None
-
-        return self.execute(sql, {'interval_seconds': interval_seconds}, build_result=prepare_result)
-
-    def create_object_instance(self, result):
-        return self.strike_mapper.create_object(result, timestamp=self.tz)
-
-    def select(self, *args):
+    def select(self, timestamp, interval_duration, interval_count=1, interval_offset=None):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), *args)
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), timestamp, interval_duration,
+                                                interval_count, interval_offset)
 
-        return self.execute(str(query), query.get_parameters(), self.create_results)
+        return self.execute_many(str(query), query.get_parameters(), self.strike_cluster_mapper.create_object,
+                            timezone=self.tz, interval_seconds=interval_duration.seconds)
 
-    def select_grid(self, grid, *args):
-        """ build up raster query """
-
-        query = self.query_builder.grid_query(self.table_name, grid, *args)
-
-        def prepare_results(cursor, _):
-            raster_data = GridData(grid)
-
-            for result in cursor:
-                raster_data.set(result['rx'], result['ry'],
-                                geom.GridElement(result['count'], result['timestamp']))
-
-            return raster_data
-
-        return self.execute(str(query), query.get_parameters(), prepare_results)
-
-    def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
-
-        query = self.query_builder.histogram_query(
-            self.get_full_table_name(),
-            minutes, minute_offset, binsize,
-            region, envelope
-        )
-
-        def prepare_result(cursor, _):
-            value_count = minutes / binsize
-
-            result = [0] * value_count
-
-            for bin_data in cursor:
-                result[bin_data[0] + value_count - 1] = bin_data[1]
-
-            return result
-
-        return self.execute(str(query), query.get_parameters(), prepare_result)
 
 class Station(Base):
     """
@@ -478,10 +443,7 @@ class Station(Base):
 
         sql += ''' order by s.number'''
 
-        return self.execute(sql, {'region': region}, self.create_results)
-
-    def create_object_instance(self, result):
-        return self.station_mapper.create_object(result)
+        return self.execute_many(sql, {'region': region}, self.station_mapper.create_object)
 
 
 class StationOffline(Base):
@@ -527,10 +489,7 @@ class StationOffline(Base):
         sql = '''select id, number, region, begin, "end"
             from stations_offline where "end" is null and region=%s order by number;'''
 
-        return self.execute(sql, (region,), self.create_results)
-
-    def create_object_instance(self, result):
-        return self.station_offline_mapper.create_object(result)
+        return self.execute_many(sql, (region,), self.station_offline_mapper.create_object)
 
 
 class Location(Base):
@@ -665,7 +624,7 @@ class Location(Base):
 
                 return locations
 
-            return self.execute(query_string, params, build_results)
+            return self.execute_many(query_string, params, build_results)
 
 
 class ServiceLog(Base):
@@ -711,7 +670,7 @@ class ServiceLog(Base):
             else:
                 return None
 
-        return self.execute(sql, build_result=prepare_result)
+        return self.execute(sql, factory_method=prepare_result)
 
     def select(self, args):
         pass
