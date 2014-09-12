@@ -24,7 +24,12 @@ import io
 
 from injector import singleton, inject
 import pytz
-from requests import Session
+try:
+    from requests import Session
+except ImportError:
+    class Session(object):
+        pass
+
 import pandas as pd
 
 from . import builder, config, util
