@@ -71,6 +71,9 @@ class TimeInterval(BaseInterval):
     def get_duration(self):
         return self.end - self.start
 
+    def contains(self, timestamp):
+        return self.start <= timestamp < self.end
+
 
 class Query(object):
     """
