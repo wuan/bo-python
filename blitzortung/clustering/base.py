@@ -82,6 +82,10 @@ class Clustering(object):
                     if shape is None:
                         continue
 
+                    x_values = np.round(shape.coords.xy[0], self.coordinate_precision)
+                    y_values = np.round(shape.coords.xy[1], self.coordinate_precision)
+                    shape = LinearRing(zip(x_values, y_values))
+
                     cluster_count += 1
 
                     yield self.cluster_builder \
