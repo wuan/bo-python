@@ -25,7 +25,8 @@ install:
 
   - pip install -r requirements.txt
   - pip install --upgrade fastcluster
-  - pip install twisted
+  - pip install --upgrade twisted
+  - pip install --upgrade geographiclib
   - python setup.py build_ext --inplace
   - pip list
 
