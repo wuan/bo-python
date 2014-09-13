@@ -189,13 +189,12 @@ class StrikeCluster(object):
     def build(self):
         if self.shape is not None:
             poly_area = PolygonArea(Geodesic.WGS84)
-            print(self.shape.coords)
             if self.shape.coords:
                 for (x, y) in zip(self.shape.coords.xy[0], self.shape.coords.xy[1]):
                     poly_area.AddPoint(x, y)
                 area = poly_area.Compute(False, True)[2] / 1e6
             else:
-                area = 0.0;
+                area = 0.0
         else:
             area = None
 
