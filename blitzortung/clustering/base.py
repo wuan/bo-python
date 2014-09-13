@@ -25,7 +25,7 @@ from .pdist import pdist
 
 
 class Clustering(object):
-    distance_limit = 10
+    distance_limit = 5
     coordinate_accuracy = 0.01
     buffer_size = 0.02
     coordinate_precision = 4
