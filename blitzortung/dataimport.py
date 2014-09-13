@@ -10,6 +10,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
+from abc import abstractmethod
 
 import os
 import logging
@@ -37,7 +38,21 @@ import pandas as pd
 from . import builder, config, util
 
 
-class HttpFileTransport(object):
+class TransportAbstract(object):
+    @abstractmethod
+    def read_lines(self, source_path, post_process=None):
+        pass
+
+
+class FileTransport(TransportAbstract):
+    def read_lines(self, source_path, post_process=None):
+        if os.path.isfile(source_path):
+            with open(source_path) as data_file:
+                for line in data_file:
+                    yield line
+
+
+class HttpFileTransport(FileTransport):
     TIMEOUT_SECONDS = 60
 
     logger = logging.getLogger(__name__)
@@ -83,25 +98,29 @@ class HttpFileTransport(object):
                 yield self.process_line(line)
 
     def process_line(self, line):
-        return self.html_parser.unescape(line.decode('utf8')).replace(u'\xa0', ' ')
+        return line.decode('utf8')
 
 
-class BlitzortungDataUrl(object):
+class BlitzortungDataPath(object):
     default_host_name = 'data'
     default_region = 1
 
-    target_url = 'http://%(host_name)s.blitzortung.org/Data_%(region)d'
+    def __init__(self, base_path=None):
+        self.data_path = os.path.join(
+            base_path if base_path else 'http://{host_name}.blitzortung.org',
+            'Data_{region}'
+        )
 
-    def build_url(self, url_path, **kwargs):
-        url_parameters = kwargs
+    def build_path(self, sub_path, **kwargs):
+        parameters = kwargs
 
-        if 'host_name' not in url_parameters:
-            url_parameters['host_name'] = self.default_host_name
+        if 'host_name' not in parameters:
+            parameters['host_name'] = self.default_host_name
 
-        if 'region' not in url_parameters:
-            url_parameters['region'] = self.default_region
+        if 'region' not in parameters:
+            parameters['region'] = self.default_region
 
-        return os.path.join(self.target_url, url_path) % url_parameters
+        return os.path.join(self.data_path, sub_path).format(**parameters)
 
 
 class BlitzortungDataPathGenerator(object):
@@ -117,7 +136,7 @@ class BlitzortungDataPathGenerator(object):
 class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
             url_path_generator=BlitzortungDataPathGenerator, strike_builder=builder.Strike)
     def __init__(self, data_transport, data_url, url_path_generator, strike_builder):
         self.data_transport = data_transport
@@ -133,7 +152,7 @@ class StrikesBlitzortungDataProvider(object):
         for url_path in self.url_path_generator.get_paths(latest_strike):
             strike_count = 0
             start_time = time.time()
-            target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
+            target_url = self.data_url.build_path(os.path.join('Protected', 'Strokes', url_path), region=region)
             for strike_line in self.data_transport.read_lines(target_url):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
@@ -164,7 +183,7 @@ def strikes():
 class StationsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
             station_builder=builder.Station)
     def __init__(self, data_transport, data_url, station_builder):
         self.data_transport = data_transport
@@ -173,7 +192,7 @@ class StationsBlitzortungDataProvider(object):
 
     def get_stations(self, region=1):
         current_stations = []
-        target_url = self.data_url.build_url('Protected/stations.txt.gz', region=region)
+        target_url = self.data_url.build_path('Protected/stations.txt.gz', region=region)
         for station_line in self.data_transport.read_lines(target_url, post_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_line(station_line).build())
@@ -198,7 +217,7 @@ def stations():
 class RawSignalsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
             url_path_generator=BlitzortungDataPathGenerator, waveform_builder=builder.RawWaveformEvent)
     def __init__(self, data_transport, data_url, url_path_generator, waveform_builder):
         self.data_transport = data_transport
@@ -212,7 +231,7 @@ class RawSignalsBlitzortungDataProvider(object):
         raw_data = []
 
         for url_path in self.url_path_generator.get_paths(latest_data):
-            target_url = self.data_url.build_url(
+            target_url = self.data_url.build_path(
                 os.path.join(str(station_id), url_path),
                 region=region,
                 host_name='signals')
