@@ -53,7 +53,7 @@ class HttpDataTransportTest(unittest.TestCase):
     def test_read_data(self):
         self.response.iter_lines.return_value = [b"line1 \n", b"line2\n", u"äöü\n".encode('utf8')]
 
-        #self.http_data_transport.read_lines_from_url.return_value = response
+        # self.http_data_transport.read_lines_from_url.return_value = response
 
         result = self.data_transport.read_lines('target_url')
 
@@ -95,15 +95,6 @@ class BlitzortungDataUrlTest(unittest.TestCase):
     def test_specific_values(self):
         target_url = self.data_url.build_url('url_path', host_name='foo', region=42)
         assert_that(target_url, is_(equal_to('http://foo.blitzortung.org/Data_42/url_path')))
-
-
-class BlitzortungDataProviderTest(unittest.TestCase):
-    def setUp(self):
-        self.http_data_transport = Mock(name="data_transport")
-
-        self.provider = blitzortung.dataimport.BlitzortungDataProvider(self.http_data_transport)
-
-
 
 
 class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
