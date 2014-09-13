@@ -1,7 +1,19 @@
+# -*- coding: utf8 -*-
+
+"""
+Copyright (C) 2014 Andreas Würl
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
 import cython
 
 from libc.math cimport sin, cos, sqrt, asin
-import numpy as np
 
 cimport numpy as np
 
@@ -19,17 +31,17 @@ def pdist(np.ndarray[double, ndim=2] data not None):
     return distances
 
 cdef unsigned int choose(unsigned int n, unsigned int k):
+    """ build numerator and denominator for fast calculation of the number of combinations
     """
-    A fast way to calculate binomial coefficients by Andrew Dalke (contrib).
-    """
-    cdef unsigned int ntok = 1, ktok = 1, t
+    cdef unsigned int numerator = 1, denominator = 1
+    cdef unsigned int ascending = 1, descending = n
 
     if 0 <= k <= n:
-        for t in range(1, min(k, n - k) + 1):
-            ntok *= n
-            ktok *= t
-            n -= 1
-        return ntok // ktok
+        for ascending in range(1, min(k, n - k) + 1):
+            numerator *= descending
+            denominator *= ascending
+            descending -= 1
+        return numerator // denominator
     else:
         return 0
 
@@ -53,6 +65,6 @@ cdef double distance_(double lambda_1, double phi_1, double lambda_2, double phi
 
     cdef double c = sqrt(delta_x * delta_x + delta_y * delta_y + delta_z * delta_z)
 
-    cdef double delta_theta = 2 * asin(c/2)
+    cdef double delta_theta = 2 * asin(c / 2)
 
     return 6371 * delta_theta
