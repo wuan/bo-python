@@ -194,7 +194,7 @@ class StrikeCluster(object):
                 try:
                     for (x, y) in zip(self.shape.coords.xy[0], self.shape.coords.xy[1]):
                         poly_area.AddPoint(x, y)
-                    area = poly_area.Compute(False, True)[2] / 1e6
+                    area = round(poly_area.Compute(False, True)[2] / 1e6, 1)
                 except ValueError:
                     area = None
             else:
