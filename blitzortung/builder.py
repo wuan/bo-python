@@ -15,6 +15,7 @@ import datetime
 import itertools
 import re
 from injector import inject
+import math
 
 import pytz
 import numpy as np
@@ -190,11 +191,14 @@ class StrikeCluster(object):
         if self.shape is not None:
             poly_area = PolygonArea(Geodesic.WGS84)
             if self.shape.coords:
-                for (x, y) in zip(self.shape.coords.xy[0], self.shape.coords.xy[1]):
-                    poly_area.AddPoint(x, y)
-                area = poly_area.Compute(False, True)[2] / 1e6
+                try:
+                    for (x, y) in zip(self.shape.coords.xy[0], self.shape.coords.xy[1]):
+                        poly_area.AddPoint(x, y)
+                    area = poly_area.Compute(False, True)[2] / 1e6
+                except ValueError:
+                    area = None
             else:
-                area = 0.0
+                area = None
         else:
             area = None
 
