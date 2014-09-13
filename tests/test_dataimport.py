@@ -96,6 +96,11 @@ class BlitzortungDataUrlTest(unittest.TestCase):
         target_url = self.data_url.build_path('url_path', host_name='foo', region=42)
         assert_that(target_url, is_(equal_to('http://foo.blitzortung.org/Data_42/url_path')))
 
+    def test_with_user_defined_base(self):
+        self.data_url = blitzortung.dataimport.BlitzortungDataPath("base/path")
+        target_url = self.data_url.build_path('url_path', host_name='bar', region=39)
+        assert_that(target_url, is_(equal_to('base/path/Data_39/url_path')))
+
 
 class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
     def create_history_url_generator(self, present_time):

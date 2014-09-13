@@ -107,7 +107,7 @@ class BlitzortungDataPath(object):
 
     def __init__(self, base_path=None):
         self.data_path = os.path.join(
-            base_path if base_path else 'http://{host_name}.blitzortung.org',
+            (base_path if base_path else 'http://{host_name}.blitzortung.org'),
             'Data_{region}'
         )
 
