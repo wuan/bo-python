@@ -149,9 +149,11 @@ class TestStrikeCluster(unittest.TestCase):
         self.seconds_interval = 10 * 60
         self.shape = shapely.geometry.LinearRing()
         self.strike_count = 4231
+        self.area = 0.815
 
-        self.strike_cluster = blitzortung.data.StrikeCluster(self.id_value, self.timestamp, self.seconds_interval, self.shape,
-                                                             self.strike_count)
+        self.strike_cluster = blitzortung.data.StrikeCluster(self.id_value, self.timestamp, self.seconds_interval,
+                                                             self.shape,
+                                                             self.strike_count, self.area)
 
     def test_get_id(self):
         assert_that(self.strike_cluster.get_id(), is_(self.id_value))
@@ -167,6 +169,9 @@ class TestStrikeCluster(unittest.TestCase):
 
     def test_get_strike_count(self):
         assert_that(self.strike_cluster.get_strike_count(), is_(self.strike_count))
+
+    def test_get_area(self):
+        assert_that(self.strike_cluster.get_area(), is_(self.area))
 
 
 class TestStation(unittest.TestCase):

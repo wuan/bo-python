@@ -281,12 +281,13 @@ class StrikeCluster(object):
     class for strike cluster objects
     """
 
-    def __init__(self, cluster_id, timestamp, interval_seconds, shape, strike_count):
+    def __init__(self, cluster_id, timestamp, interval_seconds, shape, strike_count, area):
         self.cluster_id = cluster_id
         self.timestamp = timestamp
         self.interval_seconds = interval_seconds
         self.shape = shape
         self.strike_count = strike_count
+        self.area = area
 
     def get_id(self):
         return self.cluster_id
@@ -303,8 +304,13 @@ class StrikeCluster(object):
     def get_strike_count(self):
         return self.strike_count
 
+    def get_area(self):
+        return self.area
+
     def __str__(self):
-        return "StrikeCluster({}, {}, {}, {}, {})".format(self.cluster_id, self.timestamp, self.interval_seconds, mapping(self.shape), self.strike_count)
+        return "StrikeCluster({}, {}, {}, {}, {}, {:.1f})".format(self.cluster_id, self.timestamp,
+                                                                  self.interval_seconds, mapping(self.shape),
+                                                                  self.strike_count, self.area)
 
 
 class ChannelWaveform(object):

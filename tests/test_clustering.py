@@ -56,8 +56,8 @@ class TestClustering(TestCase):
         assert_that(cluster.get_interval_seconds(), is_(10 * 60))
         shape = cluster.get_shape()
         xy_arrays = shape.coords.xy
-        assert_that(xy_arrays[0].tolist(), is_([11.05, 11.0, 11.05, 11.05]))
-        assert_that(xy_arrays[1].tolist(), is_([51.12, 51.0, 51.05, 51.12]))
+        assert_that(xy_arrays[0].tolist(), is_([11.032, 11.05, 11.0685, 11.0696, 10.9961, 10.9804, 11.032]))
+        assert_that(xy_arrays[1].tolist(), is_([51.1286, 51.14, 51.1277, 51.0461, 50.9804, 51.0039, 51.1286]))
         assert_that(cluster.get_strike_count(), is_(3))
 
     def test_basic_clustering(self):

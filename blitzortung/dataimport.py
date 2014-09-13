@@ -16,6 +16,7 @@ import logging
 import time
 import datetime
 import gzip
+
 try:
     from html.parser import HTMLParser
 except ImportError:
@@ -24,6 +25,7 @@ import io
 
 from injector import singleton, inject
 import pytz
+
 try:
     from requests import Session
 except ImportError:
@@ -34,9 +36,12 @@ import pandas as pd
 
 from . import builder, config, util
 
-class HttpDataTransport(object):
-    logger = logging.getLogger(__name__)
+
+class HttpFileTransport(object):
     TIMEOUT_SECONDS = 60
+
+    logger = logging.getLogger(__name__)
+    html_parser = HTMLParser()
 
     @inject(config=config.Config)
     def __init__(self, config, session=None):
@@ -46,30 +51,39 @@ class HttpDataTransport(object):
     def __del__(self):
         if self.session:
             try:
-                self.logger.info("close http session '%s'" % self.session)
+                self.logger.debug("close http session '%s'" % self.session)
                 self.session.close()
             except ReferenceError:
                 pass
 
-    def read_lines_from_url(self, target_url, post_process=None):
+    def read_lines(self, source_url, post_process=None):
         response = self.session.get(
-            target_url,
+            source_url,
             auth=(self.config.get_username(), self.config.get_password()),
             stream=True,
             timeout=self.TIMEOUT_SECONDS)
 
         if response.status_code != 200:
-            self.logger.debug("http status %d for get '%s" % (response.status_code, target_url))
-            return
+            self.logger.debug("http status %d for get '%s" % (response.status_code, source_url))
+            return []
 
         if post_process:
-            response_text = post_process(response.content)
-            for line in response_text.splitlines():
-                if line:
-                    yield line
+            return self.split_lines_with_processing(response.content, post_process)
         else:
-            for html_line in response.iter_lines():
-                yield html_line[:-1]
+            return self.split_lines(response)
+
+    def split_lines(self, response):
+        for html_line in response.iter_lines():
+            yield self.process_line(html_line[:-1])
+
+    def split_lines_with_processing(self, content, post_process):
+        text_content = post_process(content)
+        for line in text_content.splitlines():
+            if line:
+                yield self.process_line(line)
+
+    def process_line(self, line):
+        return self.html_parser.unescape(line.decode('utf8')).replace(u'\xa0', ' ')
 
 
 class BlitzortungDataUrl(object):
@@ -90,24 +104,6 @@ class BlitzortungDataUrl(object):
         return os.path.join(self.target_url, url_path) % url_parameters
 
 
-@singleton
-class BlitzortungDataProvider(object):
-    logger = logging.getLogger(__name__)
-    html_parser = HTMLParser()
-
-    @inject(http_data_transport=HttpDataTransport)
-    def __init__(self, http_data_transport):
-        self.http_data_transport = http_data_transport
-
-    def read_lines_from_url(self, target_url, post_process):
-        return self.http_data_transport.read_lines_from_url(target_url, post_process=post_process)
-
-    def read_data(self, target_url, post_process=None):
-        for line in self.read_lines_from_url(target_url, post_process=post_process):
-            line = self.html_parser.unescape(line.decode('utf8')).replace(u'\xa0', ' ')
-            yield line
-
-
 class BlitzortungDataPathGenerator(object):
     time_granularity = datetime.timedelta(minutes=10)
     url_path_format = '%Y/%m/%d/%H/%M.log'
@@ -121,10 +117,10 @@ class BlitzortungDataPathGenerator(object):
 class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
             url_path_generator=BlitzortungDataPathGenerator, strike_builder=builder.Strike)
-    def __init__(self, data_provider, data_url, url_path_generator, strike_builder):
-        self.data_provider = data_provider
+    def __init__(self, data_transport, data_url, url_path_generator, strike_builder):
+        self.data_transport = data_transport
         self.data_url = data_url
         self.url_path_generator = url_path_generator
         self.strike_builder = strike_builder
@@ -138,7 +134,7 @@ class StrikesBlitzortungDataProvider(object):
             strike_count = 0
             start_time = time.time()
             target_url = self.data_url.build_url(os.path.join('Protected', 'Strokes', url_path), region=region)
-            for strike_line in self.data_provider.read_data(target_url):
+            for strike_line in self.data_transport.read_lines(target_url):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
                 except builder.BuilderError as e:
@@ -168,17 +164,17 @@ def strikes():
 class StationsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
             station_builder=builder.Station)
-    def __init__(self, data_provider, data_url, station_builder):
-        self.data_provider = data_provider
+    def __init__(self, data_transport, data_url, station_builder):
+        self.data_transport = data_transport
         self.data_url = data_url
         self.station_builder = station_builder
 
     def get_stations(self, region=1):
         current_stations = []
         target_url = self.data_url.build_url('Protected/stations.txt.gz', region=region)
-        for station_line in self.data_provider.read_data(target_url, post_process=self.pre_process):
+        for station_line in self.data_transport.read_lines(target_url, post_process=self.pre_process):
             try:
                 current_stations.append(self.station_builder.from_line(station_line).build())
             except builder.BuilderError:
@@ -202,10 +198,10 @@ def stations():
 class RawSignalsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_provider=BlitzortungDataProvider, data_url=BlitzortungDataUrl,
+    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataUrl,
             url_path_generator=BlitzortungDataPathGenerator, waveform_builder=builder.RawWaveformEvent)
-    def __init__(self, data_provider, data_url, url_path_generator, waveform_builder):
-        self.data_provider = data_provider
+    def __init__(self, data_transport, data_url, url_path_generator, waveform_builder):
+        self.data_transport = data_transport
         self.data_url = data_url
         self.url_path_generator = url_path_generator
         self.waveform_builder = waveform_builder
@@ -221,7 +217,7 @@ class RawSignalsBlitzortungDataProvider(object):
                 region=region,
                 host_name='signals')
 
-            raw_data += self.data_provider.read_data(target_url)
+            raw_data += self.data_transport.read_lines(target_url)
 
         return raw_data
 

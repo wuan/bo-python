@@ -19,6 +19,8 @@ from injector import inject
 import pytz
 import numpy as np
 import pandas as pd
+from geographiclib.polygonarea import PolygonArea
+from geographiclib.geodesic import Geodesic
 
 from . import Error
 from . import data
@@ -177,6 +179,7 @@ class StrikeCluster(object):
 
     def with_shape(self, shape):
         self.shape = shape
+
         return self
 
     def with_strike_count(self, strike_count):
@@ -184,7 +187,20 @@ class StrikeCluster(object):
         return self
 
     def build(self):
-        return data.StrikeCluster(self.cluster_id, self.timestamp, self.interval_seconds, self.shape, self.strike_count)
+        if self.shape is not None:
+            poly_area = PolygonArea(Geodesic.WGS84)
+            print(self.shape.coords)
+            if self.shape.coords:
+                for (x, y) in zip(self.shape.coords.xy[0], self.shape.coords.xy[1]):
+                    poly_area.AddPoint(x, y)
+                area = poly_area.Compute(False, True)[2] / 1e6
+            else:
+                area = 0.0;
+        else:
+            area = None
+
+        return data.StrikeCluster(self.cluster_id, self.timestamp, self.interval_seconds, self.shape, self.strike_count,
+                                  area)
 
 
 class Station(Event):
