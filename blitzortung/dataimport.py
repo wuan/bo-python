@@ -88,8 +88,7 @@ class HttpFileTransport(FileTransport):
             return self.split_lines(response)
 
     def split_lines(self, response):
-        for html_line in response.iter_lines():
-            yield self.process_line(html_line[:-1])
+        return (self.process_line(html_line) for html_line in response.iter_lines())
 
     def split_lines_with_processing(self, content, post_process):
         text_content = post_process(content)
@@ -228,17 +227,17 @@ class RawSignalsBlitzortungDataProvider(object):
     def get_raw_data_since(self, latest_data, region, station_id):
         self.logger.debug("import raw data since %s" % latest_data)
 
-        raw_data = []
-
         for url_path in self.url_path_generator.get_paths(latest_data):
             target_url = self.data_url.build_path(
                 os.path.join(str(station_id), url_path),
                 region=region,
                 host_name='signals')
 
-            raw_data += self.data_transport.read_lines(target_url)
-
-        return raw_data
+            for line in self.data_transport.read_lines(target_url):
+	        try:
+                    yield self.waveform_builder.from_string(line).build()
+	        except builder.BuilderError as e:
+		    self.logger.warn(str(e))
 
 
 def raw():

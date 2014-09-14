@@ -405,7 +405,7 @@ class RawWaveformEvent(Event):
                         break
                     self.channels.append(self.channel_builder.build())
             except ValueError as e:
-                raise BuilderError(e)
+                raise BuilderError(e, string)
 
         return self
 
