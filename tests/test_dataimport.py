@@ -39,7 +39,7 @@ class HttpDataTransportTest(unittest.TestCase):
         self.data_transport = blitzortung.dataimport.HttpFileTransport(self.config, self.session)
 
     def test_read_lines_from_url(self):
-        self.response.iter_lines.return_value = [b'line1\n', b'line2\n']
+        self.response.iter_lines.return_value = [b'line1', b'line2']
 
         line_generator = self.data_transport.read_lines('http://foo.bar/baz')
 
@@ -51,7 +51,7 @@ class HttpDataTransportTest(unittest.TestCase):
             stream=True)
 
     def test_read_data(self):
-        self.response.iter_lines.return_value = [b"line1 \n", b"line2\n", u"äöü\n".encode('utf8')]
+        self.response.iter_lines.return_value = [b"line1 ", b"line2", u"äöü".encode('utf8')]
 
         # self.http_data_transport.read_lines_from_url.return_value = response
 
@@ -223,22 +223,21 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
     def setUp(self):
         self.data_provider = Mock()
         self.data_url = Mock()
-        self.url_generator = Mock()
+        self.url_path_generator = Mock()
         self.builder = Mock()
 
         self.provider = blitzortung.dataimport.RawSignalsBlitzortungDataProvider(
             self.data_provider,
             self.data_url,
-            self.url_generator,
+            self.url_path_generator,
             self.builder
         )
-        self.provider.read_data = Mock()
 
     def test_get_raw_data_since(self):
         last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 
         self.data_url.build_path.side_effect = ['full_url1', 'full_url2']
-        self.url_generator.get_paths.return_value = ['url_path1', 'url_path2']
+        self.url_path_generator.get_paths.return_value = ['url_path1', 'url_path2']
         self.data_provider.read_lines.side_effect = [["line11", "line12"], ["line21", "line22"]]
         raw11 = Mock(name='raw11')
         raw12 = Mock(name='raw12')
@@ -249,19 +248,19 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
 
         region_id = 5
         station_id = 123
-        strikes = self.provider.get_raw_data_since(last_data, region_id, station_id)
+        raw_signals = list(self.provider.get_raw_data_since(last_data, region_id, station_id))
 
         expected_args = [call(last_data)]
-        assert_that(self.url_generator.get_paths.call_args_list, is_(equal_to(expected_args)))
+        assert_that(self.url_path_generator.get_paths.call_args_list, is_(equal_to(expected_args)))
 
         expected_args = [
-            call('123/url_path1', region=5, host_name='signals'),
-            call('123/url_path2', region=5, host_name='signals')]
+            call('{}/url_path1'.format(station_id), region=region_id, host_name='signals'),
+            call('{}/url_path2'.format(station_id), region=region_id, host_name='signals')]
         assert_that(self.data_url.build_path.call_args_list, is_(equal_to(expected_args)))
 
         expected_args = [call('full_url1'), call('full_url2')]
         assert_that(self.data_provider.read_lines.call_args_list, is_(equal_to(expected_args)))
 
-        assert_that(strikes, contains("line11", "line12", "line21", "line22"))
+        assert_that(raw_signals, contains(raw11, raw12, raw21, raw22))
 
 

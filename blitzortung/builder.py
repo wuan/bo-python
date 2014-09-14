@@ -305,7 +305,7 @@ class ChannelWaveform(object):
         self.amplifier_version = None
         self.antenna = None
         self.gain = None
-        self.values = None
+        self.values = 0
         self.start = None
         self.bits = 0
         self.shift = None
@@ -331,6 +331,8 @@ class ChannelWaveform(object):
         hex_character = iter(waveform_hex_string)
         self.waveform = np.zeros(self.values)
         bits_per_char = 4
+        if self.bits == 0:
+            self.bits = len(waveform_hex_string) // self.values * bits_per_char
         chars_per_sample = self.bits // bits_per_char
         value_offset = -(1 << (chars_per_sample * 4 - 1))
 
