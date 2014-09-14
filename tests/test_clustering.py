@@ -40,8 +40,8 @@ class TestClustering(TestCase):
 
         events = [
             strike_builder.set_x(11).set_y(51).set_id(1).build(),
-            strike_builder.set_x(11.05).set_y(51.05).set_id(2).build(),
-            strike_builder.set_x(11.05).set_y(51.12).set_id(3).build(),
+            strike_builder.set_x(11.02).set_y(51.02).set_id(2).build(),
+            strike_builder.set_x(11.02).set_y(51.05).set_id(3).build(),
             strike_builder.set_x(11.4).set_y(51.4).set_id(4).build(),
             strike_builder.set_x(12).set_y(52).set_id(5).build()
         ]
@@ -56,8 +56,8 @@ class TestClustering(TestCase):
         assert_that(cluster.get_interval_seconds(), is_(10 * 60))
         shape = cluster.get_shape()
         xy_arrays = shape.coords.xy
-        assert_that(xy_arrays[0].tolist(), is_([11.032, 11.05, 11.0685, 11.0696, 10.9961, 10.9804, 11.032]))
-        assert_that(xy_arrays[1].tolist(), is_([51.1286, 51.14, 51.1277, 51.0461, 50.9804, 51.0039, 51.1286]))
+        assert_that(xy_arrays[0].tolist(), is_([11.0015, 11.034, 11.04, 11.0001, 10.98, 11.0015]))
+        assert_that(xy_arrays[1].tolist(), is_([51.0575, 51.0643, 51.02, 50.98, 50.9998, 51.0575]))
         assert_that(cluster.get_strike_count(), is_(3))
 
     def test_basic_clustering(self):
