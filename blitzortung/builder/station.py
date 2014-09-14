@@ -1,5 +1,3 @@
-import re
-
 # -*- coding: utf8 -*-
 
 """
@@ -12,6 +10,8 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
+
+import re
 
 from .base import Base, Event, BuilderError
 from .. import data
