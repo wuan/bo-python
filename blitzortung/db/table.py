@@ -53,8 +53,8 @@ class Base(object):
     createuser -i -D -R -S -W -E -P blitzortung
     createdb -E utf8 -O blitzortung blitzortung
     createlang plpgsql blitzortung
-    psql -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql -d blitzortung
-    psql -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql -d blitzortung
+    psql -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql -d blitzortung
     (< pg 9.0)
     psql -f /usr/share/postgresql/8.4/contrib/btree_gist.sql blitzortung
 
