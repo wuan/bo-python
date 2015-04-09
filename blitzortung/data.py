@@ -31,7 +31,7 @@ class Event(types.Point):
         return self.timestamp
 
     def difference_to(self, other):
-        return self.timestamp - other.timestamp
+        return other.timestamp - self.timestamp
 
     def ns_difference_to(self, other):
         return other.timestamp.value - self.timestamp.value
