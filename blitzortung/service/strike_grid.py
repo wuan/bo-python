@@ -61,6 +61,7 @@ class StrikeGridQuery(object):
         state.log_timing('strikes_grid.query')
 
         reference_time = time.time()
+        x_bin_count = state.get_grid_parameters().get_x_bin_count()
         y_bin_count = state.get_grid_parameters().get_y_bin_count()
         end_time = state.get_end_time()
         strikes_grid_result = tuple(
@@ -69,7 +70,7 @@ class StrikeGridQuery(object):
                 y_bin_count - result['ry'] - 1,
                 result['count'],
                 -(end_time - result['timestamp']).seconds
-            ) for result in results
+            ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
         )
         state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
         state.log_timing('strikes_grid.build_result', reference_time)
