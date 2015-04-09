@@ -32,17 +32,11 @@ language: python
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION dep1 dep2 ...
+  - deps='pip numpy pandas scipy cython pytz shapely requests nose mock coverage sphinx'
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION $deps
   - source activate test-environment
-  - python setup.py install
 
   # install deps
-  - sudo conda init
-  - sudo conda update conda --yes
-  - deps='pip numpy pandas scipy cython pytz shapely requests nose mock coverage sphinx'
-  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
-  - export PATH=$HOME/py/bin:$PATH
-
   - pip install -r requirements.txt
   - pip install --upgrade fastcluster
   - pip install --upgrade twisted
