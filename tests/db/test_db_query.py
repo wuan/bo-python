@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 
 """
-Copyright (C) 2010-2014 Andreas Würl
+Copyright (C) 2010-2015 Andreas Würl
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 
@@ -11,16 +11,17 @@ You should have received a copy of the GNU Affero General Public License along w
 
 """
 
-import unittest
+from unittest import TestCase
 import datetime
 from hamcrest import assert_that, is_, equal_to
 from nose.tools import raises
+import shapely.wkb
 
 import blitzortung
 import blitzortung.db.query
 
 
-class IdIntervalTest(unittest.TestCase):
+class IdIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.IdInterval()
 
@@ -51,7 +52,7 @@ class IdIntervalTest(unittest.TestCase):
         blitzortung.db.query.IdInterval(1, "asdf")
 
 
-class TimeIntervalTest(unittest.TestCase):
+class TimeIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.TimeInterval()
 
@@ -89,7 +90,7 @@ class TimeIntervalTest(unittest.TestCase):
         blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
 
 
-class QueryTest(unittest.TestCase):
+class QueryTest(TestCase):
     def setUp(self):
         self.query = blitzortung.db.query.Query()
 
@@ -148,7 +149,7 @@ class QueryTest(unittest.TestCase):
             'end_time': datetime.datetime(2013, 10, 11, 6, 30)})))
 
 
-class SelectQueryTest(unittest.TestCase):
+class SelectQueryTest(TestCase):
     def setUp(self):
         self.query = blitzortung.db.query.SelectQuery()
         self.query.set_table_name("foo")
@@ -182,4 +183,32 @@ class SelectQueryTest(unittest.TestCase):
         self.query.add_parameters({'foo': 'bar', 'baz': 'qux'})
 
         assert_that(self.query.get_parameters(), is_(equal_to({'foo': 'bar', 'baz': 'qux'})))
+
+
+class GridQueryTest(TestCase):
+    def test_with_raster(self):
+        raster = blitzortung.geom.Grid(-10, 20, 15, 35, 1.5, 1)
+
+        query = blitzortung.db.query.GridQuery(raster)
+        query.set_table_name('strikes')
+
+        assert_that(str(query), is_(equal_to(
+            'SELECT '
+            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, '
+            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, '
+            'count(*) AS count, '
+            'max("timestamp") as "timestamp" '
+            'FROM strikes '
+            'WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog '
+            'GROUP BY rx, ry')))
+
+        parameters = query.get_parameters()
+        assert_that(parameters['xmin'], is_(equal_to(-10)))
+        assert_that(parameters['xdiv'], is_(equal_to(1.5)))
+        assert_that(parameters['ymin'], is_(equal_to(15)))
+        assert_that(parameters['ydiv'], is_(equal_to(1)))
+        assert_that(parameters['srid'], is_(equal_to(4326)))
+        assert_that(parameters['envelope_srid'], is_(equal_to(4326)))
+        envelope = shapely.wkb.loads(parameters['envelope'].adapted)
+        assert_that(envelope.bounds, is_(equal_to((-10, 15, 20, 35))))
 

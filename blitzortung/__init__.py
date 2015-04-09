@@ -34,6 +34,7 @@ class Error(Exception):
 import injector
 
 from . import config
+from . import geom
 from . import db
 
 
