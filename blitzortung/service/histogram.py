@@ -21,7 +21,7 @@ class HistogramQuery(object):
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, connection, minute_length, minute_offset, region=None, envelope=None):
+    def create(self, connection, minute_length, minute_offset, region=None, envelope=None, count_threshold=0):
         reference_time = time.time()
         query = self.strike_query_builder.histogram_query(blitzortung.db.table.Strike.TABLE_NAME, minute_length,
                                                           minute_offset, 5, region, envelope)

@@ -286,10 +286,10 @@ class Strike(Base):
 
         return self.execute_many(str(query), query.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
 
-    def select_grid(self, grid, *args):
+    def select_grid(self, grid, count_threshold, *args):
         """ build up raster query """
 
-        query = self.query_builder.grid_query(self.table_name, grid, *args)
+        query = self.query_builder.grid_query(self.table_name, grid, count_threshold, *args)
 
         def prepare_results(cursor, _):
             raster_data = GridData(grid)

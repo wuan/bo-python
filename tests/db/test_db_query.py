@@ -120,26 +120,31 @@ class QueryTest(TestCase):
         assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>', 'type': '<type>'})))
 
     def test_add_order(self):
-        self.query.add_order(blitzortung.db.query.Order("bar"))
+        self.query.set_order(blitzortung.db.query.Order("bar"))
         self.assertEqual(str(self.query), "ORDER BY bar")
 
-        self.query.add_order(blitzortung.db.query.Order("baz", True))
+    def test_add_order_with_multiple_elements(self):
+        self.query.set_order(blitzortung.db.query.Order("bar"), blitzortung.db.query.Order("baz", True))
+        self.assertEqual(str(self.query), "ORDER BY bar, baz DESC")
+
+    def test_add_order_with_multiple_mixed_elements(self):
+        self.query.set_order("bar", blitzortung.db.query.Order("baz", True))
         self.assertEqual(str(self.query), "ORDER BY bar, baz DESC")
 
     def test_set_limit(self):
-        self.query.set_limit(blitzortung.db.query.Limit(10))
+        self.query.set_limit(10)
         self.assertEqual(str(self.query), "LIMIT 10")
 
     def test_parse_args_with_id_interval(self):
-        self.query.parse_args([blitzortung.db.query.IdInterval(10, 15)])
+        self.query.parse_args({'id_interval': blitzortung.db.query.IdInterval(10, 15)})
 
         assert_that(str(self.query), is_(equal_to("WHERE id >= %(start_id)s AND id < %(end_id)s")))
         assert_that(self.query.get_parameters(), is_(equal_to({'start_id': 10, 'end_id': 15})))
 
     def test_parse_args_with_time_interval(self):
-        self.query.parse_args([blitzortung.db.query.TimeInterval(
+        self.query.parse_args({'time_interval': blitzortung.db.query.TimeInterval(
             datetime.datetime(2013, 10, 9, 17, 20),
-            datetime.datetime(2013, 10, 11, 6, 30))])
+            datetime.datetime(2013, 10, 11, 6, 30))})
 
         assert_that(str(self.query), is_(equal_to(
             "WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s"
@@ -147,6 +152,20 @@ class QueryTest(TestCase):
         assert_that(self.query.get_parameters(), is_(equal_to({
             'start_time': datetime.datetime(2013, 10, 9, 17, 20),
             'end_time': datetime.datetime(2013, 10, 11, 6, 30)})))
+
+    def test_parse_args_with_order(self):
+        self.query.parse_args({'order': blitzortung.db.query.Order('test')})
+
+        assert_that(str(self.query), is_(equal_to(
+            "ORDER BY test"
+        )))
+
+    def test_parse_args_with_limit(self):
+        self.query.parse_args({'limit': 10})
+
+        assert_that(str(self.query), is_(equal_to(
+            "LIMIT 10"
+        )))
 
 
 class SelectQueryTest(TestCase):

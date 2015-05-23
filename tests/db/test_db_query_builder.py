@@ -31,7 +31,8 @@ class StrikeTest(unittest.TestCase):
         self.srid = 1234
 
     def test_select_query(self):
-        query = self.query_builder.select_query("<table_name>", self.srid, TimeInterval(self.start_time, self.end_time))
+        query = self.query_builder.select_query("<table_name>", self.srid,
+                                                time_interval=TimeInterval(self.start_time, self.end_time))
 
         assert_that(str(query),
                     is_("SELECT id, \"timestamp\", nanoseconds, ST_X(ST_Transform(geog::geometry, %(srid)s))"
@@ -45,7 +46,8 @@ class StrikeTest(unittest.TestCase):
 
     def test_grid_query(self):
         grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, self.srid)
-        query = self.query_builder.grid_query("<table_name>", grid, TimeInterval(self.start_time, self.end_time))
+        query = self.query_builder.grid_query("<table_name>", grid, count_threshold=0,
+                                              time_interval=TimeInterval(self.start_time, self.end_time))
 
         assert_that(str(query), is_(
             "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
@@ -57,6 +59,7 @@ class StrikeTest(unittest.TestCase):
         assert_that(parameters.keys(),
                     contains_inanyorder('xmin', 'ymin', 'xdiv', 'ydiv', 'envelope', 'envelope_srid', 'srid',
                                         'start_time', 'end_time'))
+        assert_that(parameters.keys(), not contains_inanyorder('count_threshold'))
         assert_that(parameters['xmin'], is_(11.0))
         assert_that(parameters['ymin'], is_(51.0))
         assert_that(parameters['xdiv'], is_(0.1))
@@ -66,6 +69,25 @@ class StrikeTest(unittest.TestCase):
         assert_that(parameters['start_time'], is_(self.start_time))
         assert_that(parameters['end_time'], is_(self.end_time))
         assert_that(parameters['srid'], is_(self.srid))
+
+    def test_grid_query_with_count_threshold(self):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, self.srid)
+        query = self.query_builder.grid_query("<table_name>", grid, count_threshold=5,
+                                              time_interval=TimeInterval(self.start_time, self.end_time))
+
+        parameters = query.get_parameters()
+        assert_that(parameters.keys(),
+                    contains_inanyorder('count_threshold', 'xmin', 'ymin', 'xdiv', 'ydiv', 'envelope', 'envelope_srid',
+                                        'srid', 'start_time', 'end_time'))
+        assert_that(parameters['count_threshold'], is_(5))
+
+        assert_that(str(query), is_(
+            "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
+            "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
+            "count(*) AS count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
+            "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
+            "count > %(count_threshold)s AND "
+            "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s GROUP BY rx, ry"))
 
 
 class StrikeClusterTest(unittest.TestCase):

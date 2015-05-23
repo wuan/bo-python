@@ -86,13 +86,27 @@ class Query(object):
         self.parameters = {}
         self.limit = None
         self.order = []
+        self.known_args = {
+            'time_interval' : self.add_time_interval,
+            'id_interval': self.add_id_interval,
+            'geometry': self.add_geometry,
+            'order': self._set_order,
+            'limit': self.set_limit
+        }
 
     def add_group_by(self, group_by):
         self.groups.append(group_by)
         return self
 
-    def add_order(self, order):
-        self.order.append(order if isinstance(order, Order) else Order(order))
+    def _set_order(self, order):
+        order_items = order if type(order) is list else [order]
+        return self.set_order(*order_items)
+
+    def set_order(self, *order_items):
+        if len(self.order) > 0:
+            raise RuntimeError("overriding Query.limit")
+
+        self.order = [(order_item if isinstance(order_item, Order) else Order(order_item)) for order_item in order_items]
         return self
 
     def set_limit(self, limit):
@@ -126,56 +140,48 @@ class Query(object):
             sql += 'ORDER BY ' + ', '.join(order_query_elements) + ' '
 
         if self.limit:
-            sql += 'LIMIT ' + str(self.limit.get_number()) + ' '
+            sql += 'LIMIT ' + str(self.limit) + ' '
 
         return sql.strip()
 
     def get_parameters(self):
         return self.parameters
 
-    def parse_args(self, args):
-        for arg in args:
-            if arg:
-                if isinstance(arg, TimeInterval):
-
-                    if arg.get_start():
-                        self.add_condition('"timestamp" >= %(start_time)s', {'start_time': arg.get_start()})
-
-                    if arg.get_end():
-                        self.add_condition('"timestamp" < %(end_time)s', {'end_time': arg.get_end()})
-
-                elif isinstance(arg, IdInterval):
-
-                    if arg.get_start():
-                        self.add_condition('id >= %(start_id)s', {'start_id': arg.get_start()})
-
-                    if arg.get_end():
-                        self.add_condition('id < %(end_id)s', {'end_id': arg.get_end()})
-
-                elif isinstance(arg, shapely.geometry.base.BaseGeometry):
-
-                    if arg.is_valid:
-                        self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
-                                           {'envelope': psycopg2.Binary(shapely.wkb.dumps(arg.envelope))})
-
-                        if not arg.equals(arg.envelope):
-                            self.add_condition(
-                                'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
-                                'ST_Transform(geog::geometry, %(srid)s))',
-                                {'geometry': psycopg2.Binary(shapely.wkb.dumps(arg))})
-
-                    else:
-                        raise ValueError("invalid geometry in db.Strike.select()")
-
-                elif isinstance(arg, Order):
-                    self.add_order(arg)
-
-                elif isinstance(arg, Limit):
-                    self.set_limit(arg)
-
-                else:
-                    print('WARNING: ' + __name__ + ' unhandled condition ' + str(type(arg)))
+    def parse_args(self, kwargs):
+        for keyword, value in kwargs.items():
+            if keyword in self.known_args and value:
+                self.known_args[keyword](value)
+            else:
+                print('WARNING: ' + __name__ + ' unhandled condition ' + keyword + ' with type ' + str(type(value)))
         return self
+
+    def add_time_interval(self, time_interval):
+        if time_interval.get_start():
+            self.add_condition('"timestamp" >= %(start_time)s', {'start_time': time_interval.get_start()})
+
+        if time_interval.get_end():
+            self.add_condition('"timestamp" < %(end_time)s', {'end_time': time_interval.get_end()})
+
+    def add_id_interval(self, id_interval):
+        if id_interval.get_start():
+            self.add_condition('id >= %(start_id)s', {'start_id': id_interval.get_start()})
+
+        if id_interval.get_end():
+            self.add_condition('id < %(end_id)s', {'end_id': id_interval.get_end()})
+
+    def add_geometry(self, geometry):
+        if geometry.is_valid:
+            self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
+                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(geometry.envelope))})
+
+            if not geometry.equals(geometry.envelope):
+                self.add_condition(
+                    'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
+                    'ST_Transform(geog::geometry, %(srid)s))',
+                    {'geometry': psycopg2.Binary(shapely.wkb.dumps(geometry))})
+
+        else:
+            raise ValueError("invalid geometry in db.Strike.select()")
 
 
 class SelectQuery(Query):
@@ -210,7 +216,7 @@ class SelectQuery(Query):
 
 
 class GridQuery(SelectQuery):
-    def __init__(self, raster):
+    def __init__(self, raster, count_threshold=0):
         super(GridQuery, self).__init__()
 
         self.raster = raster
@@ -239,6 +245,11 @@ class GridQuery(SelectQuery):
         else:
             raise ValueError("invalid Raster geometry in db.Strike.select()")
 
+        if count_threshold > 0:
+            self \
+                .add_condition("count > %(count_threshold)s") \
+                .add_parameters({'count_threshold': count_threshold})
+
     def __str__(self):
         sql = super(GridQuery, self).__str__()
 
@@ -261,18 +272,6 @@ class Order(object):
 
     def is_desc(self):
         return self.desc
-
-
-class Limit(object):
-    """
-    definition of query result limit
-    """
-
-    def __init__(self, limit):
-        self.limit = limit
-
-    def get_number(self):
-        return self.limit
 
 
 class Center(object):
