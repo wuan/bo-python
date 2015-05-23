@@ -87,7 +87,7 @@ class StrikeTest(unittest.TestCase):
             "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
             "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s "
-            "GROUP BY rx, ry HAVING strike_count > %(count_threshold)s"))
+            "GROUP BY rx, ry HAVING count(*) > %(count_threshold)s"))
 
 
 class StrikeClusterTest(unittest.TestCase):
