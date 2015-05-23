@@ -257,7 +257,7 @@ class GridQuery(SelectQuery):
         self.add_group_by('ry')
 
         if count_threshold > 0:
-            self.add_group_having("strike_count > %(count_threshold)s", count_threshold=count_threshold)
+            self.add_group_having("count(*) > %(count_threshold)s", count_threshold=count_threshold)
 
 
 class Order(object):
