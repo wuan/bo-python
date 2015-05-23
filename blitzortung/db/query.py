@@ -16,6 +16,7 @@ from __future__ import print_function
 import datetime
 import shapely.geometry.base
 import shapely.wkb
+
 try:
     import psycopg2
 except ImportError:
@@ -87,7 +88,7 @@ class Query(object):
         self.limit = None
         self.order = []
         self.known_args = {
-            'time_interval' : self.add_time_interval,
+            'time_interval': self.add_time_interval,
             'id_interval': self.add_id_interval,
             'geometry': self.add_geometry,
             'order': self._set_order,
@@ -106,7 +107,8 @@ class Query(object):
         if len(self.order) > 0:
             raise RuntimeError("overriding Query.limit")
 
-        self.order = [(order_item if isinstance(order_item, Order) else Order(order_item)) for order_item in order_items]
+        self.order = [(order_item if isinstance(order_item, Order) else Order(order_item)) for order_item in
+                      order_items]
         return self
 
     def set_limit(self, limit):
@@ -115,13 +117,12 @@ class Query(object):
         self.limit = limit
         return self
 
-    def add_condition(self, condition, parameters=None):
+    def add_condition(self, condition, **parameters):
         self.conditions.append(condition)
-        if parameters:
-            self.parameters.update(parameters)
+        self.add_parameters(**parameters)
         return self
 
-    def add_parameters(self, parameters):
+    def add_parameters(self, **parameters):
         self.parameters.update(parameters)
         return self
 
@@ -155,28 +156,28 @@ class Query(object):
 
     def add_time_interval(self, time_interval):
         if time_interval.get_start():
-            self.add_condition('"timestamp" >= %(start_time)s', {'start_time': time_interval.get_start()})
+            self.add_condition('"timestamp" >= %(start_time)s', start_time=time_interval.get_start())
 
         if time_interval.get_end():
-            self.add_condition('"timestamp" < %(end_time)s', {'end_time': time_interval.get_end()})
+            self.add_condition('"timestamp" < %(end_time)s', end_time=time_interval.get_end())
 
     def add_id_interval(self, id_interval):
         if id_interval.get_start():
-            self.add_condition('id >= %(start_id)s', {'start_id': id_interval.get_start()})
+            self.add_condition('id >= %(start_id)s', start_id=id_interval.get_start())
 
         if id_interval.get_end():
-            self.add_condition('id < %(end_id)s', {'end_id': id_interval.get_end()})
+            self.add_condition('id < %(end_id)s', end_id=id_interval.get_end())
 
     def add_geometry(self, geometry):
         if geometry.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
-                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(geometry.envelope))})
+                               envelope=psycopg2.Binary(shapely.wkb.dumps(geometry.envelope)))
 
             if not geometry.equals(geometry.envelope):
                 self.add_condition(
                     'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
                     'ST_Transform(geog::geometry, %(srid)s))',
-                    {'geometry': psycopg2.Binary(shapely.wkb.dumps(geometry))})
+                    geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
 
         else:
             raise ValueError("invalid geometry in db.Strike.select()")
@@ -219,13 +220,13 @@ class GridQuery(SelectQuery):
 
         self.raster = raster
 
-        self.add_parameters({
-            'srid': raster.get_srid(),
-            'xmin': raster.get_x_min(),
-            'xdiv': raster.get_x_div(),
-            'ymin': raster.get_y_min(),
-            'ydiv': raster.get_y_div(),
-        })
+        self.add_parameters(
+            srid=raster.get_srid(),
+            xmin=raster.get_x_min(),
+            xdiv=raster.get_x_div(),
+            ymin=raster.get_y_min(),
+            ydiv=raster.get_y_div(),
+        )
 
         self.set_columns(
             'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
@@ -238,15 +239,13 @@ class GridQuery(SelectQuery):
 
         if env.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
-                               {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)),
-                                'envelope_srid': raster.get_srid()})
+                               envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
+                               envelope_srid=raster.get_srid())
         else:
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         if count_threshold > 0:
-            self \
-                .add_condition("count > %(count_threshold)s") \
-                .add_parameters({'count_threshold': count_threshold})
+            self.add_condition("count > %(count_threshold)s", count_threshold=count_threshold)
 
     def __str__(self):
         sql = super(GridQuery, self).__str__()
@@ -282,4 +281,3 @@ class Center(object):
 
     def get_point(self):
         return self.center
-

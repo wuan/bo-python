@@ -111,11 +111,11 @@ class QueryTest(TestCase):
         self.assertEqual(str(self.query), "WHERE qux AND quux")
 
     def test_add_condition_with_parameters(self):
-        self.query.add_condition("column LIKE %(name)s", {'name': '<name>'})
+        self.query.add_condition("column LIKE %(name)s", name='<name>')
         assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s")))
         assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>'})))
 
-        self.query.add_condition("other LIKE %(type)s", {'type': '<type>'})
+        self.query.add_condition("other LIKE %(type)s", type='<type>')
         assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s AND other LIKE %(type)s")))
         assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>', 'type': '<type>'})))
 
@@ -199,7 +199,7 @@ class SelectQueryTest(TestCase):
     def test_add_parameters(self):
         assert_that(self.query.get_parameters(), is_(equal_to({})))
 
-        self.query.add_parameters({'foo': 'bar', 'baz': 'qux'})
+        self.query.add_parameters(foo='bar', baz='qux')
 
         assert_that(self.query.get_parameters(), is_(equal_to({'foo': 'bar', 'baz': 'qux'})))
 

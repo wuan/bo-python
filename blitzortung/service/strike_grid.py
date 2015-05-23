@@ -104,4 +104,3 @@ class StrikeGridQuery(object):
         print(state.get_info_text())
 
         return response
-

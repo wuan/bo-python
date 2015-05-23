@@ -105,7 +105,7 @@ class StrikeClusterTest(unittest.TestCase):
             "SELECT id, \"timestamp\", ST_Transform(geog::geometry, %(srid)s) as geom, strike_count FROM <table_name> WHERE \"timestamp\" in %(timestamps)s AND interval_seconds=%(interval_seconds)s"))
         parameters = query.get_parameters()
         assert_that(parameters.keys(), contains_inanyorder('timestamps', 'srid', 'interval_seconds'))
-        assert_that(parameters['timestamps'],
+        assert_that(tuple(parameters['timestamps']),
                     is_(tuple(str(self.end_time - self.interval_duration * i) for i in range(0, 6))))
         assert_that(parameters['srid'], is_(self.srid))
         assert_that(parameters['interval_seconds'], is_(self.interval_duration.total_seconds()))
