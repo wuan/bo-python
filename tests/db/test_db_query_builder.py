@@ -52,7 +52,7 @@ class StrikeTest(unittest.TestCase):
         assert_that(str(query), is_(
             "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
             "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
-            "count(*) AS count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
+            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
             "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s GROUP BY rx, ry"))
         parameters = query.get_parameters()
@@ -84,10 +84,10 @@ class StrikeTest(unittest.TestCase):
         assert_that(str(query), is_(
             "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
             "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
-            "count(*) AS count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
+            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
-            "count > %(count_threshold)s AND "
-            "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s GROUP BY rx, ry"))
+            "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s "
+            "GROUP BY rx, ry HAVING strike_count > %(count_threshold)s"))
 
 
 class StrikeClusterTest(unittest.TestCase):

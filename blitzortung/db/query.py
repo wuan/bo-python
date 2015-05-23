@@ -142,7 +142,7 @@ class Query(object):
             sql += 'GROUP BY ' + ', '.join(self.groups) + ' '
 
             if self.groups_having:
-                sql += ' AND '.join(self.groups_having)
+                sql += 'HAVING ' + ' AND '.join(self.groups_having) + ' '
 
         if self.order:
             build_order_query = lambda order: order.get_column() + (' DESC' if order.is_desc() else '')
@@ -253,15 +253,11 @@ class GridQuery(SelectQuery):
         else:
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
+        self.add_group_by('rx')
+        self.add_group_by('ry')
+
         if count_threshold > 0:
             self.add_group_having("strike_count > %(count_threshold)s", count_threshold=count_threshold)
-
-    def __str__(self):
-        sql = super(GridQuery, self).__str__()
-
-        sql += ' GROUP BY rx, ry'
-
-        return sql
 
 
 class Order(object):
