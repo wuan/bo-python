@@ -45,10 +45,7 @@ class StrikeGridQuery(object):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval.get_end())
 
         query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
-                                                     time_interval=time_interval)
-
-        if count_threshold > 1:
-            query.add_condition("count >= %(count_threshold)s", {'count_threshold': count_threshold})
+                                                     time_interval=time_interval, count_threshold=count_threshold)
 
         grid_query = connection.runQuery(str(query), query.get_parameters())
         grid_query.addCallback(self.build_strikes_grid_result, state=state)
