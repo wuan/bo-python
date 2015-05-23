@@ -231,7 +231,7 @@ class GridQuery(SelectQuery):
         self.set_columns(
             'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
             'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
-            'count(*) AS count',
+            'count(*) AS strike_count',
             'max("timestamp") as "timestamp"'
         )
 
@@ -245,7 +245,7 @@ class GridQuery(SelectQuery):
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         if count_threshold > 0:
-            self.add_condition("count > %(count_threshold)s", count_threshold=count_threshold)
+            self.add_condition("strike_count > %(count_threshold)s", count_threshold=count_threshold)
 
     def __str__(self):
         sql = super(GridQuery, self).__str__()

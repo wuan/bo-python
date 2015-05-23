@@ -65,7 +65,7 @@ class StrikeGridQuery(object):
             (
                 result['rx'],
                 y_bin_count - result['ry'] - 1,
-                result['count'],
+                result['strike_count'],
                 -(end_time - result['timestamp']).seconds
             ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
         )
