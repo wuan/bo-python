@@ -84,6 +84,7 @@ class Query(object):
     def __init__(self):
         self.conditions = []
         self.groups = []
+        self.groups_having = []
         self.parameters = {}
         self.limit = None
         self.order = []
@@ -122,6 +123,11 @@ class Query(object):
         self.add_parameters(**parameters)
         return self
 
+    def add_group_having(self, condition, **parameters):
+        self.groups_having.append(condition)
+        self.add_parameters(**parameters)
+        return self
+
     def add_parameters(self, **parameters):
         self.parameters.update(parameters)
         return self
@@ -134,6 +140,9 @@ class Query(object):
 
         if self.groups:
             sql += 'GROUP BY ' + ', '.join(self.groups) + ' '
+
+            if self.groups_having:
+                sql += ' AND '.join(self.groups_having)
 
         if self.order:
             build_order_query = lambda order: order.get_column() + (' DESC' if order.is_desc() else '')
@@ -245,7 +254,7 @@ class GridQuery(SelectQuery):
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         if count_threshold > 0:
-            self.add_condition("strike_count > %(count_threshold)s", count_threshold=count_threshold)
+            self.add_group_having("strike_count > %(count_threshold)s", count_threshold=count_threshold)
 
     def __str__(self):
         sql = super(GridQuery, self).__str__()
