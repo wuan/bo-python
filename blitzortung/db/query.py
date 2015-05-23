@@ -87,7 +87,7 @@ class Query(object):
         self.parameters = {}
         self.limit = None
         self.order = []
-        self.known_args = {
+        self.default_conditions = {
             'time_interval': self.add_time_interval,
             'id_interval': self.add_id_interval,
             'geometry': self.add_geometry,
@@ -148,10 +148,10 @@ class Query(object):
     def get_parameters(self):
         return self.parameters
 
-    def parse_args(self, **kwargs):
+    def set_default_conditions(self, **kwargs):
         for keyword, value in kwargs.items():
-            if keyword in self.known_args and value:
-                self.known_args[keyword](value)
+            if keyword in self.default_conditions and value:
+                self.default_conditions[keyword](value)
         return self
 
     def add_time_interval(self, time_interval):

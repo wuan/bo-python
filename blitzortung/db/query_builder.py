@@ -28,7 +28,7 @@ class Strike(object):
                          'ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y', 'altitude', 'amplitude', 'error2d',
                          'stationcount') \
             .add_parameters(srid=srid) \
-            .parse_args(**kwargs)
+            .set_default_conditions(**kwargs)
 
         if 'region' in kwargs:
             query.add_condition("region = %(region)s", region=kwargs['region'])
@@ -38,7 +38,7 @@ class Strike(object):
     def grid_query(self, table_name, grid, count_threshold=0, **kwargs):
         return GridQuery(grid, count_threshold) \
             .set_table_name(table_name) \
-            .parse_args(**kwargs)
+            .set_default_conditions(**kwargs)
 
     def histogram_query(self, table_name, minutes, minute_offset, binsize, region=None, envelope=None):
 
