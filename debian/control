@@ -8,7 +8,7 @@ Homepage: http://launchpad.net/blitzortung-python
 
 Package: python-blitzortung
 Section: python
-Architecture: all
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: blitzortung.org python modules
  <insert long description, indented with spaces>

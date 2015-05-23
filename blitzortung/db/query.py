@@ -151,8 +151,6 @@ class Query(object):
         for keyword, value in kwargs.items():
             if keyword in self.known_args and value:
                 self.known_args[keyword](value)
-            else:
-                print('WARNING: ' + __name__ + ' unhandled condition ' + keyword + ' with type ' + str(type(value)))
         return self
 
     def add_time_interval(self, time_interval):
@@ -243,7 +241,7 @@ class GridQuery(SelectQuery):
                                {'envelope': psycopg2.Binary(shapely.wkb.dumps(env)),
                                 'envelope_srid': raster.get_srid()})
         else:
-            raise ValueError("invalid Raster geometry in db.Strike.select()")
+            raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         if count_threshold > 0:
             self \

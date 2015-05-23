@@ -181,7 +181,7 @@ class Base(object):
         pass
 
     @abstractmethod
-    def select(self, *args):
+    def select(self, **kwargs):
         pass
 
     def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
@@ -279,17 +279,17 @@ class Strike(Base):
         parameters = {'region': region}
         return self.execute_single(sql, parameters, prepare_result)
 
-    def select(self, *args):
+    def select(self, **kwargs):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), *args)
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), **kwargs)
 
         return self.execute_many(str(query), query.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
 
-    def select_grid(self, grid, count_threshold, *args):
+    def select_grid(self, grid, count_threshold, **kwargs):
         """ build up raster query """
 
-        query = self.query_builder.grid_query(self.table_name, grid, count_threshold, *args)
+        query = self.query_builder.grid_query(self.table_name, grid, count_threshold, **kwargs)
 
         def prepare_results(cursor, _):
             raster_data = GridData(grid)
