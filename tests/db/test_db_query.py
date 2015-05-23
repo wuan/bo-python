@@ -103,6 +103,17 @@ class QueryTest(TestCase):
         self.query.add_group_by('baz')
         self.assertEqual(str(self.query), "GROUP BY bar, baz")
 
+    def test_add_group_with_having_condition(self):
+        self.query.add_group_by('bar')
+        self.query.add_group_having("foo > 1")
+
+        self.assertEqual(str(self.query), "GROUP BY bar HAVING foo > 1")
+
+    def test_add_having_has_no_effect_without_group(self):
+        self.query.add_group_having("foo > 1")
+
+        self.assertEqual(str(self.query), "")
+
     def test_add_condition(self):
         self.query.add_condition("qux")
         self.assertEqual(str(self.query), "WHERE qux")
