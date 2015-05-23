@@ -147,7 +147,7 @@ class Query(object):
     def get_parameters(self):
         return self.parameters
 
-    def parse_args(self, kwargs):
+    def parse_args(self, **kwargs):
         for keyword, value in kwargs.items():
             if keyword in self.known_args and value:
                 self.known_args[keyword](value)

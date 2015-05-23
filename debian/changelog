@@ -2,6 +2,8 @@ python-blitzortung (1.4.0) unstable; urgency=low
 
   * speed optimizations
   * db module refactoring
+    * new structure
+    * query builder parameters as keyword args
   * strike clustering
 
  -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 01 Sep 2014 21:12:35 +0200
