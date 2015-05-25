@@ -721,7 +721,7 @@ class ServiceLogVersion(ServiceLogBase):
 
         self.set_table_name('servicelog_version')
 
-    def insert(self, timestamp, country_code, count):
+    def insert(self, timestamp, version, count):
         sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
               '("timestamp", version, "count")' + \
               'VALUES (%(timestamp)s, %(version)s, %(count)s);'
