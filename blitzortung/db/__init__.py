@@ -14,13 +14,16 @@ You should have received a copy of the GNU Affero General Public License along w
 from injector import Module, provides, singleton, inject
 import atexit
 
+
 def create_psycopg2_dummy():
     class Dummy(object):
         pass
+
     dummy = Dummy()
     dummy.pool = Dummy()
     dummy.pool.ThreadedConnectionPool = Dummy
     return dummy
+
 
 try:
     import psycopg2
@@ -79,7 +82,19 @@ def location():
     return INJECTOR.get(table.Location)
 
 
-def servicelog():
+def servicelog_total():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(table.ServiceLog)
+    return INJECTOR.get(table.ServiceLogTotal)
+
+
+def servicelog_country():
+    from blitzortung import INJECTOR
+
+    return INJECTOR.get(table.ServiceLogTotal)
+
+
+def servicelog_version():
+    from blitzortung import INJECTOR
+
+    return INJECTOR.get(table.ServiceLogVersion)

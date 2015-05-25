@@ -37,6 +37,7 @@ try:
     import psycopg2.extensions
 except ImportError as e:
     from . import create_psycopg2_dummy
+
     psycopg2 = create_psycopg2_dummy()
 
 from abc import ABCMeta, abstractmethod
@@ -383,11 +384,12 @@ class StrikeCluster(Base):
     def select(self, timestamp, interval_duration, interval_count=1, interval_offset=None):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), timestamp, interval_duration,
+        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), timestamp,
+                                                interval_duration,
                                                 interval_count, interval_offset)
 
         return self.execute_many(str(query), query.get_parameters(), self.strike_cluster_mapper.create_object,
-                            timezone=self.tz, interval_seconds=interval_duration.seconds)
+                                 timezone=self.tz, interval_seconds=interval_duration.seconds)
 
 
 class Station(Base):
@@ -627,37 +629,11 @@ class Location(Base):
             return self.execute_many(query_string, params, build_results)
 
 
-class ServiceLog(Base):
-    """
-        CREATE TABLE servicelog (id BIGSERIAL, "timestamp" TIMESTAMPTZ, geog GEOGRAPHY(Point), version INT,
-            address INET, city CHARACTER VARYING, country CHARACTER VARYING, PRIMARY KEY(id));
-
-            CREATE INDEX servicelog_timestamp ON servicelog USING btree("timestamp");
+class ServiceLogBase(Base):
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
-        super(ServiceLog, self).__init__(db_connection_pool)
-
-        self.set_table_name('servicelog')
-
-    def insert(self, timestamp, ip_address, version, city_name, country_name, longitude, latitude):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
-              '("timestamp", geog, address, version, city, country)' + \
-              'VALUES (%(timestamp)s, ST_MakePoint(%(longitude)s, %(latitude)s), %(ip_address)s, %(version)s, ' + \
-              '%(city_name)s, %(country_name)s);'
-
-        parameters = {
-            'timestamp': timestamp,
-            'ip_address': ip_address,
-            'version': version,
-            'longitude': longitude,
-            'latitude': latitude,
-            'city_name': city_name,
-            'country_name': country_name
-        }
-
-        self.execute(sql, parameters)
+    Base class for servicelog tables
+    """
 
     def get_latest_time(self):
         sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
@@ -678,3 +654,82 @@ class ServiceLog(Base):
     def create_object_instance(self, result):
         pass
 
+
+class ServiceLogTotal(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_total ("timestamp" TIMESTAMPTZ, count INT);
+
+        CREATE INDEX servicelog_total_timestamp ON servicelog_total USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogTotal, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_total')
+
+    def insert(self, timestamp, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", count)' + \
+              'VALUES (%(timestamp)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogCountry(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_country ("timestamp" TIMESTAMPTZ, country_code CHARACTER VARYING, "count" INT);
+
+        CREATE INDEX servicelog_country_timestamp ON servicelog_country USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogCountry, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_country')
+
+    def insert(self, timestamp, country_code, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", country_code, "count")' + \
+              'VALUES (%(timestamp)s, %(country_code)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'country_code': country_code,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogVersion(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_version ("timestamp" TIMESTAMPTZ, version CHARACTER VARYING, "count" INT);
+
+        CREATE INDEX servicelog_version_timestamp ON servicelog_version USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogVersion, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_version')
+
+    def insert(self, timestamp, country_code, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", version, "count")' + \
+              'VALUES (%(timestamp)s, %(version)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'version': version,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
