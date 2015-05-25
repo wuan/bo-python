@@ -91,7 +91,7 @@ def servicelog_total():
 def servicelog_country():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(table.ServiceLogTotal)
+    return INJECTOR.get(table.ServiceLogCountry)
 
 
 def servicelog_version():
