@@ -746,7 +746,7 @@ class ServiceLogParameters(ServiceLogBase):
     def __init__(self, db_connection_pool):
         super(ServiceLogParameters, self).__init__(db_connection_pool)
 
-        self.set_table_name('servicelog_grid_baselength')
+        self.set_table_name('servicelog_parameters')
 
     def insert(self, timestamp, region, minute_length, minute_offset, grid_baselength, count_threshold, count):
         sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
