@@ -764,4 +764,3 @@ class ServiceLogParameters(ServiceLogBase):
         }
 
         self.execute(sql, parameters)
-
