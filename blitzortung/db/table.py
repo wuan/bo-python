@@ -733,3 +733,138 @@ class ServiceLogVersion(ServiceLogBase):
         }
 
         self.execute(sql, parameters)
+
+
+class ServiceLogGridBaselength(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_grid_baselength ("timestamp" TIMESTAMPTZ, grid_baselength INT, "count" INT);
+
+        CREATE INDEX servicelog_grid_baselength_timestamp ON servicelog_grid_baselength USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogGridBaselength, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_grid_baselength')
+
+    def insert(self, timestamp, grid_baselength, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", grid_baselength, "count")' + \
+              'VALUES (%(timestamp)s, %(grid_baselength)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'grid_baselength': grid_baselength,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogMinuteLength(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_minute_length ("timestamp" TIMESTAMPTZ, minute_length INT, "count" INT);
+
+        CREATE INDEX servicelog_minute_length_timestamp ON servicelog_minute_length USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogMinuteLength, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_minute_length')
+
+    def insert(self, timestamp, minute_length, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", minute_length, "count")' + \
+              'VALUES (%(timestamp)s, %(minute_length)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'minute_length': minute_length,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogMinuteOffset(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_minute_offset ("timestamp" TIMESTAMPTZ, minute_offset INT, "count" INT);
+
+        CREATE INDEX servicelog_minute_offset_timestamp ON servicelog_minute_offset USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogMinuteOffset, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_minute_offset')
+
+    def insert(self, timestamp, minute_offset, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", minute_length, "count")' + \
+              'VALUES (%(timestamp)s, %(minute_offset)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'minute_offset': minute_offset,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogRegion(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_region ("timestamp" TIMESTAMPTZ, region INT, "count" INT);
+
+        CREATE INDEX servicelog_region_timestamp ON servicelog_region USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogRegion, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_region')
+
+    def insert(self, timestamp, region, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", region, "count")' + \
+              'VALUES (%(timestamp)s, %(region)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'region': region,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
+
+
+class ServiceLogCountThreshold(ServiceLogBase):
+    """
+        CREATE TABLE servicelog_count_threshold ("timestamp" TIMESTAMPTZ, count_threshold INT, "count" INT);
+
+        CREATE INDEX servicelog_count_threshold_timestamp ON servicelog_count_threshold USING btree("timestamp");
+    """
+
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
+    def __init__(self, db_connection_pool):
+        super(ServiceLogCountThreshold, self).__init__(db_connection_pool)
+
+        self.set_table_name('servicelog_count_threshold')
+
+    def insert(self, timestamp, count_threshold, count):
+        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+              '("timestamp", count_threshold, "count")' + \
+              'VALUES (%(timestamp)s, %(count_threshold)s, %(count)s);'
+
+        parameters = {
+            'timestamp': timestamp,
+            'count_threshold': count_threshold,
+            'count': count
+        }
+
+        self.execute(sql, parameters)
