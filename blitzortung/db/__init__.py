@@ -100,31 +100,8 @@ def servicelog_version():
     return INJECTOR.get(table.ServiceLogVersion)
 
 
-def servicelog_minute_length():
+def servicelog_parameters():
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(table.ServiceLogMinuteLength)
+    return INJECTOR.get(table.ServiceLogParameters)
 
-
-def servicelog_minute_offset():
-    from blitzortung import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogMinuteOffset)
-
-
-def servicelog_grid_baselength():
-    from blitzortung import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogGridBaselength)
-
-
-def servicelog_region():
-    from blitzortung import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogRegion)
-
-
-def servicelog_count_threshold():
-    from blitzortung import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogCountThreshold)
