@@ -364,11 +364,11 @@ class StrikeCluster(Base):
               'VALUES (%(timestamp)s, %(interval_seconds)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
 
         parameters = {
-            'timestamp': strike_cluster.timestamp(),
-            'interval_seconds': strike_cluster.get_interval_seconds(),
-            'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.get_shape())),
+            'timestamp': strike_cluster.timestamp,
+            'interval_seconds': strike_cluster.interval_seconds,
+            'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.shape)),
             'srid': self.get_srid(),
-            'strike_count': strike_cluster.get_strike_count()
+            'strike_count': strike_cluster.strike_count
         }
 
         self.execute(sql, parameters)
