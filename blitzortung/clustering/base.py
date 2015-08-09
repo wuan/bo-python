@@ -52,16 +52,16 @@ class Clustering(object):
             self.apply_results(results, clustered_points)
 
             self.cluster_builder \
-                .with_timestamp(time_interval.get_end()) \
-                .with_interval_seconds(time_interval.get_duration().seconds)
+                .with_timestamp(time_interval.end) \
+                .with_interval_seconds(time_interval.duration.seconds)
 
-            for clustered_strikes in self.get_clustered_strikes(event_count, clustered_points):
-                cluster_points = len(clustered_strikes)
-                if cluster_points > 2:
-                    points = np.ndarray([cluster_points, 2])
-                    for index, strike in enumerate(clustered_strikes):
-                        points[index][0] = strike.get_x()
-                        points[index][1] = strike.get_y()
+            for clustered_events in self.get_clustered_events(event_count, clustered_points):
+                events_in_cluster = len(clustered_events)
+                if events_in_cluster > 2:
+                    points = np.ndarray([events_in_cluster, 2])
+                    for index, strike in enumerate(clustered_events):
+                        points[index][0] = strike.x
+                        points[index][1] = strike.y
                     try:
                         hull = ConvexHull(points)
                     except QhullError:
@@ -89,12 +89,12 @@ class Clustering(object):
                     cluster_count += 1
 
                     yield self.cluster_builder \
-                        .with_strike_count(cluster_points) \
+                        .with_strike_count(events_in_cluster) \
                         .with_shape(shape).build()
 
             self.logger.debug("build_clusters({} +{}): {} events -> {} clusters -> {} filtered"
-                              .format(time_interval.get_start(),
-                                      time_interval.get_end() - time_interval.get_start(),
+                              .format(time_interval.start,
+                                      time_interval.duration,
                                       event_count,
                                       len(clustered_points),
                                       cluster_count))
@@ -104,8 +104,8 @@ class Clustering(object):
         clusters = {}
         for index, event in enumerate(events):
             clusters[index] = (event,)
-            points[index][0] = event.get_x()
-            points[index][1] = event.get_y()
+            points[index][0] = event.x
+            points[index][1] = event.y
         return clusters, points
 
     def apply_results(self, results, clusters):
@@ -129,7 +129,7 @@ class Clustering(object):
 
             index += 1
 
-    def get_clustered_strikes(self, event_count, clusters):
+    def get_clustered_events(self, event_count, clusters):
         return tuple(value for index, value in six.iteritems(clusters) if index > event_count)
 
 

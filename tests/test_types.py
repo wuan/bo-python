@@ -25,8 +25,8 @@ class PointTest(unittest.TestCase):
         self.radians_factor = math.pi / 180
 
     def test_get_coordinate_components(self):
-        self.assertEqual(self.point1.get_x(), 11)
-        self.assertEqual(self.point1.get_y(), 49)
+        self.assertEqual(self.point1.x, 11)
+        self.assertEqual(self.point1.y, 49)
 
     def test_get_azimuth(self):
         self.assertAlmostEqual(self.point1.azimuth_to(self.point2), 89.62264107 * self.radians_factor)
@@ -43,8 +43,8 @@ class PointTest(unittest.TestCase):
 
     def test_geodesic_shift(self):
         point = self.point1.geodesic_shift(0, 100000)
-        self.assertAlmostEqual(point.get_x(), 11.0)
-        self.assertAlmostEqual(point.get_y(), 49.8991315)
+        self.assertAlmostEqual(point.x, 11.0)
+        self.assertAlmostEqual(point.y, 49.8991315)
 
     def test_to_string(self):
         self.assertEqual(str(self.point1), "(11.0000, 49.0000)")

@@ -132,11 +132,11 @@ class BaseTest(unittest.TestCase):
 
         self.base.commit()
 
-        self.connection.commit.assert_called_once()
+        self.connection.commit.assert_called_once_with()
 
     def test_rollback(self):
         self.connection.rollback.assert_not_called()
 
         self.base.rollback()
 
-        self.connection.rollback.assert_called_once()
+        self.connection.rollback.assert_called_once_with()

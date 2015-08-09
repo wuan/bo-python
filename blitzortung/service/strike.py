@@ -37,7 +37,7 @@ class StrikeQuery(object):
 
     def create(self, id_or_offset, minute_length, minute_offset, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
-        state = StrikeState(statsd_client, time_interval.get_end())
+        state = StrikeState(statsd_client, time_interval.end())
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
@@ -56,13 +56,13 @@ class StrikeQuery(object):
         end_time = state.get_end_time()
         strikes = tuple(
             (
-                (end_time - strike.get_timestamp()).seconds,
-                strike.get_x(),
-                strike.get_y(),
-                strike.get_altitude(),
-                strike.get_lateral_error(),
-                strike.get_amplitude(),
-                strike.get_station_count()
+                (end_time - strike.timestamp()).seconds,
+                strike.x(),
+                strike.y(),
+                strike.altitude(),
+                strike.lateral_error(),
+                strike.amplitude(),
+                strike.station_count()
             ) for strike in self.create_strikes(query_result))
 
         result = {'s': strikes}

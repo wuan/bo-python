@@ -29,14 +29,16 @@ class BaseInterval(object):
     """
 
     def __init__(self, start=None, end=None):
-        self.start = start
-        self.end = end
+        self.__start = start
+        self.__end = end
 
-    def get_start(self):
-        return self.start
+    @property
+    def start(self):
+        return self.__start
 
-    def get_end(self):
-        return self.end
+    @property
+    def end(self):
+        return self.__end
 
     def __str__(self):
         return '[' + (str(self.start) if self.start else '') + ' : ' + (str(self.end) if self.end else '') + ']'
@@ -69,7 +71,8 @@ class TimeInterval(BaseInterval):
 
         super(TimeInterval, self).__init__(start, end)
 
-    def get_duration(self):
+    @property
+    def duration(self):
         return self.end - self.start
 
     def contains(self, timestamp):
@@ -164,18 +167,18 @@ class Query(object):
         return self
 
     def add_time_interval(self, time_interval):
-        if time_interval.get_start():
-            self.add_condition('"timestamp" >= %(start_time)s', start_time=time_interval.get_start())
+        if time_interval.start:
+            self.add_condition('"timestamp" >= %(start_time)s', start_time=time_interval.start)
 
-        if time_interval.get_end():
-            self.add_condition('"timestamp" < %(end_time)s', end_time=time_interval.get_end())
+        if time_interval.end:
+            self.add_condition('"timestamp" < %(end_time)s', end_time=time_interval.end)
 
     def add_id_interval(self, id_interval):
-        if id_interval.get_start():
-            self.add_condition('id >= %(start_id)s', start_id=id_interval.get_start())
+        if id_interval.start:
+            self.add_condition('id >= %(start_id)s', start_id=id_interval.start)
 
-        if id_interval.get_end():
-            self.add_condition('id < %(end_id)s', end_id=id_interval.get_end())
+        if id_interval.end:
+            self.add_condition('id < %(end_id)s', end_id=id_interval.end)
 
     def add_geometry(self, geometry):
         if geometry.is_valid:

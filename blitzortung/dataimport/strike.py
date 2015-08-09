@@ -52,7 +52,7 @@ class StrikesBlitzortungDataProvider(object):
                 except Exception as e:
                     self.logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     raise e
-                timestamp = strike.get_timestamp()
+                timestamp = strike.timestamp
                 timestamp.nanoseconds = 0
                 if not pd.isnull(timestamp) and latest_strike < timestamp:
                     strike_count += 1

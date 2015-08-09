@@ -25,22 +25,22 @@ class IdIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.IdInterval()
 
-        self.assertEqual(id_interval.get_start(), None)
-        self.assertEqual(id_interval.get_end(), None)
+        self.assertEqual(id_interval.start, None)
+        self.assertEqual(id_interval.end, None)
         self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.IdInterval(1234)
 
-        self.assertEqual(id_interval.get_start(), 1234)
-        self.assertEqual(id_interval.get_end(), None)
+        self.assertEqual(id_interval.start, 1234)
+        self.assertEqual(id_interval.end, None)
         self.assertEqual(str(id_interval), "[1234 : ]")
 
     def test_start_and_stop_set(self):
         id_interval = blitzortung.db.query.IdInterval(1234, 5678)
 
-        self.assertEqual(id_interval.get_start(), 1234)
-        self.assertEqual(id_interval.get_end(), 5678)
+        self.assertEqual(id_interval.start, 1234)
+        self.assertEqual(id_interval.end, 5678)
         self.assertEqual(str(id_interval), "[1234 : 5678]")
 
     @raises(ValueError)
@@ -56,30 +56,30 @@ class TimeIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.TimeInterval()
 
-        self.assertEqual(id_interval.get_start(), None)
-        self.assertEqual(id_interval.get_end(), None)
+        self.assertEqual(id_interval.start, None)
+        self.assertEqual(id_interval.end, None)
         self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15))
 
-        self.assertEqual(id_interval.get_start(), datetime.datetime(2010, 11, 20, 11, 30, 15))
-        self.assertEqual(id_interval.get_end(), None)
+        self.assertEqual(id_interval.start, datetime.datetime(2010, 11, 20, 11, 30, 15))
+        self.assertEqual(id_interval.end, None)
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : ]")
 
     def test_start_and_stop_set(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15),
                                                         datetime.datetime(2010, 12, 5, 23, 15, 59))
 
-        self.assertEqual(id_interval.get_start(), datetime.datetime(2010, 11, 20, 11, 30, 15))
-        self.assertEqual(id_interval.get_end(), datetime.datetime(2010, 12, 5, 23, 15, 59))
+        self.assertEqual(id_interval.start, datetime.datetime(2010, 11, 20, 11, 30, 15))
+        self.assertEqual(id_interval.end, datetime.datetime(2010, 12, 5, 23, 15, 59))
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : 2010-12-05 23:15:59]")
 
     def test_get_duration(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15),
                                                         datetime.datetime(2010, 11, 20, 11, 40, 15))
 
-        self.assertEqual(id_interval.get_duration(), datetime.timedelta(minutes=10))
+        self.assertEqual(id_interval.duration, datetime.timedelta(minutes=10))
 
     @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):

@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from Cython.Build import cythonize
 import numpy as np
 
-import blitzortung
+import blitzortung 
 
 setup(
     name='blitzortung',
@@ -12,7 +12,7 @@ setup(
     ext_modules=cythonize("blitzortung/clustering/pdist.pyx"),
     include_dirs=[np.get_include()],
     install_requires=['injector', 'pytz', 'dateutils', 'shapely',  'pyproj', 'numpy', 'pandas', 'statsd'],
-    tests_require=['nose', 'mock', 'coverage'],
+    tests_require=['nose', 'mock', 'coverage', 'assertpy'],
     version=blitzortung.__version__,
     description='blitzortung.org python modules',
     download_url='http://www.tryb.de/andi/blitzortung/',
