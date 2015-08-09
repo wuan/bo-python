@@ -53,6 +53,3 @@ class TimingState(object):
 
     def add_info_text(self, info_text):
         self.info_text += info_text
-
-    def get_info_text(self):
-        return self.info_text

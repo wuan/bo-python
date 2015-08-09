@@ -27,12 +27,6 @@ class StrikeGridState(TimingState):
         self.grid_parameters = grid_parameters
         self.end_time = end_time
 
-    def get_grid_parameters(self):
-        return self.grid_parameters
-
-    def get_end_time(self):
-        return self.end_time
-
 
 class StrikeGridQuery(object):
     @inject(strike_query_builder=db.query_builder.Strike)
@@ -42,7 +36,7 @@ class StrikeGridQuery(object):
     def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        state = StrikeGridState(statsd_client, grid_parameters, time_interval.end())
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval.end)
 
         query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval=time_interval, count_threshold=count_threshold)
@@ -54,13 +48,13 @@ class StrikeGridQuery(object):
 
     @staticmethod
     def build_strikes_grid_result(results, state):
-        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.get_grid_parameters()))
+        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('strikes_grid.query')
 
         reference_time = time.time()
-        x_bin_count = state.get_grid_parameters().get_x_bin_count()
-        y_bin_count = state.get_grid_parameters().get_y_bin_count()
-        end_time = state.get_end_time()
+        x_bin_count = state.grid_parameters.x_bin_count
+        y_bin_count = state.grid_parameters.y_bin_count
+        end_time = state.end_time
         strikes_grid_result = tuple(
             (
                 result['rx'],
@@ -91,8 +85,8 @@ class StrikeGridQuery(object):
         state.log_gauge('strikes_grid.size', len(grid_data))
         state.log_incr('strikes_grid')
 
-        grid_parameters = state.get_grid_parameters()
-        end_time = state.get_end_time()
+        grid_parameters = state.grid_parameters
+        end_time = state.end_time
         response = {'r': grid_data, 'xd': round(grid_parameters.get_x_div(), 6),
                     'yd': round(grid_parameters.get_y_div(), 6),
                     'x0': round(grid_parameters.get_x_min(), 4), 'y1': round(grid_parameters.get_y_max(), 4),
@@ -101,6 +95,6 @@ class StrikeGridQuery(object):
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
-        print(state.get_info_text())
+        print(state.info_text)
 
         return response
