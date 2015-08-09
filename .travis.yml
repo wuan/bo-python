@@ -46,7 +46,7 @@ script:
   - nosetests
 
 after_script:
-  - echo "install"
+  - ls -la .coverage || true
 
 after_success:
   - coveralls
