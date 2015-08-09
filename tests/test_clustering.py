@@ -13,7 +13,7 @@ You should have received a copy of the GNU Affero General Public License along w
 
 from unittest import TestCase
 import datetime
-from hamcrest import assert_that, is_, close_to
+from assertpy import assert_that
 
 import nose
 import numpy as np
@@ -36,30 +36,43 @@ class TestClustering(TestCase):
         self.clustering = blitzortung.clustering.Clustering(blitzortung.builder.StrikeCluster())
 
     def test_clustering(self):
-        strike_builder = blitzortung.builder.Strike()
+        event_builder = blitzortung.builder.Event()
 
         events = [
-            strike_builder.set_x(11).set_y(51).set_id(1).build(),
-            strike_builder.set_x(11.02).set_y(51.02).set_id(2).build(),
-            strike_builder.set_x(11.02).set_y(51.05).set_id(3).build(),
-            strike_builder.set_x(11.4).set_y(51.4).set_id(4).build(),
-            strike_builder.set_x(12).set_y(52).set_id(5).build()
+            event_builder.set_x(11).set_y(51).build(),
+            event_builder.set_x(11.02).set_y(51.02).build(),
+            event_builder.set_x(11.02).set_y(51.05).build(),
+            event_builder.set_x(11.4).set_y(51.4).build(),
+            event_builder.set_x(12).set_y(52).build()
         ]
         now = datetime.datetime.utcnow()
         time_interval = blitzortung.db.query.TimeInterval(now - datetime.timedelta(minutes=10), now)
 
         clusters = list(self.clustering.build_clusters(events, time_interval))
 
-        assert_that(len(clusters), is_(1))
+        assert_that(len(clusters)).is_equal_to(1)
         cluster = clusters[0]
-        assert_that(cluster.get_timestamp(), is_(time_interval.get_end()))
-        assert_that(cluster.get_interval_seconds(), is_(10 * 60))
-        shape = cluster.get_shape()
+        assert_that(cluster.timestamp).is_equal_to(time_interval.end)
+        assert_that(cluster.interval_seconds).is_equal_to(10 * 60)
+        shape = cluster.shape
         xy_arrays = shape.coords.xy
-        assert_that(xy_arrays[0].tolist(), is_([11.0015, 11.034, 11.04, 11.0001, 10.98, 11.0015]))
-        assert_that(xy_arrays[1].tolist(), is_([51.0575, 51.0643, 51.02, 50.98, 50.9998, 51.0575]))
-        assert_that(cluster.get_strike_count(), is_(3))
+        assert_that(xy_arrays[0].tolist()).contains(11.0015, 11.034, 11.04, 11.0001, 10.98, 11.0015)
+        assert_that(xy_arrays[1].tolist()).contains(51.0575, 51.0643, 51.02, 50.98, 50.9998, 51.0575)
+        assert_that(cluster.strike_count).is_equal_to(3)
 
+    def test_clustering_with_not_enough_events(self):
+        event_builder = blitzortung.builder.Event()
+
+        events = [
+            event_builder.set_x(11).set_y(51).build(),
+            event_builder.set_x(11.02).set_y(51.02).build(),
+        ]
+        now = datetime.datetime.utcnow()
+        time_interval = blitzortung.db.query.TimeInterval(now - datetime.timedelta(minutes=10), now)
+
+        clusters = list(self.clustering.build_clusters(events, time_interval))
+        assert_that(clusters).is_empty()
+        
     def test_basic_clustering(self):
         data = [
             [1.0, 2.0],
@@ -73,29 +86,29 @@ class TestClustering(TestCase):
         dist = fastcluster.pdist(data)
         result = fastcluster.linkage(dist).tolist()
 
-        assert_that(int(result[0][0]), is_(0))
-        assert_that(int(result[0][1]), is_(4))
-        assert_that(result[0][2], is_(close_to(0.1, 0.00001)))
-        assert_that(int(result[0][3]), is_(2))
+        assert_that(int(result[0][0])).is_equal_to(0)
+        assert_that(int(result[0][1])).is_equal_to(4)
+        assert_that(result[0][2]).is_close_to(0.1, 0.00001)
+        assert_that(int(result[0][3])).is_equal_to(2)
 
-        assert_that(int(result[1][0]), is_(1))
-        assert_that(int(result[1][1]), is_(3))
-        assert_that(result[1][2], is_(close_to(0.1, 0.00001)))
-        assert_that(int(result[1][3]), is_(2))
+        assert_that(int(result[1][0])).is_equal_to(1)
+        assert_that(int(result[1][1])).is_equal_to(3)
+        assert_that(result[1][2]).is_close_to(0.1, 0.00001)
+        assert_that(int(result[1][3])).is_equal_to(2)
 
-        assert_that(int(result[2][0]), is_(2))
-        assert_that(int(result[2][1]), is_(6))
-        assert_that(result[2][2], is_(close_to(0.1, 0.00001)))
-        assert_that(int(result[2][3]), is_(3))
+        assert_that(int(result[2][0])).is_equal_to(2)
+        assert_that(int(result[2][1])).is_equal_to(6)
+        assert_that(result[2][2]).is_close_to(0.1, 0.00001)
+        assert_that(int(result[2][3])).is_equal_to(3)
 
-        assert_that(int(result[3][0]), is_(5))
-        assert_that(int(result[3][1]), is_(7))
-        assert_that(result[3][2], is_(close_to(1.34536, 0.00001)))
-        assert_that(int(result[3][3]), is_(5))
+        assert_that(int(result[3][0])).is_equal_to(5)
+        assert_that(int(result[3][1])).is_equal_to(7)
+        assert_that(result[3][2]).is_close_to(1.34536, 0.00001)
+        assert_that(int(result[3][3])).is_equal_to(5)
 
 
 class TestPdist(TestCase):
     def test_distance(self):
         distance = blitzortung.clustering.distance(11, 51, 11.1, 51.1)
 
-        assert_that(distance, is_(close_to(13.133874300397196, 1e-9)))
+        assert_that(distance).is_close_to(13.133874300397196, 1e-9)

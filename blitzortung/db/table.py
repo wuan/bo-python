@@ -255,15 +255,15 @@ class Strike(Base):
               '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
 
         parameters = {
-            'timestamp': strike.get_timestamp(),
-            'nanoseconds': strike.get_timestamp().nanosecond,
-            'longitude': strike.get_x(),
-            'latitude': strike.get_y(),
-            'altitude': strike.get_altitude(),
+            'timestamp': strike.timestamp(),
+            'nanoseconds': strike.timestamp().nanosecond,
+            'longitude': strike.x(),
+            'latitude': strike.y(),
+            'altitude': strike.altitude(),
             'region': region,
-            'amplitude': strike.get_amplitude(),
-            'error2d': strike.get_lateral_error(),
-            'stationcount': strike.get_station_count()
+            'amplitude': strike.amplitude(),
+            'error2d': strike.lateral_error(),
+            'stationcount': strike.station_count()
         }
 
         self.execute(sql, parameters)
@@ -364,7 +364,7 @@ class StrikeCluster(Base):
               'VALUES (%(timestamp)s, %(interval_seconds)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
 
         parameters = {
-            'timestamp': strike_cluster.get_timestamp(),
+            'timestamp': strike_cluster.timestamp(),
             'interval_seconds': strike_cluster.get_interval_seconds(),
             'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.get_shape())),
             'srid': self.get_srid(),
@@ -424,8 +424,8 @@ class Station(Base):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
                      ' (number, "user", "name", country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
-                     (station.get_number(), station.get_user(), station.get_name(),
-                      station.get_country(), station.get_timestamp(), station.get_x(), station.get_y(), region))
+                     (station.number(), station.get_user(), station.get_name(),
+                      station.get_country(), station.timestamp(), station.x(), station.y(), region))
 
     def select(self, timestamp=None, region=None):
         sql = ''' select
@@ -481,11 +481,11 @@ class StationOffline(Base):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
                      ' (number, region, begin, "end") ' +
                      'VALUES (%s, %s, %s, %s)',
-                     (station_offline.get_number(), region, station_offline.get_begin(), station_offline.get_end()))
+                     (station_offline.number(), region, station_offline.begin(), station_offline.end()))
 
     def update(self, station_offline, region=1):
         self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s and region=%s',
-                     (station_offline.get_end(), station_offline.get_id(), region))
+                     (station_offline.end(), station_offline.id(), region))
 
     def select(self, timestamp=None, region=1):
         sql = '''select id, number, region, begin, "end"

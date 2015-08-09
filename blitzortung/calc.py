@@ -67,8 +67,8 @@ class SimulatedData(object):
         return self.event_builder.build()
 
     def get_source_event(self):
-        self.event_builder.set_x(self.strike_location.get_x())
-        self.event_builder.set_y(self.strike_location.get_y())
+        self.event_builder.set_x(self.strike_location.x)
+        self.event_builder.set_y(self.strike_location.y)
         self.event_builder.set_timestamp(self.timestamp)
         return self.event_builder.build()
 
@@ -78,7 +78,7 @@ class ThreePointSolution(data.Event):
         location = reference_event.geodesic_shift(azimuth, distance)
         distance = reference_event.distance_to(location)
 
-        total_nanoseconds = reference_event.get_timestamp().value
+        total_nanoseconds = reference_event.timestamp.value
         total_nanoseconds -= signal_velocity.get_distance_time(distance)
         self.signal_velocity = signal_velocity
 
@@ -88,7 +88,7 @@ class ThreePointSolution(data.Event):
         distance = self.distance_to(event)
         distance_runtime = self.signal_velocity.get_distance_time(distance)
 
-        measured_runtime = event.get_timestamp().value - self.get_timestamp().value
+        measured_runtime = event.timestamp.value - self.timestamp.value
 
         return (measured_runtime - distance_runtime) / 1000.0
 
@@ -136,9 +136,6 @@ class ThreePointSolver(object):
 
         self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2,
                                     distance_0_2, azimuth_0_2)
-
-    def get_solutions(self):
-        return self.solutions
 
     def get_solution_for(self, events):
         solution_count = len(self.solutions)
@@ -292,13 +289,13 @@ class LeastSquareFit(object):
         self.n_dim = 3
         self.m_dim = len(events)
         self.events = events
-        self.time_reference = events[0].get_timestamp()
+        self.time_reference = events[0].timestamp
         self.signal_velocity = signal_velocity
 
         self.parameters = collections.OrderedDict()
-        self.parameters[FitParameter.Time] = self.calculate_time_value(three_point_solution.get_timestamp())
-        self.parameters[FitParameter.Longitude] = three_point_solution.get_x()
-        self.parameters[FitParameter.Latitude] = three_point_solution.get_y()
+        self.parameters[FitParameter.Time] = self.calculate_time_value(three_point_solution.timestamp)
+        self.parameters[FitParameter.Longitude] = three_point_solution.x
+        self.parameters[FitParameter.Latitude] = three_point_solution.y
 
         self.a_matrix = np.zeros((self.m_dim, self.n_dim))
         self.b_vector = np.zeros(self.m_dim)
@@ -377,7 +374,7 @@ class LeastSquareFit(object):
         distance = location.distance_to(event)
         distance_runtime = self.signal_velocity.get_distance_time(distance) / self.TIME_FACTOR
 
-        measured_runtime = self.calculate_time_value(event.get_timestamp()) - self.parameters[FitParameter.Time]
+        measured_runtime = self.calculate_time_value(event.timestamp) - self.parameters[FitParameter.Time]
 
         return measured_runtime - distance_runtime
 
@@ -415,8 +412,8 @@ class LeastSquareFit(object):
         event_builder = builder.Event()
 
         location = self.get_location()
-        event_builder.set_x(location.get_x())
-        event_builder.set_y(location.get_y())
+        event_builder.set_x(location.x())
+        event_builder.set_y(location.y())
         event_builder.set_timestamp(self.get_timestamp())
 
         return event_builder.build()

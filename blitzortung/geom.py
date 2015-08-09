@@ -74,10 +74,10 @@ class Envelope(Geometry):
         return abs(self.x_max - self.x_min)
 
     def contains(self, point):
-        return (point.get_x() >= self.x_min) and \
-               (point.get_x() <= self.x_max) and \
-               (point.get_y() >= self.y_min) and \
-               (point.get_y() <= self.y_max)
+        return (point.x >= self.x_min) and \
+               (point.x <= self.x_max) and \
+               (point.y >= self.y_min) and \
+               (point.y <= self.y_max)
 
     def get_env(self):
         return shapely.geometry.LinearRing(
