@@ -14,6 +14,7 @@ You should have received a copy of the GNU Affero General Public License along w
 import unittest
 import datetime
 from hamcrest import assert_that, is_, equal_to, none
+from nose.tools import raises
 import pytz
 import numpy as np
 import pandas as pd
@@ -187,20 +188,10 @@ class StrikeTest(TestBase):
             [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
              364, 111, 43, 582, 594])))
 
+    @raises(blitzortung.builder.BuilderError)
     def test_build_strike_from_bad_line(self):
-        strike_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594,"
-        strike = self.builder.from_line(strike_line).build()
-
-        assert_that(strike.timestamp, is_(equal_to(self.get_timestamp("2013-08-08 10:30:03.644038642"))))
-        assert_that(strike.x, is_(equal_to(8.931001)))
-        assert_that(strike.y, is_(equal_to(44.162701)))
-        assert_that(strike.altitude, is_(equal_to(0)))
-        assert_that(strike.amplitude, is_(equal_to(4.75)))
-        assert_that(strike.lateral_error, is_(equal_to(20146)))
-        assert_that(strike.station_count, is_(equal_to(10)))
-        assert_that(strike.stations, is_(equal_to(
-            [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
-             364, 111, 43, 582, 594])))
+        strike_line = u"2013-08-08 10:30:03.644038642"
+        self.builder.from_line(strike_line)
 
 
 class StrikeClusterTest(TestBase):
