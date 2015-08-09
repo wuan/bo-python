@@ -73,32 +73,18 @@ class BaseTest(unittest.TestCase):
         self.base.conn = None
         assert_that(self.base.is_connected(), is_(False))
 
-    def test_table_name(self):
-        assert_that(self.base.get_table_name(), is_(""))
-
-        self.base.set_table_name("foo")
-
-        assert_that(self.base.get_table_name(), is_("foo"))
-
     def test_full_table_name(self):
-        assert_that(self.base.get_full_table_name(), is_(""))
-        assert_that(self.base.get_schema_name(), is_(""))
+        assert_that(self.base.full_table_name, is_(""))
+        assert_that(self.base.schema_name, is_(""))
 
-        self.base.set_table_name("foo")
+        self.base.table_name = "foo"
 
-        assert_that(self.base.get_full_table_name(), is_("foo"))
+        assert_that(self.base.full_table_name, is_("foo"))
 
-        self.base.set_schema_name("bar")
+        self.base.schema_name = "bar"
 
-        assert_that(self.base.get_full_table_name(), is_('"bar"."foo"'))
-        assert_that(self.base.get_schema_name(), is_("bar"))
-
-    def test_srid(self):
-        assert_that(self.base.get_srid(), is_(equal_to(4326)))
-
-        self.base.set_srid(1234)
-
-        assert_that(self.base.get_srid(), is_(equal_to(1234)))
+        assert_that(self.base.full_table_name, is_('"bar"."foo"'))
+        assert_that(self.base.schema_name, is_("bar"))
 
     def test_get_timezone(self):
         assert_that(self.base.get_timezone(), is_(equal_to(pytz.UTC)))

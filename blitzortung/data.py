@@ -234,7 +234,7 @@ class GridData(object):
         self.clear()
 
     def clear(self):
-        self.data = numpy.empty((self.grid.get_y_bin_count(), self.grid.get_x_bin_count()), dtype=type(self.no_data))
+        self.data = numpy.empty((self.grid.y_bin_count, self.grid.x_bin_count), dtype=type(self.no_data))
 
     def set(self, x_index, y_index, value):
         try:
@@ -245,16 +245,13 @@ class GridData(object):
     def get(self, x_index, y_index):
         return self.data[y_index][x_index]
 
-    def get_nodata_value(self):
-        return self.no_data
-
     def to_arcgrid(self):
-        result = 'NCOLS %d\n' % self.grid.get_x_bin_count()
-        result += 'NROWS %d\n' % self.grid.get_y_bin_count()
-        result += 'XLLCORNER %.4f\n' % self.grid.get_x_min()
-        result += 'YLLCORNER %.4f\n' % self.grid.get_y_min()
-        result += 'CELLSIZE %.4f\n' % self.grid.get_x_div()
-        result += 'NODATA_VALUE %s\n' % str(self.get_nodata_value())
+        result = 'NCOLS %d\n' % self.grid.x_bin_count
+        result += 'NROWS %d\n' % self.grid.y_bin_count
+        result += 'XLLCORNER %.4f\n' % self.grid.x_min
+        result += 'YLLCORNER %.4f\n' % self.grid.y_min
+        result += 'CELLSIZE %.4f\n' % self.grid.x_div
+        result += 'NODATA_VALUE %s\n' % str(self.no_data)
 
         cell_to_string = lambda current_cell: str(current_cell.get_count()) if current_cell else '0'
         result += '\n'.join([' '.join([cell_to_string(cell) for cell in row]) for row in self.data[::-1]])
@@ -278,18 +275,18 @@ class GridData(object):
         else:
             divider = 1
 
-        result = (self.grid.get_x_bin_count() + 2) * '-' + '\n'
+        result = (self.grid.x_bin_count + 2) * '-' + '\n'
         for row in self.data[::-1]:
             result += "|"
             for cell in row:
                 if cell:
-                    index = int(math.floor((cell.get_count() - 1) / divider + 1))
+                    index = int(math.floor((cell.count - 1) / divider + 1))
                 else:
                     index = 0
                 result += chars[index]
             result += "|\n"
 
-        result += (self.grid.get_x_bin_count() + 2) * '-' + '\n'
+        result += (self.grid.x_bin_count + 2) * '-' + '\n'
         result += 'total count: %d, max per area: %d' % (total, maximum)
         return result
 

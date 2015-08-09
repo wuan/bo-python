@@ -87,7 +87,7 @@ class StrikeGridQuery(object):
 
         grid_parameters = state.grid_parameters
         end_time = state.end_time
-        response = {'r': grid_data, 'xd': round(grid_parameters.get_x_div(), 6),
+        response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.get_y_div(), 6),
                     'x0': round(grid_parameters.get_x_min(), 4), 'y1': round(grid_parameters.get_y_max(), 4),
                     'xc': grid_parameters.get_x_bin_count(),

@@ -233,11 +233,11 @@ class GridQuery(SelectQuery):
         self.raster = raster
 
         self.add_parameters(
-            srid=raster.get_srid(),
-            xmin=raster.get_x_min(),
-            xdiv=raster.get_x_div(),
-            ymin=raster.get_y_min(),
-            ydiv=raster.get_y_div(),
+            srid=raster.srid,
+            xmin=raster.x_min,
+            xdiv=raster.x_div,
+            ymin=raster.y_min,
+            ydiv=raster.y_div,
         )
 
         self.set_columns(
@@ -247,12 +247,12 @@ class GridQuery(SelectQuery):
             'max("timestamp") as "timestamp"'
         )
 
-        env = self.raster.get_env()
+        env = self.raster.env
 
         if env.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
                                envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
-                               envelope_srid=raster.get_srid())
+                               envelope_srid=raster.srid)
         else:
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 

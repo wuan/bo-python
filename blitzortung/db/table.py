@@ -127,23 +127,12 @@ class Base(object):
         else:
             return False
 
-    def set_table_name(self, table_name):
-        self.table_name = table_name
-
-    def get_table_name(self):
-        return self.table_name
-
-    def get_full_table_name(self):
-        if self.get_schema_name():
-            return '"' + self.get_schema_name() + '"."' + self.get_table_name() + '"'
+    @property
+    def full_table_name(self):
+        if self.schema_name:
+            return '"' + self.schema_name + '"."' + self.table_name + '"'
         else:
-            return self.get_table_name()
-
-    def set_schema_name(self, schema_name):
-        self.schema_name = schema_name
-
-    def get_schema_name(self):
-        return self.schema_name
+            return self.table_name
 
     def get_srid(self):
         return self.srid
@@ -246,10 +235,10 @@ class Strike(Base):
         self.query_builder = query_builder
         self.strike_mapper = strike_mapper
 
-        self.set_table_name(self.TABLE_NAME)
+        self.table_name = self.TABLE_NAME
 
     def insert(self, strike, region=1):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + \
+        sql = 'INSERT INTO ' + self.full_table_name + \
               ' ("timestamp", nanoseconds, geog, altitude, region, amplitude, error2d, stationcount) ' + \
               'VALUES (%(timestamp)s, %(nanoseconds)s, ST_MakePoint(%(longitude)s, %(latitude)s), ' + \
               '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
@@ -269,7 +258,7 @@ class Strike(Base):
         self.execute(sql, parameters)
 
     def get_latest_time(self, region=1):
-        sql = 'SELECT "timestamp", nanoseconds FROM ' + self.get_full_table_name() + \
+        sql = 'SELECT "timestamp", nanoseconds FROM ' + self.full_table_name + \
               ' WHERE region=%(region)s' + \
               ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
 
@@ -283,7 +272,7 @@ class Strike(Base):
     def select(self, **kwargs):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), **kwargs)
+        query = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
 
         return self.execute_many(str(query), query.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
 
@@ -306,7 +295,7 @@ class Strike(Base):
     def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
         query = self.query_builder.histogram_query(
-            self.get_full_table_name(),
+            self.full_table_name,
             minutes, minute_offset, binsize,
             region, envelope
         )
@@ -356,10 +345,10 @@ class StrikeCluster(Base):
         self.query_builder = query_builder
         self.strike_cluster_mapper = strike_cluster_mapper
 
-        self.set_table_name(self.TABLE_NAME)
+        self.set_table_name = self.TABLE_NAME
 
     def insert(self, strike_cluster):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + \
+        sql = 'INSERT INTO ' + self.full_table_name + \
               ' ("timestamp", interval_seconds, geog, strike_count) ' + \
               'VALUES (%(timestamp)s, %(interval_seconds)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
 
@@ -367,14 +356,14 @@ class StrikeCluster(Base):
             'timestamp': strike_cluster.timestamp,
             'interval_seconds': strike_cluster.interval_seconds,
             'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.shape)),
-            'srid': self.get_srid(),
+            'srid': self.srid,
             'strike_count': strike_cluster.strike_count
         }
 
         self.execute(sql, parameters)
 
     def get_latest_time(self, interval_seconds=600):
-        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
+        sql = 'SELECT "timestamp" FROM ' + self.full_table_name + \
               ' WHERE interval_seconds=%(interval_seconds)s ORDER BY "timestamp" DESC LIMIT 1'
 
         parameters = {'interval_seconds': interval_seconds}
@@ -384,7 +373,7 @@ class StrikeCluster(Base):
     def select(self, timestamp, interval_duration, interval_count=1, interval_offset=None):
         """ build up query """
 
-        query = self.query_builder.select_query(self.get_full_table_name(), self.get_srid(), timestamp,
+        query = self.query_builder.select_query(self.full_table_name, self.srid, timestamp,
                                                 interval_duration,
                                                 interval_count, interval_offset)
 
@@ -417,11 +406,11 @@ class Station(Base):
     def __init__(self, db_connection_pool, station_mapper):
         super(Station, self).__init__(db_connection_pool)
 
-        self.set_table_name('stations')
+        self.table_name = 'stations'
         self.station_mapper = station_mapper
 
     def insert(self, station, region=1):
-        self.execute('INSERT INTO ' + self.get_full_table_name() +
+        self.execute('INSERT INTO ' + self.full_table_name +
                      ' (number, "user", "name", country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
                      (station.number(), station.get_user(), station.get_name(),
@@ -474,17 +463,17 @@ class StationOffline(Base):
     def __init__(self, db_connection_pool, station_offline_mapper):
         super(StationOffline, self).__init__(db_connection_pool)
 
-        self.set_table_name('stations_offline')
+        self.table_name = 'stations_offline'
         self.station_offline_mapper = station_offline_mapper
 
     def insert(self, station_offline, region=1):
-        self.execute('INSERT INTO ' + self.get_full_table_name() +
+        self.execute('INSERT INTO ' + self.full_table_name +
                      ' (number, region, begin, "end") ' +
                      'VALUES (%s, %s, %s, %s)',
                      (station_offline.number, region, station_offline.begin, station_offline.end))
 
     def update(self, station_offline, region=1):
-        self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s and region=%s',
+        self.execute('UPDATE ' + self.full_table_name + ' SET "end"=%s WHERE id=%s and region=%s',
                      (station_offline.end, station_offline.id, region))
 
     def select(self, timestamp=None, region=1):
@@ -518,15 +507,15 @@ class Location(Base):
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
     def __init__(self, db_connection_pool):
         super(Location, self).__init__(db_connection_pool)
-        self.set_schema_name('geo')
-        self.set_table_name('geonames')
+        self.schema_name = 'geo'
+        self.table_name = 'geonames'
         self.center = None
         self.min_population = None
         self.limit = None
         self.max_distance = None
 
     def delete_all(self):
-        self.execute('DELETE FROM ' + self.get_full_table_name())
+        self.execute('DELETE FROM ' + self.full_table_name)
 
     def insert(self, line):
         fields = line.strip().split('\t')
@@ -549,7 +538,7 @@ class Location(Base):
         classification = self.determine_size_class(population)
 
         if classification is not None:
-            self.execute('INSERT INTO ' + self.get_full_table_name() +
+            self.execute('INSERT INTO ' + self.full_table_name +
                          '(geog, name, class, feature_class, feature_code, country_code, admin_code_1, admin_code_2, ' +
                          'population, elevation)' +
                          'VALUES(ST_GeomFromText(\'POINT(%s %s)\', 4326), %s, %s, %s, %s, %s, %s, %s, %s, %s)',
@@ -598,7 +587,7 @@ class Location(Base):
                 ST_Azimuth(geog::geometry, c.center) AS azimuth
             FROM
                 (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,''' + \
-                           self.get_full_table_name() + '''
+                           self.full_table_name + '''
             WHERE
                 feature_class='P'
                 AND population >= %(min_population)s
@@ -607,7 +596,7 @@ class Location(Base):
             LIMIT %(limit)s'''
 
             params = {
-                'srid': self.get_srid(),
+                'srid': self.srid,
                 'center_x': self.center.get_point().x,
                 'center_y': self.center.get_point().y,
                 'min_population': self.min_population,
@@ -636,7 +625,7 @@ class ServiceLogBase(Base):
     """
 
     def get_latest_time(self):
-        sql = 'SELECT "timestamp" FROM ' + self.get_full_table_name() + \
+        sql = 'SELECT "timestamp" FROM ' + self.full_table_name + \
               ' ORDER BY "timestamp" DESC LIMIT 1'
 
         def prepare_result(cursor, _):
@@ -666,10 +655,10 @@ class ServiceLogTotal(ServiceLogBase):
     def __init__(self, db_connection_pool):
         super(ServiceLogTotal, self).__init__(db_connection_pool)
 
-        self.set_table_name('servicelog_total')
+        self.table_name = 'servicelog_total'
 
     def insert(self, timestamp, count):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+        sql = 'INSERT INTO ' + self.full_table_name + ' ' + \
               '("timestamp", count)' + \
               'VALUES (%(timestamp)s, %(count)s);'
 
@@ -692,10 +681,10 @@ class ServiceLogCountry(ServiceLogBase):
     def __init__(self, db_connection_pool):
         super(ServiceLogCountry, self).__init__(db_connection_pool)
 
-        self.set_table_name('servicelog_country')
+        self.table_name = 'servicelog_country'
 
     def insert(self, timestamp, country_code, count):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+        sql = 'INSERT INTO ' + self.full_table_name + ' ' + \
               '("timestamp", country_code, "count")' + \
               'VALUES (%(timestamp)s, %(country_code)s, %(count)s);'
 
@@ -719,10 +708,10 @@ class ServiceLogVersion(ServiceLogBase):
     def __init__(self, db_connection_pool):
         super(ServiceLogVersion, self).__init__(db_connection_pool)
 
-        self.set_table_name('servicelog_version')
+        self.table_name = 'servicelog_version'
 
     def insert(self, timestamp, version, count):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+        sql = 'INSERT INTO ' + self.full_table_name + ' ' + \
               '("timestamp", version, "count")' + \
               'VALUES (%(timestamp)s, %(version)s, %(count)s);'
 
@@ -746,10 +735,10 @@ class ServiceLogParameters(ServiceLogBase):
     def __init__(self, db_connection_pool):
         super(ServiceLogParameters, self).__init__(db_connection_pool)
 
-        self.set_table_name('servicelog_parameters')
+        self.table_name = 'servicelog_parameters'
 
     def insert(self, timestamp, region, minute_length, minute_offset, grid_baselength, count_threshold, count):
-        sql = 'INSERT INTO ' + self.get_full_table_name() + ' ' + \
+        sql = 'INSERT INTO ' + self.full_table_name + ' ' + \
               '("timestamp", region, minute_length, minute_offset, grid_baselength, count_threshold, "count")' + \
               'VALUES (%(timestamp)s, %(region)s, %(minute_length)s, %(minute_offset)s, %(grid_baselength)s, %(count_threshold)s, %(count)s);'
 

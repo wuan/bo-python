@@ -38,8 +38,9 @@ class Geometry(object):
     def set_srid(self, srid):
         self.srid = srid
 
+    @property
     @abstractmethod
-    def get_env(self):
+    def env(self):
         pass
 
 
@@ -55,22 +56,12 @@ class Envelope(Geometry):
         self.y_min = y_min
         self.y_max = y_max
 
-    def get_x_min(self):
-        return self.x_min
-
-    def get_x_max(self):
-        return self.x_max
-
-    def get_y_min(self):
-        return self.y_min
-
-    def get_y_max(self):
-        return self.y_max
-
-    def get_y_delta(self):
+    @property
+    def y_delta(self):
         return abs(self.y_max - self.y_min)
 
-    def get_x_delta(self):
+    @property
+    def x_delta(self):
         return abs(self.x_max - self.x_min)
 
     def contains(self, point):
@@ -79,7 +70,8 @@ class Envelope(Geometry):
                (point.y >= self.y_min) and \
                (point.y <= self.y_max)
 
-    def get_env(self):
+    @property
+    def env(self):
         return shapely.geometry.LinearRing(
             [(self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max), (self.x_max, self.y_min)])
 
@@ -95,14 +87,8 @@ class Grid(Envelope):
         super(Grid, self).__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
-        self.x_bin_count = None
-        self.y_bin_count = None
-
-    def get_x_div(self):
-        return self.x_div
-
-    def get_y_div(self):
-        return self.y_div
+        self.__x_bin_count = None
+        self.__y_bin_count = None
 
     def get_x_bin(self, x_pos):
         return int(math.ceil(float(x_pos - self.x_min) / self.x_div)) - 1
@@ -110,15 +96,17 @@ class Grid(Envelope):
     def get_y_bin(self, y_pos):
         return int(math.ceil(float(y_pos - self.y_min) / self.y_div)) - 1
 
-    def get_x_bin_count(self):
-        if not self.x_bin_count:
-            self.x_bin_count = self.get_x_bin(self.x_max) + 1
-        return self.x_bin_count
+    @property
+    def x_bin_count(self):
+        if not self.__x_bin_count:
+            self.__x_bin_count = self.get_x_bin(self.x_max) + 1
+        return self.__x_bin_count
 
-    def get_y_bin_count(self):
-        if not self.y_bin_count:
-            self.y_bin_count = self.get_y_bin(self.y_max) + 1
-        return self.y_bin_count
+    @property
+    def y_bin_count(self):
+        if not self.__y_bin_count:
+            self.__y_bin_count = self.get_y_bin(self.y_max) + 1
+        return self.__y_bin_count
 
     def get_x_center(self, cell_index):
         return self.x_min + (cell_index + 0.5) * self.x_div
@@ -128,8 +116,8 @@ class Grid(Envelope):
 
     def __repr__(self):
         return 'Grid(x: %.4f..%.4f (%.4f), y: %.4f..%.4f (%.4f))' % (
-            self.get_x_min(), self.get_x_max(), self.get_x_div(),
-            self.get_y_min(), self.get_y_max(), self.get_y_div())
+            self.x_min, self.x_max, self.x_div,
+            self.y_min, self.y_max, self.y_div)
 
 
 class GridFactory(object):

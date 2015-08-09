@@ -38,17 +38,12 @@ class TestGeometry(TestCase):
         self.geometry = GeometryForTest()
 
     def test_default_values(self):
-        assert_that(self.geometry.get_srid(), is_(equal_to(blitzortung.geom.Geometry.DefaultSrid)))
-
-    def test_set_srid(self):
-        self.geometry.set_srid(1234)
-
-        assert_that(self.geometry.get_srid(), is_(equal_to(1234)))
+        assert_that(self.geometry.srid, is_(equal_to(blitzortung.geom.Geometry.DefaultSrid)))
 
     def test_create_with_different_srid(self):
         self.geometry = GeometryForTest(1234)
 
-        assert_that(self.geometry.get_srid(), is_(equal_to(1234)))
+        assert_that(self.geometry.srid, is_(equal_to(1234)))
 
 
 class TestEnvelope(TestCase):
@@ -56,21 +51,21 @@ class TestEnvelope(TestCase):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2)
 
     def test_default_values(self):
-        assert_that(self.envelope.get_srid(), is_(equal_to(blitzortung.geom.Geometry.DefaultSrid)))
+        assert_that(self.envelope.srid, is_(equal_to(blitzortung.geom.Geometry.DefaultSrid)))
 
     def test_custom_srid_value(self):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2, 1234)
-        assert_that(self.envelope.get_srid(), is_(equal_to(1234)))
+        assert_that(self.envelope.srid, is_(equal_to(1234)))
 
     def test_get_envelope_coordinate_components(self):
-        assert_that(self.envelope.get_x_min(), is_(equal_to(-5)))
-        assert_that(self.envelope.get_x_max(), is_(equal_to(4)))
-        assert_that(self.envelope.get_y_min(), is_(equal_to(-3)))
-        assert_that(self.envelope.get_y_max(), is_(equal_to(2)))
+        assert_that(self.envelope.x_min, is_(equal_to(-5)))
+        assert_that(self.envelope.x_max, is_(equal_to(4)))
+        assert_that(self.envelope.y_min, is_(equal_to(-3)))
+        assert_that(self.envelope.y_max, is_(equal_to(2)))
 
     def test_get_envelope_parameters(self):
-        assert_that(self.envelope.get_x_delta(), is_(equal_to(9)))
-        assert_that(self.envelope.get_y_delta(), is_(equal_to(5)))
+        assert_that(self.envelope.x_delta, is_(equal_to(9)))
+        assert_that(self.envelope.y_delta, is_(equal_to(5)))
 
     def test_contains_point_inside_envelope(self):
         self.assertTrue(self.envelope.contains(blitzortung.types.Point(0, 0)))
@@ -91,7 +86,7 @@ class TestEnvelope(TestCase):
 
     def test_get_env(self):
         expected_env = shapely.geometry.LinearRing([(-5, -3), (-5, 2), (4, 2), (4, -3)])
-        self.assertTrue(expected_env.almost_equals(self.envelope.get_env()))
+        self.assertTrue(expected_env.almost_equals(self.envelope.env))
 
     def test_str(self):
         assert_that(repr(self.envelope), is_(equal_to('Envelope(x: -5.0000..4.0000, y: -3.0000..2.0000)')))
@@ -102,16 +97,16 @@ class TestGrid(TestCase):
         self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25)
 
     def test_get_x_div(self):
-        assert_that(self.grid.get_x_div(), is_(equal_to(0.5)))
+        assert_that(self.grid.x_div, is_(equal_to(0.5)))
 
     def test_get_y_div(self):
-        assert_that(self.grid.get_y_div(), is_(equal_to(1.25)))
+        assert_that(self.grid.y_div, is_(equal_to(1.25)))
 
     def test_get_x_bin_count(self):
-        assert_that(self.grid.get_x_bin_count(), is_(equal_to(18)))
+        assert_that(self.grid.x_bin_count, is_(equal_to(18)))
 
     def test_get_y_bin_count(self):
-        assert_that(self.grid.get_y_bin_count(), is_(equal_to(4)))
+        assert_that(self.grid.y_bin_count, is_(equal_to(4)))
 
     def test_get_x_bin(self):
         assert_that(self.grid.get_x_bin(-5), is_(equal_to(-1)))
@@ -151,18 +146,18 @@ class TestGridFactory(TestCase):
     def test_get_for_srid(self):
         grid = self.grid_factory.get_for(self.base_length)
 
-        assert_that(grid.get_srid(), is_(4326))
+        assert_that(grid.srid, is_(4326))
 
     def test_grid_boundaries(self):
         grid = self.grid_factory.get_for(self.base_length)
 
-        x_div = grid.get_x_div()
-        y_div = grid.get_y_div()
+        x_div = grid.x_div
+        y_div = grid.y_div
 
-        assert_that(grid.get_x_min(), is_(10))
-        assert_that(grid.get_y_min(), is_(52))
-        assert_that(grid.get_x_max(), is_(close_to(10.964855970781894, 1e-10)))
-        assert_that(grid.get_y_max(), is_(close_to(52.99942586979069, 1e-10)))
+        assert_that(grid.x_min, is_(10))
+        assert_that(grid.y_min, is_(52))
+        assert_that(grid.x_max, is_(close_to(10.964855970781894, 1e-10)))
+        assert_that(grid.y_max, is_(close_to(52.99942586979069, 1e-10)))
         assert_that(x_div, is_(close_to(0.06891828362727814, 1e-10)))
         assert_that(y_div, is_(close_to(0.04759170808527102, 1e-10)))
 
@@ -187,11 +182,11 @@ class TestRasterElement(TestCase):
         self.timestamp = datetime.datetime(2013, 9, 6, 21, 36, 0, 123456)
         self.raster_element = blitzortung.geom.GridElement(1234, self.timestamp)
 
-    def test_get_count(self):
-        assert_that(self.raster_element.get_count(), is_(equal_to(1234)))
+    def test_count(self):
+        assert_that(self.raster_element.count, is_(equal_to(1234)))
 
-    def test_get_timestamp(self):
-        assert_that(self.raster_element.get_timestamp(), is_(equal_to(self.timestamp)))
+    def test_timestamp(self):
+        assert_that(self.raster_element.timestamp, is_(equal_to(self.timestamp)))
 
     def test_comparison(self):
         other_raster_element = blitzortung.geom.GridElement(10, self.timestamp)
