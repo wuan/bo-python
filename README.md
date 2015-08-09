@@ -1,7 +1,8 @@
 python-blitzortung a python module for blitzortung.org related stuff
 --------------------------------------------------------------------
 
-Current build status: [![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
+[![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
+[![Coverage Status](https://coveralls.io/repos/wuan/bo-python/badge.svg?branch=master&service=github)](https://coveralls.io/github/wuan/bo-python?branch=master)
 
 # Introduction
 
