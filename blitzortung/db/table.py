@@ -345,7 +345,7 @@ class StrikeCluster(Base):
         self.query_builder = query_builder
         self.strike_cluster_mapper = strike_cluster_mapper
 
-        self.set_table_name = self.TABLE_NAME
+        self.table_name = self.TABLE_NAME
 
     def insert(self, strike_cluster):
         sql = 'INSERT INTO ' + self.full_table_name + \

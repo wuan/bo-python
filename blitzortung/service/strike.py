@@ -34,7 +34,7 @@ class StrikeQuery(object):
 
     def create(self, id_or_offset, minute_length, minute_offset, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
-        state = StrikeState(statsd_client, time_interval.end())
+        state = StrikeState(statsd_client, time_interval.end)
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
@@ -94,7 +94,7 @@ class StrikeQuery(object):
 
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes.total')
-        print(state.get_info_text())
+        print(state.info_text)
 
         return final_result
 

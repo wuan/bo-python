@@ -57,10 +57,10 @@ class Strike(object):
         if region:
             query.add_condition("region = %(region)s", region=region)
 
-        if envelope and envelope.get_env().is_valid:
+        if envelope and envelope.env.is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                                envelope=psycopg2.Binary(shapely.wkb.dumps(envelope.get_env())),
-                                envelope_srid=envelope.get_srid())
+                                envelope=psycopg2.Binary(shapely.wkb.dumps(envelope.env)),
+                                envelope_srid=envelope.srid)
 
         return query
 

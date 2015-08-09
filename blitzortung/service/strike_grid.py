@@ -88,10 +88,10 @@ class StrikeGridQuery(object):
         grid_parameters = state.grid_parameters
         end_time = state.end_time
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
-                    'yd': round(grid_parameters.get_y_div(), 6),
-                    'x0': round(grid_parameters.get_x_min(), 4), 'y1': round(grid_parameters.get_y_max(), 4),
-                    'xc': grid_parameters.get_x_bin_count(),
-                    'yc': grid_parameters.get_y_bin_count(), 't': end_time.strftime("%Y%m%dT%H:%M:%S"),
+                    'yd': round(grid_parameters.y_div, 6),
+                    'x0': round(grid_parameters.x_min, 4), 'y1': round(grid_parameters.y_max, 4),
+                    'xc': grid_parameters.x_bin_count,
+                    'yc': grid_parameters.y_bin_count, 't': end_time.strftime("%Y%m%dT%H:%M:%S"),
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
