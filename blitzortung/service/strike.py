@@ -25,9 +25,6 @@ class StrikeState(TimingState):
         super(StrikeState, self).__init__("strikes", statsd_client)
         self.end_time = end_time
 
-    def get_end_time(self):
-        return self.end_time
-
 
 class StrikeQuery(object):
     @inject(strike_query_builder=db.query_builder.Strike, strike_mapper=db.mapper.Strike)
@@ -53,16 +50,16 @@ class StrikeQuery(object):
         state.log_timing('strikes.query')
 
         reference_time = time.time()
-        end_time = state.get_end_time()
+        end_time = state.end_time
         strikes = tuple(
             (
-                (end_time - strike.timestamp()).seconds,
-                strike.x(),
-                strike.y(),
-                strike.altitude(),
-                strike.lateral_error(),
-                strike.amplitude(),
-                strike.station_count()
+                (end_time - strike.timestamp).seconds,
+                strike.x,
+                strike.y,
+                strike.altitude,
+                strike.lateral_error,
+                strike.amplitude,
+                strike.station_count
             ) for strike in self.create_strikes(query_result))
 
         result = {'s': strikes}
@@ -90,7 +87,7 @@ class StrikeQuery(object):
         histogram_result = result[1]
 
         final_result = {
-            't': state.get_end_time().strftime("%Y%m%dT%H:%M:%S"),
+            't': state.end_time.strftime("%Y%m%dT%H:%M:%S"),
             'h': histogram_result
         }
         final_result.update(strikes_result)
