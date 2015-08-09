@@ -108,3 +108,20 @@ class TestStationMapper(TestCase):
             call.set_timestamp(self.timestamp),
             call.build()
         ]))
+
+    def test_strike_mapper_with_timezone(self):
+        zone = pytz.timezone('CET')
+
+        self.strike_mapper.create_object(self.result, timezone=zone)
+
+        timestamp = self.station_builder.set_timestamp.call_args[0][0]
+
+        assert_that(timestamp, is_(self.timestamp))
+        assert_that(timestamp.tzinfo.zone, is_(zone.zone))
+
+    def test_strike_mapper_without_timestamp(self):
+        self.result['begin'] = None
+
+        self.strike_mapper.create_object(self.result)
+
+        assert_that(self.station_builder.set_timestamp.call_args[0][0], is_(none()))
