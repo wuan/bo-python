@@ -118,7 +118,7 @@ class Station(Event):
 
     @property
     def is_valid(self):
-        return super(Station, self).is_valid() \
+        return super(Station, self).is_valid \
                and self.number > 0
 
     @property

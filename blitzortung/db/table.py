@@ -255,15 +255,15 @@ class Strike(Base):
               '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
 
         parameters = {
-            'timestamp': strike.timestamp(),
-            'nanoseconds': strike.timestamp().nanosecond,
-            'longitude': strike.x(),
-            'latitude': strike.y(),
-            'altitude': strike.altitude(),
+            'timestamp': strike.timestamp,
+            'nanoseconds': strike.timestamp.nanosecond,
+            'longitude': strike.x,
+            'latitude': strike.y,
+            'altitude': strike.altitude,
             'region': region,
-            'amplitude': strike.amplitude(),
-            'error2d': strike.lateral_error(),
-            'stationcount': strike.station_count()
+            'amplitude': strike.amplitude,
+            'error2d': strike.lateral_error,
+            'stationcount': strike.station_count
         }
 
         self.execute(sql, parameters)
@@ -481,11 +481,11 @@ class StationOffline(Base):
         self.execute('INSERT INTO ' + self.get_full_table_name() +
                      ' (number, region, begin, "end") ' +
                      'VALUES (%s, %s, %s, %s)',
-                     (station_offline.number(), region, station_offline.begin(), station_offline.end()))
+                     (station_offline.number, region, station_offline.begin, station_offline.end))
 
     def update(self, station_offline, region=1):
         self.execute('UPDATE ' + self.get_full_table_name() + ' SET "end"=%s WHERE id=%s and region=%s',
-                     (station_offline.end(), station_offline.id(), region))
+                     (station_offline.end, station_offline.id, region))
 
     def select(self, timestamp=None, region=1):
         sql = '''select id, number, region, begin, "end"
