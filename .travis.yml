@@ -43,10 +43,10 @@ install:
   - pip list
 
 script:
-  - nosetests
+  - nosetests --cover-xml
 
 after_script:
-  - ls -la .coverage || true
+  - ls -la .coverage 
 
 after_success:
   - coveralls
