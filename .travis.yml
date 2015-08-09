@@ -44,10 +44,7 @@ install:
   - pip list
 
 script:
-  - nosetests --cover-xml
-
-after_script:
-  - ls -la .coverage 
+  - nosetests
 
 after_success:
   - coveralls
