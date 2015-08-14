@@ -39,11 +39,12 @@ install:
   - pip install fastcluster
   - pip install twisted
   - pip install geographiclib
+  - pip install python-coveralls
   - python setup.py build_ext --inplace
   - pip list
 
 script:
   - nosetests
 
-after_script:
-  - echo "install"
+after_success:
+  - coveralls

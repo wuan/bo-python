@@ -17,6 +17,8 @@ import datetime
 import pytz
 from mock import Mock, call
 from hamcrest import assert_that, is_, equal_to, none
+import shapely.wkb
+import shapely.geometry
 
 import blitzortung.builder
 import blitzortung.db.mapper
@@ -73,3 +75,53 @@ class TestStrikeMapper(TestCase):
         self.strike_mapper.create_object(self.result)
 
         assert_that(self.strike_builder.set_timestamp.call_args[0][0], is_(none()))
+
+
+class TestStationMapper(TestCase):
+    def setUp(self):
+        self.station_builder = Mock(name="station_builder", spec=blitzortung.builder.Station)
+        self.strike_mapper = blitzortung.db.mapper.Station(self.station_builder)
+
+        self.timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.UTC)
+        self.result = {
+            'number': 31,
+            'user': '<user>',
+            'name': '<name>',
+            'country': '<country>',
+            'geog': shapely.wkb.dumps(shapely.geometry.Point(11, 49), hex=True),
+            'begin': self.timestamp
+        }
+
+        self.station = Mock(name="station")
+        self.station_builder.build.return_value = self.station
+
+    def test_station_mapper(self):
+        assert_that(self.strike_mapper.create_object(self.result), is_(self.station))
+
+        assert_that(self.station_builder.method_calls, is_([
+            call.set_number(31),
+            call.set_user('<user>'),
+            call.set_name('<name>'),
+            call.set_country('<country>'),
+            call.set_x(11.0),
+            call.set_y(49.0),
+            call.set_timestamp(self.timestamp),
+            call.build()
+        ]))
+
+    def test_strike_mapper_with_timezone(self):
+        zone = pytz.timezone('CET')
+
+        self.strike_mapper.create_object(self.result, timezone=zone)
+
+        timestamp = self.station_builder.set_timestamp.call_args[0][0]
+
+        assert_that(timestamp, is_(self.timestamp))
+        assert_that(timestamp.tzinfo.zone, is_(zone.zone))
+
+    def test_strike_mapper_without_timestamp(self):
+        self.result['begin'] = None
+
+        self.strike_mapper.create_object(self.result)
+
+        assert_that(self.station_builder.set_timestamp.call_args[0][0], is_(none()))
