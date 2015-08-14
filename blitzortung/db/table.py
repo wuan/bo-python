@@ -413,8 +413,8 @@ class Station(Base):
         self.execute('INSERT INTO ' + self.full_table_name +
                      ' (number, "user", "name", country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
-                     (station.number(), station.get_user(), station.get_name(),
-                      station.get_country(), station.timestamp(), station.x(), station.y(), region))
+                     (station.number, station.user, station.name,
+                      station.country, station.timestamp, station.x, station.y, region))
 
     def select(self, timestamp=None, region=None):
         sql = ''' select
