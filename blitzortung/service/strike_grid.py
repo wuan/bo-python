@@ -54,7 +54,7 @@ class StrikeGridQuery(object):
         reference_time = time.time()
         x_bin_count = state.grid_parameters.x_bin_count
         y_bin_count = state.grid_parameters.y_bin_count
-        end_time = state.time_interval.end_time
+        end_time = state.time_interval.end
         strikes_grid_result = tuple(
             (
                 result['rx'],
@@ -86,7 +86,7 @@ class StrikeGridQuery(object):
         state.log_incr('strikes_grid')
 
         grid_parameters = state.grid_parameters
-        end_time = state.time_interval.end_time
+        end_time = state.time_interval.end
         duration = state.time_interval.duration
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.y_div, 6),
