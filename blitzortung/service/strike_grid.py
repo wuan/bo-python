@@ -22,10 +22,10 @@ from .general import create_time_interval, TimingState
 
 
 class StrikeGridState(TimingState):
-    def __init__(self, statsd_client, grid_parameters, end_time):
+    def __init__(self, statsd_client, grid_parameters, time_interval):
         super(StrikeGridState, self).__init__("strikes_grid", statsd_client)
         self.grid_parameters = grid_parameters
-        self.end_time = end_time
+        self.time_interval = time_interval
 
 
 class StrikeGridQuery(object):
@@ -36,7 +36,7 @@ class StrikeGridQuery(object):
     def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        state = StrikeGridState(statsd_client, grid_parameters, time_interval.end)
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
         query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval=time_interval, count_threshold=count_threshold)
@@ -86,12 +86,15 @@ class StrikeGridQuery(object):
         state.log_incr('strikes_grid')
 
         grid_parameters = state.grid_parameters
-        end_time = state.end_time
+        end_time = state.time_interval.end_time
+        duration = state.time_interval.duration
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.y_div, 6),
                     'x0': round(grid_parameters.x_min, 4), 'y1': round(grid_parameters.y_max, 4),
                     'xc': grid_parameters.x_bin_count,
-                    'yc': grid_parameters.y_bin_count, 't': end_time.strftime("%Y%m%dT%H:%M:%S"),
+                    'yc': grid_parameters.y_bin_count,
+                    't': end_time.strftime("%Y%m%dT%H:%M:%S"),
+                    'dt': duration.seconds,
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
