@@ -115,9 +115,9 @@ class Grid(Envelope):
         return self.y_min + (row_index + 0.5) * self.y_div
 
     def __repr__(self):
-        return 'Grid(x: %.4f..%.4f (%.4f), y: %.4f..%.4f (%.4f))' % (
-            self.x_min, self.x_max, self.x_div,
-            self.y_min, self.y_max, self.y_div)
+        return 'Grid(x: %.4f..%.4f (%.4f, #%d), y: %.4f..%.4f (%.4f, #%d))' % (
+            self.x_min, self.x_max, self.x_div, self.x_bin_count,
+            self.y_min, self.y_max, self.y_div, self.y_bin_count)
 
 
 class GridFactory(object):
