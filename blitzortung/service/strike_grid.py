@@ -58,7 +58,7 @@ class StrikeGridQuery(object):
         strikes_grid_result = tuple(
             (
                 result['rx'],
-                y_bin_count - result['ry'] - 1,
+                y_bin_count - result['ry'],
                 result['strike_count'],
                 -(end_time - result['timestamp']).seconds
             ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
@@ -90,7 +90,7 @@ class StrikeGridQuery(object):
         duration = state.time_interval.duration
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.y_div, 6),
-                    'x0': round(grid_parameters.x_min, 4), 'y1': round(grid_parameters.y_max, 4),
+                    'x0': round(grid_parameters.x_min, 4), 'y1': round(grid_parameters.y_max + grid_parameters.y_div, 4),
                     'xc': grid_parameters.x_bin_count,
                     'yc': grid_parameters.y_bin_count,
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
