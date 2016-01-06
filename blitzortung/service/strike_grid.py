@@ -22,7 +22,6 @@ from .general import create_time_interval, TimingState
 
 
 class StrikeGridState(TimingState):
-
     __slots__ = ['grid_parameters', 'time_interval']
 
     def __init__(self, statsd_client, grid_parameters, time_interval):
@@ -32,9 +31,6 @@ class StrikeGridState(TimingState):
 
 
 class StrikeGridQuery(object):
-
-    __slots__ = ['strike_query_builder']
-
     @inject(strike_query_builder=db.query_builder.Strike)
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
@@ -62,12 +58,12 @@ class StrikeGridQuery(object):
         y_bin_count = state.grid_parameters.y_bin_count
         end_time = state.time_interval.end
         strikes_grid_result = tuple(
-            (
-                result['rx'],
-                y_bin_count - result['ry'],
-                result['strike_count'],
-                -(end_time - result['timestamp']).seconds
-            ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
+                (
+                    result['rx'],
+                    y_bin_count - result['ry'],
+                    result['strike_count'],
+                    -(end_time - result['timestamp']).seconds
+                ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
         )
         state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
         state.log_timing('strikes_grid.build_result', reference_time)
@@ -96,7 +92,8 @@ class StrikeGridQuery(object):
         duration = state.time_interval.duration
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.y_div, 6),
-                    'x0': round(grid_parameters.x_min, 4), 'y1': round(grid_parameters.y_max + grid_parameters.y_div, 4),
+                    'x0': round(grid_parameters.x_min, 4),
+                    'y1': round(grid_parameters.y_max + grid_parameters.y_div, 4),
                     'xc': grid_parameters.x_bin_count,
                     'yc': grid_parameters.y_bin_count,
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
