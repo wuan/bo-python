@@ -17,9 +17,6 @@ import blitzortung.db.query_builder
 
 
 class HistogramQuery(object):
-
-    __slots__ = ['strike_query_builder']
-
     @inject(strike_query_builder=blitzortung.db.query_builder.Strike)
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
