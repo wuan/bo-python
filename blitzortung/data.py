@@ -23,7 +23,7 @@ class Event(types.Point):
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 
-    __slot__ = ['__timestamp']
+    __slots__ = ['__timestamp']
 
     def __init__(self, timestamp, x_coord_or_point, y_coord=None):
         super(Event, self).__init__(x_coord_or_point, y_coord)
@@ -96,7 +96,7 @@ class Station(Event):
     class for station objects
     """
 
-    __slot__ = ['number', 'user', 'name', 'country', 'status', 'board']
+    __slots__ = ['number', 'user', 'name', 'country', 'status', 'board']
 
     def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
         super(Station, self).__init__(last_data, x_coord, y_coord)
@@ -164,7 +164,7 @@ class Strike(Event):
     class for strike objects
     """
 
-    __slot__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations']
+    __slots__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations']
 
     def __init__(self, strike_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
                  stations=None):
