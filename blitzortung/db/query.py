@@ -28,6 +28,8 @@ class BaseInterval(object):
     Basic interval range
     """
 
+    __slots__ = ['__start', '__end']
+
     def __init__(self, start=None, end=None):
         self.__start = start
         self.__end = end
@@ -49,6 +51,8 @@ class IdInterval(BaseInterval):
     Interval of Id
     """
 
+    __slots__ = []
+
     def __init__(self, start=None, end=None):
         if start and not isinstance(start, int):
             raise ValueError("start should be an integer value")
@@ -62,6 +66,8 @@ class TimeInterval(BaseInterval):
     """
     Time interval
     """
+
+    __slots__ = []
 
     def __init__(self, start=None, end=None):
         if start and not isinstance(start, datetime.datetime):
@@ -83,6 +89,8 @@ class Query(object):
     """
     simple class for building of complex queries
     """
+
+    __slots__ = ['conditions', 'groups', 'groups_having', 'parameters', 'limit', 'order', 'default_conditions']
 
     def __init__(self):
         self.conditions = []
@@ -196,6 +204,9 @@ class Query(object):
 
 
 class SelectQuery(Query):
+
+    __slots__ = ['table_name', 'columns']
+
     def __init__(self):
         super(SelectQuery, self).__init__()
         self.table_name = ""
@@ -227,6 +238,9 @@ class SelectQuery(Query):
 
 
 class GridQuery(SelectQuery):
+
+    __slots__ = ['raster']
+
     def __init__(self, raster, count_threshold=0):
         super(GridQuery, self).__init__()
 
@@ -268,6 +282,8 @@ class Order(object):
     definition for query search order
     """
 
+    __slots__ = ['column', 'desc']
+
     def __init__(self, column, desc=False):
         self.column = column
         self.desc = desc
@@ -283,6 +299,8 @@ class Center(object):
     """
     definition of query center point
     """
+
+    __slots__ = ['center']
 
     def __init__(self, center):
         self.center = center

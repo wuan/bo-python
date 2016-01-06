@@ -27,6 +27,9 @@ def create_time_interval(minute_length, minute_offset):
 
 
 class TimingState(object):
+
+    __slots__ = ['statsd_client', 'reference_time', 'info_text']
+
     def __init__(self, name, statsd_client):
         self.statsd_client = statsd_client
 
