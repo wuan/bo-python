@@ -27,6 +27,8 @@ class Geometry(object):
 
     __metaclass__ = ABCMeta
 
+    __slots__ = ['srid']
+
     DefaultSrid = 4326
 
     def __init__(self, srid=DefaultSrid):
@@ -48,6 +50,8 @@ class Envelope(Geometry):
     """
     definition of a coordinate envelope
     """
+
+    __slots__ = ['x_min', 'x_max', 'y_min', 'y_max']
 
     def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
         super(Envelope, self).__init__(srid)
@@ -82,6 +86,8 @@ class Envelope(Geometry):
 
 class Grid(Envelope):
     """ grid characteristics"""
+
+    __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count']
 
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid):
         super(Grid, self).__init__(x_min, x_max, y_min, y_max, srid)
@@ -123,6 +129,8 @@ class Grid(Envelope):
 class GridFactory(object):
     WGS84 = pyproj.Proj(init='epsg:4326')
 
+    __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'grid_data']
+
     def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys):
         self.min_lon = min_lon
         self.max_lon = max_lon
@@ -161,6 +169,8 @@ class GridElement(object):
     """
     raster data entry
     """
+
+    __slots__ = ['count', 'timestamp']
 
     def __init__(self, count, timestamp):
         self.count = count

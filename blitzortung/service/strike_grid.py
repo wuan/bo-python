@@ -32,6 +32,9 @@ class StrikeGridState(TimingState):
 
 
 class StrikeGridQuery(object):
+
+    __slots__ = ['strike_query_builder']
+
     @inject(strike_query_builder=db.query_builder.Strike)
     def __init__(self, strike_query_builder):
         self.strike_query_builder = strike_query_builder
