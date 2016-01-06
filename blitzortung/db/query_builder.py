@@ -22,8 +22,6 @@ from .query import SelectQuery, GridQuery
 
 class Strike(object):
 
-    __slots__ = []
-
     def select_query(self, table_name, srid, **kwargs):
         query = SelectQuery() \
             .set_table_name(table_name) \
@@ -69,8 +67,6 @@ class Strike(object):
 
 
 class StrikeCluster(object):
-
-    __slots__ = []
 
     def select_query(self, table_name, srid, timestamp, interval_duration, interval_count=1, interval_offset=None):
         end_time = timestamp
