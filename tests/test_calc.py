@@ -133,7 +133,7 @@ class ThreePointSolverTest(unittest.TestCase):
 
         self.assertEqual(2, len(solver.solutions))
 
-        solution = solver.get_solution_for(self.events)
+        solution = solver.get_solution()
 
         self.assertAlmostEqual(11.1, solution.x, 5)
         self.assertAlmostEqual(49.1, solution.y, 5)

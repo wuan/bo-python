@@ -138,5 +138,5 @@ class Clustering(object):
             index += 1
 
     @staticmethod
-    def extract_clustered_events(self, event_count, clusters):
+    def extract_clustered_events(event_count, clusters):
         return tuple(value for index, value in six.iteritems(clusters) if index > event_count)

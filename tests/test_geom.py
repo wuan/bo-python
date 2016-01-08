@@ -140,7 +140,7 @@ class TestGrid(TestCase):
         assert_that(self.grid.get_y_center(3), is_(equal_to(1.375)))
 
     def test_repr(self):
-        assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000), y: -3.0000..2.0000 (1.2500))")))
+        assert_that(repr(self.grid), is_(equal_to("Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))")))
 
 
 class TestGridFactory(TestCase):
