@@ -28,7 +28,7 @@ The following software has to be installed manually, depending on their availabi
 
 Requires numpy >= 1.7 and pandas >= 0.9 to have a finally usable 64 bit timestamp support.
 
-Scipy and fastcluster is required for the clustering
+Scipy and fastcluster is required for the (optional) clustering
 
 Requires injector.
 
