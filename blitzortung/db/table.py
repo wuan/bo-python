@@ -234,7 +234,7 @@ class Strike(Base):
 
     TABLE_NAME = 'strikes'
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder_=query_builder.Strike,
             strike_mapper=mapper.Strike)
     def __init__(self, db_connection_pool, query_builder_, strike_mapper):
         super(Strike, self).__init__(db_connection_pool)
@@ -344,12 +344,12 @@ class StrikeCluster(Base):
 
     TABLE_NAME = 'strike_clusters'
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.StrikeCluster,
+    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder_=query_builder.StrikeCluster,
             strike_cluster_mapper=mapper.StrikeCluster)
-    def __init__(self, db_connection_pool, query_builder, strike_cluster_mapper):
+    def __init__(self, db_connection_pool, query_builder_, strike_cluster_mapper):
         super(StrikeCluster, self).__init__(db_connection_pool)
 
-        self.query_builder = query_builder
+        self.query_builder = query_builder_
         self.strike_cluster_mapper = strike_cluster_mapper
 
         self.table_name = self.TABLE_NAME

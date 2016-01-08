@@ -111,4 +111,3 @@ def servicelog_parameters():
     from blitzortung import INJECTOR
 
     return INJECTOR.get(table.ServiceLogParameters)
-
