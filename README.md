@@ -3,6 +3,7 @@ python-blitzortung a python module for blitzortung.org related stuff
 
 [![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
 [![Coverage Status](https://coveralls.io/repos/wuan/bo-python/badge.svg?branch=master&service=github)](https://coveralls.io/github/wuan/bo-python?branch=master)
+[![Stories in Ready](https://badge.waffle.io/wuan/bo-python.svg?label=ready&title=Ready)](http://waffle.io/wuan/bo-python) 
 
 # Introduction
 
@@ -18,6 +19,7 @@ Please have a look at https://github.com/wuan/bo-server for related scripts/cron
 
 Install manually by entering
 
+> pip install -U -r requirements.txt
 > python setup.py install
 
 or build a debian package by entering
@@ -30,6 +32,3 @@ Requires numpy >= 1.7 and pandas >= 0.9 to have a finally usable 64 bit timestam
 
 Scipy and fastcluster is required for the (optional) clustering
 
-Requires injector.
-
- -- Andreas Würl <blitzortung@tryb.de>  Sat, 13 Sep 2014 17:11:00 +0200
