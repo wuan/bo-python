@@ -117,5 +117,3 @@ class StationOffline(Base):
 
     def build(self):
         return data.StationOffline(self.id_value, self.number, self.begin, self.end)
-
-

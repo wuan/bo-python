@@ -197,4 +197,3 @@ class Data(object):
     def list_long(self):
         for line in self.get(True):
             print(line)
-

@@ -62,7 +62,7 @@ class Clustering(object):
                 .with_timestamp(time_interval.end) \
                 .with_interval_seconds(time_interval.duration.seconds)
 
-            for clustered_events in self.get_clustered_events(event_count, clustered_points):
+            for clustered_events in self.extract_clustered_events(event_count, clustered_points):
                 events_in_cluster = len(clustered_events)
                 if events_in_cluster > 2:
                     points = np.ndarray([events_in_cluster, 2])
@@ -106,7 +106,8 @@ class Clustering(object):
                                       len(clustered_points),
                                       cluster_count))
 
-    def initialize_clusters(self, event_count, events):
+    @staticmethod
+    def initialize_clusters(event_count, events):
         points = np.ndarray([event_count, 2])
         clusters = {}
         for index, event in enumerate(events):
@@ -136,7 +137,6 @@ class Clustering(object):
 
             index += 1
 
-    def get_clustered_events(self, event_count, clusters):
+    @staticmethod
+    def extract_clustered_events(self, event_count, clusters):
         return tuple(value for index, value in six.iteritems(clusters) if index > event_count)
-
-

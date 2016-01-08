@@ -236,10 +236,10 @@ class Strike(Base):
 
     @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder=query_builder.Strike,
             strike_mapper=mapper.Strike)
-    def __init__(self, db_connection_pool, query_builder, strike_mapper):
+    def __init__(self, db_connection_pool, query_builder_, strike_mapper):
         super(Strike, self).__init__(db_connection_pool)
 
-        self.query_builder = query_builder
+        self.query_builder = query_builder_
         self.strike_mapper = strike_mapper
 
         self.table_name = self.TABLE_NAME
@@ -279,9 +279,9 @@ class Strike(Base):
     def select(self, **kwargs):
         """ build up query """
 
-        query = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
+        query_ = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
 
-        return self.execute_many(str(query), query.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
+        return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
 
     def select_grid(self, grid, count_threshold, **kwargs):
         """ build up raster query """

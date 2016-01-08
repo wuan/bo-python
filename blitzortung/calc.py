@@ -144,7 +144,7 @@ class ThreePointSolver(object):
         self.solutions = self.solve(time_distance_0_1, distance_0_1, azimuth_0_1, time_distance_0_2,
                                     distance_0_2, azimuth_0_2)
 
-    def get_solution_for(self, events):
+    def get_solution_for(self):
         solution_count = len(self.solutions)
 
         if solution_count > 1:
@@ -266,7 +266,7 @@ class FitSeed(object):
     def find_three_point_solution(self, selected_events):
         three_point_solver = ThreePointSolver(selected_events)
 
-        solution = three_point_solver.get_solution_for(self.events)
+        solution = three_point_solver.get_solution_for()
         if solution:
             self.solutions[solution] = solution.get_total_residual_time_of(self.events)
 

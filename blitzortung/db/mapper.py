@@ -31,7 +31,8 @@ class ObjectMapper(object):
     def create_object(self, result, **kwargs):
         pass
 
-    def convert_to_timezone(self, timestamp, target_timezone=None):
+    @staticmethod
+    def convert_to_timezone(timestamp, target_timezone=None):
         if timestamp is not None:
             target_timezone = target_timezone if target_timezone is not None else pytz.UTC
             timestamp = timestamp.astimezone(target_timezone)

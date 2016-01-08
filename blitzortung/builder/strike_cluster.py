@@ -74,4 +74,3 @@ class StrikeCluster(object):
 
         return data.StrikeCluster(self.cluster_id, self.timestamp, self.interval_seconds, self.shape, self.strike_count,
                                   area)
-

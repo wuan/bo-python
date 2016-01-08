@@ -61,8 +61,8 @@ class HttpFileTransport(FileTransport):
     html_parser = HTMLParser()
 
     @inject(config=config.Config)
-    def __init__(self, config, session=None):
-        self.config = config
+    def __init__(self, configuration, session=None):
+        self.config = configuration
         self.session = session if session else Session()
 
     def __del__(self):
@@ -89,7 +89,8 @@ class HttpFileTransport(FileTransport):
     def split_lines(self, lines):
         return (self.process_line(html_line) for html_line in lines)
 
-    def process_line(self, line):
+    @staticmethod
+    def process_line(line):
         return line.decode('utf8')
 
 
@@ -122,7 +123,3 @@ class BlitzortungDataPathGenerator(object):
     def get_paths(self, start_time, end_time=None):
         for interval_start_time in util.time_intervals(start_time, self.time_granularity, end_time):
             yield interval_start_time.strftime(self.url_path_format)
-
-
-
-

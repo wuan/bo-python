@@ -266,10 +266,13 @@ class GridData(object):
         result += 'CELLSIZE %.4f\n' % self.grid.x_div
         result += 'NODATA_VALUE %s\n' % str(self.no_data)
 
-        cell_to_string = lambda current_cell: str(current_cell.get_count()) if current_cell else '0'
-        result += '\n'.join([' '.join([cell_to_string(cell) for cell in row]) for row in self.data[::-1]])
+        result += '\n'.join([' '.join([self.cell_to_multiplicity(cell) for cell in row]) for row in self.data[::-1]])
 
         return result
+
+    @staticmethod
+    def cell_to_multiplicity(current_cell):
+        return str(current_cell.get_count()) if current_cell else '0'
 
     def to_map(self):
         chars = " .-o*O8"

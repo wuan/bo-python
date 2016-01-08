@@ -23,7 +23,6 @@ import sys
 import datetime
 import time
 import pytz
-from six.moves import range
 
 
 class Timer():

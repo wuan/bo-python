@@ -148,5 +148,3 @@ class RawWaveformEvent(Event):
                 raise BuilderError(e, string)
 
         return self
-
-

@@ -53,4 +53,3 @@ class StationsBlitzortungDataProvider(object):
         data = io.BytesIO(data)
         out_data = gzip.GzipFile(fileobj=data).read()
         return out_data
-

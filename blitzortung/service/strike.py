@@ -107,5 +107,3 @@ class StrikeQuery(object):
         print(state.info_text)
 
         return final_result
-
-

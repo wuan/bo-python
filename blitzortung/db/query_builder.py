@@ -29,7 +29,8 @@ from .query import SelectQuery, GridQuery
 
 
 class Strike(object):
-    def select_query(self, table_name, srid, **kwargs):
+    @staticmethod
+    def select_query(table_name, srid, **kwargs):
         query = SelectQuery() \
             .set_table_name(table_name) \
             .set_columns('id', '"timestamp"', 'nanoseconds', 'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
@@ -43,12 +44,14 @@ class Strike(object):
 
         return query
 
-    def grid_query(self, table_name, grid, count_threshold=0, **kwargs):
+    @staticmethod
+    def grid_query(table_name, grid, count_threshold=0, **kwargs):
         return GridQuery(grid, count_threshold) \
             .set_table_name(table_name) \
             .set_default_conditions(**kwargs)
 
-    def histogram_query(self, table_name, minutes, minute_offset, binsize, region=None, envelope=None):
+    @staticmethod
+    def histogram_query(table_name, minutes, minute_offset, binsize, region=None, envelope=None):
 
         query = SelectQuery() \
             .set_table_name(table_name) \
@@ -76,7 +79,8 @@ class Strike(object):
 class StrikeCluster(object):
     def select_query(self, table_name, srid, timestamp, interval_duration, interval_count=1, interval_offset=None):
         end_time = timestamp
-        interval_offset = interval_duration if interval_offset is None or interval_offset.total_seconds() <= 0 else interval_offset
+        interval_offset = interval_duration if interval_offset is None or interval_offset.total_seconds() <= 0 \
+            else interval_offset
         start_time = timestamp - interval_offset * (interval_count - 1) - interval_duration
 
         query = SelectQuery() \
@@ -95,7 +99,8 @@ class StrikeCluster(object):
 
         return query
 
-    def get_timestamps(self, start_time, end_time, interval_duration, interval_offset):
+    @staticmethod
+    def get_timestamps(start_time, end_time, interval_duration, interval_offset):
         final_time = start_time + interval_duration
         current_time = end_time
         while current_time >= final_time:

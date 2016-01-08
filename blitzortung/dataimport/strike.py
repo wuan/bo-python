@@ -69,4 +69,3 @@ class StrikesBlitzortungDataProvider(object):
             self.logger.debug("imported %d strikes for region %d in %.2fs from %s",
                               strike_count,
                               region, end_time - start_time, url_path)
-

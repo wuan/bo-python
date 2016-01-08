@@ -40,7 +40,6 @@ class CacheEntry(object):
 
 
 class ObjectCache(object):
-
     __KWA_MARK = object()
 
     def __init__(self, ttl_seconds=30):

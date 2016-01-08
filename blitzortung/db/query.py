@@ -163,7 +163,8 @@ class Query(object):
                 sql += 'HAVING ' + ' AND '.join(self.groups_having) + ' '
 
         if self.order:
-            build_order_query = lambda order: order.get_column() + (' DESC' if order.is_desc() else '')
+            def build_order_query(order): return order.get_column() + (' DESC' if order.is_desc() else '')
+
             order_query_elements = map(build_order_query, self.order)
             sql += 'ORDER BY ' + ', '.join(order_query_elements) + ' '
 
@@ -202,16 +203,15 @@ class Query(object):
 
             if not geometry.equals(geometry.envelope):
                 self.add_condition(
-                    'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
-                    'ST_Transform(geog::geometry, %(srid)s))',
-                    geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
+                        'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
+                        'ST_Transform(geog::geometry, %(srid)s))',
+                        geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
 
         else:
             raise ValueError("invalid geometry in db.Strike.select()")
 
 
 class SelectQuery(Query):
-
     __slots__ = ['table_name', 'columns']
 
     def __init__(self):
@@ -245,7 +245,6 @@ class SelectQuery(Query):
 
 
 class GridQuery(SelectQuery):
-
     __slots__ = ['raster']
 
     def __init__(self, raster, count_threshold=0):
@@ -254,18 +253,18 @@ class GridQuery(SelectQuery):
         self.raster = raster
 
         self.add_parameters(
-            srid=raster.srid,
-            xmin=raster.x_min,
-            xdiv=raster.x_div,
-            ymin=raster.y_min,
-            ydiv=raster.y_div,
+                srid=raster.srid,
+                xmin=raster.x_min,
+                xdiv=raster.x_div,
+                ymin=raster.y_min,
+                ydiv=raster.y_div,
         )
 
         self.set_columns(
-            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
-            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
-            'count(*) AS strike_count',
-            'max("timestamp") as "timestamp"'
+                'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
+                'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
+                'count(*) AS strike_count',
+                'max("timestamp") as "timestamp"'
         )
 
         env = self.raster.env
