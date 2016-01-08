@@ -75,7 +75,7 @@ class TimestampTest(unittest.TestCase):
 
     def test_set_timestamp_from_bad_string(self):
         timestamp = self.builder.set_timestamp('0000-00-00').build()
-        assert_that(timestamp.toordinal(), is_(pd.NaT.toordinal()))
+        assert_that(timestamp.value, is_(pd.NaT.value))
 
     def test_set_timestamp_from_string(self):
         timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096651423").build()

@@ -163,10 +163,10 @@ class TestGridFactory(TestCase):
 
         assert_that(grid.x_min, is_(10))
         assert_that(grid.y_min, is_(52))
-        assert_that(grid.x_max, is_(close_to(10.964855970781894, 1e-10)))
-        assert_that(grid.y_max, is_(close_to(52.99942586979069, 1e-10)))
-        assert_that(x_div, is_(close_to(0.06891828362727814, 1e-10)))
-        assert_that(y_div, is_(close_to(0.04759170808527102, 1e-10)))
+        assert_that(grid.x_max, is_(close_to(10.964855970781894, 1e-8)))
+        assert_that(grid.y_max, is_(close_to(52.99942586979069, 1e-8)))
+        assert_that(x_div, is_(close_to(0.06891828362727814, 1e-8)))
+        assert_that(y_div, is_(close_to(0.04759170808527102, 1e-8)))
 
         x_0, y_0 = pyproj.transform(self.base_proj, self.proj, 10.5, 52.5)
         x_1, y_1 = pyproj.transform(self.base_proj, self.proj, 10.5 + x_div, 52.5 + y_div)
