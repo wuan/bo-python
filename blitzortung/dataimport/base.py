@@ -60,7 +60,7 @@ class HttpFileTransport(FileTransport):
     logger = logging.getLogger(__name__)
     html_parser = HTMLParser()
 
-    @inject(config=config.Config)
+    @inject(configuration=config.Config)
     def __init__(self, configuration, session=None):
         self.config = configuration
         self.session = session if session else Session()
