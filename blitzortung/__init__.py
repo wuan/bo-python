@@ -59,10 +59,6 @@ __all__ = [
 
     'builder.Strike', 'builder.Station',
 
-    'calc.ObjectCache'
-
-    'calc.ThreePointSolution', 'calc.ThreePointSolver',
-
     'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
 
     'db.strike', 'db.station', 'db.stationOffline', 'db.location',  # database access

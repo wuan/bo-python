@@ -25,7 +25,6 @@ import pytz
 import datetime
 
 from injector import singleton, inject
-import pandas as pd
 
 from .base import HttpFileTransport, BlitzortungDataPath, BlitzortungDataPathGenerator
 from .. import builder
@@ -60,9 +59,7 @@ class StrikesBlitzortungDataProvider(object):
                 except Exception as e:
                     self.logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     raise e
-                timestamp = strike.timestamp
-                timestamp.nanoseconds = 0
-                if not pd.isnull(timestamp) and latest_strike < timestamp:
+                if strike.timestamp.is_valid and strike.timestamp > latest_strike:
                     strike_count += 1
                     yield strike
             end_time = time.time()

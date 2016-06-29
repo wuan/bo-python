@@ -18,6 +18,8 @@
 
 """
 
+from __future__ import print_function
+
 import time
 from injector import inject
 from twisted.internet.defer import gatherResults

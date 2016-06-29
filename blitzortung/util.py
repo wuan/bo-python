@@ -24,6 +24,9 @@ import datetime
 import time
 import pytz
 
+from blitzortung.data import Timestamp
+from . import data
+
 
 class Timer():
     """
@@ -55,9 +58,9 @@ def total_seconds(time_value):
     return the total seconds of the given time or datetime (relative to midnight)
     """
 
-    if isinstance(time_value, datetime.datetime):
+    if isinstance(time_value, datetime.datetime) or isinstance(time_value, data.Timestamp):
         return time_value.hour * 3600 + time_value.minute * 60 + time_value.second
-    elif isinstance(time_value, datetime.timedelta):
+    elif isinstance(time_value, datetime.timedelta) or isinstance(time_value, data.Timedelta):
         return time_value.seconds + time_value.days * 24 * 3600
     else:
         raise Exception("unhandled type " + type(time_value))
@@ -69,6 +72,7 @@ def round_time(time_value, duration):
     """
     duration_seconds = total_seconds(duration)
     seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
+    time_value.nanosecond = 0
     return time_value.replace(
         hour=seconds // 3600,
         minute=seconds // 60 % 60,
@@ -87,6 +91,7 @@ def time_intervals(start_time, duration, end_time=None):
     if not end_time:
         end_time = datetime.datetime.utcnow()
         end_time = end_time.replace(tzinfo=pytz.UTC)
+        end_time = Timestamp(end_time)
     end_time = round_time(end_time, duration)
 
     while current_time <= end_time:

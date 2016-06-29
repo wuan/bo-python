@@ -15,8 +15,6 @@ Please have a look at https://github.com/wuan/bo-server for related scripts/cron
 
 The following software has to be installed manually, as it is not available through debian/ubuntu packages at the moment:
 
-Requires numpy >= 1.7 and pandas >= 0.9 to have a finally usable 64 bit timestamp support.
-
 Scipy and fastcluster is required for the clustering
 
 Requires psycopg2 >= 2.5 to enable database access.

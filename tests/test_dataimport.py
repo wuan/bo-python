@@ -22,7 +22,6 @@ from __future__ import unicode_literals
 import unittest
 import datetime
 from nose.tools import raises
-import pandas as pd
 
 from hamcrest.library.collection.is_empty import empty
 from mock import Mock, patch, call
@@ -151,8 +150,8 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
         self.data_provider.read_lines.side_effect = [[strike_data1, strike_data2], []]
         strike1 = Mock()
         strike2 = Mock()
-        strike1.timestamp = pd.Timestamp(now - datetime.timedelta(hours=2))
-        strike2.timestamp = pd.Timestamp(now)
+        strike1.timestamp = blitzortung.data.Timestamp(now - datetime.timedelta(hours=2))
+        strike2.timestamp = blitzortung.data.Timestamp(now)
         self.builder.from_line.return_value = self.builder
         self.builder.build.side_effect = [strike1, strike2]
 

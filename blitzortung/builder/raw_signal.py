@@ -21,7 +21,6 @@
 import itertools
 import datetime
 from injector import inject
-import numpy as np
 
 from ..util import next_element
 from .base import Event, BuilderError
@@ -63,7 +62,7 @@ class ChannelWaveform(object):
 
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
         hex_character = iter(waveform_hex_string)
-        self.waveform = np.zeros(self.values)
+        self.waveform = self.values * [0]
         bits_per_char = 4
         if self.bits == 0:
             self.bits = len(waveform_hex_string) // self.values * bits_per_char
@@ -132,7 +131,7 @@ class RawWaveformEvent(Event):
             try:
                 field = iter(string.split(' '))
                 self.set_timestamp(next_element(field) + ' ' + next_element(field))
-                self.timestamp += datetime.timedelta(seconds=1)
+                self.timestamp.datetime += datetime.timedelta(seconds=1)
                 self.set_y(float(next_element(field)))
                 self.set_x(float(next_element(field)))
                 self.set_altitude(int(next_element(field)))

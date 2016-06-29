@@ -18,12 +18,192 @@
 
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, generators
+
+import datetime
+
+import pytz
+import six
+
 from . import types
 import math
-import numpy
-from shapely.geometry import mapping
 from blitzortung.geom import GridElement
+
+
+class Timestamp(types.EqualityAndHash):
+    timestamp_string_minimal_fractional_seconds_length = 20
+    timestamp_string_microseconds_length = 26
+
+    __slots__ = ['datetime', 'nanosecond']
+
+    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
+        if type(date_time) == str or type(date_time) == unicode:
+            date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
+            nanosecond += date_time_nanosecond
+        elif type(date_time) == int:
+            date_time, date_time_nanosecond = Timestamp.from_nanoseconds(date_time)
+            nanosecond += date_time_nanosecond
+
+        if nanosecond < 0 or nanosecond > 999:
+            microdelta = nanosecond / 1000
+            date_time += datetime.timedelta(microseconds=microdelta)
+            nanosecond -= microdelta * 1000
+
+        self.datetime = date_time
+        self.nanosecond = nanosecond
+
+    @staticmethod
+    def from_timestamp(timestamp_string):
+        try:
+            if len(timestamp_string) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
+                divider_index = Timestamp.timestamp_string_microseconds_length
+                date_time = datetime.datetime.strptime(timestamp_string[:divider_index], '%Y-%m-%d %H:%M:%S.%f')
+                nanosecond_string = timestamp_string[divider_index:]
+                nanosecond = int(
+                    float(nanosecond_string) * math.pow(10, 3 - len(nanosecond_string))) if nanosecond_string else 0
+            else:
+                date_time = datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
+                nanosecond = 0
+
+            return date_time.replace(tzinfo=pytz.UTC), nanosecond
+        except ValueError:
+            return None, 0
+
+    @staticmethod
+    def from_nanoseconds(total_nanoseconds):
+        total_microseconds = total_nanoseconds / 1000
+        residual_nanoseconds = total_nanoseconds % 1000
+        total_seconds = total_microseconds / 1000000
+        residual_microseconds = total_microseconds % 1000000
+        return datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC) + \
+               datetime.timedelta(seconds=total_seconds,
+                                  milliseconds=residual_microseconds), \
+               residual_nanoseconds
+
+    @property
+    def year(self):
+        return self.datetime.year
+
+    @property
+    def month(self):
+        return self.datetime.month
+
+    @property
+    def day(self):
+        return self.datetime.day
+
+    @property
+    def hour(self):
+        return self.datetime.hour
+
+    @property
+    def minute(self):
+        return self.datetime.minute
+
+    @property
+    def second(self):
+        return self.datetime.second
+
+    @property
+    def microsecond(self):
+        return self.datetime.microsecond
+
+    @property
+    def tzinfo(self):
+        return self.datetime.tzinfo
+
+    epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.UTC)
+
+    @property
+    def value(self):
+        total_microseconds = int((self.datetime - self.epoch).total_seconds() * 1000000)
+        return (total_microseconds * 1000 + self.nanosecond) if self.datetime is not None else -1
+
+    @property
+    def is_valid(self):
+        return self.datetime is not None
+
+    def __ne__(self, other):
+        return self.datetime != other.datetime or self.nanosecond != other.nanosecond
+
+    def __lt__(self, other):
+        if type(other) == datetime.datetime:
+            return self.datetime < other
+        else:
+            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond < other.nanosecond)
+
+    def __le__(self, other):
+        if type(other) == datetime.datetime:
+            return self.datetime <= other
+        else:
+            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
+
+    def __gt__(self, other):
+        if type(other) == datetime.datetime:
+            return self.datetime > other
+        else:
+            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond > other.nanosecond)
+
+    def __ge__(self, other):
+        if type(other) == datetime.datetime:
+            return self.datetime >= other
+        else:
+            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
+
+    def __add__(self, other):
+        if type(other) == Timedelta:
+            return Timestamp(self.datetime + other.timedelta, self.nanosecond + other.nanodelta)
+        elif type(other) == datetime.timedelta:
+            return Timestamp(self.datetime + other, self.nanosecond)
+        elif type(other) == int:
+            return Timestamp(self.datetime, self.nanosecond + other)
+        return NotImplemented
+
+    def __sub__(self, other):
+        if type(other) == Timestamp:
+            return Timedelta(self.datetime - other.datetime, self.nanosecond - other.nanosecond)
+        elif type(other) == datetime.timedelta:
+            return Timestamp(self.datetime - other, self.nanosecond)
+        elif type(other) == int:
+            return Timestamp(self.datetime, self.nanosecond - other)
+        return NotImplemented
+
+    @property
+    def is_valid(self):
+        return self.datetime is not None and self.datetime.year > 1900
+
+    def strftime(self, format):
+        return self.datetime.strftime(format)
+
+    def replace(self, **kwargs):
+        return Timestamp(self.datetime.replace(**kwargs), self.nanosecond)
+
+    def __repr__(self):
+        return "Timestamp({}{:03d})".format(self.datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond)
+
+
+NaT = Timestamp(None)
+
+
+class Timedelta(types.EqualityAndHash):
+    def __init__(self, timedelta=datetime.timedelta(), nanodelta=0):
+        if nanodelta < 0 or nanodelta > 999:
+            microdelta = nanodelta / 1000
+            timedelta += datetime.timedelta(microseconds=microdelta)
+            nanodelta -= microdelta * 1000
+        self.timedelta = timedelta
+        self.nanodelta = nanodelta
+
+    @property
+    def days(self):
+        return self.timedelta.days
+
+    @property
+    def seconds(self):
+        return self.timedelta.seconds
+
+    def __repr__(self):
+        return "Timedelta({}, {})".format(self.timedelta, self.nanodelta)
 
 
 class Event(types.Point):
@@ -44,7 +224,10 @@ class Event(types.Point):
         return other.timestamp - self.timestamp
 
     def ns_difference_to(self, other):
-        return other.timestamp.value - self.timestamp.value
+        value1 = other.timestamp.value
+        value2 = self.timestamp.value
+        difference = value1 - value2
+        return difference
 
     def has_same_location(self, other):
         return super(Event, self).__eq__(other)
@@ -58,7 +241,7 @@ class Event(types.Point):
 
     @property
     def has_valid_timestamp(self):
-        return self.timestamp is not None and self.timestamp.year > 1900
+        return self.timestamp is not None and self.timestamp.is_valid
 
     def __lt__(self, other):
         return self.timestamp.value < other.timestamp.value
@@ -68,16 +251,13 @@ class Event(types.Point):
 
     def __str__(self):
         if self.has_valid_timestamp:
-            timestamp_string = self.timestamp.strftime(self.time_format_fractional_seconds + 'XXX%z')
+            timestamp_string = self.timestamp.strftime(self.time_format_fractional_seconds + 'XXX')
             timestamp_string = timestamp_string.replace('XXX', "%03d" % self.timestamp.nanosecond)
         else:
             timestamp_string = "NaT"
 
         return "%s %.4f %.4f" \
                % (timestamp_string, self.x, self.y)
-
-    def __hash__(self):
-        return super(Event, self).__hash__() ^ hash(self.timestamp)
 
     @property
     def uuid(self):
@@ -201,25 +381,6 @@ class Strike(Event):
         )
 
 
-class StrikeCluster(object):
-    """
-    class for strike cluster objects
-    """
-
-    def __init__(self, cluster_id, timestamp, interval_seconds, shape, strike_count, area):
-        self.id = cluster_id
-        self.timestamp = timestamp
-        self.interval_seconds = interval_seconds
-        self.shape = shape
-        self.strike_count = strike_count
-        self.area = area
-
-    def __str__(self):
-        return "StrikeCluster({}, {}, {}, {}, {}, {:.1f})".format(self.id, self.timestamp,
-                                                                  self.interval_seconds, mapping(self.shape),
-                                                                  self.strike_count, self.area)
-
-
 class ChannelWaveform(object):
     """
     class for raw data waveform channels
@@ -246,11 +407,7 @@ class GridData(object):
     def __init__(self, grid, no_data=None):
         self.grid = grid
         self.no_data = no_data if no_data else GridElement(0, None)
-        self.data = []
-        self.clear()
-
-    def clear(self):
-        self.data = numpy.empty((self.grid.y_bin_count, self.grid.x_bin_count), dtype=type(self.no_data))
+        self.data = [[None for i in six.moves.range(grid.x_bin_count)] for i in six.moves.range(grid.y_bin_count)]
 
     def set(self, x_index, y_index, value):
         try:
@@ -267,7 +424,7 @@ class GridData(object):
         result += 'XLLCORNER %.4f\n' % self.grid.x_min
         result += 'YLLCORNER %.4f\n' % self.grid.y_min
         result += 'CELLSIZE %.4f\n' % self.grid.x_div
-        result += 'NODATA_VALUE %s\n' % str(self.no_data)
+        result += 'NODATA_VALUE %s\n' % str(self.no_data.count)
 
         result += '\n'.join([' '.join([self.cell_to_multiplicity(cell) for cell in row]) for row in self.data[::-1]])
 
@@ -275,7 +432,7 @@ class GridData(object):
 
     @staticmethod
     def cell_to_multiplicity(current_cell):
-        return str(current_cell.get_count()) if current_cell else '0'
+        return str(current_cell.count) if current_cell else '0'
 
     def to_map(self):
         chars = " .-o*O8"
@@ -285,9 +442,9 @@ class GridData(object):
         for row in self.data[::-1]:
             for cell in row:
                 if cell:
-                    total += cell.get_count()
-                    if maximum < cell.get_count():
-                        maximum = cell.get_count()
+                    total += cell.count
+                    if maximum < cell.count:
+                        maximum = cell.count
 
         if maximum > len(chars):
             divider = float(maximum) / (len(chars) - 1)

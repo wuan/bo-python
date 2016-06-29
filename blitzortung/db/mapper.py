@@ -63,24 +63,6 @@ class Strike(ObjectMapper):
         return self.strike_builder.build()
 
 
-class StrikeCluster(ObjectMapper):
-    @inject(strike_cluster_builder=blitzortung.builder.StrikeCluster)
-    def __init__(self, strike_cluster_builder):
-        self.strike_cluster_builder = strike_cluster_builder
-
-    def create_object(self, result, **kwargs):
-        timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
-
-        self.strike_cluster_builder\
-            .with_id(result['id'])\
-            .with_timestamp(self.convert_to_timezone(result['timestamp'], timezone))\
-            .with_interval_seconds(kwargs['interval_seconds'])\
-            .with_shape(shapely.wkb.loads(result['geom'], hex=True))\
-            .with_strike_count(result['strike_count'])
-
-        return self.strike_cluster_builder.build()
-
-
 class Station(ObjectMapper):
     @inject(station_builder=blitzortung.builder.Station)
     def __init__(self, station_builder):

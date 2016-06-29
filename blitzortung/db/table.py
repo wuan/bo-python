@@ -25,11 +25,9 @@ import math
 
 from injector import inject
 import pytz
-import pandas as pd
 import shapely.wkb
 
-from blitzortung.data import GridData
-
+from .. import data
 from .. import geom
 
 from . import query
@@ -251,7 +249,7 @@ class Strike(Base):
               '%(altitude)s, %(region)s, %(amplitude)s, %(error2d)s, %(stationcount)s)'
 
         parameters = {
-            'timestamp': strike.timestamp,
+            'timestamp': strike.timestamp.datetime,
             'nanoseconds': strike.timestamp.nanosecond,
             'longitude': strike.x,
             'latitude': strike.y,
@@ -270,8 +268,7 @@ class Strike(Base):
               ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
 
         def prepare_result(result):
-            total_nanoseconds = pd.Timestamp(self.fix_timezone(result['timestamp'])).value + result['nanoseconds']
-            return pd.Timestamp(total_nanoseconds, tz=self.tz)
+            return data.Timestamp(self.fix_timezone(result['timestamp']), result['nanoseconds'])
 
         parameters = {'region': region}
         return self.execute_single(sql, parameters, prepare_result)
@@ -289,7 +286,7 @@ class Strike(Base):
         query = self.query_builder.grid_query(self.table_name, grid, count_threshold, **kwargs)
 
         def prepare_results(cursor, _):
-            raster_data = GridData(grid)
+            raster_data = data.GridData(grid)
 
             for result in cursor:
                 raster_data.set(result['rx'], result['ry'],
@@ -318,74 +315,6 @@ class Strike(Base):
             return result
 
         return self.execute(str(query), query.get_parameters(), prepare_result)
-
-
-class StrikeCluster(Base):
-    """
-    strike db access class
-
-    database table creation (as db user blitzortung, database blitzortung):
-
-    CREATE TABLE strike_clusters (id bigserial, "timestamp" timestamptz, interval_seconds SMALLINT, geog GEOGRAPHY(LineString),
-        PRIMARY KEY(id));
-    ALTER TABLE strike_clusters ADD COLUMN strike_count INT;
-
-    CREATE INDEX strike_clusters_timestamp_interval_seconds ON strike_clusters USING btree("timestamp", interval_seconds);
-    CREATE INDEX strike_clusters_id_timestamp_interval_seconds ON strike_clusters USING btree(id, "timestamp", interval_seconds);
-    CREATE INDEX strike_clusters_geog ON strike_clusters USING gist(geog);
-    CREATE INDEX strike_clusters_timestamp_interval_seconds_geog ON strike_clusters USING gist("timestamp", interval_seconds, geog);
-
-    empty the table with the following commands:
-
-    DELETE FROM strike_clusters;
-    ALTER SEQUENCE strike_clusters_id_seq RESTART 1;
-
-    """
-
-    TABLE_NAME = 'strike_clusters'
-
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder_=query_builder.StrikeCluster,
-            strike_cluster_mapper=mapper.StrikeCluster)
-    def __init__(self, db_connection_pool, query_builder_, strike_cluster_mapper):
-        super(StrikeCluster, self).__init__(db_connection_pool)
-
-        self.query_builder = query_builder_
-        self.strike_cluster_mapper = strike_cluster_mapper
-
-        self.table_name = self.TABLE_NAME
-
-    def insert(self, strike_cluster):
-        sql = 'INSERT INTO ' + self.full_table_name + \
-              ' ("timestamp", interval_seconds, geog, strike_count) ' + \
-              'VALUES (%(timestamp)s, %(interval_seconds)s, ST_GeomFromWKB(%(shape)s, %(srid)s), %(strike_count)s)'
-
-        parameters = {
-            'timestamp': strike_cluster.timestamp,
-            'interval_seconds': strike_cluster.interval_seconds,
-            'shape': psycopg2.Binary(shapely.wkb.dumps(strike_cluster.shape)),
-            'srid': self.srid,
-            'strike_count': strike_cluster.strike_count
-        }
-
-        self.execute(sql, parameters)
-
-    def get_latest_time(self, interval_seconds=600):
-        sql = 'SELECT "timestamp" FROM ' + self.full_table_name + \
-              ' WHERE interval_seconds=%(interval_seconds)s ORDER BY "timestamp" DESC LIMIT 1'
-
-        parameters = {'interval_seconds': interval_seconds}
-        return self.execute_single(sql, parameters,
-                                   lambda result: self.fix_timezone(result['timestamp']))
-
-    def select(self, timestamp, interval_duration, interval_count=1, interval_offset=None):
-        """ build up query """
-
-        query = self.query_builder.select_query(self.full_table_name, self.srid, timestamp,
-                                                interval_duration,
-                                                interval_count, interval_offset)
-
-        return self.execute_many(str(query), query.get_parameters(), self.strike_cluster_mapper.create_object,
-                                 timezone=self.tz, interval_seconds=interval_duration.seconds)
 
 
 class Station(Base):
@@ -421,7 +350,7 @@ class Station(Base):
                      ' (number, "user", "name", country, "timestamp", geog, region) ' +
                      'VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)',
                      (station.number, station.user, station.name,
-                      station.country, station.timestamp, station.x, station.y, region))
+                      station.country, station.timestamp.datetime, station.x, station.y, region))
 
     def select(self, timestamp=None, region=None):
         sql = ''' select
@@ -477,7 +406,8 @@ class StationOffline(Base):
         self.execute('INSERT INTO ' + self.full_table_name +
                      ' (number, region, begin, "end") ' +
                      'VALUES (%s, %s, %s, %s)',
-                     (station_offline.number, region, station_offline.begin, station_offline.end))
+                     (station_offline.number, region, station_offline.begin.datetime,
+                      station_offline.end.datetime if station_offline.end else None))
 
     def update(self, station_offline, region=1):
         self.execute('UPDATE ' + self.full_table_name + ' SET "end"=%s WHERE id=%s and region=%s',
@@ -638,7 +568,7 @@ class ServiceLogBase(Base):
         def prepare_result(cursor, _):
             if cursor.rowcount == 1:
                 result = cursor.fetchone()
-                return pd.Timestamp(self.fix_timezone(result['timestamp']))
+                return data.Timestamp(self.fix_timezone(result['timestamp']))
             else:
                 return None
 
