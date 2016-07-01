@@ -117,7 +117,10 @@ class Station(Event):
     def __str__(self):
         offline_since = self.timestamp
         status_char = "*" if offline_since is None else "-"
-        status_text = "" if offline_since is None else " offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+        try:
+            status_text = "" if offline_since is None else " offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+        except ValueError:
+            status_text = 'n/a'
         return u"%s%3d/%3d '%s' '%s' (%.4f, %.4f)%s" % (
             status_char, self.number, self.user, self.name, self.country, self.x, self.y, status_text)
 
