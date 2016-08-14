@@ -1,6 +1,7 @@
 python-blitzortung (1.5.0) unstable; urgency=low
 
   * use python properties instead of getters (this will break compatibility to earlier versions)
+  * speed improvements
 
  -- Andreas Wuerl <blitzortung@tryb.de>  Sun, 09 Aug 2015 10:36:12 +0200
 

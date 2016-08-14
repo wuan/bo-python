@@ -73,6 +73,18 @@ class TimestampTest(unittest.TestCase):
         assert_that(timestamp.tzinfo, is_(equal_to(pytz.timezone('CET'))))
         assert_that(timestamp.nanosecond, is_(equal_to(423)))
 
+    def test_value_property(self):
+        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)).build()
+
+        value = timestamp.value
+        assert_that(value, is_(equal_to(1328878578096651000)))
+
+    def test_value_property_with_nanoseconds(self):
+        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651), 456).build()
+
+        value = timestamp.value
+        assert_that(value, is_(equal_to(1328878578096651456)))
+
     def test_set_timestamp_from_bad_string(self):
         timestamp = self.builder.set_timestamp('0000-00-00').build()
         assert_that(timestamp.value, is_(pd.NaT.value))
