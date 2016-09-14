@@ -108,6 +108,6 @@ class StrikeGridQuery(object):
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
-        print(state.info_text)
+        print("".join(state.info_text))
 
         return response

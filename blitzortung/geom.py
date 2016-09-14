@@ -185,15 +185,5 @@ class GridElement(object):
     def __gt__(self, other):
         return self.count > other.count
 
-    def get_count(self):
-        return self.count
-
-    def get_timestamp(self):
-        return self.timestamp
-
-    def __str__(self):
-        if self.timestamp is None:
-            return str(self.count)
-
     def __repr__(self):
-        return "RasterElement(%d, %s)" % (self.count, str(self.timestamp))
+        return "GridElement(%d, %s)" % (self.count, str(self.timestamp))

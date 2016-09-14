@@ -18,12 +18,6 @@
 
 """
 
-import datetime
-
-import pytz
-import numpy as np
-import pandas as pd
-
 from .. import data, Error
 
 
@@ -36,35 +30,18 @@ class Base(object):
 
 
 class Timestamp(Base):
-    timestamp_string_minimal_fractional_seconds_length = 20
-    timestamp_string_microseconds_length = 26
-
     def __init__(self):
         super(Timestamp, self).__init__()
         self.timestamp = None
 
-    def set_timestamp(self, timestamp, nanoseconds=0):
+    def set_timestamp(self, timestamp, nanosecond=0):
         if not timestamp:
             self.timestamp = None
-        elif type(timestamp) == pd.Timestamp:
-            if nanoseconds:
-                self.timestamp = pd.Timestamp(timestamp.value + nanoseconds, tz=timestamp.tzinfo)
-            else:
-                self.timestamp = timestamp
-        elif type(timestamp) == datetime.datetime:
-            total_nanoseconds = pd.Timestamp(timestamp).value + nanoseconds
-            self.timestamp = pd.Timestamp(total_nanoseconds, tz=timestamp.tzinfo)
+        elif type(timestamp) == data.Timestamp:
+            self.timestamp = timestamp + nanosecond
         else:
-            self.timestamp = self.__parse_timestamp(timestamp)
+            self.timestamp = data.Timestamp(timestamp, nanosecond=nanosecond)
         return self
-
-    @staticmethod
-    def __parse_timestamp(timestamp_string):
-        try:
-            timestamp = np.datetime64(timestamp_string + 'Z', 'ns')
-            return pd.Timestamp(timestamp, tz=pytz.UTC)
-        except ValueError:
-            return pd.NaT
 
     def build(self):
         return self.timestamp
@@ -86,6 +63,3 @@ class Event(Timestamp):
 
     def build(self):
         return data.Event(self.timestamp, self.x_coord, self.y_coord)
-
-
-

@@ -24,7 +24,6 @@ import datetime
 from hamcrest import assert_that, contains
 import pytz
 
-import blitzortung
 import blitzortung.util
 
 
