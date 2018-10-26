@@ -24,8 +24,8 @@ import blitzortung.db.query_builder
 
 
 class HistogramQuery(object):
-    @inject(strike_query_builder=blitzortung.db.query_builder.Strike)
-    def __init__(self, strike_query_builder):
+    @inject
+    def __init__(self, strike_query_builder: blitzortung.db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
     def create(self, connection, minute_length, minute_offset, region=None, envelope=None, count_threshold=0):

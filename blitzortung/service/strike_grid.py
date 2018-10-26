@@ -38,8 +38,8 @@ class StrikeGridState(TimingState):
 
 
 class StrikeGridQuery(object):
-    @inject(strike_query_builder=db.query_builder.Strike)
-    def __init__(self, strike_query_builder):
+    @inject
+    def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
     def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
