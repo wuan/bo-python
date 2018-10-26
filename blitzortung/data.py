@@ -27,16 +27,16 @@ import pytz
 import six
 
 from blitzortung.geom import GridElement
-from . import types
+from . import typedef
 
 
-class Timestamp(types.EqualityAndHash):
+class Timestamp(typedef.EqualityAndHash):
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
     __slots__ = ['datetime', 'nanosecond']
 
-    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
+    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond: int = 0):
         if type(date_time) == str:
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
@@ -45,7 +45,7 @@ class Timestamp(types.EqualityAndHash):
             nanosecond += date_time_nanosecond
 
         if nanosecond < 0 or nanosecond > 999:
-            microdelta = nanosecond / 1000
+            microdelta = nanosecond // 1000
             date_time += datetime.timedelta(microseconds=microdelta)
             nanosecond -= microdelta * 1000
 
@@ -131,28 +131,28 @@ class Timestamp(types.EqualityAndHash):
             return self.datetime < other
         else:
             return self.datetime < other.datetime or (
-                        self.datetime == other.datetime and self.nanosecond < other.nanosecond)
+                    self.datetime == other.datetime and self.nanosecond < other.nanosecond)
 
     def __le__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime <= other
         else:
             return self.datetime < other.datetime or (
-                        self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
+                    self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
 
     def __gt__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime > other
         else:
             return self.datetime > other.datetime or (
-                        self.datetime == other.datetime and self.nanosecond > other.nanosecond)
+                    self.datetime == other.datetime and self.nanosecond > other.nanosecond)
 
     def __ge__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime >= other
         else:
             return self.datetime > other.datetime or (
-                        self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
+                    self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
 
     def __add__(self, other):
         if type(other) == Timedelta:
@@ -189,10 +189,10 @@ class Timestamp(types.EqualityAndHash):
 NaT = Timestamp(None)
 
 
-class Timedelta(types.EqualityAndHash):
+class Timedelta(typedef.EqualityAndHash):
     def __init__(self, timedelta=datetime.timedelta(), nanodelta=0):
         if nanodelta < 0 or nanodelta > 999:
-            microdelta = nanodelta / 1000
+            microdelta = nanodelta // 1000
             timedelta += datetime.timedelta(microseconds=microdelta)
             nanodelta -= microdelta * 1000
         self.timedelta = timedelta
@@ -210,7 +210,7 @@ class Timedelta(types.EqualityAndHash):
         return "Timedelta({}, {})".format(self.timedelta, self.nanodelta)
 
 
-class Event(types.Point):
+class Event(typedef.Point):
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 

@@ -21,14 +21,14 @@
 import unittest
 import math
 
-import blitzortung.types
+import blitzortung.typedef
 
 
 class PointTest(unittest.TestCase):
     def setUp(self):
-        self.point1 = blitzortung.types.Point(11, 49)
-        self.point2 = blitzortung.types.Point(12, 49)
-        self.point3 = blitzortung.types.Point(11, 50)
+        self.point1 = blitzortung.typedef.Point(11, 49)
+        self.point2 = blitzortung.typedef.Point(12, 49)
+        self.point3 = blitzortung.typedef.Point(11, 50)
         self.radians_factor = math.pi / 180
 
     def test_get_coordinate_components(self):

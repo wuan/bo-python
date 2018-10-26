@@ -72,6 +72,8 @@ def round_time(time_value, duration):
     """
     duration_seconds = total_seconds(duration)
     seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
+    if hasattr(time_value, 'nanosecond'):
+        time_value.nanosecond = 0
     return time_value.replace(
         hour=seconds // 3600,
         minute=seconds // 60 % 60,
