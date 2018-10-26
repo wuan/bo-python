@@ -25,13 +25,13 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from injector import Module, singleton, provides, inject
+from injector import Module, singleton, inject, provider
 
 
 @singleton
 class Config(object):
-    @inject(config_parser=configparser.ConfigParser)
-    def __init__(self, config_parser):
+    @inject
+    def __init__(self, config_parser: configparser.ConfigParser):
         self.config_parser = config_parser
 
     def get_username(self):
@@ -69,8 +69,8 @@ def config():
 
 class ConfigModule(Module):
     @singleton
-    @provides(configparser.ConfigParser)
-    def provide_config_parser(self):
+    @provider
+    def provide_config_parser(self) -> configparser.ConfigParser:
         config_parser = configparser.ConfigParser()
         config_parser.read('/etc/blitzortung.conf')
         return config_parser

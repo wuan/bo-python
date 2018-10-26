@@ -31,9 +31,8 @@ from .. import builder
 class RawSignalsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
-            url_path_generator=BlitzortungDataPathGenerator, waveform_builder=builder.RawWaveformEvent)
-    def __init__(self, data_transport, data_url, url_path_generator, waveform_builder):
+    @inject
+    def __init__(self, data_transport: HttpFileTransport, data_url: BlitzortungDataPath, url_path_generator: BlitzortungDataPathGenerator, waveform_builder: builder.RawWaveformEvent):
         self.data_transport = data_transport
         self.data_url = data_url
         self.url_path_generator = url_path_generator

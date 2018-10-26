@@ -18,7 +18,7 @@
 
 """
 
-from injector import Module, provides, singleton, inject
+from injector import Module, provider, singleton, inject
 import atexit
 
 
@@ -51,9 +51,9 @@ class DbModule(Module):
         connection_pool.closeall()
 
     @singleton
-    @provides(psycopg2.pool.ThreadedConnectionPool)
-    @inject(config=config.Config)
-    def provide_psycopg2_connection_pool(self, config):
+    @provider
+    @inject
+    def provide_psycopg2_connection_pool(self, config: config.Config) -> psycopg2.pool.ThreadedConnectionPool:
         connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
         atexit.register(self.cleanup, connection_pool)
         return connection_pool

@@ -20,8 +20,8 @@
 
 import math
 from abc import ABCMeta, abstractmethod
-import pyproj
 
+import pyproj
 import shapely.geometry
 
 
@@ -82,8 +82,8 @@ class Envelope(Geometry):
     @property
     def env(self):
         return shapely.geometry.LinearRing(
-                [(self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),
-                 (self.x_max, self.y_min)])
+            [(self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),
+             (self.x_max, self.y_min)])
 
     def __repr__(self):
         return 'Envelope(x: %.4f..%.4f, y: %.4f..%.4f)' % (

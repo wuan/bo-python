@@ -53,7 +53,7 @@ from . import geom
 from . import db
 
 INJECTOR = injector.Injector(
-        [config.ConfigModule(), db.DbModule()])
+    [config.ConfigModule(), db.DbModule()])
 
 __all__ = [
 

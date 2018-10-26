@@ -19,15 +19,17 @@
 """
 
 from __future__ import print_function
+
+import datetime
+import glob
+import json
 import os
 import subprocess
-import glob
-import datetime
-import json
+
 import pandas as pd
 
-import blitzortung.builder
 import blitzortung
+import blitzortung.builder
 
 
 class Raw(object):

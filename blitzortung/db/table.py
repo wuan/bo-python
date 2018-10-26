@@ -232,9 +232,8 @@ class Strike(Base):
 
     TABLE_NAME = 'strikes'
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder_=query_builder.Strike,
-            strike_mapper=mapper.Strike)
-    def __init__(self, db_connection_pool, query_builder_, strike_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, query_builder_:query_builder.Strike, strike_mapper: mapper.Strike):
         super(Strike, self).__init__(db_connection_pool)
 
         self.query_builder = query_builder_
@@ -338,8 +337,8 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_mapper=mapper.Station)
-    def __init__(self, db_connection_pool, station_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, station_mapper: mapper.Station):
         super(Station, self).__init__(db_connection_pool)
 
         self.table_name = 'stations'
@@ -394,9 +393,8 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool,
-            station_offline_mapper=mapper.StationOffline)
-    def __init__(self, db_connection_pool, station_offline_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, station_offline_mapper: mapper.StationOffline):
         super(StationOffline, self).__init__(db_connection_pool)
 
         self.table_name = 'stations_offline'
@@ -441,8 +439,8 @@ class Location(Base):
 
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(Location, self).__init__(db_connection_pool)
         self.schema_name = 'geo'
         self.table_name = 'geonames'
@@ -588,8 +586,8 @@ class ServiceLogTotal(ServiceLogBase):
         CREATE INDEX servicelog_total_timestamp ON servicelog_total USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogTotal, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_total'
@@ -614,8 +612,8 @@ class ServiceLogCountry(ServiceLogBase):
         CREATE INDEX servicelog_country_timestamp ON servicelog_country USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogCountry, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_country'
@@ -641,8 +639,8 @@ class ServiceLogVersion(ServiceLogBase):
         CREATE INDEX servicelog_version_timestamp ON servicelog_version USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogVersion, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_version'
@@ -668,8 +666,8 @@ class ServiceLogParameters(ServiceLogBase):
         CREATE INDEX servicelog_parameters_timestamp ON servicelog_parameters USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogParameters, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_parameters'

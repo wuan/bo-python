@@ -21,13 +21,13 @@
 from __future__ import unicode_literals, generators
 
 import datetime
+import math
 
 import pytz
 import six
 
-from . import types
-import math
 from blitzortung.geom import GridElement
+from . import types
 
 
 class Timestamp(types.EqualityAndHash):
@@ -37,7 +37,7 @@ class Timestamp(types.EqualityAndHash):
     __slots__ = ['datetime', 'nanosecond']
 
     def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
-        if type(date_time) == str or type(date_time) == unicode:
+        if type(date_time) == str:
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
         elif type(date_time) == int:
@@ -130,25 +130,29 @@ class Timestamp(types.EqualityAndHash):
         if type(other) == datetime.datetime:
             return self.datetime < other
         else:
-            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond < other.nanosecond)
+            return self.datetime < other.datetime or (
+                        self.datetime == other.datetime and self.nanosecond < other.nanosecond)
 
     def __le__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime <= other
         else:
-            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
+            return self.datetime < other.datetime or (
+                        self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
 
     def __gt__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime > other
         else:
-            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond > other.nanosecond)
+            return self.datetime > other.datetime or (
+                        self.datetime == other.datetime and self.nanosecond > other.nanosecond)
 
     def __ge__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime >= other
         else:
-            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
+            return self.datetime > other.datetime or (
+                        self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
 
     def __add__(self, other):
         if type(other) == Timedelta:
@@ -298,7 +302,8 @@ class Station(Event):
         offline_since = self.timestamp
         status_char = "*" if offline_since is None else "-"
         try:
-            status_text = "" if offline_since is None else " offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+            status_text = "" if offline_since is None else " offline since " + offline_since.strftime(
+                "%Y-%m-%d %H:%M %Z")
         except ValueError:
             status_text = 'n/a'
         return u"%s%3d/%3d '%s' '%s' (%.4f, %.4f)%s" % (

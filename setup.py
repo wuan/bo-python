@@ -15,7 +15,7 @@ setup(
     author='Andreas Wuerl',
     author_email='blitzortung@tryb.de',
     url='http://www.blitzortung.org/',
-    license='GPL-3 License',
+    license='Apache',
     long_description="""a library providing python classes for blitzortung operation""",
     platforms='OS Independent',
     classifiers=[
