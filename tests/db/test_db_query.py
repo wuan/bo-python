@@ -21,7 +21,7 @@
 from unittest import TestCase
 import datetime
 from hamcrest import assert_that, is_, equal_to
-from nose.tools import raises
+from pytest import raises
 import shapely.wkb
 
 import blitzortung
@@ -50,13 +50,13 @@ class IdIntervalTest(TestCase):
         self.assertEqual(id_interval.end, 5678)
         self.assertEqual(str(id_interval), "[1234 : 5678]")
 
-    @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):
-        blitzortung.db.query.IdInterval("asdf")
+        with raises(ValueError):
+            blitzortung.db.query.IdInterval("asdf")
 
-    @raises(ValueError)
     def test_exception_when_end_is_not_integer(self):
-        blitzortung.db.query.IdInterval(1, "asdf")
+        with raises(ValueError):
+            blitzortung.db.query.IdInterval(1, "asdf")
 
 
 class TimeIntervalTest(TestCase):
@@ -88,13 +88,13 @@ class TimeIntervalTest(TestCase):
 
         self.assertEqual(id_interval.duration, datetime.timedelta(minutes=10))
 
-    @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):
-        blitzortung.db.query.TimeInterval("asdf")
+        with raises(ValueError):
+            blitzortung.db.query.TimeInterval("asdf")
 
-    @raises(ValueError)
     def test_exception_when_end_is_not_integer(self):
-        blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
+        with raises(ValueError):
+            blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
 
 
 class QueryTest(TestCase):

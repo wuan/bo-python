@@ -19,17 +19,18 @@
 """
 
 from __future__ import unicode_literals
-import unittest
-import datetime
-from nose.tools import raises
 
+import datetime
+import unittest
+
+from hamcrest import assert_that, is_, equal_to, contains
 from hamcrest.library.collection.is_empty import empty
-from mock import Mock, patch, call
-from hamcrest import assert_that, is_, equal_to, has_item, contains
+from mock import Mock, call
+from pytest import raises
 
 import blitzortung
-import blitzortung.dataimport
 import blitzortung.builder
+import blitzortung.dataimport
 
 
 class HttpDataTransportTest(unittest.TestCase):
@@ -172,7 +173,6 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
 
         assert_that(strikes, is_(empty()))
 
-    @raises(Exception)
     def test_get_strikes_since_with_generic_exception(self):
         now = datetime.datetime.utcnow()
         latest_strike_timestamp = now - datetime.timedelta(hours=1)
@@ -182,7 +182,8 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.from_data.return_value = self.builder
         self.builder.build.side_effect = Exception("foo")
 
-        list(self.provider.get_strikes_since(latest_strike_timestamp))
+        with raises(Exception):
+            list(self.provider.get_strikes_since(latest_strike_timestamp))
 
 
 class StationsBlitzortungDataProviderTest(unittest.TestCase):
@@ -268,5 +269,3 @@ class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
         assert_that(self.data_provider.read_lines.call_args_list, is_(equal_to(expected_args)))
 
         assert_that(raw_signals, contains(raw11, raw12, raw21, raw22))
-
-

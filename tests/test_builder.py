@@ -18,13 +18,12 @@
 
 """
 
-import unittest
 import datetime
+import unittest
+from pytest import raises
 
-from assertpy import assert_that
-from nose.tools import raises
 import pytz
-import shapely.geometry
+from assertpy import assert_that
 
 import blitzortung.builder
 from blitzortung.data import Timestamp
@@ -65,13 +64,15 @@ class TimestampTest(unittest.TestCase):
         assert_that(value).is_equal_to(1328874978096651456)
 
     def test_value_property(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC)).build()
+        timestamp = self.builder.set_timestamp(
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC)).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651000)
 
     def test_value_property_with_nanoseconds(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC), 456).build()
+        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC),
+                                               456).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651456)
@@ -200,10 +201,10 @@ class StrikeTest(TestBase):
             [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
              364, 111, 43, 582, 594])
 
-    @raises(blitzortung.builder.BuilderError)
     def test_build_strike_from_bad_line(self):
         strike_line = u"2013-08-08 10:30:03.644038642"
-        self.builder.from_line(strike_line)
+        with raises(blitzortung.builder.BuilderError):
+            self.builder.from_line(strike_line)
 
 
 class StationTest(TestBase):
@@ -372,4 +373,3 @@ class ChannelWaveformTest(unittest.TestCase):
         assert_that(waveform[0]).is_equal_to(127)
         assert_that(waveform[1]).is_equal_to(0)
         assert_that(waveform[2]).is_equal_to(-128)
-

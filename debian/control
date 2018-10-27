@@ -1,14 +1,15 @@
-Source: python-blitzortung
+Source: python3-blitzortung
 Priority: extra
 Maintainer: Andreas Würl <blitzortung@tryb.de>
-Build-Depends: debhelper (>= 7.0.50~), python (>=2.6)
+Build-Depends: debhelper (>= 7.0.50~), python3 (>=3.4)
 Standards-Version: 3.8.4
 Section: python
 Homepage: http://launchpad.net/blitzortung-python
 
-Package: python-blitzortung
+Package: python3-blitzortung
 Section: python
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}
+X-Python3-Version: (>=3.4)
 Description: blitzortung.org python modules
  <insert long description, indented with spaces>

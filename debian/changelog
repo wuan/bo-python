@@ -1,4 +1,4 @@
-python-blitzortung (1.6.0) unstable; urgency=low
+python3-blitzortung (1.6.0) unstable; urgency=low
 
   * remove pandas dependency
 
