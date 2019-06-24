@@ -18,24 +18,25 @@
 
 """
 
+import datetime
 import logging
 import os
 import time
-import pytz
-import datetime
 
+import pytz
 from injector import singleton, inject
 
 from .base import HttpFileTransport, BlitzortungDataPath, BlitzortungDataPathGenerator
 from .. import builder
 
+
 @singleton
 class StrikesBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
-            url_path_generator=BlitzortungDataPathGenerator, strike_builder=builder.Strike)
-    def __init__(self, data_transport, data_url, url_path_generator, strike_builder):
+    @inject
+    def __init__(self, data_transport: HttpFileTransport, data_url: BlitzortungDataPath,
+                 url_path_generator: BlitzortungDataPathGenerator, strike_builder: builder.Strike):
         self.data_transport = data_transport
         self.data_url = data_url
         self.url_path_generator = url_path_generator

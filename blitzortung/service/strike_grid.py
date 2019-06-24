@@ -18,14 +18,14 @@
 
 """
 
-from injector import inject
 import time
+
+from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-from .. import db
-
 from .general import create_time_interval, TimingState
+from .. import db
 
 
 class StrikeGridState(TimingState):
@@ -65,12 +65,12 @@ class StrikeGridQuery(object):
         y_bin_count = state.grid_parameters.y_bin_count
         end_time = state.time_interval.end
         strikes_grid_result = tuple(
-                (
-                    result['rx'],
-                    y_bin_count - result['ry'],
-                    result['strike_count'],
-                    -(end_time - result['timestamp']).seconds
-                ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
+            (
+                result['rx'],
+                y_bin_count - result['ry'],
+                result['strike_count'],
+                -(end_time - result['timestamp']).seconds
+            ) for result in results if 0 <= result['rx'] < x_bin_count and 0 < result['ry'] <= y_bin_count
         )
         state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
         state.log_timing('strikes_grid.build_result', reference_time)

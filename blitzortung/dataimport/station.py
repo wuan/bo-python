@@ -27,13 +27,14 @@ from injector import singleton, inject
 from .base import HttpFileTransport, BlitzortungDataPath
 from .. import builder
 
+
 @singleton
 class StationsBlitzortungDataProvider(object):
     logger = logging.getLogger(__name__)
 
-    @inject(data_transport=HttpFileTransport, data_url=BlitzortungDataPath,
-            station_builder=builder.Station)
-    def __init__(self, data_transport, data_url, station_builder):
+    @inject
+    def __init__(self, data_transport: HttpFileTransport, data_url: BlitzortungDataPath,
+                 station_builder: builder.Station):
         self.data_transport = data_transport
         self.data_url = data_url
         self.station_builder = station_builder

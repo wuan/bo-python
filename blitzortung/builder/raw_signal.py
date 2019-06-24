@@ -19,12 +19,12 @@
 """
 
 import itertools
-import datetime
+
 from injector import inject
 
-from ..util import next_element
 from .base import Event, BuilderError
 from .. import data
+from ..util import next_element
 
 
 class ChannelWaveform(object):
@@ -94,8 +94,8 @@ class RawWaveformEvent(Event):
     class for building of raw signal objects
     """
 
-    @inject(channel_builder=ChannelWaveform)
-    def __init__(self, channel_builder):
+    @inject
+    def __init__(self, channel_builder: ChannelWaveform):
         super(RawWaveformEvent, self).__init__()
         self.altitude = 0
         self.channels = []

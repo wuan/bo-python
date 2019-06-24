@@ -18,11 +18,12 @@
 
 """
 
-from unittest import TestCase
 import datetime
-from hamcrest import assert_that, is_, equal_to
-from nose.tools import raises
+from unittest import TestCase
+
+import pytest
 import shapely.wkb
+from assertpy import assert_that
 
 import blitzortung
 import blitzortung.db.query
@@ -50,13 +51,13 @@ class IdIntervalTest(TestCase):
         self.assertEqual(id_interval.end, 5678)
         self.assertEqual(str(id_interval), "[1234 : 5678]")
 
-    @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):
-        blitzortung.db.query.IdInterval("asdf")
+        with pytest.raises(ValueError):
+            blitzortung.db.query.IdInterval("asdf")
 
-    @raises(ValueError)
     def test_exception_when_end_is_not_integer(self):
-        blitzortung.db.query.IdInterval(1, "asdf")
+        with pytest.raises(ValueError):
+            blitzortung.db.query.IdInterval(1, "asdf")
 
 
 class TimeIntervalTest(TestCase):
@@ -88,13 +89,13 @@ class TimeIntervalTest(TestCase):
 
         self.assertEqual(id_interval.duration, datetime.timedelta(minutes=10))
 
-    @raises(ValueError)
     def test_exception_when_start_is_not_integer(self):
-        blitzortung.db.query.TimeInterval("asdf")
+        with pytest.raises(ValueError):
+            blitzortung.db.query.TimeInterval("asdf")
 
-    @raises(ValueError)
     def test_exception_when_end_is_not_integer(self):
-        blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
+        with pytest.raises(ValueError):
+            blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
 
 
 class QueryTest(TestCase):
@@ -130,12 +131,12 @@ class QueryTest(TestCase):
 
     def test_add_condition_with_parameters(self):
         self.query.add_condition("column LIKE %(name)s", name='<name>')
-        assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>'})))
+        assert_that(str(self.query)).is_equal_to("WHERE column LIKE %(name)s")
+        assert_that(self.query.get_parameters()).is_equal_to({'name': '<name>'})
 
         self.query.add_condition("other LIKE %(type)s", type='<type>')
-        assert_that(str(self.query), is_(equal_to("WHERE column LIKE %(name)s AND other LIKE %(type)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'name': '<name>', 'type': '<type>'})))
+        assert_that(str(self.query)).is_equal_to("WHERE column LIKE %(name)s AND other LIKE %(type)s")
+        assert_that(self.query.get_parameters()).is_equal_to({'name': '<name>', 'type': '<type>'})
 
     def test_add_order(self):
         self.query.set_order(blitzortung.db.query.Order("bar"))
@@ -156,34 +157,34 @@ class QueryTest(TestCase):
     def test_parse_args_with_id_interval(self):
         self.query.set_default_conditions(id_interval=blitzortung.db.query.IdInterval(10, 15))
 
-        assert_that(str(self.query), is_(equal_to("WHERE id >= %(start_id)s AND id < %(end_id)s")))
-        assert_that(self.query.get_parameters(), is_(equal_to({'start_id': 10, 'end_id': 15})))
+        assert_that(str(self.query)).is_equal_to("WHERE id >= %(start_id)s AND id < %(end_id)s")
+        assert_that(self.query.get_parameters()).is_equal_to({'start_id': 10, 'end_id': 15})
 
     def test_parse_args_with_time_interval(self):
         self.query.set_default_conditions(time_interval=blitzortung.db.query.TimeInterval(
             datetime.datetime(2013, 10, 9, 17, 20),
             datetime.datetime(2013, 10, 11, 6, 30)))
 
-        assert_that(str(self.query), is_(equal_to(
+        assert_that(str(self.query)).is_equal_to(
             "WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s"
-        )))
-        assert_that(self.query.get_parameters(), is_(equal_to({
+        )
+        assert_that(self.query.get_parameters()).is_equal_to({
             'start_time': datetime.datetime(2013, 10, 9, 17, 20),
-            'end_time': datetime.datetime(2013, 10, 11, 6, 30)})))
+            'end_time': datetime.datetime(2013, 10, 11, 6, 30)})
 
     def test_parse_args_with_order(self):
         self.query.set_default_conditions(order='test')
 
-        assert_that(str(self.query), is_(equal_to(
+        assert_that(str(self.query)).is_equal_to(
             "ORDER BY test"
-        )))
+        )
 
     def test_parse_args_with_limit(self):
         self.query.set_default_conditions(limit=10)
 
-        assert_that(str(self.query), is_(equal_to(
+        assert_that(str(self.query)).is_equal_to(
             "LIMIT 10"
-        )))
+        )
 
 
 class SelectQueryTest(TestCase):
@@ -215,11 +216,11 @@ class SelectQueryTest(TestCase):
         self.assertEqual(str(self.query), "SELECT FROM foo WHERE qux AND quux")
 
     def test_add_parameters(self):
-        assert_that(self.query.get_parameters(), is_(equal_to({})))
+        assert_that(self.query.get_parameters()).is_equal_to({})
 
         self.query.add_parameters(foo='bar', baz='qux')
 
-        assert_that(self.query.get_parameters(), is_(equal_to({'foo': 'bar', 'baz': 'qux'})))
+        assert_that(self.query.get_parameters()).is_equal_to({'foo': 'bar', 'baz': 'qux'})
 
 
 class GridQueryTest(TestCase):
@@ -229,7 +230,7 @@ class GridQueryTest(TestCase):
         query = blitzortung.db.query.GridQuery(raster)
         query.set_table_name('strikes')
 
-        assert_that(str(query), is_(equal_to(
+        assert_that(str(query)).is_equal_to(
             'SELECT '
             'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, '
             'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, '
@@ -237,15 +238,14 @@ class GridQueryTest(TestCase):
             'max("timestamp") as "timestamp" '
             'FROM strikes '
             'WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog '
-            'GROUP BY rx, ry')))
+            'GROUP BY rx, ry')
 
         parameters = query.get_parameters()
-        assert_that(parameters['xmin'], is_(equal_to(-10)))
-        assert_that(parameters['xdiv'], is_(equal_to(1.5)))
-        assert_that(parameters['ymin'], is_(equal_to(15)))
-        assert_that(parameters['ydiv'], is_(equal_to(1)))
-        assert_that(parameters['srid'], is_(equal_to(4326)))
-        assert_that(parameters['envelope_srid'], is_(equal_to(4326)))
+        assert_that(parameters['xmin']).is_equal_to(-10)
+        assert_that(parameters['xdiv']).is_equal_to(1.5)
+        assert_that(parameters['ymin']).is_equal_to(15)
+        assert_that(parameters['ydiv']).is_equal_to(1)
+        assert_that(parameters['srid']).is_equal_to(4326)
+        assert_that(parameters['envelope_srid']).is_equal_to(4326)
         envelope = shapely.wkb.loads(parameters['envelope'].adapted)
-        assert_that(envelope.bounds, is_(equal_to((-10, 15, 20, 35))))
-
+        assert_that(envelope.bounds).is_equal_to((-10, 15, 20, 35))

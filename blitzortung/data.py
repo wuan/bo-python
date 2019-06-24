@@ -18,16 +18,14 @@
 
 """
 
-from __future__ import unicode_literals, generators
-
 import datetime
+import math
 
 import pytz
 import six
 
-from . import types
-import math
 from blitzortung.geom import GridElement
+from . import types
 
 
 class Timestamp(types.EqualityAndHash):
@@ -37,7 +35,7 @@ class Timestamp(types.EqualityAndHash):
     __slots__ = ['datetime', 'nanosecond']
 
     def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
-        if type(date_time) == str or type(date_time) == unicode:
+        if type(date_time) == str:
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
         elif type(date_time) == int:
@@ -45,7 +43,7 @@ class Timestamp(types.EqualityAndHash):
             nanosecond += date_time_nanosecond
 
         if nanosecond < 0 or nanosecond > 999:
-            microdelta = nanosecond / 1000
+            microdelta = nanosecond // 1000
             date_time += datetime.timedelta(microseconds=microdelta)
             nanosecond -= microdelta * 1000
 
@@ -71,13 +69,13 @@ class Timestamp(types.EqualityAndHash):
 
     @staticmethod
     def from_nanoseconds(total_nanoseconds):
-        total_microseconds = total_nanoseconds / 1000
+        total_microseconds = total_nanoseconds // 1000
         residual_nanoseconds = total_nanoseconds % 1000
-        total_seconds = total_microseconds / 1000000
+        total_seconds = total_microseconds // 1000000
         residual_microseconds = total_microseconds % 1000000
         return datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC) + \
                datetime.timedelta(seconds=total_seconds,
-                                  milliseconds=residual_microseconds), \
+                                  microseconds=residual_microseconds), \
                residual_nanoseconds
 
     @property
@@ -130,25 +128,29 @@ class Timestamp(types.EqualityAndHash):
         if type(other) == datetime.datetime:
             return self.datetime < other
         else:
-            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond < other.nanosecond)
+            return self.datetime < other.datetime or (
+                    self.datetime == other.datetime and self.nanosecond < other.nanosecond)
 
     def __le__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime <= other
         else:
-            return self.datetime < other.datetime or (self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
+            return self.datetime < other.datetime or (
+                    self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
 
     def __gt__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime > other
         else:
-            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond > other.nanosecond)
+            return self.datetime > other.datetime or (
+                    self.datetime == other.datetime and self.nanosecond > other.nanosecond)
 
     def __ge__(self, other):
         if type(other) == datetime.datetime:
             return self.datetime >= other
         else:
-            return self.datetime > other.datetime or (self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
+            return self.datetime > other.datetime or (
+                    self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
 
     def __add__(self, other):
         if type(other) == Timedelta:
@@ -188,7 +190,7 @@ NaT = Timestamp(None)
 class Timedelta(types.EqualityAndHash):
     def __init__(self, timedelta=datetime.timedelta(), nanodelta=0):
         if nanodelta < 0 or nanodelta > 999:
-            microdelta = nanodelta / 1000
+            microdelta = nanodelta // 1000
             timedelta += datetime.timedelta(microseconds=microdelta)
             nanodelta -= microdelta * 1000
         self.timedelta = timedelta
@@ -298,7 +300,8 @@ class Station(Event):
         offline_since = self.timestamp
         status_char = "*" if offline_since is None else "-"
         try:
-            status_text = "" if offline_since is None else " offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+            status_text = "" if offline_since is None else " offline since " + offline_since.strftime(
+                "%Y-%m-%d %H:%M %Z")
         except ValueError:
             status_text = 'n/a'
         return u"%s%3d/%3d '%s' '%s' (%.4f, %.4f)%s" % (

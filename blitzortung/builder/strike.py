@@ -19,9 +19,10 @@
 """
 
 import re
+
 from .base import Event, BuilderError
-from ..util import force_range
 from .. import data
+from ..util import force_range
 
 
 class Strike(Event):

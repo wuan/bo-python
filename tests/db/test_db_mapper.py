@@ -18,14 +18,14 @@
 
 """
 
-from unittest import TestCase
 import datetime
+from unittest import TestCase
 
 import pytz
-from mock import Mock, call
-from hamcrest import assert_that, is_, equal_to, none
-import shapely.wkb
 import shapely.geometry
+import shapely.wkb
+from assertpy import assert_that
+from mock import Mock, call
 
 import blitzortung.builder
 import blitzortung.db.mapper
@@ -52,9 +52,9 @@ class TestStrikeMapper(TestCase):
         self.strike_builder.build.return_value = self.strike
 
     def test_strike_mapper(self):
-        assert_that(self.strike_mapper.create_object(self.result), is_(self.strike))
+        assert_that(self.strike_mapper.create_object(self.result)).is_equal_to(self.strike)
 
-        assert_that(self.strike_builder.method_calls, is_([
+        assert_that(self.strike_builder.method_calls).is_equal_to([
             call.set_id(12),
             call.set_timestamp(self.timestamp, 789),
             call.set_x(11.0),
@@ -64,7 +64,7 @@ class TestStrikeMapper(TestCase):
             call.set_station_count(12),
             call.set_lateral_error(5000),
             call.build()
-        ]))
+        ])
 
     def test_strike_mapper_with_timezone(self):
         zone = pytz.timezone('CET')
@@ -73,15 +73,15 @@ class TestStrikeMapper(TestCase):
 
         timestamp = self.strike_builder.set_timestamp.call_args[0][0]
 
-        assert_that(timestamp, is_(self.timestamp))
-        assert_that(timestamp.tzinfo.zone, is_(zone.zone))
+        assert_that(timestamp).is_equal_to(self.timestamp)
+        assert_that(timestamp.tzinfo.zone).is_equal_to(zone.zone)
 
     def test_strike_mapper_without_timestamp(self):
         self.result['timestamp'] = None
 
         self.strike_mapper.create_object(self.result)
 
-        assert_that(self.strike_builder.set_timestamp.call_args[0][0], is_(none()))
+        assert_that(self.strike_builder.set_timestamp.call_args[0][0]).is_none()
 
 
 class TestStationMapper(TestCase):
@@ -103,9 +103,9 @@ class TestStationMapper(TestCase):
         self.station_builder.build.return_value = self.station
 
     def test_station_mapper(self):
-        assert_that(self.strike_mapper.create_object(self.result), is_(self.station))
+        assert_that(self.strike_mapper.create_object(self.result)).is_equal_to(self.station)
 
-        assert_that(self.station_builder.method_calls, is_([
+        assert_that(self.station_builder.method_calls).is_equal_to([
             call.set_number(31),
             call.set_user('<user>'),
             call.set_name('<name>'),
@@ -114,7 +114,7 @@ class TestStationMapper(TestCase):
             call.set_y(49.0),
             call.set_timestamp(self.timestamp),
             call.build()
-        ]))
+        ])
 
     def test_strike_mapper_with_timezone(self):
         zone = pytz.timezone('CET')
@@ -123,12 +123,12 @@ class TestStationMapper(TestCase):
 
         timestamp = self.station_builder.set_timestamp.call_args[0][0]
 
-        assert_that(timestamp, is_(self.timestamp))
-        assert_that(timestamp.tzinfo.zone, is_(zone.zone))
+        assert_that(timestamp).is_equal_to(self.timestamp)
+        assert_that(timestamp.tzinfo.zone).is_equal_to(zone.zone)
 
     def test_strike_mapper_without_timestamp(self):
         self.result['begin'] = None
 
         self.strike_mapper.create_object(self.result)
 
-        assert_that(self.station_builder.set_timestamp.call_args[0][0], is_(none()))
+        assert_that(self.station_builder.set_timestamp.call_args[0][0]).is_none()

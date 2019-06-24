@@ -19,9 +19,10 @@
 """
 
 from abc import abstractmethod
-from injector import inject
+
 import pytz
 import shapely.wkb
+from injector import inject
 
 import blitzortung.builder
 
@@ -42,8 +43,8 @@ class ObjectMapper(object):
 
 
 class Strike(ObjectMapper):
-    @inject(strike_builder=blitzortung.builder.Strike)
-    def __init__(self, strike_builder):
+    @inject
+    def __init__(self, strike_builder: blitzortung.builder.Strike):
         self.strike_builder = strike_builder
 
     def create_object(self, result, **kwargs):
@@ -64,8 +65,8 @@ class Strike(ObjectMapper):
 
 
 class Station(ObjectMapper):
-    @inject(station_builder=blitzortung.builder.Station)
-    def __init__(self, station_builder):
+    @inject
+    def __init__(self, station_builder: blitzortung.builder.Station):
         self.station_builder = station_builder
 
     def create_object(self, result, **kwargs):
@@ -85,8 +86,8 @@ class Station(ObjectMapper):
 
 
 class StationOffline(ObjectMapper):
-    @inject(station_offline_builder=blitzortung.builder.StationOffline)
-    def __init__(self, station_offline_builder):
+    @inject
+    def __init__(self, station_offline_builder: blitzortung.builder.StationOffline):
         self.station_offline_builder = station_offline_builder
 
     def create_object(self, result, **kwargs):

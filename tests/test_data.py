@@ -18,10 +18,9 @@
 
 """
 
-import unittest
 import datetime
+
 import pytz
-import shapely.geometry
 from assertpy import assert_that
 
 import blitzortung
@@ -29,7 +28,7 @@ import blitzortung.data
 from blitzortung.data import Timestamp, Timedelta, NaT
 
 
-class TestTimestamp(unittest.TestCase):
+class TestTimestamp(object):
     def test_value(self):
         now = Timestamp()
         later = now + 1234567
@@ -42,8 +41,16 @@ class TestTimestamp(unittest.TestCase):
 
         assert_that(later - now).is_equal_to(Timedelta(nanodelta=1234567))
 
+    def test_from_nanoseconds(self):
+        timestamp = Timestamp(1540935833552753700)
 
-class TestTimedelta(unittest.TestCase):
+        print(timestamp)
+
+        assert_that(timestamp.datetime).is_equal_to(datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, pytz.UTC))
+        assert_that(timestamp.nanosecond).is_equal_to(700)
+
+
+class TestTimedelta(object):
     def test_normalizing(self):
         assert_that(Timedelta(nanodelta=1500)).is_equal_to(
             Timedelta(datetime.timedelta(microseconds=1), 500))
@@ -55,11 +62,20 @@ class TestTimedelta(unittest.TestCase):
             Timedelta(datetime.timedelta(microseconds=-2), 500))
 
 
-class EventBaseTest(unittest.TestCase):
-    def setUp(self):
+class EventBaseTest(object):
+    def setup_method(self):
         self.not_a_time = NaT
         self.now_time = Timestamp()
         self.later_time = self.now_time + 100
+
+    def assertTrue(self, value):
+        assert_that(value).is_true()
+
+    def assertFalse(self, value):
+        assert_that(value).is_false()
+
+    def assertEqual(self, value, other):
+        assert_that(other).is_equal_to(value)
 
 
 class TestEvent(EventBaseTest):
@@ -131,8 +147,8 @@ class TestEvent(EventBaseTest):
         self.assertFalse(event.is_valid)
 
 
-class TestStrike(unittest.TestCase):
-    def setUp(self):
+class TestStrike(object):
+    def setup_method(self):
         self.timestamp = Timestamp('2013-09-28 23:23:38.123456', 789)
         self.strike = blitzortung.data.Strike(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
 
@@ -172,8 +188,8 @@ class TestStrike(unittest.TestCase):
         assert_that(str(self.strike)).is_equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")
 
 
-class TestStation(unittest.TestCase):
-    def setUp(self):
+class TestStation(object):
+    def setup_method(self):
         self.timestamp = Timestamp('2013-09-28 23:23:38')
         self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, self.timestamp,
                                                 '<status>', '<board>')
@@ -203,8 +219,8 @@ class TestStation(unittest.TestCase):
         assert_that(self.station.status).is_equal_to('<status>')
 
 
-class TestGridData(unittest.TestCase):
-    def setUp(self):
+class TestGridData(object):
+    def setup_method(self):
         self.reference_time = datetime.datetime.utcnow()
         self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25)
         self.grid_data = blitzortung.data.GridData(self.grid)

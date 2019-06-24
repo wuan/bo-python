@@ -18,8 +18,8 @@
 
 """
 
-from unittest import TestCase
 import datetime
+from unittest import TestCase
 
 import pyproj
 import shapely.geometry
@@ -140,7 +140,8 @@ class TestGrid(TestCase):
         assert_that(self.grid.get_y_center(3)).is_equal_to(1.375)
 
     def test_repr(self):
-        assert_that(repr(self.grid)).is_equal_to("Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))")
+        assert_that(repr(self.grid)).is_equal_to(
+            "Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))")
 
 
 class TestGridFactory(TestCase):
@@ -180,9 +181,6 @@ class TestGridFactory(TestCase):
         grid_2 = self.grid_factory.get_for(self.base_length)
 
         assert_that(grid_1).is_same_as(grid_2)
-
-
-
 
 
 class TestRasterElement(TestCase):

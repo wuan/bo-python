@@ -18,8 +18,10 @@
 
 """
 
-from injector import inject
 import time
+
+from injector import inject
+
 import blitzortung.db.query_builder
 
 

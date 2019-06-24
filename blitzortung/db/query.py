@@ -21,6 +21,7 @@
 from __future__ import print_function
 
 import datetime
+
 import shapely.geometry.base
 import shapely.wkb
 
@@ -203,9 +204,9 @@ class Query(object):
 
             if not geometry.equals(geometry.envelope):
                 self.add_condition(
-                        'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
-                        'ST_Transform(geog::geometry, %(srid)s))',
-                        geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
+                    'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
+                    'ST_Transform(geog::geometry, %(srid)s))',
+                    geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
 
         else:
             raise ValueError("invalid geometry in db.Strike.select()")
@@ -253,18 +254,18 @@ class GridQuery(SelectQuery):
         self.raster = raster
 
         self.add_parameters(
-                srid=raster.srid,
-                xmin=raster.x_min,
-                xdiv=raster.x_div,
-                ymin=raster.y_min,
-                ydiv=raster.y_div,
+            srid=raster.srid,
+            xmin=raster.x_min,
+            xdiv=raster.x_div,
+            ymin=raster.y_min,
+            ydiv=raster.y_div,
         )
 
         self.set_columns(
-                'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
-                'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
-                'count(*) AS strike_count',
-                'max("timestamp") as "timestamp"'
+            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
+            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
+            'count(*) AS strike_count',
+            'max("timestamp") as "timestamp"'
         )
 
         env = self.raster.env

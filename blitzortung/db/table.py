@@ -19,21 +19,19 @@
 """
 
 from __future__ import print_function
-import logging
 
+import logging
 import math
 
-from injector import inject
 import pytz
-import shapely.wkb
+from injector import inject
 
+from blitzortung.logger import get_logger_name
+from . import mapper
+from . import query
+from . import query_builder
 from .. import data
 from .. import geom
-
-from . import query
-from . import mapper
-from . import query_builder
-from blitzortung.logger import get_logger_name
 
 try:
     import psycopg2
@@ -232,9 +230,9 @@ class Strike(Base):
 
     TABLE_NAME = 'strikes'
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, query_builder_=query_builder.Strike,
-            strike_mapper=mapper.Strike)
-    def __init__(self, db_connection_pool, query_builder_, strike_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, query_builder_: query_builder.Strike,
+                 strike_mapper: mapper.Strike):
         super(Strike, self).__init__(db_connection_pool)
 
         self.query_builder = query_builder_
@@ -278,7 +276,8 @@ class Strike(Base):
 
         query_ = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
 
-        return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object, timezone=self.tz)
+        return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object,
+                                 timezone=self.tz)
 
     def select_grid(self, grid, count_threshold, **kwargs):
         """ build up raster query """
@@ -338,8 +337,8 @@ class Station(Base):
     ALTER SEQUENCE stations_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool, station_mapper=mapper.Station)
-    def __init__(self, db_connection_pool, station_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, station_mapper: mapper.Station):
         super(Station, self).__init__(db_connection_pool)
 
         self.table_name = 'stations'
@@ -394,9 +393,9 @@ class StationOffline(Base):
     ALTER SEQUENCE stations_offline_id_seq RESTART 1;
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool,
-            station_offline_mapper=mapper.StationOffline)
-    def __init__(self, db_connection_pool, station_offline_mapper):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool,
+                 station_offline_mapper: mapper.StationOffline):
         super(StationOffline, self).__init__(db_connection_pool)
 
         self.table_name = 'stations_offline'
@@ -441,8 +440,8 @@ class Location(Base):
 
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(Location, self).__init__(db_connection_pool)
         self.schema_name = 'geo'
         self.table_name = 'geonames'
@@ -588,8 +587,8 @@ class ServiceLogTotal(ServiceLogBase):
         CREATE INDEX servicelog_total_timestamp ON servicelog_total USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogTotal, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_total'
@@ -614,8 +613,8 @@ class ServiceLogCountry(ServiceLogBase):
         CREATE INDEX servicelog_country_timestamp ON servicelog_country USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogCountry, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_country'
@@ -641,8 +640,8 @@ class ServiceLogVersion(ServiceLogBase):
         CREATE INDEX servicelog_version_timestamp ON servicelog_version USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogVersion, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_version'
@@ -668,8 +667,8 @@ class ServiceLogParameters(ServiceLogBase):
         CREATE INDEX servicelog_parameters_timestamp ON servicelog_parameters USING btree("timestamp");
     """
 
-    @inject(db_connection_pool=psycopg2.pool.ThreadedConnectionPool)
-    def __init__(self, db_connection_pool):
+    @inject
+    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
         super(ServiceLogParameters, self).__init__(db_connection_pool)
 
         self.table_name = 'servicelog_parameters'
