@@ -18,20 +18,18 @@
 
 """
 
-from __future__ import print_function
-
 import logging
 import math
 
 import pytz
 from injector import inject
 
-from blitzortung.logger import get_logger_name
 from . import mapper
 from . import query
 from . import query_builder
 from .. import data
 from .. import geom
+from ..logger import get_logger_name
 
 try:
     import psycopg2

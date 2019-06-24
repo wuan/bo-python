@@ -24,8 +24,7 @@ import time
 
 import pytz
 
-from blitzortung.data import Timestamp
-from . import data
+from .data import Timestamp, Timedelta
 
 
 class Timer():
@@ -58,9 +57,9 @@ def total_seconds(time_value):
     return the total seconds of the given time or datetime (relative to midnight)
     """
 
-    if isinstance(time_value, datetime.datetime) or isinstance(time_value, data.Timestamp):
+    if isinstance(time_value, datetime.datetime) or isinstance(time_value, Timestamp):
         return time_value.hour * 3600 + time_value.minute * 60 + time_value.second
-    elif isinstance(time_value, datetime.timedelta) or isinstance(time_value, data.Timedelta):
+    elif isinstance(time_value, datetime.timedelta) or isinstance(time_value, Timedelta):
         return time_value.seconds + time_value.days * 24 * 3600
     else:
         raise Exception("unhandled type " + type(time_value))

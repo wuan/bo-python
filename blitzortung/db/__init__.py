@@ -61,54 +61,54 @@ class DbModule(Module):
 
 
 def strike():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.Strike)
 
 
 def strike_cluster():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.StrikeCluster)
 
 
 def station():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.Station)
 
 
 def station_offline():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.StationOffline)
 
 
 def location():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.Location)
 
 
 def servicelog_total():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.ServiceLogTotal)
 
 
 def servicelog_country():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.ServiceLogCountry)
 
 
 def servicelog_version():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.ServiceLogVersion)
 
 
 def servicelog_parameters():
-    from blitzortung import INJECTOR
+    from .. import INJECTOR
 
     return INJECTOR.get(table.ServiceLogParameters)

@@ -18,18 +18,14 @@
 
 """
 
-from __future__ import print_function
-
 import datetime
 import glob
 import json
 import os
 import subprocess
 
-import pandas as pd
-
-import blitzortung
-import blitzortung.builder
+from . import builder
+from blitzortung.data import Timestamp
 
 
 class Raw(object):
@@ -45,11 +41,11 @@ class Raw(object):
         return os.path.basename(self.file_path)
 
     def get_data(self, start_time=None, end_time=None):
-        return [blitzortung.builder.RawEvent().from_json(element).build()
+        return [builder.RawEvent().from_json(element).build()
                 for element in self.__execute(start_time, end_time)]
 
     def get_waveform_data(self, start_time=None, end_time=None):
-        return [blitzortung.builder.RawWaveformEvent().from_json(element).build()
+        return [builder.RawWaveformEvent().from_json(element).build()
                 for element in self.__execute(start_time, end_time, '--long-data')]
 
     def get_info(self, start_time=None, end_time=None):
@@ -114,14 +110,14 @@ class Archive(object):
 
             if depth == 3:
                 date_string = "-".join(self.__split_path_into_components(current_path)[-depth:])
-                self.dates_filecount[pd.Timestamp(date_string)] = len(files)
+                self.dates_filecount[Timestamp(date_string)] = len(files)
 
     def get_dates_filecount(self):
         return self.dates_filecount
 
     def get_files_for_date(self, date_string):
         result = []
-        date = pd.Timestamp(date_string)
+        date = Timestamp(date_string)
         if date in self.dates_filecount:
 
             for file_path in glob.glob(os.path.join(self.__get_path_for_date(date), '*')):
@@ -186,7 +182,7 @@ class Data(object):
         raw_events = []
 
         for line in self.get_output(raw_file, start_time, end_time):
-            raw_event_builder = blitzortung.builder.RawEvent()
+            raw_event_builder = builder.RawEvent()
             raw_event_builder.from_string(line)
             raw_events.append(raw_event_builder.build())
 

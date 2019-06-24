@@ -24,7 +24,7 @@ import math
 import pytz
 import six
 
-from blitzortung.geom import GridElement
+from .geom import GridElement
 from . import types
 
 

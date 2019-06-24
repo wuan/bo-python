@@ -24,7 +24,7 @@ import pytz
 import shapely.wkb
 from injector import inject
 
-import blitzortung.builder
+from .. import builder
 
 
 class ObjectMapper(object):
@@ -44,7 +44,7 @@ class ObjectMapper(object):
 
 class Strike(ObjectMapper):
     @inject
-    def __init__(self, strike_builder: blitzortung.builder.Strike):
+    def __init__(self, strike_builder: builder.Strike):
         self.strike_builder = strike_builder
 
     def create_object(self, result, **kwargs):
@@ -66,7 +66,7 @@ class Strike(ObjectMapper):
 
 class Station(ObjectMapper):
     @inject
-    def __init__(self, station_builder: blitzortung.builder.Station):
+    def __init__(self, station_builder: builder.Station):
         self.station_builder = station_builder
 
     def create_object(self, result, **kwargs):
@@ -87,7 +87,7 @@ class Station(ObjectMapper):
 
 class StationOffline(ObjectMapper):
     @inject
-    def __init__(self, station_offline_builder: blitzortung.builder.StationOffline):
+    def __init__(self, station_offline_builder: builder.StationOffline):
         self.station_offline_builder = station_offline_builder
 
     def create_object(self, result, **kwargs):

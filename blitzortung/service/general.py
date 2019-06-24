@@ -23,7 +23,7 @@ import time
 
 import pytz
 
-import blitzortung
+from .. import db
 
 
 def create_time_interval(minute_length, minute_offset):
@@ -32,7 +32,7 @@ def create_time_interval(minute_length, minute_offset):
     end_time = end_time.replace(microsecond=0)
     end_time += datetime.timedelta(minutes=minute_offset)
     start_time = end_time - datetime.timedelta(minutes=minute_length)
-    return blitzortung.db.query.TimeInterval(start_time, end_time)
+    return db.query.TimeInterval(start_time, end_time)
 
 
 class TimingState(object):
