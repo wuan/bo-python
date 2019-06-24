@@ -19,20 +19,19 @@
 """
 
 from __future__ import unicode_literals
-import unittest
-import datetime
-from nose.tools import raises
 
-from hamcrest.library.collection.is_empty import empty
-from mock import Mock, patch, call
-from hamcrest import assert_that, is_, equal_to, has_item, contains
+import datetime
+
+import pytest
+from assertpy import assert_that
+from mock import Mock, call
 
 import blitzortung
-import blitzortung.dataimport
 import blitzortung.builder
+import blitzortung.dataimport
 
 
-class HttpDataTransportTest(unittest.TestCase):
+class HttpDataTransportTest(object):
     def setUp(self):
         self.config = Mock(name='config')
         self.config.get_username.return_value = '<username>'
@@ -49,7 +48,7 @@ class HttpDataTransportTest(unittest.TestCase):
 
         line_generator = self.data_transport.read_lines('http://foo.bar/baz')
 
-        assert_that(list(line_generator), contains('line1', 'line2'))
+        assert_that(list(line_generator)).contains('line1', 'line2')
         self.session.get.assert_called_with(
             'http://foo.bar/baz',
             auth=('<username>', '<password>'),
@@ -63,13 +62,13 @@ class HttpDataTransportTest(unittest.TestCase):
 
         result = self.data_transport.read_lines('target_url')
 
-        assert_that(list(result), contains(u'line1 ', u'line2', u'äöü'))
+        assert_that(list(result)).contains(u'line1 ', u'line2', u'äöü')
 
     def test_read_data_with_empty_response(self):
         self.response.iter_lines.return_value = []
         result = self.data_transport.read_lines('foo')
 
-        assert_that(list(result), equal_to([]))
+        assert_that(list(result)).is_empty()
 
     def test_read_lines_from_url_with_post_process(self):
         self.response.status_code = 200
@@ -80,35 +79,35 @@ class HttpDataTransportTest(unittest.TestCase):
 
         line_generator = self.data_transport.read_lines('http://foo.bar/baz', post_process=post_process)
 
-        assert_that(list(line_generator), contains('processed', 'lines'))
+        assert_that(list(line_generator)).contains('processed', 'lines')
 
     def test_read_from_url_with_error(self):
         self.response.status_code = 404
 
         response = self.data_transport.read_lines('http://foo.bar/baz')
 
-        assert_that(list(response), is_([]))
+        assert_that(list(response)).is_empty()
 
 
-class BlitzortungDataUrlTest(unittest.TestCase):
+class BlitzortungDataUrlTest(object):
     def setUp(self):
         self.data_url = blitzortung.dataimport.BlitzortungDataPath()
 
     def test_default_values(self):
         target_url = self.data_url.build_path('url_path')
-        assert_that(target_url, is_(equal_to('http://data.blitzortung.org/Data_1/url_path')))
+        assert_that(target_url).is_equal_to('http://data.blitzortung.org/Data_1/url_path')
 
     def test_specific_values(self):
         target_url = self.data_url.build_path('url_path', host_name='foo', region=42)
-        assert_that(target_url, is_(equal_to('http://foo.blitzortung.org/Data_42/url_path')))
+        assert_that(target_url).is_equal_to('http://foo.blitzortung.org/Data_42/url_path')
 
     def test_with_user_defined_base(self):
         self.data_url = blitzortung.dataimport.BlitzortungDataPath("base/path")
         target_url = self.data_url.build_path('url_path', host_name='bar', region=39)
-        assert_that(target_url, is_(equal_to('base/path/Data_39/url_path')))
+        assert_that(target_url).is_equal_to('base/path/Data_39/url_path')
 
 
-class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
+class BlitzortungHistoryUrlGeneratorTest(object):
     def create_history_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
@@ -119,14 +118,14 @@ class BlitzortungHistoryUrlGeneratorTest(unittest.TestCase):
 
         urls = [url for url in self.strikes_url.get_paths(self.start_time, self.present_time)]
 
-        assert_that(urls, contains(
+        assert_that(urls).contains(
             '2013/08/20/11/40.log',
             '2013/08/20/11/50.log',
             '2013/08/20/12/00.log'
-        ))
+        )
 
 
-class StrikesBlitzortungDataProviderTest(unittest.TestCase):
+class StrikesBlitzortungDataProviderTest(object):
     def setUp(self):
         self.data_provider = Mock()
         self.data_url = Mock()
@@ -157,7 +156,7 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
 
         strikes = self.provider.get_strikes_since(latest_strike_timestamp)
 
-        assert_that(list(strikes), contains(strike2))
+        assert_that(list(strikes)).contains(strike2)
 
     def test_get_strikes_since_with_builder_error(self):
         now = datetime.datetime.utcnow()
@@ -170,9 +169,8 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
 
         strikes = list(self.provider.get_strikes_since(latest_strike_timestamp))
 
-        assert_that(strikes, is_(empty()))
+        assert_that(strikes).is_empty()
 
-    @raises(Exception)
     def test_get_strikes_since_with_generic_exception(self):
         now = datetime.datetime.utcnow()
         latest_strike_timestamp = now - datetime.timedelta(hours=1)
@@ -182,10 +180,11 @@ class StrikesBlitzortungDataProviderTest(unittest.TestCase):
         self.builder.from_data.return_value = self.builder
         self.builder.build.side_effect = Exception("foo")
 
-        list(self.provider.get_strikes_since(latest_strike_timestamp))
+        with pytest.raises(Exception):
+            list(self.provider.get_strikes_since(latest_strike_timestamp))
 
 
-class StationsBlitzortungDataProviderTest(unittest.TestCase):
+class StationsBlitzortungDataProviderTest(object):
     def setUp(self):
         self.data_provider = Mock()
         self.data_url = Mock()
@@ -210,9 +209,9 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
 
         stations = self.provider.get_stations()
         expected_args = [call('full_url', post_process=self.provider.pre_process)]
-        assert_that(self.data_provider.read_lines.call_args_list, is_(equal_to(expected_args)))
+        assert_that(self.data_provider.read_lines.call_args_list).is_equal_to(expected_args)
 
-        assert_that(stations, contains(station1, station2))
+        assert_that(stations).contains(station1, station2)
 
     def test_get_stations_with_builder_error(self):
         station_data = {'one': 1}
@@ -222,51 +221,48 @@ class StationsBlitzortungDataProviderTest(unittest.TestCase):
 
         strikes = self.provider.get_stations()
 
-        assert_that(list(strikes), is_(empty()))
+        assert_that(list(strikes)).is_empty()
 
+    class RawSignalsBlitzortungDataProviderTest(object):
+        def setUp(self):
+            self.data_provider = Mock()
+            self.data_url = Mock()
+            self.url_path_generator = Mock()
+            self.builder = Mock()
 
-class RawSignalsBlitzortungDataProviderTest(unittest.TestCase):
-    def setUp(self):
-        self.data_provider = Mock()
-        self.data_url = Mock()
-        self.url_path_generator = Mock()
-        self.builder = Mock()
+            self.provider = blitzortung.dataimport.RawSignalsBlitzortungDataProvider(
+                self.data_provider,
+                self.data_url,
+                self.url_path_generator,
+                self.builder
+            )
 
-        self.provider = blitzortung.dataimport.RawSignalsBlitzortungDataProvider(
-            self.data_provider,
-            self.data_url,
-            self.url_path_generator,
-            self.builder
-        )
+        def test_get_raw_data_since(self):
+            last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 
-    def test_get_raw_data_since(self):
-        last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+            self.data_url.build_path.side_effect = ['full_url1', 'full_url2']
+            self.url_path_generator.get_paths.return_value = ['url_path1', 'url_path2']
+            self.data_provider.read_lines.side_effect = [["line11", "line12"], ["line21", "line22"]]
+            raw11 = Mock(name='raw11')
+            raw12 = Mock(name='raw12')
+            raw21 = Mock(name='raw21')
+            raw22 = Mock(name='raw22')
+            self.builder.from_string.return_value = self.builder
+            self.builder.build.side_effect = [raw11, raw12, raw21, raw22]
 
-        self.data_url.build_path.side_effect = ['full_url1', 'full_url2']
-        self.url_path_generator.get_paths.return_value = ['url_path1', 'url_path2']
-        self.data_provider.read_lines.side_effect = [["line11", "line12"], ["line21", "line22"]]
-        raw11 = Mock(name='raw11')
-        raw12 = Mock(name='raw12')
-        raw21 = Mock(name='raw21')
-        raw22 = Mock(name='raw22')
-        self.builder.from_string.return_value = self.builder
-        self.builder.build.side_effect = [raw11, raw12, raw21, raw22]
+            region_id = 5
+            station_id = 123
+            raw_signals = list(self.provider.get_raw_data_since(last_data, region_id, station_id))
 
-        region_id = 5
-        station_id = 123
-        raw_signals = list(self.provider.get_raw_data_since(last_data, region_id, station_id))
+            expected_args = [call(last_data)]
+            assert_that(self.url_path_generator.get_paths.call_args_list).is_equal_to(expected_args)
 
-        expected_args = [call(last_data)]
-        assert_that(self.url_path_generator.get_paths.call_args_list, is_(equal_to(expected_args)))
+            expected_args = [
+                call('{}/url_path1'.format(station_id), region=region_id, host_name='signals'),
+                call('{}/url_path2'.format(station_id), region=region_id, host_name='signals')]
+            assert_that(self.data_url.build_path.call_args_list).is_equal_to(expected_args)
 
-        expected_args = [
-            call('{}/url_path1'.format(station_id), region=region_id, host_name='signals'),
-            call('{}/url_path2'.format(station_id), region=region_id, host_name='signals')]
-        assert_that(self.data_url.build_path.call_args_list, is_(equal_to(expected_args)))
+            expected_args = [call('full_url1'), call('full_url2')]
+            assert_that(self.data_provider.read_lines.call_args_list).is_equal_to(expected_args)
 
-        expected_args = [call('full_url1'), call('full_url2')]
-        assert_that(self.data_provider.read_lines.call_args_list, is_(equal_to(expected_args)))
-
-        assert_that(raw_signals, contains(raw11, raw12, raw21, raw22))
-
-
+            assert_that(raw_signals).contains(raw11, raw12, raw21, raw22)

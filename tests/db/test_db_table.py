@@ -18,15 +18,13 @@
 
 """
 
-import unittest
 import datetime
 
-import pytz
-from mock import Mock, call
-from hamcrest import assert_that, is_, equal_to, none
 import psycopg2
+import pytz
+from assertpy import assert_that
+from mock import Mock, call
 
-import blitzortung
 import blitzortung.db.table
 
 
@@ -44,8 +42,8 @@ class BaseForTest(blitzortung.db.table.Base):
         return args
 
 
-class BaseTest(unittest.TestCase):
-    def setUp(self):
+class BaseTest(object):
+    def setup_method(self):
         self.connection_pool = Mock()
         self.connection = self.connection_pool.getconn()
         self.cursor = self.connection.cursor()
@@ -72,37 +70,37 @@ class BaseTest(unittest.TestCase):
 
     def test_is_connected(self):
         self.connection.closed = True
-        assert_that(self.base.is_connected(), is_(False))
+        assert_that(self.base.is_connected()).is_equal_to(False)
 
         self.connection.closed = False
-        assert_that(self.base.is_connected())
+        assert_that(self.base.is_connected()).is_true()
 
         self.base.conn = None
-        assert_that(self.base.is_connected(), is_(False))
+        assert_that(self.base.is_connected()).is_false()
 
     def test_full_table_name(self):
-        assert_that(self.base.full_table_name, is_(""))
-        assert_that(self.base.schema_name, is_(""))
+        assert_that(self.base.full_table_name).is_equal_to("")
+        assert_that(self.base.schema_name).is_equal_to("")
 
         self.base.table_name = "foo"
 
-        assert_that(self.base.full_table_name, is_("foo"))
+        assert_that(self.base.full_table_name).is_equal_to("foo")
 
         self.base.schema_name = "bar"
 
-        assert_that(self.base.full_table_name, is_('"bar"."foo"'))
-        assert_that(self.base.schema_name, is_("bar"))
+        assert_that(self.base.full_table_name).is_equal_to('"bar"."foo"')
+        assert_that(self.base.schema_name).is_equal_to("bar")
 
     def test_get_timezone(self):
-        assert_that(self.base.get_timezone(), is_(equal_to(pytz.UTC)))
+        assert_that(self.base.get_timezone()).is_equal_to(pytz.UTC)
 
     def test_fix_timezone(self):
-        assert_that(self.base.fix_timezone(None), is_(none()))
+        assert_that(self.base.fix_timezone(None)).is_none()
 
         time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0, tzinfo=pytz.timezone("UTC"))
 
-        assert_that(self.base.fix_timezone(time), is_(utc_time))
+        assert_that(self.base.fix_timezone(time)).is_equal_to(utc_time)
 
     def test_from_bare_utc_to_timezone(self):
         self.base.set_timezone(pytz.timezone("CET"))
@@ -110,7 +108,7 @@ class BaseTest(unittest.TestCase):
         time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
-        assert_that(self.base.from_bare_utc_to_timezone(utc_time), is_(equal_to(time)))
+        assert_that(self.base.from_bare_utc_to_timezone(utc_time)).is_equal_to(time)
 
     def test_from_timezone_to_bare_utc(self):
         self.base.set_timezone(pytz.timezone("CET"))
@@ -118,7 +116,7 @@ class BaseTest(unittest.TestCase):
         time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
-        assert_that(self.base.from_timezone_to_bare_utc(time), is_(equal_to(utc_time)))
+        assert_that(self.base.from_timezone_to_bare_utc(time)).is_equal_to(utc_time)
 
     def test_commit(self):
         self.connection.commit.assert_not_called()

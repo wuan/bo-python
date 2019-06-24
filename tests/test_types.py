@@ -18,13 +18,12 @@
 
 """
 
-import unittest
 import math
 
 import blitzortung.types
 
 
-class PointTest(unittest.TestCase):
+class PointTest(object):
     def setUp(self):
         self.point1 = blitzortung.types.Point(11, 49)
         self.point2 = blitzortung.types.Point(12, 49)

@@ -18,9 +18,10 @@
 
 """
 
-from unittest import TestCase
-from hamcrest import assert_that, is_, instance_of, is_not, same_instance, contains
 import time
+from unittest import TestCase
+
+from assertpy import assert_that
 from mock import Mock
 
 from blitzortung.cache import CacheEntry, ObjectCache
@@ -38,15 +39,15 @@ class TestCacheEntry(TestCase):
         assert_that(not self.cache_entry.is_valid(time.time()))
 
     def test_get_payload(self):
-        assert_that(self.cache_entry.get_payload(), is_(self.payload))
+        assert_that(self.cache_entry.get_payload()).is_equal_to(self.payload)
 
     def test_get_payload_increases_hit_count(self):
         self.cache_entry.get_payload()
 
-        assert_that(self.cache_entry.get_hit_count(), is_(1))
+        assert_that(self.cache_entry.get_hit_count()).is_equal_to(1)
 
     def test_get_hit_count(self):
-        assert_that(self.cache_entry.get_hit_count(), is_(0))
+        assert_that(self.cache_entry.get_hit_count()).is_equal_to(0)
 
 
 class TestObject(object):
@@ -66,25 +67,25 @@ class TestObjectCache(TestCase):
         self.cache = ObjectCache()
 
     def test_get_time_to_live_default_value(self):
-        assert_that(self.cache.get_time_to_live(), is_(30))
+        assert_that(self.cache.get_time_to_live()).is_equal_to(30)
 
     def test_get_time_to_live(self):
         self.cache = ObjectCache(ttl_seconds=60)
-        assert_that(self.cache.get_time_to_live(), is_(60))
+        assert_that(self.cache.get_time_to_live()).is_equal_to(60)
 
     def test_get(self):
         cached_object = self.cache.get(TestObject)
-        assert_that(cached_object, instance_of(TestObject))
+        assert_that(cached_object).is_instance_of(TestObject)
 
     def test_get_caches_objects(self):
         cached_object = self.cache.get(TestObject)
-        assert_that(self.cache.get(TestObject), is_(same_instance(cached_object)))
+        assert_that(self.cache.get(TestObject)).is_same_as(cached_object)
 
     def test_clear_clears_cache(self):
         cached_object = self.cache.get(TestObject)
 
         self.cache.clear()
-        assert_that(self.cache.get(TestObject), is_not(same_instance(cached_object)))
+        assert_that(self.cache.get(TestObject)).is_not_same_as(cached_object)
 
     def test_clear_resets_counters(self):
         self.cache.get(TestObject)
@@ -92,12 +93,12 @@ class TestObjectCache(TestCase):
 
         self.cache.clear()
 
-        assert_that(self.cache.get_ratio(), is_(0.0))
+        assert_that(self.cache.get_ratio()).is_equal_to(0.0)
 
     def test_get_creates_new_object_if_original_object_is_expired(self):
         self.cache = ObjectCache(ttl_seconds=-10)
         cached_object = self.cache.get(TestObject)
-        assert_that(self.cache.get(TestObject), is_not(same_instance(cached_object)))
+        assert_that(self.cache.get(TestObject)).is_not_same_as(cached_object)
 
     def test_get_different_objects_for_different_create_objects(self):
         class OtherTestObject(TestObject):
@@ -106,7 +107,7 @@ class TestObjectCache(TestCase):
         cached_object = self.cache.get(TestObject)
         other_cached_object = self.cache.get(OtherTestObject)
 
-        assert_that(cached_object, is_not(other_cached_object))
+        assert_that(cached_object).is_not_equal_to(other_cached_object)
 
     def test_get_with_arg_is_called_with_same_arg(self):
         argument1 = object()
@@ -114,14 +115,14 @@ class TestObjectCache(TestCase):
 
         cached_object = self.cache.get(TestObject, argument1, argument2)
 
-        assert_that(cached_object.get_args(), contains(argument1, argument2))
+        assert_that(cached_object.get_args()).contains(argument1, argument2)
         assert_that(not cached_object.get_kwargs())
 
     def test_get_with_arg_is_cached(self):
         argument = object()
 
         cached_object = self.cache.get(TestObject, argument)
-        assert_that(self.cache.get(TestObject, argument), is_(same_instance(cached_object)))
+        assert_that(self.cache.get(TestObject, argument)).is_same_as(cached_object)
 
     def test_get_with_kwargs_is_called_with_same_kwargs(self):
         argument1 = object()
@@ -130,20 +131,20 @@ class TestObjectCache(TestCase):
         cached_object = self.cache.get(TestObject, foo=argument1, bar=argument2)
 
         assert_that(not cached_object.get_args())
-        assert_that(cached_object.get_kwargs(), is_({'foo': argument1, 'bar': argument2}))
+        assert_that(cached_object.get_kwargs()).is_equal_to({'foo': argument1, 'bar': argument2})
 
     def test_get_with_kwargs_is_cached(self):
         argument1 = object()
         argument2 = object()
 
         cached_object = self.cache.get(TestObject, foo=argument1, bar=argument2)
-        assert_that(self.cache.get(TestObject, bar=argument2, foo=argument1), is_(same_instance(cached_object)))
+        assert_that(self.cache.get(TestObject, bar=argument2, foo=argument1)).is_same_as(cached_object)
 
     def test_get_ratio(self):
-        assert_that(self.cache.get_ratio(), is_(0.0))
+        assert_that(self.cache.get_ratio()).is_equal_to(0.0)
 
         self.cache.get(TestObject)
-        assert_that(self.cache.get_ratio(), is_(0.0))
+        assert_that(self.cache.get_ratio()).is_equal_to(0.0)
 
         self.cache.get(TestObject)
-        assert_that(self.cache.get_ratio(), is_(0.5))
+        assert_that(self.cache.get_ratio()).is_equal_to(0.5)

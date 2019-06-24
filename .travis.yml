@@ -1,20 +1,18 @@
 language: python
 
 python:
-    - 2.7
-    - 3.3
-    - 3.4
+    - "3.5"
+    - "3.6"
 
 install:
   # install deps
   - pip install -r requirements.txt
+  - pip install pytest-cov mock assertpy python-coveralls
   - pip install fastcluster
-  - pip install twisted
-  - pip install python-coveralls
   - pip list
 
 script:
-  - nosetests
+  - py.test
 
 after_success:
   - coveralls

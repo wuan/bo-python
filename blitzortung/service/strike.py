@@ -21,16 +21,16 @@
 from __future__ import print_function
 
 import time
+
 from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-from .. import db, geom
 from .general import TimingState, create_time_interval
+from .. import db, geom
 
 
 class StrikeState(TimingState):
-
     __slots__ = ['end_time']
 
     def __init__(self, statsd_client, end_time):
@@ -51,7 +51,8 @@ class StrikeQuery(object):
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
         query = self.strike_query_builder.select_query(db.table.Strike.TABLE_NAME, geom.Geometry.DefaultSrid,
-                                                       time_interval=time_interval, order=order, id_interval=id_interval)
+                                                       time_interval=time_interval, order=order,
+                                                       id_interval=id_interval)
 
         strikes_result = connection.runQuery(str(query), query.get_parameters())
         strikes_result.addCallback(self.strike_build_results, state=state)

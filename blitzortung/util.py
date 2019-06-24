@@ -18,10 +18,10 @@
 
 """
 
-import sys
-
 import datetime
+import sys
 import time
+
 import pytz
 
 from blitzortung.data import Timestamp
@@ -72,7 +72,8 @@ def round_time(time_value, duration):
     """
     duration_seconds = total_seconds(duration)
     seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
-    time_value.nanosecond = 0
+    if isinstance(time_value, Timestamp):
+        time_value.nanosecond = 0
     return time_value.replace(
         hour=seconds // 3600,
         minute=seconds // 60 % 60,
@@ -91,7 +92,6 @@ def time_intervals(start_time, duration, end_time=None):
     if not end_time:
         end_time = datetime.datetime.utcnow()
         end_time = end_time.replace(tzinfo=pytz.UTC)
-        end_time = Timestamp(end_time)
     end_time = round_time(end_time, duration)
 
     while current_time <= end_time:
@@ -101,5 +101,6 @@ def time_intervals(start_time, duration, end_time=None):
 
 def force_range(lower_limit, value, upper_limit):
     return lower_limit if value < lower_limit else upper_limit if value > upper_limit else value
+
 
 next_element = (lambda iterator: iterator.next()) if sys.version < '3' else (lambda iterator: next(iterator))

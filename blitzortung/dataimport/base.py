@@ -18,11 +18,10 @@
 
 """
 
-from abc import abstractmethod
-
-import os
-import logging
 import datetime
+import logging
+import os
+from abc import abstractmethod
 
 try:
     from html.parser import HTMLParser
@@ -60,8 +59,8 @@ class HttpFileTransport(FileTransport):
     logger = logging.getLogger(__name__)
     html_parser = HTMLParser()
 
-    @inject(configuration=config.Config)
-    def __init__(self, configuration, session=None):
+    @inject
+    def __init__(self, configuration: config.Config, session=None):
         self.config = configuration
         self.session = session if session else Session()
 
