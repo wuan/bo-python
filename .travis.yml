@@ -12,7 +12,7 @@ install:
   - pip list
 
 script:
-  - py.test
+  - py.test --cov-report term-missing --cov-config .coveragerc --cov=blitzortung
 
 after_success:
   - coveralls
