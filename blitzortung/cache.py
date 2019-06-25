@@ -51,7 +51,8 @@ class ObjectCache(object):
     def get(self, cached_object_creator, *args, **kwargs):
         self.total_count += 1
 
-        cache_key = (cached_object_creator,) + args + (ObjectCache.__KWA_MARK,) + tuple(sorted(kwargs.items()))
+        cache_key = (cached_object_creator,) + args + (ObjectCache.__KWA_MARK,) \
+                    + tuple(sorted(kwargs.items()))
         current_time = int(time.time())
 
         if cache_key in self.cache:

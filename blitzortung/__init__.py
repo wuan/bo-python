@@ -23,6 +23,12 @@ blitzortung python modules
 """
 import logging
 
+import injector
+
+from . import config
+from . import db
+from . import geom
+
 __version__ = '1.6.0'
 
 
@@ -46,11 +52,6 @@ class Error(Exception):
 #   Public interface and exports.
 # -----------------------------------------------------------------------------
 
-import injector
-
-from . import config
-from . import geom
-from . import db
 
 INJECTOR = injector.Injector(
     [config.ConfigModule(), db.DbModule()])
