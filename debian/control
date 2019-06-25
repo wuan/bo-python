@@ -1,14 +1,14 @@
-Source: python-blitzortung
+Source: python3-blitzortung
 Priority: extra
 Maintainer: Andreas Würl <blitzortung@tryb.de>
-Build-Depends: debhelper (>= 7.0.50~), python (>=2.6)
+Build-Depends: debhelper (>= 7.0.50~), dh-python, python3 (>=3.5), python3-pytest-cov, python3-mock, python3-pyproj, python3-tz, python3-shapely, python3-twisted, python3-psycopg2, python3-lockfile, python3-statsd
 Standards-Version: 3.8.4
 Section: python
 Homepage: http://launchpad.net/blitzortung-python
 
-Package: python-blitzortung
+Package: python3-blitzortung
 Section: python
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-pyproj, python3-tz, python3-shapely, python3-twisted, python3-psycopg2, python3-lockfile, python3-statsd
 Description: blitzortung.org python modules
  <insert long description, indented with spaces>

@@ -1,3 +1,9 @@
+python3-blitzortung (1.7.0) unstable; urgency=low
+
+  * update to Python 3
+
+ -- Andreas Wuerl <blitzortung@tryb.de>  Mon, 24 Jun 2019 21:57:32 +0200
+
 python-blitzortung (1.6.0) unstable; urgency=low
 
   * remove pandas dependency
