@@ -7,13 +7,13 @@ python:
 install:
   # install deps
   - pip install -r requirements.txt
-  - pip install pytest-cov pytest-pep8 mock assertpy python-coveralls
+  - pip install pytest-cov mock assertpy python-coveralls
   - pip install fastcluster
   - pip list
 
 script:
   - py.test --cov-report term-missing --cov-config .coveragerc --cov=blitzortung
-  - py.test --pep8 blitzortung -v --cov blitzortung --cov-report term-missing
+  - py.test -v --cov blitzortung --cov-report term-missing
 
 after_success:
   - coveralls
