@@ -1,7 +1,7 @@
 cython>=0.26.1
 injector>=0.8.0
 lockfile==0.12.2
-requests==2.18.4
+requests==2.20.0
 pytz==2018.3
 psycopg2==2.7.4
 pyproj>=1.9.5.1
