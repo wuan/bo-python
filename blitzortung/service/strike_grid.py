@@ -57,7 +57,7 @@ class StrikeGridQuery(object):
 
     @staticmethod
     def build_strikes_grid_result(results, state):
-        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
+        state.add_info_text("grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('strikes_grid.query')
 
         reference_time = time.time()
@@ -123,7 +123,7 @@ class GlobalStrikeGridQuery(object):
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
-        query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
+        query = self.strike_query_builder.global_grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
                                                      time_interval=time_interval, count_threshold=count_threshold)
 
         grid_query = connection.runQuery(str(query), query.get_parameters())
@@ -133,7 +133,7 @@ class GlobalStrikeGridQuery(object):
 
     @staticmethod
     def build_strikes_grid_result(results, state):
-        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
+        state.add_info_text("global grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('global_strikes_grid.query')
 
         reference_time = time.time()

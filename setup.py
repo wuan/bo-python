@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-import blitzortung 
+import blitzortung
 
 setup(
     name='blitzortung',

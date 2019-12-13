@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2020 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -49,9 +49,13 @@ class Error(Exception):
 
 import injector
 
+from . import builder
 from . import config
+from . import dataimport
 from . import db
 from . import geom
+from . import util
+from . import types
 
 INJECTOR = injector.Injector(
     [config.ConfigModule(), db.DbModule()])

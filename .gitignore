@@ -4,4 +4,7 @@ nosetests.xml
 *.pyc
 *.c
 /build
+/coverage.xml
 /coverage_report
+/dist
+.DS_Store
