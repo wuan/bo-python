@@ -111,3 +111,74 @@ class StrikeGridQuery(object):
         print("".join(state.info_text))
 
         return response
+
+
+class GlobalStrikeGridQuery(object):
+    @inject
+    def __init__(self, strike_query_builder: db.query_builder.Strike):
+        self.strike_query_builder = strike_query_builder
+
+    def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
+        time_interval = create_time_interval(minute_length, minute_offset)
+
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+
+        query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
+                                                     time_interval=time_interval, count_threshold=count_threshold)
+
+        grid_query = connection.runQuery(str(query), query.get_parameters())
+        grid_query.addCallback(self.build_strikes_grid_result, state=state)
+        grid_query.addErrback(log.err)
+        return grid_query, state
+
+    @staticmethod
+    def build_strikes_grid_result(results, state):
+        state.add_info_text("query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
+        state.log_timing('global_strikes_grid.query')
+
+        reference_time = time.time()
+        end_time = state.time_interval.end
+        global_strikes_grid_result = tuple(
+            (
+                result['rx'],
+                -result['ry'],
+                result['strike_count'],
+                -(end_time - result['timestamp']).seconds
+            ) for result in results
+        )
+        state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
+        state.log_timing('globaL_strikes_grid.build_result', reference_time)
+
+        return global_strikes_grid_result
+
+    def combine_result(self, strike_grid_result, histogram_result, state):
+        combined_result = gatherResults([strike_grid_result, histogram_result], consumeErrors=True)
+        combined_result.addCallback(self.build_grid_response, state=state)
+        combined_result.addErrback(log.err)
+
+        return combined_result
+
+    @staticmethod
+    def build_grid_response(results, state):
+        state.log_timing('global_strikes_grid.results')
+
+        grid_data = results[0]
+        histogram_data = results[1]
+
+        state.log_gauge('global_strikes_grid.size', len(grid_data))
+        state.log_incr('global_strikes_grid')
+
+        grid_parameters = state.grid_parameters
+        end_time = state.time_interval.end
+        duration = state.time_interval.duration
+        response = {'r': grid_data,
+                    'xd': round(grid_parameters.x_div, 6),
+                    'yd': round(grid_parameters.y_div, 6),
+                    't': end_time.strftime("%Y%m%dT%H:%M:%S"),
+                    'dt': duration.seconds,
+                    'h': histogram_data}
+        state.add_info_text(", total %.03fs" % state.get_seconds())
+        state.log_timing('global_strikes_grid.total')
+        print("".join(state.info_text))
+
+        return response

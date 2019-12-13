@@ -26,7 +26,9 @@ import shapely.wkb
 try:
     import psycopg2
 except ImportError:
-    psycopg2 = None
+    from . import create_psycopg2_dummy
+
+    psycopg2 = create_psycopg2_dummy()
 
 
 class BaseInterval(object):
@@ -274,6 +276,34 @@ class GridQuery(SelectQuery):
                                envelope_srid=raster.srid)
         else:
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
+
+        self.add_group_by('rx')
+        self.add_group_by('ry')
+
+        if count_threshold > 0:
+            self.add_group_having("count(*) > %(count_threshold)s", count_threshold=count_threshold)
+
+
+class GlobalGridQuery(SelectQuery):
+    __slots__ = ['raster']
+
+    def __init__(self, raster, count_threshold=0):
+        super(GlobalGridQuery, self).__init__()
+
+        self.raster = raster
+
+        self.add_parameters(
+            srid=raster.srid,
+            xdiv=raster.x_div,
+            ydiv=raster.y_div,
+        )
+
+        self.set_columns(
+            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s))) / %(xdiv)s)::integer AS rx',
+            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s))) / %(ydiv)s)::integer AS ry',
+            'count(*) AS strike_count',
+            'max("timestamp") as "timestamp"'
+        )
 
         self.add_group_by('rx')
         self.add_group_by('ry')

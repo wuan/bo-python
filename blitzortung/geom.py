@@ -170,7 +170,6 @@ class GridFactory(object):
 
         return self.grid_data[base_length]
 
-
 class GridElement(object):
     """
     raster data entry

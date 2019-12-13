@@ -55,18 +55,14 @@ class Base(object):
     createuser -i -D -R -S -W -E -P blitzortung
     createdb -E utf8 -O blitzortung blitzortung
     createlang plpgsql blitzortung
-    psql -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql -d blitzortung
-    psql -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql -d blitzortung
-    (< pg 9.0)
-    psql -f /usr/share/postgresql/8.4/contrib/btree_gist.sql blitzortung
-
+    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/spatial_ref_sys.sql -d blitzortung
 
     psql blitzortung
 
     GRANT SELECT ON spatial_ref_sys TO blitzortung;
     GRANT SELECT ON geometry_columns TO blitzortung;
     GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
-    (>= pg 9.0)
     CREATE EXTENSION "btree_gist";
 
     """

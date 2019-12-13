@@ -33,6 +33,12 @@ def strike_grid_query():
     return INJECTOR.get(strike_grid.StrikeGridQuery)
 
 
+def global_strike_grid_query():
+    from .. import INJECTOR
+
+    return INJECTOR.get(strike_grid.GlobalStrikeGridQuery)
+
+
 def histogram_query():
     from .. import INJECTOR
 

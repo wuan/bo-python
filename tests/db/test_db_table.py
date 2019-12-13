@@ -20,7 +20,13 @@
 
 import datetime
 
-import psycopg2
+try:
+    import psycopg2
+except ImportError as e:
+    from blitzortung.db import create_psycopg2_dummy
+
+    psycopg2 = create_psycopg2_dummy()
+
 import pytz
 from assertpy import assert_that
 from mock import Mock, call
