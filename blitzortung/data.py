@@ -119,7 +119,7 @@ class Timestamp(types.EqualityAndHash):
 
     @property
     def is_valid(self):
-        return self.datetime is not None
+        return self.datetime is not None and self.datetime.year > 1900
 
     def __ne__(self, other):
         return self.datetime != other.datetime or self.nanosecond != other.nanosecond
@@ -170,12 +170,8 @@ class Timestamp(types.EqualityAndHash):
             return Timestamp(self.datetime, self.nanosecond - other)
         return NotImplemented
 
-    @property
-    def is_valid(self):
-        return self.datetime is not None and self.datetime.year > 1900
-
-    def strftime(self, format):
-        return self.datetime.strftime(format)
+    def strftime(self, datetime_format):
+        return self.datetime.strftime(datetime_format)
 
     def replace(self, **kwargs):
         return Timestamp(self.datetime.replace(**kwargs), self.nanosecond)

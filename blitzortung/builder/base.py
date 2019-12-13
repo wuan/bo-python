@@ -37,7 +37,7 @@ class Timestamp(Base):
     def set_timestamp(self, timestamp, nanosecond=0):
         if not timestamp:
             self.timestamp = None
-        elif type(timestamp) == data.Timestamp:
+        elif isinstance(timestamp, data.Timestamp):
             self.timestamp = timestamp + nanosecond
         else:
             self.timestamp = data.Timestamp(timestamp, nanosecond=nanosecond)

@@ -25,7 +25,7 @@ except ImportError:
 
 import shapely.wkb
 
-from .query import SelectQuery, GridQuery
+from .query import SelectQuery, GridQuery, GlobalGridQuery
 
 
 class Strike(object):
@@ -47,6 +47,12 @@ class Strike(object):
     @staticmethod
     def grid_query(table_name, grid, count_threshold=0, **kwargs):
         return GridQuery(grid, count_threshold) \
+            .set_table_name(table_name) \
+            .set_default_conditions(**kwargs)
+
+    @staticmethod
+    def global_grid_query(table_name, grid, count_threshold=0, **kwargs):
+        return GlobalGridQuery(grid, count_threshold) \
             .set_table_name(table_name) \
             .set_default_conditions(**kwargs)
 

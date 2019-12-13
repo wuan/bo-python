@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2020 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -135,14 +135,16 @@ class Grid(Envelope):
 class GridFactory(object):
     WGS84 = pyproj.Proj(init='epsg:4326')
 
-    __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'grid_data']
+    __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'ref_lon', 'ref_lat', 'grid_data']
 
-    def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys):
+    def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys, ref_lon=None, ref_lat=None):
         self.min_lon = min_lon
         self.max_lon = max_lon
         self.min_lat = min_lat
         self.max_lat = max_lat
         self.coord_sys = coord_sys
+        self.ref_lon = ref_lon
+        self.ref_lat = ref_lat
 
         self.grid_data = {}
 
@@ -152,8 +154,8 @@ class GridFactory(object):
 
     def get_for(self, base_length):
         if base_length not in self.grid_data:
-            ref_lon = (self.min_lon + self.max_lon) / 2.0
-            ref_lat = (self.min_lat + self.max_lat) / 2.0
+            ref_lon = self.ref_lon if self.ref_lon else (self.min_lon + self.max_lon) / 2.0
+            ref_lat = self.ref_lat if self.ref_lat else (self.min_lat + self.max_lat) / 2.0
 
             utm_x, utm_y = pyproj.transform(self.WGS84, self.coord_sys, ref_lon, ref_lat)
             lon_d, lat_d = pyproj.transform(self.coord_sys, self.WGS84, utm_x + base_length, utm_y + base_length)
@@ -169,6 +171,7 @@ class GridFactory(object):
                                                Geometry.DefaultSrid)
 
         return self.grid_data[base_length]
+
 
 class GridElement(object):
     """
