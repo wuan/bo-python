@@ -22,7 +22,6 @@ import datetime
 import math
 
 import pytz
-import six
 
 from .geom import GridElement
 from . import types
@@ -406,7 +405,7 @@ class GridData(object):
     def __init__(self, grid, no_data=None):
         self.grid = grid
         self.no_data = no_data if no_data else GridElement(0, None)
-        self.data = [[None for i in six.moves.range(grid.x_bin_count)] for i in six.moves.range(grid.y_bin_count)]
+        self.data = [[None for i in range(grid.x_bin_count)] for i in range(grid.y_bin_count)]
 
     def set(self, x_index, y_index, value):
         try:

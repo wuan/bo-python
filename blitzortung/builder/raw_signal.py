@@ -19,12 +19,11 @@
 """
 
 import itertools
-
+import datetime
 from injector import inject
 
 from .base import Event, BuilderError
 from .. import data
-from ..util import next_element
 
 
 class ChannelWaveform(object):
@@ -47,17 +46,17 @@ class ChannelWaveform(object):
         self.waveform = None
 
     def from_field_iterator(self, field):
-        self.channel_number = int(next_element(field))
-        self.amplifier_version = next_element(field)
-        self.antenna = int(next_element(field))
-        self.gain = next_element(field)
-        self.values = int(next_element(field))
-        self.start = int(next_element(field))
-        self.bits = int(next_element(field))
-        self.shift = int(next_element(field))
-        self.conversion_gap = int(next_element(field))
-        self.conversion_time = int(next_element(field))
-        self.__extract_waveform_from_hex_string(next_element(field))
+        self.channel_number = int(next(field))
+        self.amplifier_version = next(field)
+        self.antenna = int(next(field))
+        self.gain = next(field)
+        self.values = int(next(field))
+        self.start = int(next(field))
+        self.bits = int(next(field))
+        self.shift = int(next(field))
+        self.conversion_gap = int(next(field))
+        self.conversion_time = int(next(field))
+        self.__extract_waveform_from_hex_string(next(field))
         return self
 
     def __extract_waveform_from_hex_string(self, waveform_hex_string):
@@ -130,11 +129,11 @@ class RawWaveformEvent(Event):
         if string:
             try:
                 field = iter(string.split(' '))
-                self.set_timestamp(next_element(field) + ' ' + next_element(field))
+                self.set_timestamp(next(field) + ' ' + next(field))
                 self.timestamp.datetime += datetime.timedelta(seconds=1)
-                self.set_y(float(next_element(field)))
-                self.set_x(float(next_element(field)))
-                self.set_altitude(int(next_element(field)))
+                self.set_y(float(next(field)))
+                self.set_x(float(next(field)))
+                self.set_altitude(int(next(field)))
 
                 self.channels = []
                 while True:
