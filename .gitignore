@@ -8,3 +8,8 @@ nosetests.xml
 /coverage_report
 /dist
 .DS_Store
+/blitzortung.egg-info
+/debian/.debhelper
+/debian/files
+/debian/python3-blitzortung*
+/.pybuild
