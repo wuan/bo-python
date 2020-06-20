@@ -60,7 +60,9 @@ class StrikesBlitzortungDataProvider(object):
                 except Exception as e:
                     self.logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     raise e
-                if strike.timestamp.is_valid and strike.timestamp > latest_strike:
+                is_newer = strike.timestamp > latest_strike
+                self.logger.info("'%s' > '%s' = %s".format(str*(self.timestamp), str(latest_strike), str(is_newer)))
+                if strike.timestamp.is_valid and is_newer:
                     strike_count += 1
                     yield strike
             end_time = time.time()
