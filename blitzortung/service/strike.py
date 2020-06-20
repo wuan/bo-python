@@ -25,6 +25,7 @@ from twisted.internet.defer import gatherResults
 from twisted.python import log
 
 from .general import TimingState, create_time_interval
+from ..data import Timestamp
 from .. import db, geom
 
 
@@ -44,7 +45,7 @@ class StrikeQuery(object):
 
     def create(self, id_or_offset, minute_length, minute_offset, connection, statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
-        state = StrikeState(statsd_client, time_interval.end)
+        state = StrikeState(statsd_client, Timestamp(time_interval.end))
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
