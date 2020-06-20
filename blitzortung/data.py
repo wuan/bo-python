@@ -23,8 +23,8 @@ import math
 
 import pytz
 
-from .geom import GridElement
 from . import types
+from .geom import GridElement
 
 
 class Timestamp(types.EqualityAndHash):
@@ -173,7 +173,12 @@ class Timestamp(types.EqualityAndHash):
         return self.datetime.strftime(datetime_format)
 
     def replace(self, **kwargs):
-        return Timestamp(self.datetime.replace(**kwargs), self.nanosecond)
+        if 'nanosecond' in kwargs:
+            nanosecond = kwargs['nanosecond']
+            del kwargs['nanosecond']
+        else:
+            nanosecond = self.nanosecond
+        return Timestamp(self.datetime.replace(**kwargs), nanosecond)
 
     def __repr__(self):
         return "Timestamp({}{:03d})".format(self.datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond)

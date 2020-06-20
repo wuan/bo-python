@@ -19,7 +19,6 @@
 """
 
 import datetime
-import sys
 import time
 
 import pytz
@@ -62,7 +61,7 @@ def total_seconds(time_value):
     elif isinstance(time_value, datetime.timedelta) or isinstance(time_value, Timedelta):
         return time_value.seconds + time_value.days * 24 * 3600
     else:
-        raise Exception("unhandled type " + type(time_value))
+        raise ValueError("unhandled type " + str(type(time_value)))
 
 
 def round_time(time_value, duration):
@@ -71,14 +70,18 @@ def round_time(time_value, duration):
     """
     duration_seconds = total_seconds(duration)
     seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
+
+    updated_values = {
+        'hour': seconds // 3600,
+        'minute': seconds // 60 % 60,
+        'second': seconds % 60,
+        'microsecond': 0
+    }
+
     if isinstance(time_value, Timestamp):
-        time_value.nanosecond = 0
-    return time_value.replace(
-        hour=seconds // 3600,
-        minute=seconds // 60 % 60,
-        second=seconds % 60,
-        microsecond=0
-    )
+        updated_values['nanosecond'] = 0
+
+    return time_value.replace(**updated_values)
 
 
 def time_intervals(start_time, duration, end_time=None):
@@ -100,4 +103,3 @@ def time_intervals(start_time, duration, end_time=None):
 
 def force_range(lower_limit, value, upper_limit):
     return lower_limit if value < lower_limit else upper_limit if value > upper_limit else value
-

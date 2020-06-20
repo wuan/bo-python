@@ -24,6 +24,7 @@ import pytz
 from assertpy import assert_that
 
 import blitzortung.util
+from blitzortung.data import Timestamp
 
 
 class TimeIntervalsTest(object):
@@ -79,3 +80,44 @@ class TimeIntervalsTest(object):
             blitzortung.util.round_time(start_time, self.duration),
             blitzortung.util.round_time(end_time, self.duration)
         )
+
+
+class TestRoundTime:
+
+    def test_round_time_with_datetime(self):
+        time_value = datetime.datetime(2013, 8, 20, 12, 3, 23, 123456)
+
+        result = blitzortung.util.round_time(time_value, datetime.timedelta(minutes=2))
+
+        assert_that(result.hour).is_equal_to(12)
+        assert_that(result.minute).is_equal_to(2)
+        assert_that(result.second).is_equal_to(0)
+        assert_that(result.microsecond).is_equal_to(0)
+
+    def test_round_time_with_timestamp(self):
+        time_value = datetime.datetime(2013, 8, 20, 12, 3, 23, 123456)
+
+        result = blitzortung.util.round_time(Timestamp(time_value, 789), datetime.timedelta(minutes=2))
+
+        assert_that(result.hour).is_equal_to(12)
+        assert_that(result.minute).is_equal_to(2)
+        assert_that(result.second).is_equal_to(0)
+        assert_that(result.microsecond).is_equal_to(0)
+        assert_that(result.nanosecond).is_equal_to(0)
+
+    def test_round_time_does_not_touch_datetime_argument(self):
+        time_value = datetime.datetime(2013, 8, 20, 12, 0, 23, 123456)
+
+        blitzortung.util.round_time(time_value, datetime.timedelta(minutes=1))
+
+        assert_that(time_value.second).is_equal_to(23)
+        assert_that(time_value.microsecond).is_equal_to(123456)
+
+    def test_round_time_does_not_touch_timestamp_argument(self):
+        time_value = Timestamp(datetime.datetime(2013, 8, 20, 12, 0, 23, 123456), 789)
+
+        blitzortung.util.round_time(time_value, datetime.timedelta(minutes=1))
+
+        assert_that(time_value.second).is_equal_to(23)
+        assert_that(time_value.microsecond).is_equal_to(123456)
+        assert_that(time_value.nanosecond).is_equal_to(789)
