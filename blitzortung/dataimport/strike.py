@@ -30,9 +30,10 @@ from .base import HttpFileTransport, BlitzortungDataPath, BlitzortungDataPathGen
 from .. import builder
 
 
+logger = logging.getLogger(__name__)
+
 @singleton
 class StrikesBlitzortungDataProvider(object):
-    logger = logging.getLogger(__name__)
 
     @inject
     def __init__(self, data_transport: HttpFileTransport, data_url: BlitzortungDataPath,
@@ -45,7 +46,7 @@ class StrikesBlitzortungDataProvider(object):
     def get_strikes_since(self, latest_strike=None, region=1):
         latest_strike = latest_strike if latest_strike else \
             (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
-        self.logger.debug("import strikes since %s" % latest_strike)
+        logger.debug("import strikes since %s" % latest_strike)
 
         for url_path in self.url_path_generator.get_paths(latest_strike):
             strike_count = 0
@@ -55,17 +56,15 @@ class StrikesBlitzortungDataProvider(object):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
                 except builder.BuilderError as e:
-                    self.logger.warn("%s: %s (%s)" % (e.__class__, e.args, strike_line))
+                    logger.warn("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     continue
                 except Exception as e:
-                    self.logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
+                    logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     raise e
-                is_newer = strike.timestamp > latest_strike
-                self.logger.info("'%s' > '%s' = %s".format(str*(self.timestamp), str(latest_strike), str(is_newer)))
-                if strike.timestamp.is_valid and is_newer:
+                if strike.timestamp.is_valid and strike.timestamp > latest_strike:
                     strike_count += 1
                     yield strike
             end_time = time.time()
-            self.logger.debug("imported %d strikes for region %d in %.2fs from %s",
-                              strike_count,
-                              region, end_time - start_time, url_path)
+            logger.debug("imported %d strikes for region %d in %.2fs from %s",
+                         strike_count,
+                         region, end_time - start_time, url_path)
