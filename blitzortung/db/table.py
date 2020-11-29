@@ -253,7 +253,7 @@ class Strike(Base):
 
         self.execute(sql, parameters)
 
-    def get_latest_time(self, region=1):
+    def get_latest_time(self, region=None):
         sql = 'SELECT "timestamp", nanoseconds FROM ' + self.full_table_name + \
               (' WHERE region=%(region)s' if region else '') + \
               ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
