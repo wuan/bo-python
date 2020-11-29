@@ -20,6 +20,7 @@
 
 import atexit
 
+import mock
 from injector import Module, singleton, inject, provider
 
 
@@ -30,6 +31,8 @@ def create_psycopg2_dummy():
     dummy = Dummy()
     dummy.pool = Dummy()
     dummy.pool.ThreadedConnectionPool = Dummy
+    dummy.extensions = mock.Mock()
+    dummy.extras = mock.Mock()
     return dummy
 
 

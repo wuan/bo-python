@@ -183,8 +183,7 @@ class Base(object):
             if cursor.rowcount == 1:
                 return factory_method(cursor.fetchone(), **factory_method_args)
 
-        base = self.execute(sql_statement, parameters, single_cursor_factory)
-        return base
+        return self.execute(sql_statement, parameters, single_cursor_factory)
 
     def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -256,7 +255,7 @@ class Strike(Base):
 
     def get_latest_time(self, region=1):
         sql = 'SELECT "timestamp", nanoseconds FROM ' + self.full_table_name + \
-              ' WHERE region=%(region)s' + \
+              (' WHERE region=%(region)s' if region else '') + \
               ' ORDER BY "timestamp" DESC, nanoseconds DESC LIMIT 1'
 
         def prepare_result(result):
