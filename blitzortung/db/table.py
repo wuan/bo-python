@@ -56,6 +56,7 @@ class Base(object):
     createdb -E utf8 -O blitzortung blitzortung
     createlang plpgsql blitzortung
     psql -f /usr/share/postgresql/10/contrib/postgis-2.4/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/12/contrib/postgis-3.0/postgis.sql -d blitzortung
     psql -f /usr/share/postgresql/10/contrib/postgis-2.4/spatial_ref_sys.sql -d blitzortung
 
     psql blitzortung
@@ -198,6 +199,8 @@ class Strike(Base):
     strike db access class
 
     database table creation (as db user blitzortung, database blitzortung):
+
+    > psql -h localhost -U blitzortung -W blitzortung
 
     CREATE TABLE strikes (id bigserial, "timestamp" timestamptz, nanoseconds SMALLINT, geog GEOGRAPHY(Point),
         PRIMARY KEY(id));

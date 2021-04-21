@@ -91,7 +91,7 @@ class StrikeGridQuery(object):
         grid_data = results[0]
         histogram_data = results[1]
 
-        state.log_gauge('strikes_grid.size', len(grid_data))
+        state.log_gauge('strikes_grid.size', len(grid_data) if grid_data else 0)
         state.log_incr('strikes_grid')
 
         grid_parameters = state.grid_parameters
