@@ -43,40 +43,12 @@ except ImportError as e:
 from abc import ABCMeta, abstractmethod
 
 
-class Base(object):
-    """
-    abstract base class for database access objects
-
-    creation of database
-
-    as user postgres:
-
-    createuser -i -D -R -S -W -E -P blitzortung
-    createdb -E utf8 -O blitzortung blitzortung
-    createlang plpgsql blitzortung
-    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/postgis.sql -d blitzortung
-    psql -f /usr/share/postgresql/12/contrib/postgis-3.0/postgis.sql -d blitzortung
-    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/spatial_ref_sys.sql -d blitzortung
-
-    psql blitzortung
-
-    GRANT SELECT ON spatial_ref_sys TO blitzortung;
-    GRANT SELECT ON geometry_columns TO blitzortung;
-    GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
-    CREATE EXTENSION "btree_gist";
-
-    """
-    __metaclass__ = ABCMeta
-
-    DefaultTimezone = datetime.timezone.utc
+class DbWrapper:
 
     def __init__(self, db_connection_pool):
-
-        self.logger = logging.getLogger(get_logger_name(self.__class__))
         self.db_connection_pool = db_connection_pool
 
-        self.schema_name = ""
-        self.table_name = ""
+        self.logger = logging.getLogger(get_logger_name(self.__class__))
 
         while True:
             self.conn = self.db_connection_pool.getconn()
@@ -91,10 +63,6 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.conn)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
-
-        self.srid = geom.Geometry.DefaultSrid
-        self.tz = None
-        self.set_timezone(Base.DefaultTimezone)
 
         cur = None
         try:
@@ -124,36 +92,9 @@ class Base(object):
         else:
             return False
 
-    @property
-    def full_table_name(self):
-        if self.schema_name:
-            return '"' + self.schema_name + '"."' + self.table_name + '"'
-        else:
-            return self.table_name
-
-    def get_srid(self):
-        return self.srid
-
-    def set_srid(self, srid):
-        self.srid = srid
-
-    def get_timezone(self):
-        return self.tz
-
     def set_timezone(self, tz):
-        self.tz = tz
         with self.conn.cursor() as cur:
-            cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
-
-    def fix_timezone(self, timestamp):
-        return timestamp.astimezone(self.tz) if timestamp else None
-
-    def from_bare_utc_to_timezone(self, utc_time):
-        return utc_time.replace(tzinfo=datetime.timezone.utc).astimezone(self.tz)
-
-    @staticmethod
-    def from_timezone_to_bare_utc(time_with_tz):
-        return time_with_tz.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            cur.execute('SET TIME ZONE \'%s\'' % str(tz))
 
     def commit(self):
         """ commit pending database transaction """
@@ -162,14 +103,6 @@ class Base(object):
     def rollback(self):
         """ rollback pending database transaction """
         self.conn.rollback()
-
-    @abstractmethod
-    def insert(self, *args):
-        pass
-
-    @abstractmethod
-    def select(self, **kwargs):
-        pass
 
     def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -191,6 +124,102 @@ class Base(object):
             if factory_method:
                 for value in cursor:
                     yield factory_method(value, **factory_method_args)
+
+
+class Base:
+    """
+    abstract base class for database access objects
+
+    creation of database
+
+    as user postgres:
+
+    createuser -i -D -R -S -W -E -P blitzortung
+    createdb -E utf8 -O blitzortung blitzortung
+    createlang plpgsql blitzortung
+    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/12/contrib/postgis-3.0/postgis.sql -d blitzortung
+    psql -f /usr/share/postgresql/10/contrib/postgis-2.4/spatial_ref_sys.sql -d blitzortung
+    psql -f /usr/share/postgresql/12/contrib/postgis-3.0/spatial_ref_sys.sql -d blitzortung
+
+    psql blitzortung
+
+    GRANT SELECT ON spatial_ref_sys TO blitzortung;
+    GRANT SELECT ON geometry_columns TO blitzortung;
+    GRANT INSERT, DELETE ON geometry_columns TO blitzortung;
+    CREATE EXTENSION "btree_gist";
+
+    """
+    __metaclass__ = ABCMeta
+
+    DefaultTimezone = datetime.timezone.utc
+
+    def __init__(self, db_wrapper: DbWrapper):
+        self.db_wrapper = db_wrapper
+
+        self.logger = logging.getLogger(get_logger_name(self.__class__))
+
+        self.schema_name = ""
+        self.table_name = ""
+
+        self.srid = geom.Geometry.DefaultSrid
+        self.tz = None
+        self.set_timezone(Base.DefaultTimezone)
+
+    @property
+    def full_table_name(self):
+        if self.schema_name:
+            return '"' + self.schema_name + '"."' + self.table_name + '"'
+        else:
+            return self.table_name
+
+    def get_srid(self):
+        return self.srid
+
+    def set_srid(self, srid):
+        self.srid = srid
+
+    def get_timezone(self):
+        return self.tz
+
+    def set_timezone(self, tz):
+        self.tz = tz
+        self.db_wrapper.set_timezone(tz)
+
+    def fix_timezone(self, timestamp):
+        return timestamp.astimezone(self.tz) if timestamp else None
+
+    def from_bare_utc_to_timezone(self, utc_time):
+        return utc_time.replace(tzinfo=datetime.timezone.utc).astimezone(self.tz)
+
+    @staticmethod
+    def from_timezone_to_bare_utc(time_with_tz):
+        return time_with_tz.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+
+    def commit(self):
+        """ commit pending database transaction """
+        self.db_wrapper.commit()
+
+    def rollback(self):
+        """ rollback pending database transaction """
+        self.db_wrapper.rollback()
+
+    @abstractmethod
+    def insert(self, *args):
+        pass
+
+    @abstractmethod
+    def select(self, **kwargs):
+        pass
+
+    def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        return self.db_wrapper.execute(sql_statement, parameters, factory_method, **factory_method_args)
+
+    def execute_single(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        return self.db_wrapper.execute_single(sql_statement, parameters, factory_method, **factory_method_args)
+
+    def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        return self.db_wrapper.execute_many(sql_statement, parameters, factory_method, **factory_method_args)
 
 
 class Strike(Base):

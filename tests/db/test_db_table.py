@@ -24,12 +24,16 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
+from blitzortung import builder
+
 try:
     import psycopg2
 except ImportError as e:
     from blitzortung.db import create_psycopg2_dummy
 
     psycopg2 = create_psycopg2_dummy()
+
+from blitzortung.db import query_builder, mapper
 
 from assertpy import assert_that
 from mock import Mock, call
@@ -140,3 +144,36 @@ class BaseTest(object):
         self.base.rollback()
 
         self.connection.rollback.assert_called_once_with()
+
+
+class StrikeForTest(blitzortung.db.table.Strike):
+    def __init__(self, db_connection_pool):
+        super().__init__(db_connection_pool, query_builder.Strike(), mapper.Strike(builder.Strike()))
+
+    def create_object_instance(self, result):
+        return result
+
+    def insert(self, *args):
+        return args
+
+    def select(self, *args):
+        return args
+
+
+class TestStrike:
+    def setup_method(self):
+        self.connection_pool = Mock()
+        self.connection = self.connection_pool.getconn()
+        self.cursor = self.connection.cursor()
+
+        psycopg2.extensions = Mock()
+
+        self.cursor.__enter__ = Mock(return_value=self.cursor)
+        self.cursor.__exit__ = Mock(return_value=False)
+
+        self.base = StrikeForTest(self.connection_pool)
+
+    def test_latest_time(self):
+        result = self.base.get_latest_time(2)
+
+        assert_that(result).is_equal_to("asdf")
