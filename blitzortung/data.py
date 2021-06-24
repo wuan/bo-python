@@ -20,6 +20,7 @@
 
 import datetime
 import math
+from typing import Union, Optional
 
 import pytz
 
@@ -33,7 +34,10 @@ class Timestamp(types.EqualityAndHash):
 
     __slots__ = ['datetime', 'nanosecond']
 
-    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
+    def __init__(self,
+                 date_time: Union[datetime.datetime, str, int, None] = datetime.datetime.utcnow().replace(
+                     tzinfo=pytz.UTC),
+                 nanosecond: int = 0):
         if type(date_time) == str:
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
@@ -50,7 +54,7 @@ class Timestamp(types.EqualityAndHash):
         self.nanosecond = nanosecond
 
     @staticmethod
-    def from_timestamp(timestamp_string):
+    def from_timestamp(timestamp_string: str) -> (datetime.datetime, int):
         try:
             if len(timestamp_string) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
                 divider_index = Timestamp.timestamp_string_microseconds_length
@@ -67,7 +71,7 @@ class Timestamp(types.EqualityAndHash):
             return None, 0
 
     @staticmethod
-    def from_nanoseconds(total_nanoseconds):
+    def from_nanoseconds(total_nanoseconds: int) -> (datetime.datetime, int):
         total_microseconds = total_nanoseconds // 1000
         residual_nanoseconds = total_nanoseconds % 1000
         total_seconds = total_microseconds // 1000000
@@ -78,27 +82,27 @@ class Timestamp(types.EqualityAndHash):
                residual_nanoseconds
 
     @property
-    def year(self):
+    def year(self) -> int:
         return self.datetime.year
 
     @property
-    def month(self):
+    def month(self) -> int:
         return self.datetime.month
 
     @property
-    def day(self):
+    def day(self) -> int:
         return self.datetime.day
 
     @property
-    def hour(self):
+    def hour(self) -> int:
         return self.datetime.hour
 
     @property
-    def minute(self):
+    def minute(self) -> int:
         return self.datetime.minute
 
     @property
-    def second(self):
+    def second(self) -> int:
         return self.datetime.second
 
     @property
@@ -106,18 +110,18 @@ class Timestamp(types.EqualityAndHash):
         return self.datetime.microsecond
 
     @property
-    def tzinfo(self):
+    def tzinfo(self) -> Optional[str]:
         return self.datetime.tzinfo
 
     epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.UTC)
 
     @property
-    def value(self):
+    def value(self) -> int:
         total_microseconds = int((self.datetime - self.epoch).total_seconds() * 1000000)
         return (total_microseconds * 1000 + self.nanosecond) if self.datetime is not None else -1
 
     @property
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return self.datetime is not None and self.datetime.year > 1900
 
     def __ne__(self, other):
@@ -188,6 +192,8 @@ NaT = Timestamp(None)
 
 
 class Timedelta(types.EqualityAndHash):
+    __slots__ = ["timedelta", "nanodelta"]
+
     def __init__(self, timedelta=datetime.timedelta(), nanodelta=0):
         if nanodelta < 0 or nanodelta > 999:
             microdelta = nanodelta // 1000
