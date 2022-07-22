@@ -36,8 +36,8 @@ class ObjectMapper(object):
         if timestamp is not None:
             target_timezone = target_timezone if target_timezone is not None else datetime.timezone.utc
             timestamp = timestamp.astimezone(target_timezone)
-#            if target_timezone != datetime.timezone.utc:
-#                timestamp = target_timezone.enfold(timestamp)
+        #            if target_timezone != datetime.timezone.utc:
+        #                timestamp = target_timezone.enfold(timestamp)
         return timestamp
 
 

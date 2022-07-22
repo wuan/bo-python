@@ -228,7 +228,7 @@ class Strike(Base):
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, query_builder_: query_builder.Strike,
                  strike_mapper: mapper.Strike):
-        super(Strike, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.query_builder = query_builder_
         self.strike_mapper = strike_mapper
@@ -334,7 +334,7 @@ class Station(Base):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, station_mapper: mapper.Station):
-        super(Station, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'stations'
         self.station_mapper = station_mapper
@@ -391,7 +391,7 @@ class StationOffline(Base):
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool,
                  station_offline_mapper: mapper.StationOffline):
-        super(StationOffline, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'stations_offline'
         self.station_offline_mapper = station_offline_mapper
@@ -437,7 +437,7 @@ class Location(Base):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
-        super(Location, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
         self.schema_name = 'geo'
         self.table_name = 'geonames'
         self.center = None
@@ -584,7 +584,7 @@ class ServiceLogTotal(ServiceLogBase):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
-        super(ServiceLogTotal, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'servicelog_total'
 
@@ -610,7 +610,7 @@ class ServiceLogCountry(ServiceLogBase):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
-        super(ServiceLogCountry, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'servicelog_country'
 
@@ -637,7 +637,7 @@ class ServiceLogVersion(ServiceLogBase):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
-        super(ServiceLogVersion, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'servicelog_version'
 
@@ -664,7 +664,7 @@ class ServiceLogParameters(ServiceLogBase):
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool):
-        super(ServiceLogParameters, self).__init__(db_connection_pool)
+        super().__init__(db_connection_pool)
 
         self.table_name = 'servicelog_parameters'
 

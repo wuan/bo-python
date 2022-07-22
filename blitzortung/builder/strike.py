@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class Strike(Event):
     stations_parser = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
 
     def __init__(self):
-        super(Strike, self).__init__()
+        super().__init__()
         self.id_value = -1
         self.altitude = None
         self.amplitude = None

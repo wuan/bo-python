@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ import blitzortung.types
 class GeometryForTest(blitzortung.geom.Geometry):
     def __init__(self, srid=None):
         if srid:
-            super(GeometryForTest, self).__init__(srid)
+            super().__init__(srid)
         else:
-            super(GeometryForTest, self).__init__()
+            super().__init__()
 
     def get_env(self):
         return None
@@ -93,7 +93,7 @@ class TestEnvelope(TestCase):
 
     def test_get_env(self):
         expected_env = shapely.geometry.LinearRing([(-5, -3), (-5, 2), (4, 2), (4, -3)])
-        self.assertTrue(expected_env.almost_equals(self.envelope.env))
+        self.assertTrue(expected_env.equals(self.envelope.env))
 
     def test_str(self):
         assert_that(repr(self.envelope)).is_equal_to('Envelope(x: -5.0000..4.0000, y: -3.0000..2.0000)')
@@ -146,8 +146,8 @@ class TestGrid(TestCase):
 
 class TestGridFactory(TestCase):
     def setUp(self):
-        self.base_proj = pyproj.Proj(init='epsg:4326')
-        self.proj = pyproj.Proj(init='epsg:32633')
+        self.base_proj = pyproj.CRS('epsg:4326')
+        self.proj = pyproj.CRS('epsg:32633')
         self.grid_factory = blitzortung.geom.GridFactory(10, 11, 52, 53, self.proj)
         self.base_length = 5000
 
@@ -165,13 +165,14 @@ class TestGridFactory(TestCase):
         assert_that(grid.x_min).is_equal_to(10)
         assert_that(grid.y_min).is_equal_to(52)
         epsilon = 5e-8
+        print(grid)
         assert_that(grid.x_max).is_close_to(10.964855970781894, epsilon)
         assert_that(grid.y_max).is_close_to(52.99942586979069, epsilon)
         assert_that(x_div).is_close_to(0.06891828362727814, epsilon)
         assert_that(y_div).is_close_to(0.04759170808527102, epsilon)
 
-        x_0, y_0 = pyproj.transform(self.base_proj, self.proj, 10.5, 52.5)
-        x_1, y_1 = pyproj.transform(self.base_proj, self.proj, 10.5 + x_div, 52.5 + y_div)
+        x_0, y_0 = pyproj.Transformer.from_proj(self.base_proj, self.proj).transform(52.5, 10.5)
+        x_1, y_1 = pyproj.Transformer.from_proj(self.base_proj, self.proj).transform(52.5 + y_div, 10.5 + x_div)
 
         assert_that(x_1 - x_0).is_close_to(self.base_length, 1e-4)
         assert_that(y_1 - y_0).is_close_to(self.base_length, 1e-4)

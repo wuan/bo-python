@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ class Event(types.Point):
     __slots__ = ['__timestamp']
 
     def __init__(self, timestamp, x_coord_or_point, y_coord=None):
-        super(Event, self).__init__(x_coord_or_point, y_coord)
+        super().__init__(x_coord_or_point, y_coord)
         self.__timestamp = timestamp
 
     @property
@@ -230,7 +230,7 @@ class Event(types.Point):
         return difference
 
     def has_same_location(self, other):
-        return super(Event, self).__eq__(other)
+        return super().__eq__(other)
 
     @property
     def is_valid(self):
@@ -267,12 +267,12 @@ class Event(types.Point):
 
 class RawWaveformEvent(Event):
     def __init__(self, timestamp, x_coord, y_coord, altitude, channels):
-        super(RawWaveformEvent, self).__init__(timestamp, x_coord, y_coord)
+        super().__init__(timestamp, x_coord, y_coord)
         self.altitude = altitude
         self.channels = channels
 
     def __str__(self):
-        return super(RawWaveformEvent, self).__str__() + "%d %d chs" % (self.altitude, len(self.channels))
+        return super().__str__() + "%d %d chs" % (self.altitude, len(self.channels))
 
     def __repr__(self):
         return self.__str__()
@@ -286,7 +286,7 @@ class Station(Event):
     __slots__ = ['number', 'user', 'name', 'country', 'status', 'board']
 
     def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
-        super(Station, self).__init__(last_data, x_coord, y_coord)
+        super().__init__(last_data, x_coord, y_coord)
         self.number = number
         self.user = user
         self.name = name
@@ -313,7 +313,7 @@ class Station(Event):
 
     @property
     def is_valid(self):
-        return super(Station, self).is_valid \
+        return super().is_valid \
                and self.number > 0
 
     @property
@@ -359,7 +359,7 @@ class Strike(Event):
 
     def __init__(self, strike_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
                  stations=None):
-        super(Strike, self).__init__(timestamp, x_coord, y_coord)
+        super().__init__(timestamp, x_coord, y_coord)
         self.id = strike_id
         self.altitude = altitude
         self.amplitude = amplitude
@@ -374,7 +374,7 @@ class Strike(Event):
         return participant in self.stations
 
     def __str__(self):
-        return super(Strike, self).__str__() + " %s %.1f %d %d" % (
+        return super().__str__() + " %s %.1f %d %d" % (
             str(self.altitude) if self.altitude is not None else '-',
             self.amplitude if self.amplitude else 0.0,
             self.lateral_error,

@@ -67,7 +67,7 @@ class IdInterval(BaseInterval):
         if end and not isinstance(end, int):
             raise ValueError("end should be an integer value")
 
-        super(IdInterval, self).__init__(start, end)
+        super().__init__(start, end)
 
 
 class TimeInterval(BaseInterval):
@@ -83,7 +83,7 @@ class TimeInterval(BaseInterval):
         if end and not isinstance(end, datetime.datetime):
             raise ValueError("end should be a datetime value")
 
-        super(TimeInterval, self).__init__(start, end)
+        super().__init__(start, end)
 
     @property
     def duration(self):
@@ -216,7 +216,7 @@ class SelectQuery(Query):
     __slots__ = ['table_name', 'columns']
 
     def __init__(self):
-        super(SelectQuery, self).__init__()
+        super().__init__()
         self.table_name = ""
         self.columns = []
 
@@ -240,7 +240,7 @@ class SelectQuery(Query):
 
         sql += 'FROM ' + self.table_name + ' '
 
-        sql += super(SelectQuery, self).__str__()
+        sql += super().__str__()
 
         return sql.strip()
 
@@ -249,7 +249,7 @@ class GridQuery(SelectQuery):
     __slots__ = ['raster']
 
     def __init__(self, raster, count_threshold=0):
-        super(GridQuery, self).__init__()
+        super().__init__()
 
         self.raster = raster
 
@@ -288,7 +288,7 @@ class GlobalGridQuery(SelectQuery):
     __slots__ = ['raster']
 
     def __init__(self, raster, count_threshold=0):
-        super(GlobalGridQuery, self).__init__()
+        super().__init__()
 
         self.raster = raster
 

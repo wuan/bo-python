@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2020 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ class Geometry(object):
 
     __metaclass__ = ABCMeta
 
-    __slots__ = ['srid']
+    __slots__ = ('srid',)
 
     DefaultSrid = 4326
 
@@ -56,10 +56,10 @@ class Envelope(Geometry):
     definition of a coordinate envelope
     """
 
-    __slots__ = ['x_min', 'x_max', 'y_min', 'y_max']
+    __slots__ = ('x_min', 'x_max', 'y_min', 'y_max')
 
     def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
-        super(Envelope, self).__init__(srid)
+        super().__init__(srid)
         self.x_min = x_min
         self.x_max = x_max
         self.y_min = y_min
@@ -74,10 +74,8 @@ class Envelope(Geometry):
         return abs(self.x_max - self.x_min)
 
     def contains(self, point):
-        return (point.x >= self.x_min) and \
-               (point.x <= self.x_max) and \
-               (point.y >= self.y_min) and \
-               (point.y <= self.y_max)
+        return (self.x_min <= point.x <= self.x_max) and \
+               (self.y_min <= point.y <= self.y_max)
 
     @property
     def env(self):
@@ -96,7 +94,7 @@ class Grid(Envelope):
     __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count']
 
     def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid):
-        super(Grid, self).__init__(x_min, x_max, y_min, y_max, srid)
+        super().__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
         self.__x_bin_count = None
@@ -133,7 +131,7 @@ class Grid(Envelope):
 
 
 class GridFactory(object):
-    WGS84 = pyproj.Proj(init='epsg:4326')
+    WGS84 = pyproj.CRS(f"epsg:{Geometry.DefaultSrid}")
 
     __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'ref_lon', 'ref_lat', 'grid_data']
 
@@ -157,8 +155,10 @@ class GridFactory(object):
             ref_lon = self.ref_lon if self.ref_lon else (self.min_lon + self.max_lon) / 2.0
             ref_lat = self.ref_lat if self.ref_lat else (self.min_lat + self.max_lat) / 2.0
 
-            utm_x, utm_y = pyproj.transform(self.WGS84, self.coord_sys, ref_lon, ref_lat)
-            lon_d, lat_d = pyproj.transform(self.coord_sys, self.WGS84, utm_x + base_length, utm_y + base_length)
+            utm_x, utm_y = pyproj.Transformer.from_crs(self.WGS84, self.coord_sys) \
+                .transform(ref_lat, ref_lon)
+            lat_d, lon_d = pyproj.Transformer.from_crs(self.coord_sys, self.WGS84) \
+                .transform(utm_x + base_length, utm_y + base_length)
 
             delta_lon = lon_d - ref_lon
             delta_lat = lat_d - ref_lat

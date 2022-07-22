@@ -38,7 +38,7 @@ class EqualityAndHash(object):
         return hash(tuple(sorted(self.__dict__.items())))
 
 
-class Point(object):
+class Point:
     """
     Base class for Point like objects
     """
@@ -47,7 +47,7 @@ class Point(object):
 
     __geod = pyproj.Geod(ellps='WGS84', units='m')
 
-    __slots__ = ['x', 'y']
+    __slots__ = ('x', 'y')
 
     def __init__(self, x_coord_or_point, y_coord=None):
         (self.x, self.y) = self.__get_point_coordinates(x_coord_or_point, y_coord)

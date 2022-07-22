@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ class BuilderError(Error):
     pass
 
 
-class Base(object):
+class Base:
     pass
 
 
 class Timestamp(Base):
     def __init__(self):
-        super(Timestamp, self).__init__()
+        super().__init__()
         self.timestamp = None
 
     def set_timestamp(self, timestamp, nanosecond=0):
@@ -49,7 +49,7 @@ class Timestamp(Base):
 
 class Event(Timestamp):
     def __init__(self):
-        super(Event, self).__init__()
+        super().__init__()
         self.x_coord = 0
         self.y_coord = 0
 

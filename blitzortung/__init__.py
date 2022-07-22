@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2020 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ blitzortung python modules
 """
 import logging
 
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 
 # -----------------------------------------------------------------------------

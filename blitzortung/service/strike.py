@@ -33,7 +33,7 @@ class StrikeState(TimingState):
     __slots__ = ['end_time']
 
     def __init__(self, statsd_client, end_time):
-        super(StrikeState, self).__init__("strikes", statsd_client)
+        super().__init__("strikes", statsd_client)
         self.end_time = end_time
 
 

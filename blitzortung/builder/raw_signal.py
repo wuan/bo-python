@@ -95,7 +95,7 @@ class RawWaveformEvent(Event):
 
     @inject
     def __init__(self, channel_builder: ChannelWaveform):
-        super(RawWaveformEvent, self).__init__()
+        super().__init__()
         self.altitude = 0
         self.channels = []
 
