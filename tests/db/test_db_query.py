@@ -247,5 +247,6 @@ class GridQueryTest(TestCase):
         assert_that(parameters['ydiv']).is_equal_to(1)
         assert_that(parameters['srid']).is_equal_to(4326)
         assert_that(parameters['envelope_srid']).is_equal_to(4326)
-        envelope = shapely.wkb.loads(parameters['envelope'].adapted)
+        wkb = parameters['envelope'].adapted
+        envelope = shapely.wkb.loads(wkb)
         assert_that(envelope.bounds).is_equal_to((-10, 15, 20, 35))

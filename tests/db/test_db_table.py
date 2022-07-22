@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@
 """
 
 import datetime
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 try:
     import psycopg2
@@ -27,7 +31,6 @@ except ImportError as e:
 
     psycopg2 = create_psycopg2_dummy()
 
-import pytz
 from assertpy import assert_that
 from mock import Mock, call
 
@@ -98,28 +101,28 @@ class BaseTest(object):
         assert_that(self.base.schema_name).is_equal_to("bar")
 
     def test_get_timezone(self):
-        assert_that(self.base.get_timezone()).is_equal_to(pytz.UTC)
+        assert_that(self.base.get_timezone()).is_equal_to(datetime.timezone.utc)
 
     def test_fix_timezone(self):
         assert_that(self.base.fix_timezone(None)).is_none()
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
-        utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0, tzinfo=pytz.timezone("UTC"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
+        utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0, tzinfo=ZoneInfo("UTC"))
 
         assert_that(self.base.fix_timezone(time)).is_equal_to(utc_time)
 
     def test_from_bare_utc_to_timezone(self):
-        self.base.set_timezone(pytz.timezone("CET"))
+        self.base.set_timezone(ZoneInfo("CET"))
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
         assert_that(self.base.from_bare_utc_to_timezone(utc_time)).is_equal_to(time)
 
     def test_from_timezone_to_bare_utc(self):
-        self.base.set_timezone(pytz.timezone("CET"))
+        self.base.set_timezone(ZoneInfo("CET"))
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("CET"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
         assert_that(self.base.from_timezone_to_bare_utc(time)).is_equal_to(utc_time)

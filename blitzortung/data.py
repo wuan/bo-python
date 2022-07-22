@@ -21,8 +21,6 @@
 import datetime
 import math
 
-import pytz
-
 from . import types
 from .geom import GridElement
 
@@ -33,7 +31,7 @@ class Timestamp(types.EqualityAndHash):
 
     __slots__ = ['datetime', 'nanosecond']
 
-    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=pytz.UTC), nanosecond=0):
+    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc), nanosecond=0):
         if type(date_time) == str:
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
@@ -62,7 +60,7 @@ class Timestamp(types.EqualityAndHash):
                 date_time = datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
                 nanosecond = 0
 
-            return date_time.replace(tzinfo=pytz.UTC), nanosecond
+            return date_time.replace(tzinfo=datetime.timezone.utc), nanosecond
         except ValueError:
             return None, 0
 
@@ -72,7 +70,7 @@ class Timestamp(types.EqualityAndHash):
         residual_nanoseconds = total_nanoseconds % 1000
         total_seconds = total_microseconds // 1000000
         residual_microseconds = total_microseconds % 1000000
-        return datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC) + \
+        return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + \
                datetime.timedelta(seconds=total_seconds,
                                   microseconds=residual_microseconds), \
                residual_nanoseconds
@@ -109,7 +107,7 @@ class Timestamp(types.EqualityAndHash):
     def tzinfo(self):
         return self.datetime.tzinfo
 
-    epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.UTC)
+    epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
 
     @property
     def value(self):

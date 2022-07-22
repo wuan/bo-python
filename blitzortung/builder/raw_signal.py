@@ -19,7 +19,7 @@
 """
 
 import itertools
-import datetime
+
 from injector import inject
 
 from .base import Event, BuilderError

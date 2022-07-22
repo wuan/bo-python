@@ -25,8 +25,8 @@ from twisted.internet.defer import gatherResults
 from twisted.python import log
 
 from .general import TimingState, create_time_interval
-from ..data import Timestamp
 from .. import db, geom
+from ..data import Timestamp
 
 
 class StrikeState(TimingState):

@@ -24,8 +24,8 @@ import json
 import os
 import subprocess
 
-from . import builder
 from blitzortung.data import Timestamp
+from . import builder
 
 
 class Raw(object):

@@ -17,10 +17,9 @@
    limitations under the License.
 
 """
-
+import datetime
 from abc import abstractmethod
 
-import pytz
 import shapely.wkb
 from injector import inject
 
@@ -35,10 +34,10 @@ class ObjectMapper(object):
     @staticmethod
     def convert_to_timezone(timestamp, target_timezone=None):
         if timestamp is not None:
-            target_timezone = target_timezone if target_timezone is not None else pytz.UTC
+            target_timezone = target_timezone if target_timezone is not None else datetime.timezone.utc
             timestamp = timestamp.astimezone(target_timezone)
-            if target_timezone != pytz.UTC:
-                timestamp = target_timezone.normalize(timestamp)
+#            if target_timezone != datetime.timezone.utc:
+#                timestamp = target_timezone.enfold(timestamp)
         return timestamp
 
 
@@ -48,7 +47,7 @@ class Strike(ObjectMapper):
         self.strike_builder = strike_builder
 
     def create_object(self, result, **kwargs):
-        timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
+        timezone = kwargs['timezone'] if 'timezone' in kwargs else datetime.timezone.utc
 
         self.strike_builder.set_id(result['id'])
         self.strike_builder.set_timestamp(
@@ -70,7 +69,7 @@ class Station(ObjectMapper):
         self.station_builder = station_builder
 
     def create_object(self, result, **kwargs):
-        timezone = kwargs['timezone'] if 'timezone' in kwargs else pytz.UTC
+        timezone = kwargs['timezone'] if 'timezone' in kwargs else datetime.timezone.utc
 
         self.station_builder.set_number(result['number'])
         self.station_builder.set_user(result['user'])

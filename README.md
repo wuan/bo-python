@@ -3,7 +3,6 @@ python-blitzortung a python module for blitzortung.org related stuff
 
 [![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
 [![Coverage Status](https://coveralls.io/repos/wuan/bo-python/badge.svg?branch=master&service=github)](https://coveralls.io/github/wuan/bo-python?branch=master)
-[![Stories in Ready](https://badge.waffle.io/wuan/bo-python.svg?label=ready&title=Ready)](http://waffle.io/wuan/bo-python) 
 
 # Introduction
 

@@ -20,7 +20,6 @@
 
 import datetime
 
-import pytz
 from assertpy import assert_that
 
 import blitzortung
@@ -46,7 +45,8 @@ class TestTimestamp(object):
 
         print(timestamp)
 
-        assert_that(timestamp.datetime).is_equal_to(datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, pytz.UTC))
+        assert_that(timestamp.datetime).is_equal_to(
+            datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, datetime.timezone.utc))
         assert_that(timestamp.nanosecond).is_equal_to(700)
 
 

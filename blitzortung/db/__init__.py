@@ -22,10 +22,12 @@ import atexit
 
 import mock
 from injector import Module, singleton, inject, provider
+from mock.mock import MagicMock
 
 
 def create_psycopg2_dummy():
     class Dummy(object):
+        Binary = MagicMock(name="psycopg2.Binary")
         pass
 
     dummy = Dummy()

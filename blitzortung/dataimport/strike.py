@@ -23,14 +23,13 @@ import logging
 import os
 import time
 
-import pytz
 from injector import singleton, inject
 
 from .base import HttpFileTransport, BlitzortungDataPath, BlitzortungDataPathGenerator
 from .. import builder
 
-
 logger = logging.getLogger(__name__)
+
 
 @singleton
 class StrikesBlitzortungDataProvider(object):
@@ -45,7 +44,7 @@ class StrikesBlitzortungDataProvider(object):
 
     def get_strikes_since(self, latest_strike=None, region=1):
         latest_strike = latest_strike if latest_strike else \
-            (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=pytz.UTC)
+            (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=datetime.timezone.utc)
         logger.debug("import strikes since %s" % latest_strike)
 
         for url_path in self.url_path_generator.get_paths(latest_strike):
