@@ -21,8 +21,6 @@
 import datetime
 import time
 
-import pytz
-
 from .data import Timestamp, Timedelta
 
 
@@ -93,7 +91,7 @@ def time_intervals(start_time, duration, end_time=None):
     current_time = round_time(start_time, duration)
     if not end_time:
         end_time = datetime.datetime.utcnow()
-        end_time = end_time.replace(tzinfo=pytz.UTC)
+        end_time = end_time.replace(tzinfo=datetime.timezone.utc)
     end_time = round_time(end_time, duration)
 
     while current_time <= end_time:

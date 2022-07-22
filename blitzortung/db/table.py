@@ -17,11 +17,10 @@
    limitations under the License.
 
 """
-
+import datetime
 import logging
 import math
 
-import pytz
 from injector import inject
 
 from . import mapper
@@ -69,7 +68,7 @@ class Base(object):
     """
     __metaclass__ = ABCMeta
 
-    DefaultTimezone = pytz.UTC
+    DefaultTimezone = datetime.timezone.utc
 
     def __init__(self, db_connection_pool):
 
@@ -150,11 +149,11 @@ class Base(object):
         return timestamp.astimezone(self.tz) if timestamp else None
 
     def from_bare_utc_to_timezone(self, utc_time):
-        return utc_time.replace(tzinfo=pytz.UTC).astimezone(self.tz)
+        return utc_time.replace(tzinfo=datetime.timezone.utc).astimezone(self.tz)
 
     @staticmethod
     def from_timezone_to_bare_utc(time_with_tz):
-        return time_with_tz.astimezone(pytz.UTC).replace(tzinfo=None)
+        return time_with_tz.astimezone(datetime.timezone.utc).replace(tzinfo=None)
 
     def commit(self):
         """ commit pending database transaction """

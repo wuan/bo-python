@@ -21,7 +21,6 @@
 import datetime
 
 import pytest
-import pytz
 from assertpy import assert_that
 
 import blitzortung.builder
@@ -31,7 +30,8 @@ from blitzortung.data import Timestamp
 class TestBase(object):
     @staticmethod
     def get_timestamp(timestamp_string):
-        return datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=pytz.UTC)
+        return datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S.%f').replace(
+            tzinfo=datetime.timezone.utc)
 
 
 class TimestampTest(object):
@@ -64,14 +64,15 @@ class TimestampTest(object):
 
     def test_value_property(self):
         timestamp = self.builder.set_timestamp(
-            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC)).build()
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc)).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651000)
 
     def test_value_property_with_nanoseconds(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=pytz.UTC),
-                                               456).build()
+        timestamp = self.builder.set_timestamp(
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc),
+            456).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651456)
@@ -87,7 +88,7 @@ class TimestampTest(object):
         self.assert_timestamp_base(timestamp)
         assert_that(timestamp.microsecond).is_equal_to(96651)
         assert_that(timestamp.nanosecond).is_equal_to(423)
-        assert_that(timestamp.tzinfo).is_equal_to(pytz.UTC)
+        assert_that(timestamp.tzinfo).is_equal_to(datetime.timezone.utc)
 
     def test_set_timestamp_from_millisecond_string(self):
         timestamp = self.builder.set_timestamp("2012-02-10 12:56:18.096").build()
