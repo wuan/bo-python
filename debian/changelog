@@ -2,7 +2,7 @@ python3-blitzortung (1.7.1) unstable; urgency=low
 
   * remove outdated dependencies
 
- -- Andreas Wuerl <blitzortung@tryb.de>  Fre, 22 Jul 2022 20:41:21 +0200
+ -- Andreas Wuerl <blitzortung@tryb.de>  Fri, 22 Jul 2022 20:41:21 +0200
 
 python3-blitzortung (1.7.0) unstable; urgency=low
 
