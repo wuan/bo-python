@@ -1,22 +1,37 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
+from distutils.core import setup
 
-import blitzortung
+from setuptools import find_packages
 
 setup(
     name='blitzortung',
-    packages=find_packages(),
-    install_requires=['injector', 'dateutils', 'shapely', 'pyproj', 'statsd'],
-    tests_require=['pytest-coverage', 'mock', 'assertpy'],
-    version=blitzortung.__version__,
+    version='1.7.1',
     description='blitzortung.org python modules',
-    download_url='http://tryb.de/andi/blitzortung/',
+    long_description="""a library providing python classes for blitzortung operation""",
     author='Andreas Wuerl',
     author_email='blitzortung@tryb.de',
-    url='http://www.blitzortung.org/',
+    url='https://github.com/wuan/bo-python',
     license='Apache 2',
-    long_description="""a library providing python classes for blitzortung operation""",
+    packages=find_packages(),
+    install_requires=[
+        'backports.zoneinfo',
+        'injector',
+        'requests',
+        'lockfile',
+        'shapely',
+        'pyproj==3.2.1',
+        'twisted',
+        'psycopg2'
+    ],
+    extras_require={
+        'testing': [
+            'pytest-cov',
+            'pytest-benchmark',
+            'mock',
+            'assertpy'
+        ],
+    },
     platforms='OS Independent',
     classifiers=[
         'Development Status :: 4 - Beta',

@@ -32,7 +32,7 @@ class StrikeGridState(TimingState):
     __slots__ = ['grid_parameters', 'time_interval']
 
     def __init__(self, statsd_client, grid_parameters, time_interval):
-        super(StrikeGridState, self).__init__("strikes_grid", statsd_client)
+        super().__init__("strikes_grid", statsd_client)
         self.grid_parameters = grid_parameters
         self.time_interval = time_interval
 

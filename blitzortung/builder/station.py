@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2014-2022 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class Station(Event):
     last_signal_parser = re.compile(r'last_signal;"([-: 0-9]+)" ?')
 
     def __init__(self):
-        super(Station, self).__init__()
+        super().__init__()
         self.number = -1
         self.user = -1
         self.name = None
@@ -93,7 +93,7 @@ class Station(Event):
 
 class StationOffline(Base):
     def __init__(self):
-        super(StationOffline, self).__init__()
+        super().__init__()
         self.id_value = -1
         self.number = -1
         self.begin = None
