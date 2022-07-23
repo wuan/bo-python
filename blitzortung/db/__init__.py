@@ -26,15 +26,15 @@ from mock.mock import MagicMock
 
 
 def create_psycopg2_dummy():
-    class Dummy(object):
+    class Dummy:
         Binary = MagicMock(name="psycopg2.Binary")
         pass
 
-    dummy = Dummy()
-    dummy.pool = Dummy()
-    dummy.pool.ThreadedConnectionPool = Dummy
-    dummy.extensions = mock.Mock()
-    dummy.extras = mock.Mock()
+    dummy = mock.Mock(name='psycopg2')
+#    dummy.pool = Dumm()
+    dummy.pool.ThreadedConnectionPool = Dummy()
+#    dummy.extensions = mock.Mock()
+#    dummy.extras = mock.Mock()
     return dummy
 
 
