@@ -2,7 +2,8 @@ python-blitzortung a python module for blitzortung.org related stuff
 --------------------------------------------------------------------
 
 [![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
-[![Coverage Status](https://coveralls.io/repos/wuan/bo-python/badge.svg?branch=master&service=github)](https://coveralls.io/github/wuan/bo-python?branch=master)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ee40a9ada1a14cc7b061a0080bdc4d84)](https://www.codacy.com/gh/wuan/bo-python/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=wuan/bo-python&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/ee40a9ada1a14cc7b061a0080bdc4d84)](https://www.codacy.com/gh/wuan/bo-python/dashboard?utm_source=github.com&utm_medium=referral&utm_content=wuan/bo-python&utm_campaign=Badge_Coverage)
 
 # Introduction
 
