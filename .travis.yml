@@ -11,13 +11,11 @@ install:
   # temp fix for https://github.com/pypa/setuptools/issues/3293
   - pip install --upgrade importlib-metadata>=0.21
   - pip install -r requirements.txt
-  - pip install python-coveralls
   - pip install fastcluster
   - pip list
 
 script:
-  - py.test --cov-report term-missing --cov-config .coveragerc --cov=blitzortung
-  - py.test -v --cov blitzortung --cov-report term-missing
+  - pytest --cov-report xml:coverage.xml --cov-report term --cov=blitzortung tests
 
 after_success:
-  - coveralls
+  - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
