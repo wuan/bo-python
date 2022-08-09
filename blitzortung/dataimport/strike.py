@@ -50,7 +50,11 @@ class StrikesBlitzortungDataProvider(object):
         for url_path in self.url_path_generator.get_paths(latest_strike):
             strike_count = 0
             start_time = time.time()
+<<<<<<< Updated upstream
             target_url = self.data_url.build_path(os.path.join('Protected', 'Strikes', url_path), region=region)
+=======
+            target_url = self.data_url.build_path(os.path.join('Protected', 'Strikes_{region}', url_path), region=region)
+>>>>>>> Stashed changes
             for strike_line in self.data_transport.read_lines(target_url):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
