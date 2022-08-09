@@ -50,7 +50,7 @@ class StrikesBlitzortungDataProvider(object):
         for url_path in self.url_path_generator.get_paths(latest_strike):
             strike_count = 0
             start_time = time.time()
-            target_url = self.data_url.build_path(os.path.join('Protected', 'Strokes', url_path), region=region)
+            target_url = self.data_url.build_path(os.path.join('Protected', 'Strikes', url_path), region=region)
             for strike_line in self.data_transport.read_lines(target_url):
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
@@ -66,4 +66,4 @@ class StrikesBlitzortungDataProvider(object):
             end_time = time.time()
             logger.debug("imported %d strikes for region %d in %.2fs from %s",
                          strike_count,
-                         region, end_time - start_time, url_path)
+                         region, end_time - start_time, target_url)
