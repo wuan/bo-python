@@ -15,7 +15,7 @@ automat==20.2.0
     # via twisted
 backports-zoneinfo==0.2.1
     # via blitzortung (setup.py)
-certifi==2022.6.15
+certifi==2022.12.7
     # via
     #   pyproj
     #   requests
