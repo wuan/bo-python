@@ -9,7 +9,6 @@ authors = [
 license = { file = 'LICENSE' }
 requires-python = ">=3.7"
 dependencies = [
-    'backports.zoneinfo;python_version <= "3.8"',
     'injector',
     'requests',
     'lockfile',
@@ -46,7 +45,8 @@ tests = [
     'pytest-cov',
     'pytest-benchmark',
     'mock',
-    'assertpy'
+    'assertpy',
+    'backports.zoneinfo; python_version < "3.9"',
 ]
 
 [project.urls]
