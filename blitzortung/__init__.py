@@ -60,27 +60,6 @@ from . import types
 INJECTOR = injector.Injector(
     [config.ConfigModule(), db.DbModule()])
 
-__all__ = [
-
-    'builder.Strike', 'builder.Station',
-
-    'data.TimeIntervals', 'data.Timestamp', 'data.NanosecondTimestamp',  # data items
-
-    'db.strike', 'db.station', 'db.stationOffline', 'db.location',  # database access
-
-    'Error',  # custom exceptions
-
-    'files.Raw', 'files.Data',
-
-    'geom.Point',
-
-    'types.Point',
-
-    'util.Timer',
-
-    'dataimport.StrikesBlitzortungDataProvider', 'dataimport.raw'
-]
-
 root_logger = logging.getLogger(__name__)
 root_logger.setLevel(logging.WARN)
 
