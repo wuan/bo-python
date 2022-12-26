@@ -20,7 +20,9 @@
 
 import datetime
 
+import pytest
 from assertpy import assert_that
+from mock import Mock
 
 import blitzortung
 import blitzortung.data
@@ -253,6 +255,37 @@ NODATA_VALUE 0
 |                  |
 --------------------
 total count: 0, max per area: 0""")
+
+    @pytest.mark.parametrize(["count", "divider", "expected"], [
+        (5, 5, 1),
+        (6, 5, 2),
+        (10, 5, 2),
+        (11, 5, 3),
+    ])
+    def test_cell_index(self, count, divider, expected):
+        cell = Mock()
+        cell.count = count
+        result = blitzortung.data.GridData.cell_index(cell, divider)
+
+        assert_that(result).is_equal_to(expected)
+
+    def test_empty_cell_index(self):
+        result = blitzortung.data.GridData.cell_index(None, 5)
+
+        assert_that(result).is_equal_to(0)
+
+    def test_max_and_total(self):
+        cell1 = Mock()
+        cell1.count = 4
+        cell2 = Mock()
+        cell2.count = 8
+        cell4 = Mock()
+        cell4.count = 6
+
+        maximum, total = blitzortung.data.GridData.max_and_total_entries([[cell1, cell2],[None, cell4]])
+
+        assert_that(maximum).is_equal_to(8)
+        assert_that(total).is_equal_to(18)
 
     def test_empty_raster_to_reduced_array(self):
         assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(())
