@@ -25,7 +25,7 @@ jobs:
           python -m pip install -U pip pip-tools
           ./update_requirements
           pip install --use-pep517 -r requirements_tests.txt
-          pytest --cov blitzortung --cov-report xml tests
+          pytest --cov blitzortung --cov-report xml --cov-report term --junitxml=junit.xml tests
       - name: Build
         run: |
           pip install -q build
