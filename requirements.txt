@@ -10,8 +10,6 @@ attrs==21.4.0
     #   twisted
 automat==20.2.0
     # via twisted
-backports-zoneinfo==0.2.1
-    # via blitzortung (pyproject.toml)
 certifi==2022.6.15
     # via
     #   pyproj
