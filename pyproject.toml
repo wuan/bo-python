@@ -1,0 +1,53 @@
+[project]
+name = 'blitzortung'
+version = '1.7.1'
+description = 'blitzortung.org python modules'
+authors = [
+    { name = 'Andreas Wuerl', email = 'blitzortung@tryb.de' }
+]
+
+license = { file = 'LICENSE' }
+requires-python = ">=3.7"
+dependencies = [
+    'backports.zoneinfo',
+    'injector',
+    'requests',
+    'lockfile',
+    'shapely',
+    'pyproj',
+    'twisted',
+    'psycopg2'
+]
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Environment :: Console',
+    'Environment :: Plugins',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Education',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: Apache Software License',
+    'Natural Language :: English',
+    'Operating System :: OS Independent',
+    'Topic :: Scientific/Engineering :: Atmospheric Science',
+    'Topic :: Scientific/Engineering :: GIS',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Utilities',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+]
+
+[tool.setuptools]
+packages = ["blitzortung"]
+
+[project.optional-dependencies]
+tests = [
+    'pytest-cov',
+    'pytest-benchmark',
+    'mock',
+    'assertpy'
+]
+
+[project.urls]
+homepage = 'https://github.com/wuan/bo-python'

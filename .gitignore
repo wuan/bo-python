@@ -1,7 +1,7 @@
+.envrc
 .idea
 .coverage
-nosetests.xml
-*.pyc
+
 *.c
 /build
 /coverage.xml
