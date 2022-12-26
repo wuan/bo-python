@@ -25,7 +25,7 @@ import pyproj
 import shapely.geometry
 
 
-class Geometry(object):
+class Geometry:
     """
     abstract base class for geometries
     """
@@ -130,7 +130,7 @@ class Grid(Envelope):
             self.y_min, self.y_max, self.y_div, self.y_bin_count)
 
 
-class GridFactory(object):
+class GridFactory:
     WGS84 = pyproj.CRS(f"epsg:{Geometry.default_srid}")
 
     __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'ref_lon', 'ref_lat', 'grid_data']
@@ -173,7 +173,7 @@ class GridFactory(object):
         return self.grid_data[base_length]
 
 
-class GridElement(object):
+class GridElement:
     """
     raster data entry
     """

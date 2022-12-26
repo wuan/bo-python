@@ -37,7 +37,7 @@ class StrikeState(TimingState):
         self.end_time = end_time
 
 
-class StrikeQuery(object):
+class StrikeQuery:
     @inject
     def __init__(self, strike_query_builder: db.query_builder.Strike, strike_mapper: db.mapper.Strike):
         self.strike_query_builder = strike_query_builder

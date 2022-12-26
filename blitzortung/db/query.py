@@ -31,7 +31,7 @@ except ImportError:
     psycopg2 = create_psycopg2_dummy()
 
 
-class BaseInterval(object):
+class BaseInterval:
     """
     Basic interval range
     """
@@ -93,7 +93,7 @@ class TimeInterval(BaseInterval):
         return self.start <= timestamp < self.end
 
 
-class Query(object):
+class Query:
     """
     simple class for building of complex queries
     """
@@ -312,7 +312,7 @@ class GlobalGridQuery(SelectQuery):
             self.add_group_having("count(*) > %(count_threshold)s", count_threshold=count_threshold)
 
 
-class Order(object):
+class Order:
     """
     definition for query search order
     """
@@ -330,15 +330,15 @@ class Order(object):
         return self.desc
 
 
-class Center(object):
+class Center:
     """
     definition of query center point
     """
 
-    __slots__ = ['center']
+    __slots__ = ['point']
 
     def __init__(self, center):
-        self.center = center
+        self.point = center
 
     def get_point(self):
-        return self.center
+        return self.point

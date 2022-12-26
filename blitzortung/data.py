@@ -321,7 +321,7 @@ class Station(Event):
         return self.timestamp is not None
 
 
-class StationOffline(object):
+class StationOffline:
     """
     class for station offline information objects
     """
@@ -382,7 +382,7 @@ class Strike(Event):
         )
 
 
-class ChannelWaveform(object):
+class ChannelWaveform:
     """
     class for raw data waveform channels
     """
@@ -402,7 +402,7 @@ class ChannelWaveform(object):
         self.waveform = waveform
 
 
-class GridData(object):
+class GridData:
     """ class for grid characteristics"""
 
     def __init__(self, grid, no_data=None):

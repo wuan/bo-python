@@ -33,7 +33,7 @@ def create_time_interval(minute_length, minute_offset):
     return db.query.TimeInterval(start_time, end_time)
 
 
-class TimingState(object):
+class TimingState:
     __slots__ = ['statsd_client', 'reference_time', 'name', 'info_text']
 
     def __init__(self, name, statsd_client):

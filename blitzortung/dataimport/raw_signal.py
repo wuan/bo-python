@@ -28,7 +28,7 @@ from .. import builder
 
 
 @singleton
-class RawSignalsBlitzortungDataProvider(object):
+class RawSignalsBlitzortungDataProvider:
     logger = logging.getLogger(__name__)
 
     @inject

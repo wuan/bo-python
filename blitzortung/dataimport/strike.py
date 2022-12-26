@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @singleton
-class StrikesBlitzortungDataProvider(object):
+class StrikesBlitzortungDataProvider:
 
     @inject
     def __init__(self, data_transport: HttpFileTransport, data_url: BlitzortungDataPath,

@@ -28,7 +28,7 @@ from blitzortung.data import Timestamp
 from . import builder
 
 
-class Raw(object):
+class Raw:
     BO_DATA_EXECUTABLE = 'bo-data'
 
     def __init__(self, file_path):
@@ -68,7 +68,7 @@ class Raw(object):
         return json.loads(output)
 
 
-class RawFile(object):
+class RawFile:
     def __init__(self, config):
         raw_file_names = glob.glob(os.path.join(config.get_raw_path(), '*.bor'))
 
@@ -98,7 +98,7 @@ class RawFile(object):
         return dates
 
 
-class Archive(object):
+class Archive:
     def __init__(self, config):
         self.dates_filecount = {}
 
@@ -146,7 +146,7 @@ class Archive(object):
             return components
 
 
-class Data(object):
+class Data:
     def __init__(self, raw_file_path, time):
         self.raw_file_path = raw_file_path
         self.time = time

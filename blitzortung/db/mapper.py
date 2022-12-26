@@ -26,7 +26,7 @@ from injector import inject
 from .. import builder
 
 
-class ObjectMapper(object):
+class ObjectMapper:
     @abstractmethod
     def create_object(self, result, **kwargs):
         pass

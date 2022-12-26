@@ -37,7 +37,7 @@ class StrikeGridState(TimingState):
         self.time_interval = time_interval
 
 
-class StrikeGridQuery(object):
+class StrikeGridQuery:
     @inject
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
@@ -113,7 +113,7 @@ class StrikeGridQuery(object):
         return response
 
 
-class GlobalStrikeGridQuery(object):
+class GlobalStrikeGridQuery:
     @inject
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder

@@ -26,7 +26,7 @@ from .base import Event, BuilderError
 from .. import data
 
 
-class ChannelWaveform(object):
+class ChannelWaveform:
     """
     class for building of waveforms within raw signal objects
     """

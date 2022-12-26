@@ -43,7 +43,7 @@ except ImportError as e:
 from abc import ABCMeta, abstractmethod
 
 
-class Base(object):
+class Base:
     """
     abstract base class for database access objects
 

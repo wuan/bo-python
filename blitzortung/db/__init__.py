@@ -26,7 +26,7 @@ from mock.mock import MagicMock
 
 
 def create_psycopg2_dummy():
-    class Dummy(object):
+    class Dummy:
         Binary = MagicMock(name="psycopg2.Binary")
 
     dummy = Dummy()

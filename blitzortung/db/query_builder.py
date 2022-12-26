@@ -28,7 +28,7 @@ import shapely.wkb
 from .query import SelectQuery, GridQuery, GlobalGridQuery
 
 
-class Strike(object):
+class Strike:
     @staticmethod
     def select_query(table_name, srid, **kwargs):
         query = SelectQuery() \
@@ -82,7 +82,7 @@ class Strike(object):
         return query
 
 
-class StrikeCluster(object):
+class StrikeCluster:
     def select_query(self, table_name, srid, timestamp, interval_duration, interval_count=1, interval_offset=None):
         end_time = timestamp
         interval_offset = interval_duration if interval_offset is None or interval_offset.total_seconds() <= 0 \

@@ -21,7 +21,7 @@
 import time
 
 
-class CacheEntry(object):
+class CacheEntry:
     def __init__(self, payload, expiry_time):
         self.__payload = payload
         self.__expiry_time = expiry_time
@@ -38,7 +38,7 @@ class CacheEntry(object):
         return self.__hit_count
 
 
-class ObjectCache(object):
+class ObjectCache:
     __KWA_MARK = object()
 
     def __init__(self, ttl_seconds=30):

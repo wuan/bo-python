@@ -29,7 +29,7 @@ from .. import builder
 
 
 @singleton
-class StationsBlitzortungDataProvider(object):
+class StationsBlitzortungDataProvider:
     logger = logging.getLogger(__name__)
 
     @inject

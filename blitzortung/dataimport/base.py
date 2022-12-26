@@ -33,13 +33,13 @@ from injector import inject
 try:
     from requests import Session
 except ImportError:
-    class Session(object):
+    class Session:
         pass
 
 from .. import config, util
 
 
-class TransportAbstract(object):
+class TransportAbstract:
     @abstractmethod
     def read_lines(self, source_path, post_process=None):
         pass
@@ -93,7 +93,7 @@ class HttpFileTransport(FileTransport):
         return line.decode('utf8')
 
 
-class BlitzortungDataPath(object):
+class BlitzortungDataPath:
     default_host_name = 'data'
     default_region = 1
 
@@ -115,7 +115,7 @@ class BlitzortungDataPath(object):
         return os.path.join(self.data_path, sub_path).format(**parameters)
 
 
-class BlitzortungDataPathGenerator(object):
+class BlitzortungDataPathGenerator:
     time_granularity = datetime.timedelta(minutes=10)
     url_path_format = '%Y/%m/%d/%H/%M.log'
 

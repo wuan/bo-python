@@ -25,7 +25,7 @@ from injector import inject
 from .. import db
 
 
-class HistogramQuery(object):
+class HistogramQuery:
     @inject
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
