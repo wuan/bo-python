@@ -460,11 +460,7 @@ class GridData(object):
 
     @staticmethod
     def cell_index(cell, divider):
-        if cell:
-            index = int(math.floor((cell.count - 1) / divider + 1))
-        else:
-            index = 0
-        return index
+        return int(math.floor((cell.count - 1) / divider + 1)) if cell else 0
 
     @staticmethod
     def max_and_total_entries(matrix):
