@@ -47,7 +47,7 @@ class StrikeGridQuery(object):
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
-        query = self.strike_query_builder.grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
+        query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters,
                                                      time_interval=time_interval, count_threshold=count_threshold)
 
         grid_query = connection.runQuery(str(query), query.get_parameters())
@@ -123,7 +123,7 @@ class GlobalStrikeGridQuery(object):
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
-        query = self.strike_query_builder.global_grid_query(db.table.Strike.TABLE_NAME, grid_parameters,
+        query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters,
                                                             time_interval=time_interval,
                                                             count_threshold=count_threshold)
 

@@ -29,10 +29,10 @@ class Strike(Event):
     """
     class for building strike objects
     """
-    position_parser = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
-    amplitude_parser = re.compile(r'str;([0-9\.]+)')
-    deviation_parser = re.compile(r'dev;([0-9\.]+)')
-    stations_parser = re.compile(r'sta;([0-9]+);([0-9]+);([^ ]+)')
+    position_parser = re.compile(r'pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)')
+    amplitude_parser = re.compile(r'str;([0-9.]+)')
+    deviation_parser = re.compile(r'dev;([0-9.]+)')
+    stations_parser = re.compile(r'sta;(\d+);(\d+);([^ ]+)')
 
     def __init__(self):
         super().__init__()

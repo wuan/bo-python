@@ -49,7 +49,7 @@ class StrikeQuery(object):
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
         order = db.query.Order('id')
-        query = self.strike_query_builder.select_query(db.table.Strike.TABLE_NAME, geom.Geometry.DefaultSrid,
+        query = self.strike_query_builder.select_query(db.table.Strike.table_name, geom.Geometry.default_srid,
                                                        time_interval=time_interval, order=order,
                                                        id_interval=id_interval)
 

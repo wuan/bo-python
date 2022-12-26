@@ -34,9 +34,9 @@ class Geometry(object):
 
     __slots__ = ('srid',)
 
-    DefaultSrid = 4326
+    default_srid = 4326
 
-    def __init__(self, srid=DefaultSrid):
+    def __init__(self, srid=default_srid):
         self.srid = srid
 
     def get_srid(self):
@@ -58,7 +58,7 @@ class Envelope(Geometry):
 
     __slots__ = ('x_min', 'x_max', 'y_min', 'y_max')
 
-    def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.DefaultSrid):
+    def __init__(self, x_min, x_max, y_min, y_max, srid=Geometry.default_srid):
         super().__init__(srid)
         self.x_min = x_min
         self.x_max = x_max
@@ -93,7 +93,7 @@ class Grid(Envelope):
 
     __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count']
 
-    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.DefaultSrid):
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.default_srid):
         super().__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
@@ -131,7 +131,7 @@ class Grid(Envelope):
 
 
 class GridFactory(object):
-    WGS84 = pyproj.CRS(f"epsg:{Geometry.DefaultSrid}")
+    WGS84 = pyproj.CRS(f"epsg:{Geometry.default_srid}")
 
     __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'ref_lon', 'ref_lat', 'grid_data']
 
@@ -168,7 +168,7 @@ class GridFactory(object):
 
             self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
                                                delta_lon, delta_lat,
-                                               Geometry.DefaultSrid)
+                                               Geometry.default_srid)
 
         return self.grid_data[base_length]
 

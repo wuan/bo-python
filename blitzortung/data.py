@@ -309,7 +309,7 @@ class Station(Event):
         return self.number == other.number and self.name == other.name and self.country == other.country
 
     def __ne__(self, other):
-        return not self == other
+        return self != other
 
     @property
     def is_valid(self):
@@ -408,7 +408,7 @@ class GridData(object):
     def __init__(self, grid, no_data=None):
         self.grid = grid
         self.no_data = no_data if no_data else GridElement(0, None)
-        self.data = [[None for i in range(grid.x_bin_count)] for i in range(grid.y_bin_count)]
+        self.data = [[None for _ in range(grid.x_bin_count)] for _ in range(grid.y_bin_count)]
 
     def set(self, x_index, y_index, value):
         try:
@@ -437,15 +437,9 @@ class GridData(object):
 
     def to_map(self):
         chars = " .-o*O8"
-        maximum = 0
-        total = 0
 
-        for row in self.data[::-1]:
-            for cell in row:
-                if cell:
-                    total += cell.count
-                    if maximum < cell.count:
-                        maximum = cell.count
+        matrix = self.data[::-1]
+        maximum, total = self.max_and_total_entries(matrix)
 
         if maximum > len(chars):
             divider = float(maximum) / (len(chars) - 1)
@@ -456,16 +450,35 @@ class GridData(object):
         for row in self.data[::-1]:
             result += "|"
             for cell in row:
-                if cell:
-                    index = int(math.floor((cell.count - 1) / divider + 1))
-                else:
-                    index = 0
+                index = self.cell_index(cell, divider)
                 result += chars[index]
             result += "|\n"
 
         result += (self.grid.x_bin_count + 2) * '-' + '\n'
         result += 'total count: %d, max per area: %d' % (total, maximum)
         return result
+
+    @staticmethod
+    def cell_index(cell, divider):
+        maximum = 0
+        total = 0
+        if cell:
+            index = int(math.floor((cell.count - 1) / divider + 1))
+        else:
+            index = 0
+        return index
+
+    @staticmethod
+    def max_and_total_entries(matrix):
+        maximum = 0
+        total = 0
+        for row in matrix:
+            for cell in row:
+                if cell:
+                    total += cell.count
+                    if maximum < cell.count:
+                        maximum = cell.count
+        return maximum, total
 
     def to_reduced_array(self, reference_time):
 

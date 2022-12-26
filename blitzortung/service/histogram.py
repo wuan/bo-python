@@ -30,9 +30,9 @@ class HistogramQuery(object):
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, connection, minute_length, minute_offset, region=None, envelope=None, count_threshold=0):
+    def create(self, connection, minute_length, minute_offset, region=None, envelope=None):
         reference_time = time.time()
-        query = self.strike_query_builder.histogram_query(db.table.Strike.TABLE_NAME, minute_length,
+        query = self.strike_query_builder.histogram_query(db.table.Strike.table_name, minute_length,
                                                           minute_offset, 5, region, envelope)
         histogram_query = connection.runQuery(str(query), query.get_parameters())
         histogram_query.addCallback(self.build_result, minutes=minute_length, bin_size=5,

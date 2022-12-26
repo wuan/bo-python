@@ -45,7 +45,7 @@ class TestGeometry(TestCase):
         self.geometry = GeometryForTest()
 
     def test_default_values(self):
-        assert_that(self.geometry.srid).is_equal_to(blitzortung.geom.Geometry.DefaultSrid)
+        assert_that(self.geometry.srid).is_equal_to(blitzortung.geom.Geometry.default_srid)
 
     def test_create_with_different_srid(self):
         self.geometry = GeometryForTest(1234)
@@ -58,7 +58,7 @@ class TestEnvelope(TestCase):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2)
 
     def test_default_values(self):
-        assert_that(self.envelope.srid).is_equal_to(blitzortung.geom.Geometry.DefaultSrid)
+        assert_that(self.envelope.srid).is_equal_to(blitzortung.geom.Geometry.default_srid)
 
     def test_custom_srid_value(self):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2, 1234)

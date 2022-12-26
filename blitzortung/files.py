@@ -81,16 +81,16 @@ class RawFile(object):
                 date = datetime.datetime.strptime(raw_file_name[-12:-4], '%Y%m%d').date()
             except ValueError:
                 continue
-            if not date in self.raw_files:
+            if date not in self.raw_files:
                 self.raw_files[date] = raw_file_name
             else:
-                raise Exception("ERROR: double date! " + raw_file_name + " vs. " + self.raw_files[date])
+                raise ValueError("ERROR: double date! " + raw_file_name + " vs. " + self.raw_files[date])
 
     def get(self, date):
         if date in self.raw_files:
             return self.raw_files[date]
         else:
-            raise Exception("no file for date " + date.strftime('%Y-%m-%d'))
+            raise KeyError("no file for date " + date.strftime('%Y-%m-%d'))
 
     def get_dates(self):
         dates = self.raw_files.keys()

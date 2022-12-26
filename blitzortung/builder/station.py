@@ -29,11 +29,11 @@ class Station(Event):
     class for building of station objects
     """
 
-    station_parser = re.compile(r'station;([0-9]+)')
-    user_parser = re.compile(r'user;([0-9]+)')
+    station_parser = re.compile(r'station;(\d+)')
+    user_parser = re.compile(r'user;(\d+)')
     city_parser = re.compile(r'city;"([^"]+)"')
     country_parser = re.compile(r'country;"([^"]+)"')
-    position_parser = re.compile(r'pos;([-0-9\.]+);([-0-9\.]+);([-0-9\.]+)')
+    position_parser = re.compile(r'pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)')
     status_parser = re.compile(r'status;"?([^ ]+)"?')
     board_parser = re.compile(r'board;"?([^ ]+)"?')
     last_signal_parser = re.compile(r'last_signal;"([-: 0-9]+)" ?')

@@ -19,8 +19,8 @@
 """
 import datetime
 import logging
-import math
 
+import math
 from injector import inject
 
 from . import mapper
@@ -68,7 +68,7 @@ class Base(object):
     """
     __metaclass__ = ABCMeta
 
-    DefaultTimezone = datetime.timezone.utc
+    default_timezone = datetime.timezone.utc
 
     def __init__(self, db_connection_pool):
 
@@ -92,9 +92,9 @@ class Base(object):
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
 
-        self.srid = geom.Geometry.DefaultSrid
+        self.srid = geom.Geometry.default_srid
         self.tz = None
-        self.set_timezone(Base.DefaultTimezone)
+        self.set_timezone(Base.default_timezone)
 
         cur = None
         try:
@@ -223,7 +223,7 @@ class Strike(Base):
 
     """
 
-    TABLE_NAME = 'strikes'
+    table_name = 'strikes'
 
     @inject
     def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, query_builder_: query_builder.Strike,
@@ -232,8 +232,6 @@ class Strike(Base):
 
         self.query_builder = query_builder_
         self.strike_mapper = strike_mapper
-
-        self.table_name = self.TABLE_NAME
 
     def insert(self, strike, region=1):
         sql = 'INSERT INTO ' + self.full_table_name + \
