@@ -91,7 +91,6 @@ class TestEvent(EventBaseTest):
 
         self.assertTrue(event2 > event1)
         self.assertTrue(event2 >= event1)
-        self.assertTrue(event2 >= event2)
         self.assertFalse(event2 > event2)
         self.assertFalse(event1 > event2)
         self.assertFalse(event1 >= event2)
@@ -99,7 +98,6 @@ class TestEvent(EventBaseTest):
 
         self.assertTrue(event1 < event2)
         self.assertTrue(event1 <= event2)
-        self.assertTrue(event1 <= event1)
         self.assertFalse(event1 < event1)
         self.assertFalse(event2 < event1)
         self.assertFalse(event2 <= event1)
