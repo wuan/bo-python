@@ -20,30 +20,12 @@
 
 import atexit
 
-import mock
 from injector import Module, singleton, inject, provider
-from mock.mock import MagicMock
 
-
-def create_psycopg2_dummy():
-    class Dummy:
-        Binary = MagicMock(name="psycopg2.Binary")
-
-    dummy = Dummy()
-    dummy.pool = Dummy()
-    dummy.pool.ThreadedConnectionPool = Dummy
-    dummy.extensions = mock.Mock()
-    dummy.extras = mock.Mock()
-    return dummy
-
-
-try:
-    import psycopg2
-    import psycopg2.pool
-    import psycopg2.extras
-    import psycopg2.extensions
-except ImportError:
-    psycopg2 = create_psycopg2_dummy()
+import psycopg2
+import psycopg2.pool
+import psycopg2.extras
+import psycopg2.extensions
 
 from .. import config
 
