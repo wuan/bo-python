@@ -22,6 +22,12 @@ import atexit
 
 from injector import Module, singleton, inject, provider
 
+try:
+    from psycopg2cffi import compat
+    compat.register()
+except ImportError:
+    pass
+
 import psycopg2
 import psycopg2.pool
 import psycopg2.extras
