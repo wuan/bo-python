@@ -55,7 +55,8 @@ class DbModule(Module):
 def strike():
     from .. import INJECTOR
 
-    return INJECTOR.get(table.Strike)
+    strike_db = INJECTOR.get(table.Strike)
+    return strike_db
 
 
 def strike_cluster():

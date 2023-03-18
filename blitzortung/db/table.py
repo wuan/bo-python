@@ -230,6 +230,7 @@ class Strike(Base):
                  strike_mapper: mapper.Strike):
         super().__init__(db_connection_pool)
 
+        self.table_name = Strike.table_name
         self.query_builder = query_builder_
         self.strike_mapper = strike_mapper
 

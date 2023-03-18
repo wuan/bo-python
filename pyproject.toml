@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.7.1'
+version = '1.8.0'
 description = 'blitzortung.org python modules'
 authors = [
     { name = 'Andreas Wuerl', email = 'blitzortung@tryb.de' }
@@ -11,7 +11,7 @@ requires-python = ">=3.7"
 dependencies = [
     'injector',
     'requests',
-    'lockfile',
+    'fasteners',
     'shapely',
     'pyproj',
     'twisted',
