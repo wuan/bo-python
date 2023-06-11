@@ -59,7 +59,7 @@ class ObjectCache:
 
         if cache_key in self.cache:
             count = 0
-            if self.size is not None and cache_key in self.keys:
+            if self.size is not None:
                 count = self.keys[cache_key]
                 del self.keys[cache_key]
             entry = self.cache[cache_key]
@@ -73,13 +73,13 @@ class ObjectCache:
                 expired_key = next(iter(self.keys))
                 del self.keys[expired_key]
                 del self.cache[expired_key]
-            self.keys[cache_key] = 0
 
         expires = current_time + self.__ttl_seconds
         payload = cached_object_creator(*args, **kwargs)
 
         entry = CacheEntry(payload, expires)
         self.cache[cache_key] = entry
+        self.keys[cache_key] = 0
 
         return entry.get_payload()
 
