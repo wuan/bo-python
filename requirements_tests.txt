@@ -23,6 +23,8 @@ constantly==15.1.0
     # via twisted
 coverage[toml]==7.0.1
     # via pytest-cov
+fasteners==0.18
+    # via blitzortung (pyproject.toml)
 hyperlink==21.0.0
     # via twisted
 idna==3.4
@@ -34,8 +36,6 @@ incremental==22.10.0
 iniconfig==1.1.1
     # via pytest
 injector==0.20.1
-    # via blitzortung (pyproject.toml)
-lockfile==0.12.2
     # via blitzortung (pyproject.toml)
 mock==4.0.3
     # via blitzortung (pyproject.toml)
