@@ -41,12 +41,14 @@ class CacheEntry:
 class ObjectCache:
     __KWA_MARK = object()
 
-    def __init__(self, ttl_seconds=30):
+    def __init__(self, ttl_seconds=30, size=None):
         self.__ttl_seconds = int(ttl_seconds)
         self.total_count = 0
         self.total_hit_count = 0
+        self.size = size
 
         self.cache = {}
+        self.keys = {}
 
     def get(self, cached_object_creator, *args, **kwargs):
         self.total_count += 1
@@ -56,10 +58,22 @@ class ObjectCache:
         current_time = int(time.time())
 
         if cache_key in self.cache:
+            count = 0
+            if self.size is not None:
+                count = self.keys[cache_key]
+                del self.keys[cache_key]
             entry = self.cache[cache_key]
             if entry.is_valid(current_time):
+                if self.size is not None:
+                    self.keys[cache_key] = count + 1
                 self.total_hit_count += 1
                 return entry.get_payload()
+        elif self.size is not None:
+            if len(self.keys) >= self.size:
+                expired_key = next(iter(self.keys))
+                del self.keys[expired_key]
+                del self.cache[expired_key]
+            self.keys[cache_key] = 0
 
         expires = current_time + self.__ttl_seconds
         payload = cached_object_creator(*args, **kwargs)
@@ -81,3 +95,6 @@ class ObjectCache:
         if self.total_hit_count == 0:
             return 0.0
         return self.total_hit_count / self.total_count
+
+    def get_size(self):
+        return len(self.cache)

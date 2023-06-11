@@ -148,3 +148,26 @@ class TestObjectCache(TestCase):
 
         self.cache.get(CachedObject)
         assert_that(self.cache.get_ratio()).is_equal_to(0.5)
+
+
+class TestObjectCacheWithSize(TestCase):
+    def setUp(self):
+        self.cache = ObjectCache(size=2)
+
+    def test_limited_size(self):
+        foo_1 = self.cache.get(CachedObject, name="foo")
+        assert_that(self.cache.get_size()).is_equal_to(1)
+        self.cache.get(CachedObject, name="bar")
+        assert_that(self.cache.get_size()).is_equal_to(2)
+        self.cache.get(CachedObject, name="baz")
+        assert_that(self.cache.get_size()).is_equal_to(2)
+        foo_2 = self.cache.get(CachedObject, name="foo")
+        assert_that(foo_1).is_not_same_as(foo_2)
+
+    def test_track_recent_usage(self):
+        foo_1 = self.cache.get(CachedObject, name="foo")
+        bar = self.cache.get(CachedObject, name="bar")
+        assert_that(list(self.cache.keys.values())).is_equal_to([0, 0])
+        foo_2 = self.cache.get(CachedObject, name="foo")
+        assert_that(list(self.cache.keys.values())).is_equal_to([0, 1])
+        assert_that(foo_1).is_same_as(foo_2)
