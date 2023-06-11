@@ -59,7 +59,7 @@ class ObjectCache:
 
         if cache_key in self.cache:
             count = 0
-            if self.size is not None:
+            if self.size is not None and cache_key in self.keys:
                 count = self.keys[cache_key]
                 del self.keys[cache_key]
             entry = self.cache[cache_key]
