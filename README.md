@@ -17,10 +17,15 @@ Please have a look at https://github.com/wuan/bo-server for related scripts/cron
 
 # Installation
 
+## Install pip
+
+> wget https://bootstrap.pypa.io/get-pip.py
+> sudo pypy3 get-pip.py 
 Install manually by entering
 
-> pip install -U -r requirements.txt
-> python setup.py install
+## Install library with dependencies
+
+> sudo pypy3 -m pip install -e .
 
 or build a debian package by entering
 
