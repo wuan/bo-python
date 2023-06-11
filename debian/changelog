@@ -1,3 +1,10 @@
+python3-blitzortung (1.8) unstable; urgency=low
+
+  * prepare for PyPy usage
+  * update dependencies
+
+ -- Andreas Wuerl <blitzortung@tryb.de>  Sat, 18 Mar 2023 12:20:34 +0100
+
 python3-blitzortung (1.7.1) unstable; urgency=low
 
   * remove outdated dependencies

@@ -18,6 +18,8 @@ charset-normalizer==2.1.1
     # via requests
 constantly==15.1.0
     # via twisted
+fasteners==0.18
+    # via blitzortung (pyproject.toml)
 hyperlink==21.0.0
     # via twisted
 idna==3.4
@@ -27,8 +29,6 @@ idna==3.4
 incremental==22.10.0
     # via twisted
 injector==0.20.1
-    # via blitzortung (pyproject.toml)
-lockfile==0.12.2
     # via blitzortung (pyproject.toml)
 numpy==1.24.1
     # via shapely

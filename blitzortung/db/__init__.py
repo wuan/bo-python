@@ -20,30 +20,18 @@
 
 import atexit
 
-import mock
 from injector import Module, singleton, inject, provider
-from mock.mock import MagicMock
-
-
-def create_psycopg2_dummy():
-    class Dummy:
-        Binary = MagicMock(name="psycopg2.Binary")
-
-    dummy = Dummy()
-    dummy.pool = Dummy()
-    dummy.pool.ThreadedConnectionPool = Dummy
-    dummy.extensions = mock.Mock()
-    dummy.extras = mock.Mock()
-    return dummy
-
 
 try:
-    import psycopg2
-    import psycopg2.pool
-    import psycopg2.extras
-    import psycopg2.extensions
+    from psycopg2cffi import compat
+    compat.register()
 except ImportError:
-    psycopg2 = create_psycopg2_dummy()
+    pass
+
+import psycopg2
+import psycopg2.pool
+import psycopg2.extras
+import psycopg2.extensions
 
 from .. import config
 
@@ -67,7 +55,8 @@ class DbModule(Module):
 def strike():
     from .. import INJECTOR
 
-    return INJECTOR.get(table.Strike)
+    strike_db = INJECTOR.get(table.Strike)
+    return strike_db
 
 
 def strike_cluster():
