@@ -143,7 +143,7 @@ class GlobalStrikeGridQuery:
         global_strikes_grid_result = tuple(
             (
                 result['rx'],
-                -result['ry'],
+                -result['ry'] - 1,
                 result['strike_count'],
                 -(end_time - result['timestamp']).seconds
             ) for result in results
