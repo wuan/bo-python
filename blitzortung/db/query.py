@@ -299,8 +299,8 @@ class GlobalGridQuery(SelectQuery):
         )
 
         self.set_columns(
-            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s))) / %(xdiv)s)::integer AS rx',
-            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s))) / %(ydiv)s)::integer AS ry',
+            'ROUND((ST_X(ST_Transform(geog::geometry, %(srid)s))) / %(xdiv)s)::integer AS rx',
+            'ROUND((ST_Y(ST_Transform(geog::geometry, %(srid)s))) / %(ydiv)s)::integer AS ry',
             'count(*) AS strike_count',
             'max("timestamp") as "timestamp"'
         )
