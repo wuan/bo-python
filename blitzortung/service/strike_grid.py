@@ -132,8 +132,8 @@ class GlobalStrikeGridQuery:
         grid_query.addErrback(log.err)
         return grid_query, state
 
-    @classmethod
-    def build_strikes_grid_result(cls, results, state):
+    @staticmethod
+    def build_strikes_grid_result(results, state):
         state.add_info_text(
             "global grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('global_strikes_grid.query')
@@ -142,8 +142,8 @@ class GlobalStrikeGridQuery:
         end_time = state.time_interval.end
         global_strikes_grid_result = tuple(
             (
-                cls._fix_positive_offset(result['rx']) - 1,
-                -cls._fix_positive_offset(result['ry']),
+                result['rx'],
+                -result['ry'] - 1,
                 result['strike_count'],
                 -(end_time - result['timestamp']).seconds
             ) for result in results
@@ -152,10 +152,6 @@ class GlobalStrikeGridQuery:
         state.log_timing('globaL_strikes_grid.build_result', reference_time)
 
         return global_strikes_grid_result
-
-    @staticmethod
-    def _fix_positive_offset(value):
-        return value + 1 if value > 0 else value
 
     def combine_result(self, strike_grid_result, histogram_result, state):
         combined_result = gatherResults([strike_grid_result, histogram_result], consumeErrors=True)
