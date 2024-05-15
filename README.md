@@ -7,7 +7,7 @@ python-blitzortung a python module for blitzortung.org related stuff
 
 # Introduction
 
-This modules contains the following independent components
+This module contains the following independent components
 
 * strike and station data import from data.blitzortung.org
 * database setup and access for local storage of blitzortung.org data.
