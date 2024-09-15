@@ -93,6 +93,13 @@ class ObjectCache:
         self.total_hit_count = 0
         self.cache.clear()
 
+    def clean_expired(self):
+        now = time.time()
+        expired_keys = {key for key, entry in self.cache.items() if not entry.is_valid(now)}
+        for expired_key in expired_keys:
+            del self.keys[expired_key]
+            del self.cache[expired_key]
+
     def get_time_to_live(self):
         return self.__ttl_seconds
 

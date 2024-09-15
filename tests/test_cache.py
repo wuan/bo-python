@@ -19,6 +19,7 @@
 """
 
 import time
+from functools import cache
 from unittest import TestCase
 
 from assertpy import assert_that
@@ -152,7 +153,7 @@ class TestObjectCache(TestCase):
 
 class TestObjectCacheWithSize(TestCase):
     def setUp(self):
-        self.cache = ObjectCache(size=2)
+        self.cache = ObjectCache(ttl_seconds=1, size=2)
 
     def test_limited_size(self):
         foo_1 = self.cache.get(CachedObject, name="foo")
@@ -171,3 +172,13 @@ class TestObjectCacheWithSize(TestCase):
         foo_2 = self.cache.get(CachedObject, name="foo")
         assert_that(list(self.cache.keys.values())).is_equal_to([0, 1])
         assert_that(foo_1).is_same_as(foo_2)
+
+    def test_expiry(self):
+        _ = self.cache.get(CachedObject, name="foo")
+        self.cache.clean_expired()
+        assert_that(self.cache.get_size()).is_equal_to(1)
+        time.sleep(1)
+        self.cache.clean_expired()
+        assert_that(self.cache.get_size()).is_equal_to(0)
+
+
