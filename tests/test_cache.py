@@ -181,4 +181,11 @@ class TestObjectCacheWithSize(TestCase):
         self.cache.clean_expired()
         assert_that(self.cache.get_size()).is_equal_to(0)
 
+    def test_auto_expiry(self):
+        self.cache = ObjectCache(ttl_seconds=1, size=2, cleanup_period=1)
+        _ = self.cache.get(CachedObject, name="foo")
+        assert_that(self.cache.get_size()).is_equal_to(1)
+        time.sleep(1)
+        _ = self.cache.get(CachedObject, name="bar")
+        assert_that(self.cache.get_size()).is_equal_to(1)
 

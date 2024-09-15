@@ -46,7 +46,7 @@ class CacheEntry:
 class ObjectCache:
     __KWA_MARK = object()
 
-    def __init__(self, ttl_seconds=30, size=None):
+    def __init__(self, ttl_seconds=30, size=None, cleanup_period=None):
         self.__ttl_seconds = int(ttl_seconds)
         self.total_count = 0
         self.total_hit_count = 0
@@ -54,8 +54,19 @@ class ObjectCache:
 
         self.cache = {}
         self.keys = {}
+        self.last_cleanup = 0
+        self.cleanup_period = cleanup_period
 
     def get(self, cached_object_creator, *args, **kwargs):
+        if self.cleanup_period is not None:
+            now = time.time()
+            if now > self.last_cleanup + self.cleanup_period:
+                before = self.get_size()
+                self.clean_expired()
+                after = self.get_size()
+                print(f"{cached_object_creator.__name__}: cache cleanup {before} -> {after}")
+                self.last_cleanup = now
+
         self.total_count += 1
 
         cache_key = (cached_object_creator,) + args + (ObjectCache.__KWA_MARK,) \
