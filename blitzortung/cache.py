@@ -37,6 +37,11 @@ class CacheEntry:
     def get_hit_count(self):
         return self.__hit_count
 
+    def __repr__(self):
+        valid = "+" if self.is_valid(self.__hit_count) else "-"
+
+        return f"cached<{valid} {self.get_hit_count()}>:{self.__payload}"
+
 
 class ObjectCache:
     __KWA_MARK = object()
