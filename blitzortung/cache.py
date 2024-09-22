@@ -44,7 +44,7 @@ class CacheEntry:
 
 
 class ObjectCache:
-    __KWA_MARK = object()
+    kwargs_separator = object()
 
     def __init__(self, ttl_seconds=30, size=None, cleanup_period=None):
         self.__ttl_seconds = int(ttl_seconds)
@@ -69,8 +69,9 @@ class ObjectCache:
 
         self.total_count += 1
 
-        cache_key = (cached_object_creator,) + args + (ObjectCache.__KWA_MARK,) \
+        cache_key = (cached_object_creator,) + args + (self.kwargs_separator,) \
                     + tuple(sorted(kwargs.items()))
+
         current_time = int(time.time())
 
         if cache_key in self.cache:

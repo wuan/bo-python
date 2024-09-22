@@ -19,7 +19,6 @@
 """
 
 import time
-from functools import cache
 from unittest import TestCase
 
 from assertpy import assert_that
@@ -141,6 +140,13 @@ class TestObjectCache(TestCase):
         cached_object = self.cache.get(CachedObject, foo=argument1, bar=argument2)
         assert_that(self.cache.get(CachedObject, bar=argument2, foo=argument1)).is_same_as(cached_object)
 
+    def test_get_with_kwargs_and_simlar_arg_and_is_not_cached(self):
+        argument1 = object()
+        argument2 = object()
+
+        cached_object = self.cache.get(CachedObject, foo=argument1, bar=argument2)
+        assert_that(self.cache.get(CachedObject, ('bar', argument2), foo=argument1)).is_not_same_as(cached_object)
+
     def test_get_ratio(self):
         assert_that(self.cache.get_ratio()).is_equal_to(0.0)
 
@@ -188,4 +194,3 @@ class TestObjectCacheWithSize(TestCase):
         time.sleep(1)
         _ = self.cache.get(CachedObject, name="bar")
         assert_that(self.cache.get_size()).is_equal_to(1)
-
