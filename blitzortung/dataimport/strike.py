@@ -44,7 +44,7 @@ class StrikesBlitzortungDataProvider:
 
     def get_strikes_since(self, latest_strike=None, region=1):
         latest_strike = latest_strike if latest_strike else \
-            (datetime.datetime.utcnow() - datetime.timedelta(hours=6)).replace(tzinfo=datetime.timezone.utc)
+            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)
         logger.debug("import strikes since %s" % latest_strike)
 
         for url_path in self.url_path_generator.get_paths(latest_strike):

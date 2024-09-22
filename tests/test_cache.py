@@ -194,3 +194,18 @@ class TestObjectCacheWithSize(TestCase):
         time.sleep(1)
         _ = self.cache.get(CachedObject, name="bar")
         assert_that(self.cache.get_size()).is_equal_to(1)
+
+def test_bench_object_cache_get(benchmark):
+    cache = ObjectCache()
+    benchmark.pedantic(cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100)
+
+def test_bench_object_cache_with_size_get(benchmark):
+    cache = ObjectCache(size=2)
+    benchmark.pedantic(cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100)
+
+def test_bench_object_cache_generate_cache_key(benchmark):
+    cache = ObjectCache()
+    benchmark.pedantic(cache.generate_cache_key, args=(CachedObject, ("foo", "bar"), {"baz": "asdf", "qux": "quux"}), rounds=1000, iterations=100)
+
+    print("hit count", cache.total_hit_count)
+

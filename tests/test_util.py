@@ -69,8 +69,7 @@ class TimeIntervalsTest(object):
         )
 
     def test_time_intervals_generator_at_current_time(self):
-        end_time = datetime.datetime.utcnow()
-        end_time = end_time.replace(tzinfo=datetime.timezone.utc)
+        end_time = datetime.datetime.now(datetime.timezone.utc)
         start_time = end_time - self.duration
 
         times = [time for time in blitzortung.util.time_intervals(start_time, self.duration)]

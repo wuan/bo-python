@@ -20,14 +20,14 @@
 
 import math
 
-import blitzortung.types
+import blitzortung.base
 
 
 class PointTest(object):
     def setUp(self):
-        self.point1 = blitzortung.types.Point(11, 49)
-        self.point2 = blitzortung.types.Point(12, 49)
-        self.point3 = blitzortung.types.Point(11, 50)
+        self.point1 = blitzortung.base.Point(11, 49)
+        self.point2 = blitzortung.base.Point(12, 49)
+        self.point3 = blitzortung.base.Point(11, 50)
         self.radians_factor = math.pi / 180
 
     def test_get_coordinate_components(self):

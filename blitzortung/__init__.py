@@ -55,7 +55,7 @@ from . import dataimport
 from . import db
 from . import geom
 from . import util
-from . import types
+from . import base
 
 INJECTOR = injector.Injector(
     [config.ConfigModule(), db.DbModule()])

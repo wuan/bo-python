@@ -31,7 +31,7 @@ from blitzortung.geom import Grid
 class StrikeTest(object):
     def setUp(self):
         self.query_builder = blitzortung.db.query_builder.Strike()
-        self.end_time = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, second=0, microsecond=0)
+        self.end_time = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
         self.start_time = self.end_time - datetime.timedelta(minutes=10)
         self.srid = 1234
 
@@ -97,7 +97,7 @@ class StrikeTest(object):
 class StrikeClusterTest(object):
     def setUp(self):
         self.query_builder = blitzortung.db.query_builder.StrikeCluster()
-        self.end_time = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, second=0, microsecond=0)
+        self.end_time = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
         self.interval_duration = datetime.timedelta(minutes=10)
         self.srid = "<srid>"
 

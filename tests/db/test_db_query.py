@@ -95,7 +95,7 @@ class TimeIntervalTest(TestCase):
 
     def test_exception_when_end_is_not_integer(self):
         with pytest.raises(ValueError):
-            blitzortung.db.query.TimeInterval(datetime.datetime.utcnow(), "asdf")
+            blitzortung.db.query.TimeInterval(datetime.datetime.now(datetime.timezone.utc), "asdf")
 
 
 class QueryTest(TestCase):

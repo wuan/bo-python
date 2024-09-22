@@ -26,7 +26,7 @@ import shapely.geometry
 from assertpy import assert_that
 
 import blitzortung.geom
-import blitzortung.types
+import blitzortung.base
 
 
 class GeometryForTest(blitzortung.geom.Geometry):
@@ -75,21 +75,21 @@ class TestEnvelope(TestCase):
         assert_that(self.envelope.y_delta).is_equal_to(5)
 
     def test_contains_point_inside_envelope(self):
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(0, 0)))
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(1, 1.5)))
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(-1, -1.5)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(0, 0)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(1, 1.5)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(-1, -1.5)))
 
     def test_contains_point_on_border(self):
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(0, -3)))
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(0, 2)))
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(-5, 0)))
-        self.assertTrue(self.envelope.contains(blitzortung.types.Point(4, 0)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(0, -3)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(0, 2)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(-5, 0)))
+        self.assertTrue(self.envelope.contains(blitzortung.base.Point(4, 0)))
 
     def test_does_not_contain_point_outside_border(self):
-        self.assertFalse(self.envelope.contains(blitzortung.types.Point(0, -3.0001)))
-        self.assertFalse(self.envelope.contains(blitzortung.types.Point(0, 2.0001)))
-        self.assertFalse(self.envelope.contains(blitzortung.types.Point(-5.0001, 0)))
-        self.assertFalse(self.envelope.contains(blitzortung.types.Point(4.0001, 0)))
+        self.assertFalse(self.envelope.contains(blitzortung.base.Point(0, -3.0001)))
+        self.assertFalse(self.envelope.contains(blitzortung.base.Point(0, 2.0001)))
+        self.assertFalse(self.envelope.contains(blitzortung.base.Point(-5.0001, 0)))
+        self.assertFalse(self.envelope.contains(blitzortung.base.Point(4.0001, 0)))
 
     def test_get_env(self):
         expected_env = shapely.geometry.LinearRing([(-5, -3), (-5, 2), (4, 2), (4, -3)])

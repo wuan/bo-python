@@ -2,7 +2,7 @@ import pytest
 
 from blitzortung.data import Timestamp, Event
 from blitzortung.geom import Envelope
-from blitzortung.types import Point
+from blitzortung.base import Point
 
 
 @pytest.fixture

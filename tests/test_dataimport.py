@@ -139,7 +139,7 @@ class StrikesBlitzortungDataProviderTest(object):
         self.provider.read_data = Mock()
 
     def test_get_strikes_since(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_paths.return_value = ['path1', 'path2']
         strike_data1 = {'one': 1}
@@ -157,7 +157,7 @@ class StrikesBlitzortungDataProviderTest(object):
         assert_that(list(strikes)).contains(strike2)
 
     def test_get_strikes_since_with_builder_error(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_paths.return_value = ['path']
         strike_data = {'one': 1}
@@ -170,7 +170,7 @@ class StrikesBlitzortungDataProviderTest(object):
         assert_that(strikes).is_empty()
 
     def test_get_strikes_since_with_generic_exception(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         latest_strike_timestamp = now - datetime.timedelta(hours=1)
         self.url_generator.get_url_paths.return_value = ['path']
         strike_data = {'one': 1}
@@ -236,7 +236,7 @@ class StationsBlitzortungDataProviderTest(object):
             )
 
         def test_get_raw_data_since(self):
-            last_data = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+            last_data = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
 
             self.data_url.build_path.side_effect = ['full_url1', 'full_url2']
             self.url_path_generator.get_paths.return_value = ['url_path1', 'url_path2']

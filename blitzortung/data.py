@@ -21,21 +21,21 @@
 import datetime
 import math
 
-from . import types
+from . import base
 from .geom import GridElement
 
 
-class Timestamp(types.EqualityAndHash):
+class Timestamp(base.EqualityAndHash):
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
     __slots__ = ['datetime', 'nanosecond']
 
-    def __init__(self, date_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc), nanosecond=0):
-        if type(date_time) == str:
+    def __init__(self, date_time=datetime.datetime.now(datetime.timezone.utc), nanosecond=0):
+        if isinstance(date_time, str):
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
-        elif type(date_time) == int:
+        elif isinstance(date_time, int):
             date_time, date_time_nanosecond = Timestamp.from_nanoseconds(date_time)
             nanosecond += date_time_nanosecond
 
@@ -73,7 +73,7 @@ class Timestamp(types.EqualityAndHash):
         return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + \
                datetime.timedelta(seconds=total_seconds,
                                   microseconds=residual_microseconds), \
-               residual_nanoseconds
+            residual_nanoseconds
 
     @property
     def year(self):
@@ -107,7 +107,7 @@ class Timestamp(types.EqualityAndHash):
     def tzinfo(self):
         return self.datetime.tzinfo
 
-    epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
+    epoch = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
 
     @property
     def value(self):
@@ -122,48 +122,48 @@ class Timestamp(types.EqualityAndHash):
         return self.datetime != other.datetime or self.nanosecond != other.nanosecond
 
     def __lt__(self, other):
-        if type(other) == datetime.datetime:
+        if isinstance(other, datetime.datetime):
             return self.datetime < other
         else:
             return self.datetime < other.datetime or (
                     self.datetime == other.datetime and self.nanosecond < other.nanosecond)
 
     def __le__(self, other):
-        if type(other) == datetime.datetime:
+        if isinstance(other, datetime.datetime):
             return self.datetime <= other
         else:
             return self.datetime < other.datetime or (
                     self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
 
     def __gt__(self, other):
-        if type(other) == datetime.datetime:
+        if isinstance(other, datetime.datetime):
             return self.datetime > other
         else:
             return self.datetime > other.datetime or (
                     self.datetime == other.datetime and self.nanosecond > other.nanosecond)
 
     def __ge__(self, other):
-        if type(other) == datetime.datetime:
+        if isinstance(other, datetime.datetime):
             return self.datetime >= other
         else:
             return self.datetime > other.datetime or (
                     self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
 
     def __add__(self, other):
-        if type(other) == Timedelta:
+        if isinstance(other, Timedelta):
             return Timestamp(self.datetime + other.timedelta, self.nanosecond + other.nanodelta)
-        elif type(other) == datetime.timedelta:
+        elif isinstance(other, datetime.timedelta):
             return Timestamp(self.datetime + other, self.nanosecond)
-        elif type(other) == int:
+        elif isinstance(other, int):
             return Timestamp(self.datetime, self.nanosecond + other)
         return NotImplemented
 
     def __sub__(self, other):
-        if type(other) == Timestamp:
+        if isinstance(other, Timestamp):
             return Timedelta(self.datetime - other.datetime, self.nanosecond - other.nanosecond)
-        elif type(other) == datetime.timedelta:
+        elif isinstance(other, datetime.timedelta):
             return Timestamp(self.datetime - other, self.nanosecond)
-        elif type(other) == int:
+        elif isinstance(other, int):
             return Timestamp(self.datetime, self.nanosecond - other)
         return NotImplemented
 
@@ -185,7 +185,7 @@ class Timestamp(types.EqualityAndHash):
 NaT = Timestamp(None)
 
 
-class Timedelta(types.EqualityAndHash):
+class Timedelta(base.EqualityAndHash):
     def __init__(self, timedelta=datetime.timedelta(), nanodelta=0):
         if nanodelta < 0 or nanodelta > 999:
             microdelta = nanodelta // 1000
@@ -206,7 +206,7 @@ class Timedelta(types.EqualityAndHash):
         return "Timedelta({}, {})".format(self.timedelta, self.nanodelta)
 
 
-class Event(types.Point):
+class Event(base.Point):
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 
@@ -234,10 +234,10 @@ class Event(types.Point):
 
     @property
     def is_valid(self):
-        return (self.x != 0.0 or self.y != 0.0) \
-               and -180 <= self.x <= 180 \
-               and -90 < self.y < 90 \
-               and self.has_valid_timestamp
+        return (not math.isclose(self.x, 0.0, rel_tol=1e-09, abs_tol=1e-09) or not math.isclose(self.y, 0.0, rel_tol=1e-09)) \
+            and -180 <= self.x <= 180 \
+            and -90 < self.y < 90 \
+            and self.has_valid_timestamp
 
     @property
     def has_valid_timestamp(self):
@@ -257,12 +257,12 @@ class Event(types.Point):
             timestamp_string = "NaT"
 
         return "%s %.4f %.4f" \
-               % (timestamp_string, self.x, self.y)
+            % (timestamp_string, self.x, self.y)
 
     @property
     def uuid(self):
         return "%s-%05.0f-%05.0f" \
-               % (str(self.timestamp().value), self.x * 100, self.y * 100)
+            % (str(self.timestamp().value), self.x * 100, self.y * 100)
 
 
 class RawWaveformEvent(Event):
@@ -314,7 +314,7 @@ class Station(Event):
     @property
     def is_valid(self):
         return super().is_valid \
-               and self.number > 0
+            and self.number > 0
 
     @property
     def is_offline(self):

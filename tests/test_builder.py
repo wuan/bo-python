@@ -151,7 +151,7 @@ class StrikeTest(TestBase):
 
         self.builder.set_x(0.0)
         self.builder.set_y(0.0)
-        self.builder.set_timestamp(datetime.datetime.utcnow())
+        self.builder.set_timestamp(datetime.datetime.now(datetime.timezone.utc))
         self.builder.set_amplitude(1.0)
         self.builder.set_lateral_error(5.0)
         self.builder.set_station_count(10)
@@ -159,7 +159,7 @@ class StrikeTest(TestBase):
         assert_that(self.builder.build().id).is_equal_to(1234)
 
     def test_set_timestamp(self):
-        timestamp = datetime.datetime.utcnow()
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
         self.builder.set_timestamp(timestamp)
 
         self.builder.set_x(0.0)
@@ -270,7 +270,7 @@ class StationOffline(object):
         self.builder.set_id(364)
         self.builder.set_number(123)
 
-        end = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        end = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
         begin = end - datetime.timedelta(hours=1)
         self.builder.set_begin(begin)
         self.builder.set_end(end)

@@ -74,21 +74,14 @@ class ObjectCache:
         current_time = int(time.time())
 
         if cache_key in self.cache:
-            count = 0
-            if self.size is not None:
-                count = self.keys[cache_key]
-                del self.keys[cache_key]
             entry = self.cache[cache_key]
             if entry.is_valid(current_time):
                 if self.size is not None:
-                    self.keys[cache_key] = count + 1
+                    self.track_usage(cache_key)
                 self.total_hit_count += 1
                 return entry.get_payload()
-        elif self.size is not None:
-            if len(self.keys) >= self.size:
-                expired_key = next(iter(self.keys))
-                del self.keys[expired_key]
-                del self.cache[expired_key]
+        elif self.size is not None and len(self.keys) >= self.size:
+            self.remove_oldest_entry()
 
         expires = current_time + self.__ttl_seconds
         payload = cached_object_creator(*args, **kwargs)
@@ -98,6 +91,16 @@ class ObjectCache:
         self.keys[cache_key] = 0
 
         return entry.get_payload()
+
+    def remove_oldest_entry(self):
+        expired_key = next(iter(self.keys))
+        del self.keys[expired_key]
+        del self.cache[expired_key]
+
+    def track_usage(self, cache_key):
+        count = self.keys[cache_key]
+        del self.keys[cache_key]
+        self.keys[cache_key] = count + 1
 
     def clear(self):
         self.total_count = 0

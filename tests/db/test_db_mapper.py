@@ -39,7 +39,7 @@ class TestStrikeMapper(TestCase):
         self.strike_builder = Mock(name="strike_builder", spec=blitzortung.builder.Strike)
         self.strike_mapper = blitzortung.db.mapper.Strike(self.strike_builder)
 
-        self.timestamp = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        self.timestamp = datetime.datetime.now(datetime.timezone.utc)
         self.result = {
             'id': 12,
             'timestamp': self.timestamp,
@@ -92,7 +92,7 @@ class TestStationMapper(TestCase):
         self.station_builder = Mock(name="station_builder", spec=blitzortung.builder.Station)
         self.strike_mapper = blitzortung.db.mapper.Station(self.station_builder)
 
-        self.timestamp = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        self.timestamp = datetime.datetime.now(datetime.timezone.utc)
         self.result = {
             'number': 31,
             'user': '<user>',
