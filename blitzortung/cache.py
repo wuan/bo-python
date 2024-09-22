@@ -69,8 +69,7 @@ class ObjectCache:
 
         self.total_count += 1
 
-        cache_key = (cached_object_creator,) + args + (self.kwargs_separator,) \
-                    + tuple(sorted(kwargs.items()))
+        cache_key = self.generate_cache_key(cached_object_creator, args, kwargs)
 
         current_time = int(time.time())
 
@@ -122,3 +121,15 @@ class ObjectCache:
 
     def get_size(self):
         return len(self.cache)
+
+
+    def generate_cache_key(self, cached_object_creator, args, kwargs):
+        """
+        Generates a cache key based on the cached object creator function, args, and kwargs.
+
+        :param cached_object_creator: The function used to create the object to be cached.
+        :param args: Positional arguments to the object creator.
+        :param kwargs: Keyword arguments to the object creator.
+        :return: A tuple representing the cache key.
+        """
+        return (cached_object_creator,) + args + (self.kwargs_separator,) + tuple(sorted(kwargs.items()))
