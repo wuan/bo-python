@@ -1,4 +1,0 @@
-#!/bin/sh
-pip-compile pyproject.toml -U -o requirements.txt
-pip-compile pyproject.toml -U --extra=tests -o requirements_tests.txt
-
