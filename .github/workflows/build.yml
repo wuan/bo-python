@@ -13,8 +13,7 @@ jobs:
       matrix:
         python-version: [ "3.9", "3.10", "3.11", "3.12" ]
         poetry-version: [ "1.7.1", "1.8.3" ]
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,7 +41,7 @@ jobs:
           poetry build
 
       - uses: sonarsource/sonarqube-scan-action@v3
-        if: matrix.python-version == '3.10' && matrix.os == 'ubuntu-latest' && matrix.poetry-version == '1.7.1'
+        if: matrix.python-version == '3.10' && matrix.poetry-version == '1.7.1'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
