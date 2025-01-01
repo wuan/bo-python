@@ -272,12 +272,12 @@ class GridQuery(SelectQuery):
         env = self.grid.env
 
         if env.is_valid:
-            print("   grid query:", env)
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
                                envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
                                envelope_srid=grid.srid)
         else:
-            print("invalid env:", grid, env, file=sys.stderr)
+            print("ERROR: invalid env from grid", grid)
+            print("                         env", env)
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         self.add_group_by('rx')
@@ -288,17 +288,17 @@ class GridQuery(SelectQuery):
 
 
 class GlobalGridQuery(SelectQuery):
-    __slots__ = ['raster']
+    __slots__ = ['grid']
 
-    def __init__(self, raster, count_threshold=0):
+    def __init__(self, grid, count_threshold=0):
         super().__init__()
 
-        self.raster = raster
+        self.grid = grid
 
         self.add_parameters(
-            srid=raster.srid,
-            xdiv=raster.x_div,
-            ydiv=raster.y_div,
+            srid=grid.srid,
+            xdiv=grid.x_div,
+            ydiv=grid.y_div,
         )
 
         self.set_columns(
