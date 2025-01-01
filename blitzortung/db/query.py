@@ -19,6 +19,7 @@
 """
 
 import datetime
+import sys
 
 import shapely.geometry.base
 import shapely.wkb
@@ -271,10 +272,12 @@ class GridQuery(SelectQuery):
         env = self.raster.env
 
         if env.is_valid:
+            print("   grid query:", env)
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
                                envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
                                envelope_srid=raster.srid)
         else:
+            print("invalid env:", env, file=sys.stderr)
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
         self.add_group_by('rx')
