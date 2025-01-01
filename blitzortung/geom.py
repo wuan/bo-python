@@ -136,10 +136,10 @@ class GridFactory:
     __slots__ = ['min_lon', 'max_lon', 'max_lat', 'min_lat', 'coord_sys', 'ref_lon', 'ref_lat', 'grid_data']
 
     def __init__(self, min_lon, max_lon, min_lat, max_lat, coord_sys, ref_lon=None, ref_lat=None):
-        self.min_lon = min_lon
-        self.max_lon = max_lon
-        self.min_lat = min_lat
-        self.max_lat = max_lat
+        self.min_lon = max(-180.0, min_lon)
+        self.max_lon = min(180.0, max_lon)
+        self.min_lat = max(-90.0, min_lat)
+        self.max_lat = min(90.0, max_lat)
         self.coord_sys = coord_sys
         self.ref_lon = ref_lon
         self.ref_lat = ref_lat

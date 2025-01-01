@@ -22,6 +22,7 @@ import datetime
 from unittest import TestCase
 
 import pyproj
+import pytest
 import shapely.geometry
 from assertpy import assert_that
 
@@ -144,44 +145,75 @@ class TestGrid(TestCase):
             "Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))")
 
 
-class TestGridFactory(TestCase):
-    def setUp(self):
-        self.base_proj = pyproj.CRS('epsg:4326')
-        self.proj = pyproj.CRS('epsg:32633')
-        self.grid_factory = blitzortung.geom.GridFactory(10, 11, 52, 53, self.proj)
-        self.base_length = 5000
+class TestGridFactory:
+    @pytest.fixture
+    def base_proj(self):
+        return pyproj.CRS('epsg:4326')
 
-    def test_get_for_srid(self):
-        grid = self.grid_factory.get_for(self.base_length)
+    @pytest.fixture
+    def proj(self):
+        return pyproj.CRS('epsg:32633')
 
-        assert_that(grid.srid).is_equal_to(4326)
+    @pytest.fixture
+    def default_factory(self, proj):
+        return blitzortung.geom.GridFactory(10, 11, 52, 53, proj)
 
-    def test_grid_boundaries(self):
-        grid = self.grid_factory.get_for(self.base_length)
+    @pytest.fixture
+    def default_grid(self, default_factory, base_length):
+        return default_factory.get_for(base_length)
+
+    @pytest.fixture
+    def base_length(self):
+        return 5000
+
+    @pytest.fixture
+    def epsilon(self):
+        return 1e-4
+
+    def test_get_for_srid(self, default_grid):
+        assert_that(default_grid.srid).is_equal_to(4326)
+
+    def test_grid_boundaries(self, default_grid, base_proj, proj, base_length, epsilon):
+        grid = default_grid
 
         x_div = grid.x_div
         y_div = grid.y_div
 
         assert_that(grid.x_min).is_equal_to(10)
         assert_that(grid.y_min).is_equal_to(52)
-        epsilon = 5e-8
-        print(grid)
-        assert_that(grid.x_max).is_close_to(10.964855970781894, epsilon)
-        assert_that(grid.y_max).is_close_to(52.99942586979069, epsilon)
-        assert_that(x_div).is_close_to(0.06891828362727814, epsilon)
-        assert_that(y_div).is_close_to(0.04759170808527102, epsilon)
 
-        x_0, y_0 = pyproj.Transformer.from_proj(self.base_proj, self.proj).transform(52.5, 10.5)
-        x_1, y_1 = pyproj.Transformer.from_proj(self.base_proj, self.proj).transform(52.5 + y_div, 10.5 + x_div)
+        assert_that(grid.x_max).is_close_to(10.9648, epsilon)
+        assert_that(grid.y_max).is_close_to(52.9994, epsilon)
+        assert_that(x_div).is_close_to(0.0689, epsilon)
+        assert_that(y_div).is_close_to(0.0475, epsilon)
 
-        assert_that(x_1 - x_0).is_close_to(self.base_length, 1e-4)
-        assert_that(y_1 - y_0).is_close_to(self.base_length, 1e-4)
+        x_0, y_0 = pyproj.Transformer.from_proj(base_proj, proj).transform(52.5, 10.5)
+        x_1, y_1 = pyproj.Transformer.from_proj(base_proj, proj).transform(52.5 + y_div, 10.5 + x_div)
 
-    def test_get_for_cache(self):
-        grid_1 = self.grid_factory.get_for(self.base_length)
-        grid_2 = self.grid_factory.get_for(self.base_length)
+        assert_that(x_1 - x_0).is_close_to(base_length, epsilon)
+        assert_that(y_1 - y_0).is_close_to(base_length, epsilon)
+
+    def test_get_for_cache(self, default_factory, base_length):
+        grid_1 = default_factory.get_for(base_length)
+        grid_2 = default_factory.get_for(base_length)
 
         assert_that(grid_1).is_same_as(grid_2)
+
+    def test_grid_outside_upper_range(self, base_length, proj, epsilon):
+        factory =  blitzortung.geom.GridFactory(14, 16, 70, 95, proj)
+
+        grid = factory.get_for(base_length)
+
+        assert_that(grid.x_delta).is_close_to(1.8134, epsilon)
+        assert_that(grid.y_delta).is_close_to(19.9795, epsilon)
+
+    def test_grid_outside_lower_range(self, base_length, proj, epsilon):
+        factory =  blitzortung.geom.GridFactory(14, 16, -95, -70, pyproj.CRS('epsg:32733'))
+
+        grid = factory.get_for(base_length)
+
+        assert_that(grid.x_delta).is_close_to(1.7974, epsilon)
+        assert_that(grid.y_delta).is_close_to(19.9785, epsilon)
 
 
 class TestRasterElement(TestCase):
