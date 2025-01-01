@@ -276,7 +276,7 @@ class GridQuery(SelectQuery):
                                envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
                                envelope_srid=grid.srid)
         else:
-            print("ERROR: invalid env from grid", grid)
+            print("ERROR: invalid env from grid", grid.x_min, grid.x_max, grid.y_min, grid.y_max, grid.x_div, grid.y_div)
             print("                         env", env)
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")
 
