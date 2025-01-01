@@ -1,9 +1,11 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+
 python-blitzortung a python module for blitzortung.org related stuff
 --------------------------------------------------------------------
-
-[![Build Status](https://travis-ci.org/wuan/bo-python.svg?branch=master)](https://travis-ci.org/wuan/bo-python)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ee40a9ada1a14cc7b061a0080bdc4d84)](https://www.codacy.com/gh/wuan/bo-python/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=wuan/bo-python&amp;utm_campaign=Badge_Grade)
-[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/ee40a9ada1a14cc7b061a0080bdc4d84)](https://www.codacy.com/gh/wuan/bo-python/dashboard?utm_source=github.com&utm_medium=referral&utm_content=wuan/bo-python&utm_campaign=Badge_Coverage)
 
 # Introduction
 
