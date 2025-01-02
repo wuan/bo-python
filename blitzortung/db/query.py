@@ -275,6 +275,7 @@ class GridQuery(SelectQuery):
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
                                envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
                                envelope_srid=grid.srid)
+            print("  query:", env)
         else:
             print("ERROR: invalid env from grid", grid.x_min, grid.x_max, grid.y_min, grid.y_max, grid.x_div, grid.y_div)
             print("                         env", env)
