@@ -19,7 +19,6 @@
 """
 
 import datetime
-import sys
 
 import shapely.geometry.base
 import shapely.wkb
