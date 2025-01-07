@@ -3,6 +3,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=wuan_bo-python&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=wuan_bo-python)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wuan/bo-python/badge)](https://scorecard.dev/viewer/?uri=github.com/wuan/bo-python)
 
 python-blitzortung a python module for blitzortung.org related stuff
 --------------------------------------------------------------------
