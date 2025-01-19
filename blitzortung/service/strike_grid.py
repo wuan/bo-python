@@ -20,6 +20,7 @@
 
 import time
 from dataclasses import dataclass
+from typing import Optional
 
 from injector import inject
 from twisted.internet.defer import gatherResults
