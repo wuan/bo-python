@@ -102,10 +102,10 @@ class StrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('strikes_grid.size', len(grid_data) if grid_data else 0)
-        state.log_gauge(f'strikes_grid.size.{state.grid_metadata.baselength}', len(grid_data))
+        state.log_gauge(f'strikes_grid.size.{state.grid_metadata.base_length}', len(grid_data))
         if state.grid_metadata.region is None:
             state.log_gauge('local_strikes_grid.size', len(grid_data) if grid_data else 0)
-            state.log_gauge(f'local_strikes_grid.size.baselength.{state.grid_metadata.baselength}', len(grid_data))
+            state.log_gauge(f'local_strikes_grid.size.baselength.{state.grid_metadata.base_length}', len(grid_data))
         state.log_incr('strikes_grid')
 
         grid_parameters = state.grid_parameters
@@ -183,7 +183,7 @@ class GlobalStrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('global_strikes_grid.size', len(grid_data))
-        state.log_gauge(f'global_strikes_grid.size.{state.grid_metadata.baselength}', len(grid_data))
+        state.log_gauge(f'global_strikes_grid.size.{state.grid_metadata.base_length}', len(grid_data))
         state.log_incr('global_strikes_grid')
 
         grid_parameters = state.grid_parameters
