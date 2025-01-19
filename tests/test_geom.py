@@ -102,7 +102,7 @@ class TestEnvelope(TestCase):
 
 class TestGrid(TestCase):
     def setUp(self):
-        self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25, 5000)
+        self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25)
 
     def test_get_x_div(self):
         assert_that(self.grid.x_div).is_equal_to(0.5)

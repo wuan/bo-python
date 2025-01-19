@@ -28,12 +28,19 @@ from .general import create_time_interval, TimingState
 from .. import db
 
 
-class StrikeGridState(TimingState):
-    __slots__ = ['grid_parameters', 'time_interval']
+@dataclass(frozen=True)
+class GridMetadata:
+    base_length: int
+    region: Optional[int] = None
 
-    def __init__(self, statsd_client, grid_parameters, time_interval):
+
+class StrikeGridState(TimingState):
+    __slots__ = ['grid_parameters', 'grid_metadata', 'time_interval']
+
+    def __init__(self, statsd_client, grid_parameters, grid_metadata, time_interval):
         super().__init__("strikes_grid", statsd_client)
         self.grid_parameters = grid_parameters
+        self.grid_metadata = grid_metadata
         self.time_interval = time_interval
 
 
@@ -42,10 +49,11 @@ class StrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
+    def create(self, grid_parameters, grid_metadata, minute_length, minute_offset, count_threshold, connection,
+               statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+        state = StrikeGridState(statsd_client, grid_parameters, grid_metadata, time_interval)
 
         query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters,
                                                      time_interval=time_interval, count_threshold=count_threshold)
@@ -92,6 +100,10 @@ class StrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('strikes_grid.size', len(grid_data) if grid_data else 0)
+        state.log_gauge(f'strikes_grid.size.{state.grid_metadata.baselength}', len(grid_data))
+        if state.grid_metadata.region is None:
+            state.log_gauge('local_strikes_grid.size', len(grid_data) if grid_data else 0)
+            state.log_gauge(f'local_strikes_grid.size.baselength.{state.grid_metadata.baselength}', len(grid_data))
         state.log_incr('strikes_grid')
 
         grid_parameters = state.grid_parameters
@@ -118,10 +130,11 @@ class GlobalStrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters, minute_length, minute_offset, count_threshold, connection, statsd_client):
+    def create(self, grid_parameters, grid_metadata, minute_length, minute_offset, count_threshold, connection,
+               statsd_client):
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+        state = StrikeGridState(statsd_client, grid_parameters, grid_metadata, time_interval)
 
         query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters,
                                                             time_interval=time_interval,
@@ -168,7 +181,7 @@ class GlobalStrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('global_strikes_grid.size', len(grid_data))
-        state.log_gauge(f'global_strikes_grid.size.{state.grid_parameters.baselength}', len(grid_data))
+        state.log_gauge(f'global_strikes_grid.size.{state.grid_metadata.baselength}', len(grid_data))
         state.log_incr('global_strikes_grid')
 
         grid_parameters = state.grid_parameters

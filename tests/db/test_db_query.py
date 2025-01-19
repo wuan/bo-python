@@ -225,7 +225,7 @@ class SelectQueryTest(TestCase):
 
 class GridQueryTest(TestCase):
     def test_with_raster(self):
-        raster = blitzortung.geom.Grid(-10, 20, 15, 35, 1.5, 1, 5000)
+        raster = blitzortung.geom.Grid(-10, 20, 15, 35, 1.5, 1)
 
         query = blitzortung.db.query.GridQuery(raster)
         query.set_table_name('strikes')
