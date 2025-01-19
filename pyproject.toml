@@ -1,8 +1,10 @@
-[tool.poetry]
+[project]
 name = 'blitzortung'
 version = '1.9.0'
 description = 'blitzortung.org python modules'
-authors = ["Andreas Würl <andi@tryb.de>"]
+authors = [
+    {name = "Andreas Würl",email = "andi@tryb.de"}
+]
 
 license = "Apache-2.0"
 

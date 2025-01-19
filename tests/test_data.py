@@ -224,7 +224,7 @@ class TestStation(object):
 class TestGridData(object):
     def setup_method(self):
         self.reference_time = datetime.datetime.now(datetime.timezone.utc)
-        self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25)
+        self.grid = blitzortung.geom.Grid(-5, 4, -3, 2, 0.5, 1.25, 5000)
         self.grid_data = blitzortung.data.GridData(self.grid)
 
     def test_get_grid(self):

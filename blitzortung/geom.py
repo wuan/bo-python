@@ -91,14 +91,15 @@ class Envelope(Geometry):
 class Grid(Envelope):
     """ grid characteristics"""
 
-    __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count']
+    __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count', '_baselength']
 
-    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, srid=Geometry.default_srid):
+    def __init__(self, x_min, x_max, y_min, y_max, x_div, y_div, baselength, srid=Geometry.default_srid):
         super().__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
         self.__x_bin_count = None
         self.__y_bin_count = None
+        self._baselength = baselength
 
     def get_x_bin(self, x_pos):
         return int(math.ceil(float(x_pos - self.x_min) / self.x_div)) - 1
@@ -167,7 +168,7 @@ class GridFactory:
             max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)
 
             self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
-                                               delta_lon, delta_lat,
+                                               delta_lon, delta_lat, base_length,
                                                Geometry.default_srid)
 
         return self.grid_data[base_length]

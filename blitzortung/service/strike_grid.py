@@ -168,6 +168,7 @@ class GlobalStrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('global_strikes_grid.size', len(grid_data))
+        state.log_gauge(f'global_strikes_grid.size.{state.grid_parameters.baselength}', len(grid_data))
         state.log_incr('global_strikes_grid')
 
         grid_parameters = state.grid_parameters
