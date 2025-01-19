@@ -19,6 +19,7 @@
 """
 
 import time
+from dataclasses import dataclass
 
 from injector import inject
 from twisted.internet.defer import gatherResults
