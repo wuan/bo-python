@@ -20,8 +20,8 @@ dependencies = [
 ]
 
 [project.scripts]
-bo-db = "blitzortung_srv.console.db:run"
-bo-import = "blitzortung_srv.console.import:run"
+bo-db = "blitzortung.console.db:run"
+bo-import = "blitzortung.console.import:run"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
