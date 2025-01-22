@@ -15,12 +15,13 @@ dependencies = [
     "shapely (>=2.0.6,<3.0.0)",
     "pyproj (>=3.7.0,<4.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
-    "injector (>=0.22.0,<0.23.0)"
+    "injector (>=0.22.0,<0.23.0)",
+    "statsd-telegraf (>=3.2.1.post1,<4.0.0)"
 ]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[project.scripts]
+bo-db = "blitzortung_srv.console.db:run"
+bo-import = "blitzortung_srv.console.import:run"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -28,3 +29,8 @@ pytest-cov = "^6.0.0"
 pytest-benchmark = "^5.1.0"
 mock = "^5.1.0"
 assertpy = "^1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
