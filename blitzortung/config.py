@@ -18,10 +18,11 @@
 
 """
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+from typing import Optional
+import os
+
+import configparser
+    #import ConfigParser as configparser
 
 from injector import Module, singleton, inject, provider
 
@@ -69,6 +70,18 @@ class ConfigModule(Module):
     @singleton
     @provider
     def provide_config_parser(self) -> configparser.ConfigParser:
+        config_file_path = self.find_config_file_path()
+
+        if config_file_path is None:
+            raise ValueError("No configuration file found")
+
         config_parser = configparser.ConfigParser()
-        config_parser.read('/etc/blitzortung.conf')
+        config_parser.read(config_file_path)
         return config_parser
+
+    def find_config_file_path(self) -> Optional[str]:
+        config_file_name = "blitzortung.conf"
+        for config_dir_name in [".", "/etc/"]:
+            config_file_path = os.path.join(config_dir_name, config_file_name)
+            if os.path.exists(config_file_path):
+                return config_file_path
