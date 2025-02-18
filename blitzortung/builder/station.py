@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -29,11 +29,11 @@ class Station(Event):
     class for building of station objects
     """
 
-    station_parser = re.compile(r'station;(\d+)')
-    user_parser = re.compile(r'user;(\d+)')
+    station_parser = re.compile(r"station;(\d+)")
+    user_parser = re.compile(r"user;(\d+)")
     city_parser = re.compile(r'city;"([^"]+)"')
     country_parser = re.compile(r'country;"([^"]+)"')
-    position_parser = re.compile(r'pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)')
+    position_parser = re.compile(r"pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)")
     status_parser = re.compile(r'status;"?([^ ]+)"?')
     board_parser = re.compile(r'board;"?([^ ]+)"?')
     last_signal_parser = re.compile(r'last_signal;"([-: 0-9]+)" ?')
@@ -86,9 +86,17 @@ class Station(Event):
         return self
 
     def build(self):
-        return data.Station(self.number, self.user, self.name, self.country,
-                            self.x_coord, self.y_coord, self.timestamp, self.status,
-                            self.board)
+        return data.Station(
+            self.number,
+            self.user,
+            self.name,
+            self.country,
+            self.x_coord,
+            self.y_coord,
+            self.timestamp,
+            self.status,
+            self.board,
+        )
 
 
 class StationOffline(Base):

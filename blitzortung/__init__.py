@@ -2,28 +2,28 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-"""
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
-blitzortung python modules
-"""
+
 import logging
 
-__version__ = '1.7.1'
+import injector
+
+
+__version__ = "1.7.1"
 
 
 # -----------------------------------------------------------------------------
@@ -39,6 +39,7 @@ class Error(Exception):
     """
     General Blitzortung error class.
     """
+
     pass
 
 
@@ -47,18 +48,14 @@ class Error(Exception):
 # -----------------------------------------------------------------------------
 
 
-import injector
+def create_injector():
+    from . import config
+    from . import db
 
-from . import builder
-from . import config
-from . import dataimport
-from . import db
-from . import geom
-from . import util
-from . import base
+    return injector.Injector([config.ConfigModule(), db.DbModule()])
 
-INJECTOR = injector.Injector(
-    [config.ConfigModule(), db.DbModule()])
+
+INJECTOR = create_injector()
 
 root_logger = logging.getLogger(__name__)
 root_logger.setLevel(logging.WARN)

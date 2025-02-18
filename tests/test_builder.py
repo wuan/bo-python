@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -30,8 +30,9 @@ from blitzortung.data import Timestamp
 class TestBase(object):
     @staticmethod
     def get_timestamp(timestamp_string):
-        return datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S.%f').replace(
-            tzinfo=datetime.timezone.utc)
+        return datetime.datetime.strptime(
+            timestamp_string, "%Y-%m-%d %H:%M:%S.%f"
+        ).replace(tzinfo=datetime.timezone.utc)
 
 
 class TimestampTest(object):
@@ -46,39 +47,51 @@ class TimestampTest(object):
         assert_that(self.builder.build()).is_none()
 
     def test_set_timestamp_from_datetime(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)).build()
+        timestamp = self.builder.set_timestamp(
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)
+        ).build()
 
         self.assert_timestamp(timestamp)
 
     def test_value_property(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)).build()
+        timestamp = self.builder.set_timestamp(
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651)
+        ).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328874978096651000)
 
     def test_value_property_with_nanoseconds(self):
-        timestamp = self.builder.set_timestamp(datetime.datetime(2012, 2, 10, 12, 56, 18, 96651), 456).build()
+        timestamp = self.builder.set_timestamp(
+            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651), 456
+        ).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328874978096651456)
 
-    def test_value_property(self):
+    def test_value_property_with_tz(self):
         timestamp = self.builder.set_timestamp(
-            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc)).build()
+            datetime.datetime(
+                2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc
+            )
+        ).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651000)
 
-    def test_value_property_with_nanoseconds(self):
+    def test_value_property_with_nanoseconds_with_tz(self):
         timestamp = self.builder.set_timestamp(
-            datetime.datetime(2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc),
-            456).build()
+            datetime.datetime(
+                2012, 2, 10, 12, 56, 18, 96651, tzinfo=datetime.timezone.utc
+            ),
+            456,
+        ).build()
 
         value = timestamp.value
         assert_that(value).is_equal_to(1328878578096651456)
 
     def test_set_timestamp_from_bad_string(self):
-        timestamp = self.builder.set_timestamp('0000-00-00').build()
+        timestamp = self.builder.set_timestamp("0000-00-00").build()
         assert_that(timestamp.datetime).is_none()
 
     def test_set_timestamp_from_string(self):
@@ -186,10 +199,12 @@ class StrikeTest(TestBase):
         assert_that(self.builder.build().lateral_error).is_equal_to(32767)
 
     def test_build_strike_from_line(self):
-        strike_line = u"2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
+        strike_line = "2013-08-08 10:30:03.644038642 pos;44.162701;8.931001;0 str;4.75 typ;0 dev;20146 sta;10;24;226,529,391,233,145,398,425,533,701,336,336,515,434,392,439,283,674,573,559,364,111,43,582,594"
         strike = self.builder.from_line(strike_line).build()
 
-        assert_that(strike.timestamp).is_equal_to(Timestamp("2013-08-08 10:30:03.644038642"))
+        assert_that(strike.timestamp).is_equal_to(
+            Timestamp("2013-08-08 10:30:03.644038642")
+        )
         assert_that(strike.timestamp.nanosecond).is_equal_to(642)
         assert_that(strike.x).is_equal_to(8.931001)
         assert_that(strike.y).is_equal_to(44.162701)
@@ -198,11 +213,36 @@ class StrikeTest(TestBase):
         assert_that(strike.lateral_error).is_equal_to(20146)
         assert_that(strike.station_count).is_equal_to(10)
         assert_that(strike.stations).is_equal_to(
-            [226, 529, 391, 233, 145, 398, 425, 533, 701, 336, 336, 515, 434, 392, 439, 283, 674, 573, 559,
-             364, 111, 43, 582, 594])
+            [
+                226,
+                529,
+                391,
+                233,
+                145,
+                398,
+                425,
+                533,
+                701,
+                336,
+                336,
+                515,
+                434,
+                392,
+                439,
+                283,
+                674,
+                573,
+                559,
+                364,
+                111,
+                43,
+                582,
+                594,
+            ]
+        )
 
     def test_build_strike_from_bad_line(self):
-        strike_line = u"2013-08-08 10:30:03.644038642"
+        strike_line = "2013-08-08 10:30:03.644038642"
         with pytest.raises(blitzortung.builder.BuilderError):
             self.builder.from_line(strike_line)
 
@@ -219,41 +259,43 @@ class StationTest(TestBase):
         assert_that(self.builder.board).is_none()
 
     def test_build_station_from_line(self):
-        line = u'station;364 user;1 city;"Musterdörfl" country;"Germany" pos;49.5435;9.7314;432 board;6.8 firmware;"WT 6.20.2 / 31e" status; 30 distance;71.474188743479 myblitz;N input_board;;;;;; input_firmware;"31e";"31e";"";"";"";"" input_gain;7.7;7.7;7.7;7.7;7.7;7.7 input_antenna;10;10;;;; last_signal;"2012-02-10 13:39:47" signals;3133 last_stroke;"2013-10-04 21:03:34" strokes;0;0;0;4;6;66.6667;752;3983;18.8802'
+        line = 'station;364 user;1 city;"Musterdörfl" country;"Germany" pos;49.5435;9.7314;432 board;6.8 firmware;"WT 6.20.2 / 31e" status; 30 distance;71.474188743479 myblitz;N input_board;;;;;; input_firmware;"31e";"31e";"";"";"";"" input_gain;7.7;7.7;7.7;7.7;7.7;7.7 input_antenna;10;10;;;; last_signal;"2012-02-10 13:39:47" signals;3133 last_stroke;"2013-10-04 21:03:34" strokes;0;0;0;4;6;66.6667;752;3983;18.8802'
 
         station = self.builder.from_line(line).build()
 
         assert_that(station.number).is_equal_to(364)
         assert_that(station.user).is_equal_to(1)
-        assert_that(station.name).is_equal_to(u'Musterdörfl')
-        assert_that(station.country).is_equal_to('Germany')
+        assert_that(station.name).is_equal_to("Musterdörfl")
+        assert_that(station.country).is_equal_to("Germany")
         assert_that(station.x).is_equal_to(9.7314)
         assert_that(station.y).is_equal_to(49.5435)
         assert_that(station.timestamp).is_equal_to(Timestamp("2012-02-10 13:39:47"))
-        assert_that(station.board).is_equal_to(u'6.8')
+        assert_that(station.board).is_equal_to("6.8")
 
     def test_build_station_offline(self):
         self.builder.set_number(364)
         self.builder.set_user(10)
-        self.builder.set_name(u'Musterdörfl')
-        self.builder.set_country(u'Germany')
+        self.builder.set_name("Musterdörfl")
+        self.builder.set_country("Germany")
         self.builder.set_x(9.7314)
         self.builder.set_y(49.5435)
         self.builder.set_timestamp("2012-02-10 14:39:47.410492123")
-        self.builder.set_status('A')
-        self.builder.set_board('0815')
+        self.builder.set_status("A")
+        self.builder.set_board("0815")
 
         station = self.builder.build()
 
         assert_that(station.number).is_equal_to(364)
-        assert_that(station.name).is_equal_to(u'Musterdörfl')
-        assert_that(station.country).is_equal_to(u'Germany')
+        assert_that(station.name).is_equal_to("Musterdörfl")
+        assert_that(station.country).is_equal_to("Germany")
         assert_that(station.x).is_equal_to(9.7314)
         assert_that(station.y).is_equal_to(49.5435)
-        assert_that(station.timestamp.datetime).is_equal_to(self.get_timestamp("2012-02-10 14:39:47.410492"))
+        assert_that(station.timestamp.datetime).is_equal_to(
+            self.get_timestamp("2012-02-10 14:39:47.410492")
+        )
         assert_that(station.timestamp.nanosecond).is_equal_to(123)
-        assert_that(station.status).is_equal_to('A')
-        assert_that(station.board).is_equal_to('0815')
+        assert_that(station.status).is_equal_to("A")
+        assert_that(station.board).is_equal_to("0815")
 
 
 class StationOffline(object):
@@ -285,7 +327,9 @@ class StationOffline(object):
 
 class RawWaveformEventTest(object):
     def setUp(self):
-        self.builder = blitzortung.builder.RawWaveformEvent(blitzortung.builder.ChannelWaveform())
+        self.builder = blitzortung.builder.RawWaveformEvent(
+            blitzortung.builder.ChannelWaveform()
+        )
 
     def test_build_raw_green_event(self):
         line = "2013-09-28 20:00:54.490994382 48.000000 11.000000 500 0 GREEN 0 0.0 256 0 8 0 0 1950 69696A6B6D70727476787C80828483848484838382838384848587898A8A8A8B8C8C8D8D8D8D8C8B8987868482807D7B7A7979797A7B7C7D7D8082838484848382807F7E7C7B7978787878797B7D7F80828587898A8B8B8A88878583817E7D7B7A79797A7B7B7C7D7E7E8081818180807E7C7C7B7A797979797A7C7E8082848687898B8C8D8D8D8B8A8987858482807F7D7D7D7E80808283848586878786858381807E7D7C7B797878797A7B7D7F81828485878888888785848280807E7C7A7979797A7B7D7E8081828485868686858482807F7E7C7B79787878797B7D7F8082848688898A8A8A898785848382807F7D7D7D7D7E7F8081828283848585848381 1 GREEN 0 0.0 256 0 8 0 0 1950 8C8C8C8D8C8C8B8A89888685838281818080808080807F7F7E7D7D7C7B7A7A7A7A797979797979797A7B7C7D7E7F8082838384848584848484838281808080808080828182838384858584848483828281807F7D7D7C7C7C7C7D7E7F80818283848586868686868685858584838483838484858585868685868585838381807F7E7D7C7B7A7A797A7A7A7B7C7D7E7F8081828282828281818080807F7F7F7F7F80808181828283838383838382818180807F7E7D7D7D7D7D7E7E7F8080818283838484848383828282818180808080818182828383848585858585858483828281807E7D7C7C7C7C7C7C7D7D7E7E7F8080808180808080808080807F7F808081"

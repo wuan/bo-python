@@ -2,24 +2,24 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
 import itertools
-
+import datetime
 from injector import inject
 
 from .base import Event, BuilderError
@@ -30,6 +30,7 @@ class ChannelWaveform:
     """
     class for building of waveforms within raw signal objects
     """
+
     fields_per_channel = 11
 
     def __init__(self):
@@ -85,7 +86,8 @@ class ChannelWaveform:
             self.shift,
             self.conversion_gap,
             self.conversion_time,
-            self.waveform)
+            self.waveform,
+        )
 
 
 class RawWaveformEvent(Event):
@@ -103,11 +105,7 @@ class RawWaveformEvent(Event):
 
     def build(self):
         return data.RawWaveformEvent(
-            self.timestamp,
-            self.x_coord,
-            self.y_coord,
-            self.altitude,
-            self.channels
+            self.timestamp, self.x_coord, self.y_coord, self.altitude, self.channels
         )
 
     def set_altitude(self, altitude):
@@ -125,11 +123,11 @@ class RawWaveformEvent(Event):
         return self
 
     def from_string(self, string):
-        """ Construct strike from blitzortung.org text format data line """
+        """Construct strike from blitzortung.org text format data line"""
         if string:
             try:
-                field = iter(string.split(' '))
-                self.set_timestamp(next(field) + ' ' + next(field))
+                field = iter(string.split(" "))
+                self.set_timestamp(next(field) + " " + next(field))
                 self.timestamp.datetime += datetime.timedelta(seconds=1)
                 self.set_y(float(next(field)))
                 self.set_x(float(next(field)))

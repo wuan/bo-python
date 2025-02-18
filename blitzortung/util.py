@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -24,7 +24,7 @@ import time
 from .data import Timestamp, Timedelta
 
 
-class Timer():
+class Timer:
     """
     simple timer for repeated time measurements
     """
@@ -56,7 +56,9 @@ def total_seconds(time_value):
 
     if isinstance(time_value, datetime.datetime) or isinstance(time_value, Timestamp):
         return time_value.hour * 3600 + time_value.minute * 60 + time_value.second
-    elif isinstance(time_value, datetime.timedelta) or isinstance(time_value, Timedelta):
+    elif isinstance(time_value, datetime.timedelta) or isinstance(
+        time_value, Timedelta
+    ):
         return time_value.seconds + time_value.days * 24 * 3600
     else:
         raise ValueError("unhandled type " + str(type(time_value)))
@@ -70,14 +72,14 @@ def round_time(time_value, duration):
     seconds = (total_seconds(time_value) // duration_seconds) * duration_seconds
 
     updated_values = {
-        'hour': seconds // 3600,
-        'minute': seconds // 60 % 60,
-        'second': seconds % 60,
-        'microsecond': 0
+        "hour": seconds // 3600,
+        "minute": seconds // 60 % 60,
+        "second": seconds % 60,
+        "microsecond": 0,
     }
 
     if isinstance(time_value, Timestamp):
-        updated_values['nanosecond'] = 0
+        updated_values["nanosecond"] = 0
 
     return time_value.replace(**updated_values)
 
@@ -99,4 +101,10 @@ def time_intervals(start_time, duration, end_time=None):
 
 
 def force_range(lower_limit, value, upper_limit):
-    return lower_limit if value < lower_limit else upper_limit if value > upper_limit else value
+    return (
+        lower_limit
+        if value < lower_limit
+        else upper_limit
+        if value > upper_limit
+        else value
+    )

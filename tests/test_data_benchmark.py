@@ -16,7 +16,8 @@ def point() -> Point:
     y = 3.0
     return Point(x, y)
 
-def test_bench_event(timestamp, benchmark):
+
+def test_bench_event(timestamp, benchmark, point):
     benchmark.pedantic(Event, args=(timestamp, point), rounds=1000, iterations=100)
 
 
