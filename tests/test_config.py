@@ -17,7 +17,7 @@
    limitations under the License.
 
 """
-
+import os
 import sys
 
 from assertpy import assert_that
@@ -95,13 +95,18 @@ class TestConfigModule(object):
     def setup_method(self):
         self.config_module = blitzortung.config.ConfigModule()
 
-    @patch(config_parser_module + '.ConfigParser')
-    def test_provide_config_parser(self, config_parser_class_mock):
+    @patch("configparser.ConfigParser")
+    def test_provide_config_parser(self, config_parser_class_mock, tmp_path):
+        with open(os.path.join(tmp_path, "blitzortung.conf"), "w") as config_file:
+            config_file.write("\n")
+
+        os.chdir(tmp_path)
+
         config_parser = self.config_module.provide_config_parser()
 
         assert_that(config_parser).is_equal_to(config_parser_class_mock.return_value)
         assert_that(config_parser_class_mock.mock_calls).contains(call())
-        assert_that(config_parser.mock_calls).contains(call.read('/etc/blitzortung.conf'))
+        assert_that(config_parser.mock_calls).contains(call.read('./blitzortung.conf'))
 
     @patch('blitzortung.INJECTOR')
     def test_get_config(self, injector_class_mock):
