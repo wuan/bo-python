@@ -23,10 +23,7 @@ import logging
 import os
 from abc import abstractmethod
 
-try:
-    from html.parser import HTMLParser
-except ImportError:
-    from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 from injector import inject
 

@@ -26,8 +26,6 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
-import shapely.geometry
-import shapely.wkb
 from assertpy import assert_that
 from mock import Mock, call
 
@@ -92,59 +90,3 @@ class TestStrikeMapper(TestCase):
         self.strike_mapper.create_object(self.result)
 
         assert_that(self.strike_builder.set_timestamp.call_args[0][0]).is_none()
-
-
-class TestStationMapper(TestCase):
-    def setUp(self):
-        self.station_builder = Mock(
-            name="station_builder", spec=blitzortung.builder.Station
-        )
-        self.strike_mapper = blitzortung.db.mapper.Station(self.station_builder)
-
-        self.timestamp = datetime.datetime.now(datetime.timezone.utc)
-        self.result = {
-            "number": 31,
-            "user": "<user>",
-            "name": "<name>",
-            "country": "<country>",
-            "geog": shapely.wkb.dumps(shapely.geometry.Point(11, 49), hex=True),
-            "begin": self.timestamp,
-        }
-
-        self.station = Mock(name="station")
-        self.station_builder.build.return_value = self.station
-
-    def test_station_mapper(self):
-        assert_that(self.strike_mapper.create_object(self.result)).is_equal_to(
-            self.station
-        )
-
-        assert_that(self.station_builder.method_calls).is_equal_to(
-            [
-                call.set_number(31),
-                call.set_user("<user>"),
-                call.set_name("<name>"),
-                call.set_country("<country>"),
-                call.set_x(11.0),
-                call.set_y(49.0),
-                call.set_timestamp(self.timestamp),
-                call.build(),
-            ]
-        )
-
-    def test_strike_mapper_with_timezone(self):
-        zone_info = ZoneInfo("CET")
-
-        self.strike_mapper.create_object(self.result, timezone=zone_info)
-
-        timestamp = self.station_builder.set_timestamp.call_args[0][0]
-
-        assert_that(timestamp).is_equal_to(self.timestamp)
-        assert_that(timestamp.tzinfo).is_equal_to(zone_info)
-
-    def test_strike_mapper_without_timestamp(self):
-        self.result["begin"] = None
-
-        self.strike_mapper.create_object(self.result)
-
-        assert_that(self.station_builder.set_timestamp.call_args[0][0]).is_none()

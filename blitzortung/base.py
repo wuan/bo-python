@@ -69,7 +69,7 @@ class Point:
         result: tuple[float, float, float] = self.__geod.fwd(
             self.x, self.y, azimuth / self.__radians_factor, distance, radians=False
         )
-        return Point(result[0], result[1])
+        return type(self)(result[0], result[1])
 
     def geodesic_relation_to(self, other: Self) -> tuple[float, float]:
         result = self.__geod.inv(self.x, self.y, other.x, other.y, radians=False)

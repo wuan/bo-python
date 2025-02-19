@@ -93,3 +93,4 @@ class ConfigModule(Module):
             config_file_path = os.path.join(config_dir_name, config_file_name)
             if os.path.exists(config_file_path):
                 return config_file_path
+        return None

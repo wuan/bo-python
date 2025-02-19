@@ -339,142 +339,6 @@ class Strike(Base):
         return self.execute(str(query), query.get_parameters(), prepare_result)
 
 
-class Station(Base):
-    """
-
-    database table creation (as db user blitzortung, database blitzortung):
-
-    CREATE TABLE stations (id bigserial, number int, "user" int, geog GEOGRAPHY(Point), PRIMARY KEY(id));
-    ALTER TABLE stations ADD COLUMN region SMALLINT;
-    ALTER TABLE stations ADD COLUMN name CHARACTER VARYING;
-    ALTER TABLE stations ADD COLUMN country CHARACTER VARYING;
-    ALTER TABLE stations ADD COLUMN "timestamp" TIMESTAMPTZ;
-
-    CREATE INDEX stations_timestamp ON stations USING btree("timestamp");
-    CREATE INDEX stations_number_timestamp ON stations USING btree(number, "timestamp");
-    CREATE INDEX stations_geog ON stations USING gist(geog);
-
-    empty the table with the following commands:
-
-    DELETE FROM stations;
-    ALTER SEQUENCE stations_id_seq RESTART 1;
-    """
-
-    @inject
-    def __init__(
-        self,
-        db_connection_pool: psycopg2.pool.ThreadedConnectionPool,
-        station_mapper: mapper.Station,
-    ):
-        super().__init__(db_connection_pool)
-
-        self.table_name = "stations"
-        self.station_mapper = station_mapper
-
-    def insert(self, station, region=1):
-        self.execute(
-            "INSERT INTO "
-            + self.full_table_name
-            + ' (number, "user", "name", country, "timestamp", geog, region) '
-            + "VALUES (%s, %s, %s, %s, %s, ST_MakePoint(%s, %s), %s)",
-            (
-                station.number,
-                station.user,
-                station.name,
-                station.country,
-                station.timestamp.datetime,
-                station.x,
-                station.y,
-                region,
-            ),
-        )
-
-    def select(self, timestamp=None, region=None):
-        sql = """ select
-             o.begin, s.number, s.user, s.name, s.country, s.geog
-        from stations as s
-        inner join
-           (select b. region, b.number, max(b."timestamp") as "timestamp"
-            from stations as b
-        group by region, number
-        order by region, number) as c
-        on s.region = c.region and s.number = c.number and s."timestamp" = c."timestamp"
-        left join stations_offline as o
-        on o.number = s.number and o.region = s.region and o."end" is null"""
-
-        if region:
-            sql += """ where s.region = %(region)s"""
-
-        sql += """ order by s.number"""
-
-        return self.execute_many(
-            sql, {"region": region}, self.station_mapper.create_object
-        )
-
-
-class StationOffline(Base):
-    """
-
-    database table creation (as db user blitzortung, database blitzortung):
-
-    CREATE TABLE stations_offline (id bigserial, number int, PRIMARY KEY(id));
-    ALTER TABLE stations_offline ADD COLUMN region SMALLINT;
-    ALTER TABLE stations_offline ADD COLUMN begin TIMESTAMPTZ;
-    ALTER TABLE stations_offline ADD COLUMN "end" TIMESTAMPTZ;
-
-    CREATE INDEX stations_offline_begin ON stations_offline USING btree(begin);
-    CREATE INDEX stations_offline_end ON stations_offline USING btree("end");
-    CREATE INDEX stations_offline_end_number ON stations_offline USING btree("end", number);
-    CREATE INDEX stations_offline_begin_end ON stations_offline USING btree(begin, "end");
-
-    empty the table with the following commands:
-
-    DELETE FROM stations_offline;
-    ALTER SEQUENCE stations_offline_id_seq RESTART 1;
-    """
-
-    @inject
-    def __init__(
-        self,
-        db_connection_pool: psycopg2.pool.ThreadedConnectionPool,
-        station_offline_mapper: mapper.StationOffline,
-    ):
-        super().__init__(db_connection_pool)
-
-        self.table_name = "stations_offline"
-        self.station_offline_mapper = station_offline_mapper
-
-    def insert(self, station_offline, region=1):
-        self.execute(
-            "INSERT INTO "
-            + self.full_table_name
-            + ' (number, region, begin, "end") '
-            + "VALUES (%s, %s, %s, %s)",
-            (
-                station_offline.number,
-                region,
-                station_offline.begin.datetime,
-                station_offline.end.datetime if station_offline.end else None,
-            ),
-        )
-
-    def update(self, station_offline, region=1):
-        self.execute(
-            "UPDATE "
-            + self.full_table_name
-            + ' SET "end"=%s WHERE id=%s and region=%s',
-            (station_offline.end, station_offline.id, region),
-        )
-
-    def select(self, timestamp=None, region=1):
-        sql = """select id, number, region, begin, "end"
-            from stations_offline where "end" is null and region=%s order by number;"""
-
-        return self.execute_many(
-            sql, (region,), self.station_offline_mapper.create_object
-        )
-
-
 class Location(Base):
     """
     geonames db access class
@@ -581,19 +445,19 @@ class Location(Base):
         if self.is_connected():
             query_string = (
                 """SELECT
-                name,
-                country_code,
-                admin_code_1,
-                admin_code_2,
-                feature_class,
-                feature_code,
-                elevation,
-                ST_Transform(geog::geometry, %(srid)s) AS geog,
-                population,
-                ST_Distance_Sphere(geog::geometry, c.center) AS distance,
-                ST_Azimuth(geog::geometry, c.center) AS azimuth
-            FROM
-                (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,"""
+                    name,
+                    country_code,
+                    admin_code_1,
+                    admin_code_2,
+                    feature_class,
+                    feature_code,
+                    elevation,
+                    ST_Transform(geog::geometry, %(srid)s) AS geog,
+                    population,
+                    ST_Distance_Sphere(geog::geometry, c.center) AS distance,
+                    ST_Azimuth(geog::geometry, c.center) AS azimuth
+                FROM
+                    (SELECT ST_SetSRID(ST_MakePoint(%(center_x)s, %(center_y)s), %(srid)s) as center ) as c,"""
                 + self.full_table_name
                 + """
             WHERE
