@@ -22,7 +22,7 @@ Please have a look at https://github.com/wuan/bo-server for related scripts/cron
 ## Install pip
 
 > wget https://bootstrap.pypa.io/get-pip.py
-> sudo pypy3 get-pip.py 
+> sudo pypy3 get-pip.py
 Install manually by entering
 
 ## Install library with dependencies
@@ -36,4 +36,3 @@ or build a debian package by entering
 The following software has to be installed manually, depending on their availability as debian/ubuntu packages.
 
 Scipy and fastcluster is required for the (optional) clustering
-

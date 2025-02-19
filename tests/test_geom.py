@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -46,7 +46,9 @@ class TestGeometry(TestCase):
         self.geometry = GeometryForTest()
 
     def test_default_values(self):
-        assert_that(self.geometry.srid).is_equal_to(blitzortung.geom.Geometry.default_srid)
+        assert_that(self.geometry.srid).is_equal_to(
+            blitzortung.geom.Geometry.default_srid
+        )
 
     def test_create_with_different_srid(self):
         self.geometry = GeometryForTest(1234)
@@ -59,7 +61,9 @@ class TestEnvelope(TestCase):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2)
 
     def test_default_values(self):
-        assert_that(self.envelope.srid).is_equal_to(blitzortung.geom.Geometry.default_srid)
+        assert_that(self.envelope.srid).is_equal_to(
+            blitzortung.geom.Geometry.default_srid
+        )
 
     def test_custom_srid_value(self):
         self.envelope = blitzortung.geom.Envelope(-5, 4, -3, 2, 1234)
@@ -97,7 +101,9 @@ class TestEnvelope(TestCase):
         self.assertTrue(expected_env.equals(self.envelope.env))
 
     def test_str(self):
-        assert_that(repr(self.envelope)).is_equal_to('Envelope(x: -5.0000..4.0000, y: -3.0000..2.0000)')
+        assert_that(repr(self.envelope)).is_equal_to(
+            "Envelope(x: -5.0000..4.0000, y: -3.0000..2.0000)"
+        )
 
 
 class TestGrid(TestCase):
@@ -142,17 +148,18 @@ class TestGrid(TestCase):
 
     def test_repr(self):
         assert_that(repr(self.grid)).is_equal_to(
-            "Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))")
+            "Grid(x: -5.0000..4.0000 (0.5000, #18), y: -3.0000..2.0000 (1.2500, #4))"
+        )
 
 
 class TestGridFactory:
     @pytest.fixture
     def base_proj(self):
-        return pyproj.CRS('epsg:4326')
+        return pyproj.CRS("epsg:4326")
 
     @pytest.fixture
     def proj(self):
-        return pyproj.CRS('epsg:32633')
+        return pyproj.CRS("epsg:32633")
 
     @pytest.fixture
     def default_factory(self, proj):
@@ -188,7 +195,9 @@ class TestGridFactory:
         assert_that(y_div).is_close_to(0.0475, epsilon)
 
         x_0, y_0 = pyproj.Transformer.from_proj(base_proj, proj).transform(52.5, 10.5)
-        x_1, y_1 = pyproj.Transformer.from_proj(base_proj, proj).transform(52.5 + y_div, 10.5 + x_div)
+        x_1, y_1 = pyproj.Transformer.from_proj(base_proj, proj).transform(
+            52.5 + y_div, 10.5 + x_div
+        )
 
         assert_that(x_1 - x_0).is_close_to(base_length, epsilon)
         assert_that(y_1 - y_0).is_close_to(base_length, epsilon)
@@ -200,7 +209,7 @@ class TestGridFactory:
         assert_that(grid_1).is_same_as(grid_2)
 
     def test_grid_outside_upper_range(self, base_length, proj, epsilon):
-        factory =  blitzortung.geom.GridFactory(14, 16, 70, 95, proj)
+        factory = blitzortung.geom.GridFactory(14, 16, 70, 95, proj)
 
         grid = factory.get_for(base_length)
 
@@ -208,7 +217,9 @@ class TestGridFactory:
         assert_that(grid.y_delta).is_close_to(19.9795, epsilon)
 
     def test_grid_outside_lower_range(self, base_length, proj, epsilon):
-        factory =  blitzortung.geom.GridFactory(14, 16, -95, -70, pyproj.CRS('epsg:32733'))
+        factory = blitzortung.geom.GridFactory(
+            14, 16, -95, -70, pyproj.CRS("epsg:32733")
+        )
 
         grid = factory.get_for(base_length)
 
@@ -234,4 +245,6 @@ class TestRasterElement(TestCase):
         assert_that(self.raster_element > other_raster_element)
 
     def test_string_representation(self):
-        assert_that(repr(self.raster_element)).is_equal_to("GridElement(1234, 2013-09-06 21:36:00.123456)")
+        assert_that(repr(self.raster_element)).is_equal_to(
+            "GridElement(1234, 2013-09-06 21:36:00.123456)"
+        )

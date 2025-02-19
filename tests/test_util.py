@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -37,7 +37,12 @@ class TimeIntervalsTest(object):
     def test_time_intervals_generator(self):
         self.initialize_times(datetime.datetime(2013, 8, 20, 12, 9, 0))
 
-        times = [time for time in blitzortung.util.time_intervals(self.start_time, self.duration, self.end_time)]
+        times = [
+            time
+            for time in blitzortung.util.time_intervals(
+                self.start_time, self.duration, self.end_time
+            )
+        ]
 
         assert_that(times).contains(
             datetime.datetime(2013, 8, 20, 11, 40, 0),
@@ -48,7 +53,12 @@ class TimeIntervalsTest(object):
     def test_time_intervals_generator_at_start_of_interval(self):
         self.initialize_times(datetime.datetime(2013, 8, 20, 12, 5, 0))
 
-        times = [time for time in blitzortung.util.time_intervals(self.start_time, self.duration, self.end_time)]
+        times = [
+            time
+            for time in blitzortung.util.time_intervals(
+                self.start_time, self.duration, self.end_time
+            )
+        ]
 
         assert_that(times).contains(
             datetime.datetime(2013, 8, 20, 11, 40, 0),
@@ -59,7 +69,12 @@ class TimeIntervalsTest(object):
     def test_time_intervals_generator_before_start_of_interval(self):
         self.initialize_times(datetime.datetime(2013, 8, 20, 12, 4, 59))
 
-        times = [time for time in blitzortung.util.time_intervals(self.start_time, self.duration, self.end_time)]
+        times = [
+            time
+            for time in blitzortung.util.time_intervals(
+                self.start_time, self.duration, self.end_time
+            )
+        ]
 
         assert_that(times).contains(
             datetime.datetime(2013, 8, 20, 11, 30, 0),
@@ -72,16 +87,17 @@ class TimeIntervalsTest(object):
         end_time = datetime.datetime.now(datetime.timezone.utc)
         start_time = end_time - self.duration
 
-        times = [time for time in blitzortung.util.time_intervals(start_time, self.duration)]
+        times = [
+            time for time in blitzortung.util.time_intervals(start_time, self.duration)
+        ]
 
         assert_that(times).contains(
             blitzortung.util.round_time(start_time, self.duration),
-            blitzortung.util.round_time(end_time, self.duration)
+            blitzortung.util.round_time(end_time, self.duration),
         )
 
 
 class TestRoundTime:
-
     def test_round_time_with_datetime(self):
         time_value = datetime.datetime(2013, 8, 20, 12, 3, 23, 123456)
 
@@ -95,7 +111,9 @@ class TestRoundTime:
     def test_round_time_with_timestamp(self):
         time_value = datetime.datetime(2013, 8, 20, 12, 3, 23, 123456)
 
-        result = blitzortung.util.round_time(Timestamp(time_value, 789), datetime.timedelta(minutes=2))
+        result = blitzortung.util.round_time(
+            Timestamp(time_value, 789), datetime.timedelta(minutes=2)
+        )
 
         assert_that(result.hour).is_equal_to(12)
         assert_that(result.minute).is_equal_to(2)

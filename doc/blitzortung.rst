@@ -103,4 +103,3 @@ Subpackages
 .. toctree::
 
     blitzortung.db
-

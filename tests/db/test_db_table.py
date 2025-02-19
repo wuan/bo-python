@@ -2,23 +2,24 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
 import datetime
+
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
@@ -26,7 +27,7 @@ except ImportError:
 
 try:
     import psycopg2
-except ImportError as e:
+except ImportError:
     from blitzortung.db import create_psycopg2_dummy
 
     psycopg2 = create_psycopg2_dummy()
@@ -65,16 +66,18 @@ class BaseTest(object):
         self.base = BaseForTest(self.connection_pool)
 
     def test_initialize(self):
-        expected_calls = [call.getconn(),
-                          call.getconn().cursor(),
-                          call.getconn(),
-                          call.getconn().cancel(),
-                          call.getconn().reset(),
-                          call.getconn().set_client_encoding('UTF8'),
-                          call.getconn().cursor(),
-                          call.getconn().cursor().execute_many("SET TIME ZONE 'UTC'"),
-                          call.getconn().cursor(cursor_factory=psycopg2.extras.DictCursor),
-                          call.getconn().cursor().close()]
+        expected_calls = [
+            call.getconn(),
+            call.getconn().cursor(),
+            call.getconn(),
+            call.getconn().cancel(),
+            call.getconn().reset(),
+            call.getconn().set_client_encoding("UTF8"),
+            call.getconn().cursor(),
+            call.getconn().cursor().execute_many("SET TIME ZONE 'UTC'"),
+            call.getconn().cursor(cursor_factory=psycopg2.extras.DictCursor),
+            call.getconn().cursor().close(),
+        ]
         self.connection_pool.has_calls(expected_calls)
 
     def test_is_connected(self):

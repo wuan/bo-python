@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -29,10 +29,11 @@ class Strike(Event):
     """
     class for building strike objects
     """
-    position_parser = re.compile(r'pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)')
-    amplitude_parser = re.compile(r'str;([0-9.]+)')
-    deviation_parser = re.compile(r'dev;([0-9.]+)')
-    stations_parser = re.compile(r'sta;(\d+);(\d+);([^ ]+)')
+
+    position_parser = re.compile(r"pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)")
+    amplitude_parser = re.compile(r"str;([0-9.]+)")
+    deviation_parser = re.compile(r"dev;([0-9.]+)")
+    stations_parser = re.compile(r"sta;(\d+);(\d+);([^ ]+)")
 
     def __init__(self):
         super().__init__()
@@ -68,7 +69,7 @@ class Strike(Event):
         return self
 
     def from_line(self, line):
-        """ Construct strike from new blitzortung text format data line """
+        """Construct strike from new blitzortung text format data line"""
         try:
             self.set_timestamp(line[0:29])
 
@@ -82,12 +83,23 @@ class Strike(Event):
             self.set_lateral_error(float(self.deviation_parser.findall(line)[0]))
             stations = self.stations_parser.findall(line)[0]
             self.set_station_count(int(stations[0]))
-            self.set_stations([int(station) for station in stations[2].split(',') if station])
+            self.set_stations(
+                [int(station) for station in stations[2].split(",") if station]
+            )
         except (KeyError, ValueError, IndexError) as e:
             raise BuilderError(e)
 
         return self
 
     def build(self):
-        return data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
-                           self.amplitude, self.lateral_error, self.station_count, self.stations)
+        return data.Strike(
+            self.id_value,
+            self.timestamp,
+            self.x_coord,
+            self.y_coord,
+            self.altitude,
+            self.amplitude,
+            self.lateral_error,
+            self.station_count,
+            self.stations,
+        )

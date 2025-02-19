@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -131,21 +131,27 @@ class TestObjectCache(TestCase):
         cached_object = self.cache.get(CachedObject, foo=argument1, bar=argument2)
 
         assert_that(not cached_object.get_args())
-        assert_that(cached_object.get_kwargs()).is_equal_to({'foo': argument1, 'bar': argument2})
+        assert_that(cached_object.get_kwargs()).is_equal_to(
+            {"foo": argument1, "bar": argument2}
+        )
 
     def test_get_with_kwargs_is_cached(self):
         argument1 = object()
         argument2 = object()
 
         cached_object = self.cache.get(CachedObject, foo=argument1, bar=argument2)
-        assert_that(self.cache.get(CachedObject, bar=argument2, foo=argument1)).is_same_as(cached_object)
+        assert_that(
+            self.cache.get(CachedObject, bar=argument2, foo=argument1)
+        ).is_same_as(cached_object)
 
     def test_get_with_kwargs_and_simlar_arg_and_is_not_cached(self):
         argument1 = object()
         argument2 = object()
 
         cached_object = self.cache.get(CachedObject, foo=argument1, bar=argument2)
-        assert_that(self.cache.get(CachedObject, ('bar', argument2), foo=argument1)).is_not_same_as(cached_object)
+        assert_that(
+            self.cache.get(CachedObject, ("bar", argument2), foo=argument1)
+        ).is_not_same_as(cached_object)
 
     def test_get_ratio(self):
         assert_that(self.cache.get_ratio()).is_equal_to(0.0)
@@ -173,7 +179,7 @@ class TestObjectCacheWithSize(TestCase):
 
     def test_track_recent_usage(self):
         foo_1 = self.cache.get(CachedObject, name="foo")
-        bar = self.cache.get(CachedObject, name="bar")
+        _ = self.cache.get(CachedObject, name="bar")
         assert_that(list(self.cache.keys.values())).is_equal_to([0, 0])
         foo_2 = self.cache.get(CachedObject, name="foo")
         assert_that(list(self.cache.keys.values())).is_equal_to([0, 1])
@@ -195,17 +201,28 @@ class TestObjectCacheWithSize(TestCase):
         _ = self.cache.get(CachedObject, name="bar")
         assert_that(self.cache.get_size()).is_equal_to(1)
 
+
 def test_bench_object_cache_get(benchmark):
     cache = ObjectCache()
-    benchmark.pedantic(cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100)
+    benchmark.pedantic(
+        cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100
+    )
+
 
 def test_bench_object_cache_with_size_get(benchmark):
     cache = ObjectCache(size=2)
-    benchmark.pedantic(cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100)
+    benchmark.pedantic(
+        cache.get, args=(CachedObject, "foo"), rounds=1000, iterations=100
+    )
+
 
 def test_bench_object_cache_generate_cache_key(benchmark):
     cache = ObjectCache()
-    benchmark.pedantic(cache.generate_cache_key, args=(CachedObject, ("foo", "bar"), {"baz": "asdf", "qux": "quux"}), rounds=1000, iterations=100)
+    benchmark.pedantic(
+        cache.generate_cache_key,
+        args=(CachedObject, ("foo", "bar"), {"baz": "asdf", "qux": "quux"}),
+        rounds=1000,
+        iterations=100,
+    )
 
     print("hit count", cache.total_hit_count)
-

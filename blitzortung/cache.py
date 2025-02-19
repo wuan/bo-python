@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -64,7 +64,9 @@ class ObjectCache:
                 before = self.get_size()
                 self.clean_expired()
                 after = self.get_size()
-                print(f"{cached_object_creator.__name__}: cache cleanup {before} -> {after}")
+                print(
+                    f"{cached_object_creator.__name__}: cache cleanup {before} -> {after}"
+                )
                 self.last_cleanup = now
 
         self.total_count += 1
@@ -109,7 +111,9 @@ class ObjectCache:
 
     def clean_expired(self):
         now = time.time()
-        expired_keys = {key for key, entry in self.cache.items() if not entry.is_valid(now)}
+        expired_keys = {
+            key for key, entry in self.cache.items() if not entry.is_valid(now)
+        }
         for expired_key in expired_keys:
             del self.keys[expired_key]
             del self.cache[expired_key]
@@ -125,7 +129,6 @@ class ObjectCache:
     def get_size(self):
         return len(self.cache)
 
-
     def generate_cache_key(self, cached_object_creator, args, kwargs):
         """
         Generates a cache key based on the cached object creator function, args, and kwargs.
@@ -135,4 +138,9 @@ class ObjectCache:
         :param kwargs: Keyword arguments to the object creator.
         :return: A tuple representing the cache key.
         """
-        return (cached_object_creator,) + args + (self.kwargs_separator,) + tuple(sorted(kwargs.items()))
+        return (
+            (cached_object_creator,)
+            + args
+            + (self.kwargs_separator,)
+            + tuple(sorted(kwargs.items()))
+        )

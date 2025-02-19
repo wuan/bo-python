@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+Copyright 2014-2016 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -48,20 +48,23 @@ class TestTimestamp(object):
         print(timestamp)
 
         assert_that(timestamp.datetime).is_equal_to(
-            datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, datetime.timezone.utc))
+            datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, datetime.timezone.utc)
+        )
         assert_that(timestamp.nanosecond).is_equal_to(700)
 
 
 class TestTimedelta(object):
     def test_normalizing(self):
         assert_that(Timedelta(nanodelta=1500)).is_equal_to(
-            Timedelta(datetime.timedelta(microseconds=1), 500))
-        assert_that(Timedelta(nanodelta=500)).is_equal_to(
-            Timedelta(nanodelta=500))
+            Timedelta(datetime.timedelta(microseconds=1), 500)
+        )
+        assert_that(Timedelta(nanodelta=500)).is_equal_to(Timedelta(nanodelta=500))
         assert_that(Timedelta(nanodelta=-500)).is_equal_to(
-            Timedelta(datetime.timedelta(microseconds=-1), nanodelta=500))
+            Timedelta(datetime.timedelta(microseconds=-1), nanodelta=500)
+        )
         assert_that(Timedelta(nanodelta=-1500)).is_equal_to(
-            Timedelta(datetime.timedelta(microseconds=-2), 500))
+            Timedelta(datetime.timedelta(microseconds=-2), 500)
+        )
 
 
 class EventBaseTest(object):
@@ -151,8 +154,10 @@ class TestEvent(EventBaseTest):
 
 class TestStrike(object):
     def setup_method(self):
-        self.timestamp = Timestamp('2013-09-28 23:23:38.123456', 789)
-        self.strike = blitzortung.data.Strike(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
+        self.timestamp = Timestamp("2013-09-28 23:23:38.123456", 789)
+        self.strike = blitzortung.data.Strike(
+            123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15]
+        )
 
     def test_get_id(self):
         assert_that(self.strike.id).is_equal_to(123)
@@ -177,7 +182,9 @@ class TestStrike(object):
         assert_that(self.strike.station_count).is_equal_to(11)
 
     def test_get_default_stations(self):
-        self.strike = blitzortung.data.Strike(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11)
+        self.strike = blitzortung.data.Strike(
+            123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11
+        )
         assert_that(self.strike.stations).is_equal_to([])
 
     def test_with_stations(self):
@@ -187,23 +194,38 @@ class TestStrike(object):
         assert_that(self.strike.has_participant(5))
 
     def test_string_represenation(self):
-        assert_that(str(self.strike)).is_equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")
+        assert_that(str(self.strike)).is_equal_to(
+            "2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11"
+        )
 
 
 class TestStation(object):
     def setup_method(self):
-        self.timestamp = Timestamp('2013-09-28 23:23:38')
-        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, self.timestamp,
-                                                '<status>', '<board>')
+        self.timestamp = Timestamp("2013-09-28 23:23:38")
+        self.station = blitzortung.data.Station(
+            123,
+            45,
+            "<name>",
+            "<country>",
+            11.2,
+            49.4,
+            self.timestamp,
+            "<status>",
+            "<board>",
+        )
 
     def test_online_str(self):
-        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, None, '<status>', '<board>')
+        self.station = blitzortung.data.Station(
+            123, 45, "<name>", "<country>", 11.2, 49.4, None, "<status>", "<board>"
+        )
         assert_that(str(self.station)).is_equal_to(
-            "*123/ 45 '<name>' '<country>' (11.2000, 49.4000)")
+            "*123/ 45 '<name>' '<country>' (11.2000, 49.4000)"
+        )
 
     def test_offline_str(self):
         assert_that(str(self.station)).is_equal_to(
-            "-123/ 45 '<name>' '<country>' (11.2000, 49.4000) offline since 2013-09-28 23:23 UTC")
+            "-123/ 45 '<name>' '<country>' (11.2000, 49.4000) offline since 2013-09-28 23:23 UTC"
+        )
 
     def test_get_number(self):
         assert_that(self.station.number).is_equal_to(123)
@@ -212,13 +234,13 @@ class TestStation(object):
         assert_that(self.station.user).is_equal_to(45)
 
     def test_get_name(self):
-        assert_that(self.station.name).is_equal_to('<name>')
+        assert_that(self.station.name).is_equal_to("<name>")
 
     def test_get_country(self):
-        assert_that(self.station.country).is_equal_to('<country>')
+        assert_that(self.station.country).is_equal_to("<country>")
 
     def test_get_status(self):
-        assert_that(self.station.status).is_equal_to('<status>')
+        assert_that(self.station.status).is_equal_to("<status>")
 
 
 class TestGridData(object):
@@ -256,12 +278,15 @@ NODATA_VALUE 0
 --------------------
 total count: 0, max per area: 0""")
 
-    @pytest.mark.parametrize(["count", "divider", "expected"], [
-        (5, 5, 1),
-        (6, 5, 2),
-        (10, 5, 2),
-        (11, 5, 3),
-    ])
+    @pytest.mark.parametrize(
+        ["count", "divider", "expected"],
+        [
+            (5, 5, 1),
+            (6, 5, 2),
+            (10, 5, 2),
+            (11, 5, 3),
+        ],
+    )
     def test_cell_index(self, count, divider, expected):
         cell = Mock()
         cell.count = count
@@ -282,18 +307,40 @@ total count: 0, max per area: 0""")
         cell4 = Mock()
         cell4.count = 6
 
-        maximum, total = blitzortung.data.GridData.max_and_total_entries([[cell1, cell2],[None, cell4]])
+        maximum, total = blitzortung.data.GridData.max_and_total_entries(
+            [[cell1, cell2], [None, cell4]]
+        )
 
         assert_that(maximum).is_equal_to(8)
         assert_that(total).is_equal_to(18)
 
     def test_empty_raster_to_reduced_array(self):
-        assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(())
+        assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(
+            ()
+        )
 
     def add_raster_data(self):
-        self.grid_data.set(0, 0, blitzortung.geom.GridElement(5, self.reference_time - datetime.timedelta(minutes=2)))
-        self.grid_data.set(1, 1, blitzortung.geom.GridElement(10, self.reference_time - datetime.timedelta(seconds=10)))
-        self.grid_data.set(4, 2, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
+        self.grid_data.set(
+            0,
+            0,
+            blitzortung.geom.GridElement(
+                5, self.reference_time - datetime.timedelta(minutes=2)
+            ),
+        )
+        self.grid_data.set(
+            1,
+            1,
+            blitzortung.geom.GridElement(
+                10, self.reference_time - datetime.timedelta(seconds=10)
+            ),
+        )
+        self.grid_data.set(
+            4,
+            2,
+            blitzortung.geom.GridElement(
+                20, self.reference_time - datetime.timedelta(hours=1)
+            ),
+        )
 
     def test_raster_to_arcgrid(self):
         self.add_raster_data()
@@ -325,5 +372,13 @@ total count: 35, max per area: 20""")
         )
 
     def test_raster_set_outside_valid_index_value_does_not_throw_exception(self):
-        self.grid_data.set(1000, 0, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
-        assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(())
+        self.grid_data.set(
+            1000,
+            0,
+            blitzortung.geom.GridElement(
+                20, self.reference_time - datetime.timedelta(hours=1)
+            ),
+        )
+        assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(
+            ()
+        )

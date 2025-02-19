@@ -2,19 +2,19 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+Copyright 2014-2022 Andreas Würl
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 """
 
@@ -29,9 +29,11 @@ class Timestamp(base.EqualityAndHash):
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
-    __slots__ = ['datetime', 'nanosecond']
+    __slots__ = ["datetime", "nanosecond"]
 
-    def __init__(self, date_time=datetime.datetime.now(datetime.timezone.utc), nanosecond=0):
+    def __init__(
+        self, date_time=datetime.datetime.now(datetime.timezone.utc), nanosecond=0
+    ):
         if isinstance(date_time, str):
             date_time, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             nanosecond += date_time_nanosecond
@@ -50,14 +52,27 @@ class Timestamp(base.EqualityAndHash):
     @staticmethod
     def from_timestamp(timestamp_string):
         try:
-            if len(timestamp_string) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
+            if (
+                len(timestamp_string)
+                > Timestamp.timestamp_string_minimal_fractional_seconds_length
+            ):
                 divider_index = Timestamp.timestamp_string_microseconds_length
-                date_time = datetime.datetime.strptime(timestamp_string[:divider_index], '%Y-%m-%d %H:%M:%S.%f')
+                date_time = datetime.datetime.strptime(
+                    timestamp_string[:divider_index], "%Y-%m-%d %H:%M:%S.%f"
+                )
                 nanosecond_string = timestamp_string[divider_index:]
-                nanosecond = int(
-                    float(nanosecond_string) * math.pow(10, 3 - len(nanosecond_string))) if nanosecond_string else 0
+                nanosecond = (
+                    int(
+                        float(nanosecond_string)
+                        * math.pow(10, 3 - len(nanosecond_string))
+                    )
+                    if nanosecond_string
+                    else 0
+                )
             else:
-                date_time = datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
+                date_time = datetime.datetime.strptime(
+                    timestamp_string, "%Y-%m-%d %H:%M:%S"
+                )
                 nanosecond = 0
 
             return date_time.replace(tzinfo=datetime.timezone.utc), nanosecond
@@ -70,10 +85,11 @@ class Timestamp(base.EqualityAndHash):
         residual_nanoseconds = total_nanoseconds % 1000
         total_seconds = total_microseconds // 1000000
         residual_microseconds = total_microseconds % 1000000
-        return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + \
-               datetime.timedelta(seconds=total_seconds,
-                                  microseconds=residual_microseconds), \
-            residual_nanoseconds
+        return datetime.datetime(
+            1970, 1, 1, tzinfo=datetime.timezone.utc
+        ) + datetime.timedelta(
+            seconds=total_seconds, microseconds=residual_microseconds
+        ), residual_nanoseconds
 
     @property
     def year(self):
@@ -112,7 +128,11 @@ class Timestamp(base.EqualityAndHash):
     @property
     def value(self):
         total_microseconds = int((self.datetime - self.epoch).total_seconds() * 1000000)
-        return (total_microseconds * 1000 + self.nanosecond) if self.datetime is not None else -1
+        return (
+            (total_microseconds * 1000 + self.nanosecond)
+            if self.datetime is not None
+            else -1
+        )
 
     @property
     def is_valid(self):
@@ -126,32 +146,38 @@ class Timestamp(base.EqualityAndHash):
             return self.datetime < other
         else:
             return self.datetime < other.datetime or (
-                    self.datetime == other.datetime and self.nanosecond < other.nanosecond)
+                self.datetime == other.datetime and self.nanosecond < other.nanosecond
+            )
 
     def __le__(self, other):
         if isinstance(other, datetime.datetime):
             return self.datetime <= other
         else:
             return self.datetime < other.datetime or (
-                    self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
+                self.datetime == other.datetime and self.nanosecond <= other.nanosecond
+            )
 
     def __gt__(self, other):
         if isinstance(other, datetime.datetime):
             return self.datetime > other
         else:
             return self.datetime > other.datetime or (
-                    self.datetime == other.datetime and self.nanosecond > other.nanosecond)
+                self.datetime == other.datetime and self.nanosecond > other.nanosecond
+            )
 
     def __ge__(self, other):
         if isinstance(other, datetime.datetime):
             return self.datetime >= other
         else:
             return self.datetime > other.datetime or (
-                    self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
+                self.datetime == other.datetime and self.nanosecond >= other.nanosecond
+            )
 
     def __add__(self, other):
         if isinstance(other, Timedelta):
-            return Timestamp(self.datetime + other.timedelta, self.nanosecond + other.nanodelta)
+            return Timestamp(
+                self.datetime + other.timedelta, self.nanosecond + other.nanodelta
+            )
         elif isinstance(other, datetime.timedelta):
             return Timestamp(self.datetime + other, self.nanosecond)
         elif isinstance(other, int):
@@ -160,7 +186,9 @@ class Timestamp(base.EqualityAndHash):
 
     def __sub__(self, other):
         if isinstance(other, Timestamp):
-            return Timedelta(self.datetime - other.datetime, self.nanosecond - other.nanosecond)
+            return Timedelta(
+                self.datetime - other.datetime, self.nanosecond - other.nanosecond
+            )
         elif isinstance(other, datetime.timedelta):
             return Timestamp(self.datetime - other, self.nanosecond)
         elif isinstance(other, int):
@@ -171,15 +199,17 @@ class Timestamp(base.EqualityAndHash):
         return self.datetime.strftime(datetime_format)
 
     def replace(self, **kwargs):
-        if 'nanosecond' in kwargs:
-            nanosecond = kwargs['nanosecond']
-            del kwargs['nanosecond']
+        if "nanosecond" in kwargs:
+            nanosecond = kwargs["nanosecond"]
+            del kwargs["nanosecond"]
         else:
             nanosecond = self.nanosecond
         return Timestamp(self.datetime.replace(**kwargs), nanosecond)
 
     def __repr__(self):
-        return "Timestamp({}{:03d})".format(self.datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond)
+        return "Timestamp({}{:03d})".format(
+            self.datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond
+        )
 
 
 NaT = Timestamp(None)
@@ -207,10 +237,10 @@ class Timedelta(base.EqualityAndHash):
 
 
 class Event(base.Point):
-    time_format = '%Y-%m-%d %H:%M:%S'
-    time_format_fractional_seconds = time_format + '.%f'
+    time_format = "%Y-%m-%d %H:%M:%S"
+    time_format_fractional_seconds = time_format + ".%f"
 
-    __slots__ = ['__timestamp']
+    __slots__ = ["__timestamp"]
 
     def __init__(self, timestamp, x_coord_or_point, y_coord=None):
         super().__init__(x_coord_or_point, y_coord)
@@ -234,10 +264,15 @@ class Event(base.Point):
 
     @property
     def is_valid(self):
-        return (not math.isclose(self.x, 0.0, rel_tol=1e-09, abs_tol=1e-09) or not math.isclose(self.y, 0.0, rel_tol=1e-09)) \
-            and -180 <= self.x <= 180 \
-            and -90 < self.y < 90 \
+        return (
+            (
+                not math.isclose(self.x, 0.0, rel_tol=1e-09, abs_tol=1e-09)
+                or not math.isclose(self.y, 0.0, rel_tol=1e-09)
+            )
+            and -180 <= self.x <= 180
+            and -90 < self.y < 90
             and self.has_valid_timestamp
+        )
 
     @property
     def has_valid_timestamp(self):
@@ -251,18 +286,24 @@ class Event(base.Point):
 
     def __str__(self):
         if self.has_valid_timestamp:
-            timestamp_string = self.timestamp.strftime(self.time_format_fractional_seconds + 'XXX')
-            timestamp_string = timestamp_string.replace('XXX', "%03d" % self.timestamp.nanosecond)
+            timestamp_string = self.timestamp.strftime(
+                self.time_format_fractional_seconds + "XXX"
+            )
+            timestamp_string = timestamp_string.replace(
+                "XXX", "%03d" % self.timestamp.nanosecond
+            )
         else:
             timestamp_string = "NaT"
 
-        return "%s %.4f %.4f" \
-            % (timestamp_string, self.x, self.y)
+        return "%s %.4f %.4f" % (timestamp_string, self.x, self.y)
 
     @property
     def uuid(self):
-        return "%s-%05.0f-%05.0f" \
-            % (str(self.timestamp().value), self.x * 100, self.y * 100)
+        return "%s-%05.0f-%05.0f" % (
+            str(self.timestamp().value),
+            self.x * 100,
+            self.y * 100,
+        )
 
 
 class RawWaveformEvent(Event):
@@ -283,9 +324,11 @@ class Station(Event):
     class for station objects
     """
 
-    __slots__ = ['number', 'user', 'name', 'country', 'status', 'board']
+    __slots__ = ["number", "user", "name", "country", "status", "board"]
 
-    def __init__(self, number, user, name, country, x_coord, y_coord, last_data, status, board):
+    def __init__(
+        self, number, user, name, country, x_coord, y_coord, last_data, status, board
+    ):
         super().__init__(last_data, x_coord, y_coord)
         self.number = number
         self.user = user
@@ -298,23 +341,37 @@ class Station(Event):
         offline_since = self.timestamp
         status_char = "*" if offline_since is None else "-"
         try:
-            status_text = "" if offline_since is None else " offline since " + offline_since.strftime(
-                "%Y-%m-%d %H:%M %Z")
+            status_text = (
+                ""
+                if offline_since is None
+                else " offline since " + offline_since.strftime("%Y-%m-%d %H:%M %Z")
+            )
         except ValueError:
-            status_text = 'n/a'
-        return u"%s%3d/%3d '%s' '%s' (%.4f, %.4f)%s" % (
-            status_char, self.number, self.user, self.name, self.country, self.x, self.y, status_text)
+            status_text = "n/a"
+        return "%s%3d/%3d '%s' '%s' (%.4f, %.4f)%s" % (
+            status_char,
+            self.number,
+            self.user,
+            self.name,
+            self.country,
+            self.x,
+            self.y,
+            status_text,
+        )
 
     def __eq__(self, other):
-        return self.number == other.number and self.name == other.name and self.country == other.country
+        return (
+            self.number == other.number
+            and self.name == other.name
+            and self.country == other.country
+        )
 
     def __ne__(self, other):
         return self != other
 
     @property
     def is_valid(self):
-        return super().is_valid \
-            and self.number > 0
+        return super().is_valid and self.number > 0
 
     @property
     def is_offline(self):
@@ -347,7 +404,7 @@ class StationOffline:
         if not self.__end:
             self.__end = end
         else:
-            raise ValueError('cannot overwrite end of StationOffline when already set')
+            raise ValueError("cannot overwrite end of StationOffline when already set")
 
 
 class Strike(Event):
@@ -355,10 +412,27 @@ class Strike(Event):
     class for strike objects
     """
 
-    __slots__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations']
+    __slots__ = [
+        "id",
+        "altitude",
+        "amplitude",
+        "lateral_error",
+        "station_count",
+        "stations",
+    ]
 
-    def __init__(self, strike_id, timestamp, x_coord, y_coord, altitude, amplitude, lateral_error, station_count,
-                 stations=None):
+    def __init__(
+        self,
+        strike_id,
+        timestamp,
+        x_coord,
+        y_coord,
+        altitude,
+        amplitude,
+        lateral_error,
+        station_count,
+        stations=None,
+    ):
         super().__init__(timestamp, x_coord, y_coord)
         self.id = strike_id
         self.altitude = altitude
@@ -375,10 +449,10 @@ class Strike(Event):
 
     def __str__(self):
         return super().__str__() + " %s %.1f %d %d" % (
-            str(self.altitude) if self.altitude is not None else '-',
+            str(self.altitude) if self.altitude is not None else "-",
             self.amplitude if self.amplitude else 0.0,
             self.lateral_error,
-            self.station_count if self.station_count else 0
+            self.station_count if self.station_count else 0,
         )
 
 
@@ -387,8 +461,20 @@ class ChannelWaveform:
     class for raw data waveform channels
     """
 
-    def __init__(self, channel_number, amplifier_version, antenna, gain, values, start, bits, shift, conversion_gap,
-                 conversion_time, waveform):
+    def __init__(
+        self,
+        channel_number,
+        amplifier_version,
+        antenna,
+        gain,
+        values,
+        start,
+        bits,
+        shift,
+        conversion_gap,
+        conversion_time,
+        waveform,
+    ):
         self.channel_number = channel_number
         self.amplifier_version = amplifier_version
         self.antenna = antenna
@@ -403,12 +489,14 @@ class ChannelWaveform:
 
 
 class GridData:
-    """ class for grid characteristics"""
+    """class for grid characteristics"""
 
     def __init__(self, grid, no_data=None):
         self.grid = grid
         self.no_data = no_data if no_data else GridElement(0, None)
-        self.data = [[None for _ in range(grid.x_bin_count)] for _ in range(grid.y_bin_count)]
+        self.data = [
+            [None for _ in range(grid.x_bin_count)] for _ in range(grid.y_bin_count)
+        ]
 
     def set(self, x_index, y_index, value):
         try:
@@ -420,20 +508,25 @@ class GridData:
         return self.data[y_index][x_index]
 
     def to_arcgrid(self):
-        result = 'NCOLS %d\n' % self.grid.x_bin_count
-        result += 'NROWS %d\n' % self.grid.y_bin_count
-        result += 'XLLCORNER %.4f\n' % self.grid.x_min
-        result += 'YLLCORNER %.4f\n' % self.grid.y_min
-        result += 'CELLSIZE %.4f\n' % self.grid.x_div
-        result += 'NODATA_VALUE %s\n' % str(self.no_data.count)
+        result = "NCOLS %d\n" % self.grid.x_bin_count
+        result += "NROWS %d\n" % self.grid.y_bin_count
+        result += "XLLCORNER %.4f\n" % self.grid.x_min
+        result += "YLLCORNER %.4f\n" % self.grid.y_min
+        result += "CELLSIZE %.4f\n" % self.grid.x_div
+        result += "NODATA_VALUE %s\n" % str(self.no_data.count)
 
-        result += '\n'.join([' '.join([self.cell_to_multiplicity(cell) for cell in row]) for row in self.data[::-1]])
+        result += "\n".join(
+            [
+                " ".join([self.cell_to_multiplicity(cell) for cell in row])
+                for row in self.data[::-1]
+            ]
+        )
 
         return result
 
     @staticmethod
     def cell_to_multiplicity(current_cell):
-        return str(current_cell.count) if current_cell else '0'
+        return str(current_cell.count) if current_cell else "0"
 
     def to_map(self):
         chars = " .-o*O8"
@@ -446,7 +539,7 @@ class GridData:
         else:
             divider = 1
 
-        result = (self.grid.x_bin_count + 2) * '-' + '\n'
+        result = (self.grid.x_bin_count + 2) * "-" + "\n"
         for row in self.data[::-1]:
             result += "|"
             for cell in row:
@@ -454,8 +547,8 @@ class GridData:
                 result += chars[index]
             result += "|\n"
 
-        result += (self.grid.x_bin_count + 2) * '-' + '\n'
-        result += 'total count: %d, max per area: %d' % (total, maximum)
+        result += (self.grid.x_bin_count + 2) * "-" + "\n"
+        result += "total count: %d, max per area: %d" % (total, maximum)
         return result
 
     @staticmethod
@@ -475,13 +568,18 @@ class GridData:
         return maximum, total
 
     def to_reduced_array(self, reference_time):
-
         reduced_array = []
 
         for row_index, row in enumerate(self.data[::-1]):
-            reduced_array += tuple((column_index, row_index,
-                                    int(cell.count),
-                                    -(reference_time - cell.timestamp).seconds) for column_index, cell in
-                                   enumerate(row) if cell)
+            reduced_array += tuple(
+                (
+                    column_index,
+                    row_index,
+                    int(cell.count),
+                    -(reference_time - cell.timestamp).seconds,
+                )
+                for column_index, cell in enumerate(row)
+                if cell
+            )
 
         return tuple(reduced_array)
