@@ -9,13 +9,14 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.10"
 dependencies = [
-    "twisted (>=24.11.0,<25.0.0)",
+    "twisted (>=23.10.0,<24.0.0)",
     "requests (>=2.32.3,<3.0.0)",
     "fasteners (>=0.19,<0.20)",
     "shapely (>=2.0.6,<3.0.0)",
     "pyproj (>=3.7.0,<4.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
-    "injector (>=0.22.0,<0.23.0)"
+    "injector (>=0.22.0,<0.23.0)",
+    "incremental (==22.10.0)"
 ]
 
 [build-system]
