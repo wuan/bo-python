@@ -49,7 +49,13 @@ class Point:
 
     __slots__ = ('x', 'y')
 
+<<<<<<< Updated upstream
     def __init__(self, x_coord_or_point, y_coord=None):
+=======
+    def __init__(
+        self, x_coord_or_point: Union[float, Self], y_coord: Optional[float] = None
+    ) -> None:
+>>>>>>> Stashed changes
         (self.x, self.y) = self.__get_point_coordinates(x_coord_or_point, y_coord)
 
     def distance_to(self, other):
