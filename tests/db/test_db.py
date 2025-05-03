@@ -290,6 +290,17 @@ def test_grid_query(strikes, strike_factory, grid_factory, time_interval, utm_eu
 
     assert result == (expected,)
 
+def test_grid_query_with_count_threshold(strikes, strike_factory, grid_factory, time_interval, utm_eu):
+    strikes.insert(strike_factory(11.5, 49.5))
+    strikes.insert(strike_factory(12.5, 49.5))
+    strikes.insert(strike_factory(12.5, 49.5))
+    strikes.commit()
+
+    grid = grid_factory.get_for(10000)
+
+    result = strikes.select_grid(grid, 1, time_interval=time_interval)
+
+    assert result == ((19, 6, 2, 0),)
 
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (8, 139, 1, 0)),
