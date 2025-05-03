@@ -131,7 +131,7 @@ class GlobalStrikeGridQuery:
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
-        query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters,
+        query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                             time_interval=time_interval,
                                                             count_threshold=grid_parameters.count_threshold)
 
