@@ -58,7 +58,7 @@ class StrikeGridQuery:
     def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection, statsd_client):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
-        query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters,
+        query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                      time_interval=time_interval, count_threshold=grid_parameters.count_threshold)
 
         grid_query = connection.runQuery(str(query), query.get_parameters())
