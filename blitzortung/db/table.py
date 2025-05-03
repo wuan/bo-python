@@ -21,6 +21,8 @@ import datetime
 import logging
 
 import math
+
+from blitzortung.db.grid_result import build_grid_result
 from injector import inject
 
 from . import mapper
@@ -30,15 +32,10 @@ from .. import data
 from .. import geom
 from ..logger import get_logger_name
 
-try:
-    import psycopg2
-    import psycopg2.pool
-    import psycopg2.extras
-    import psycopg2.extensions
-except ImportError as e:
-    from . import create_psycopg2_dummy
-
-    psycopg2 = create_psycopg2_dummy()
+import psycopg2
+import psycopg2.pool
+import psycopg2.extras
+import psycopg2.extensions
 
 from abc import ABCMeta, abstractmethod
 
@@ -88,6 +85,7 @@ class Base:
                 self.db_connection_pool.putconn(self.conn, close=True)
                 continue
             break
+
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.conn)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
         self.conn.set_client_encoding('UTF8')
@@ -111,12 +109,8 @@ class Base:
             if cur:
                 cur.close()
 
-    def __del__(self):
-        try:
-            if not self.conn.closed:
-                self.db_connection_pool.putconn(self.conn)
-        except (psycopg2.pool.PoolError, AttributeError):
-            pass
+    def close(self):
+        self.db_connection_pool.putconn(self.conn)
 
     def is_connected(self):
         if self.conn:
@@ -186,11 +180,11 @@ class Base:
         return self.execute(sql_statement, parameters, single_cursor_factory)
 
     def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+        factory_method = factory_method or (lambda values, **_: values)
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_statement, parameters)
-            if factory_method:
-                for value in cursor:
-                    yield factory_method(value, **factory_method_args)
+            for value in cursor:
+                yield factory_method(value, **factory_method_args)
 
 
 class Strike(Base):
@@ -278,16 +272,22 @@ class Strike(Base):
 
         query = self.query_builder.grid_query(self.table_name, grid, count_threshold, **kwargs)
 
-        def prepare_results(cursor, _):
-            raster_data = data.GridData(grid)
+        data = self.execute_many(str(query), query.get_parameters())
 
-            for result in cursor:
-                raster_data.set(result['rx'], result['ry'],
-                                geom.GridElement(result['count'], result['timestamp']))
+        grid_result = build_grid_result(data, grid.x_bin_count, grid.y_bin_count, kwargs['time_interval'].end)
 
-            return raster_data
+        return grid_result
 
-        return self.execute_base(str(query), query.get_parameters(), prepare_results)
+    def select_global_grid(self, grid, count_threshold, **kwargs):
+        """ build up raster query """
+
+        query = self.query_builder.global_grid_query(self.table_name, grid, count_threshold, **kwargs)
+
+        data = self.execute_many(str(query), query.get_parameters())
+
+        grid_result = build_grid_result(data, grid.x_bin_count, grid.y_bin_count, kwargs['time_interval'].end)
+
+        return grid_result
 
     def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
 
@@ -297,8 +297,8 @@ class Strike(Base):
             region, envelope
         )
 
-        def prepare_result(cursor, _):
-            value_count = minutes / binsize
+        def prepare_result(cursor):
+            value_count = minutes // binsize
 
             result = [0] * value_count
 

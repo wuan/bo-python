@@ -37,7 +37,7 @@ jobs:
       - name: Set poetry
         uses: abatilo/actions-poetry@0dd19c9498c3dc8728967849d0d2eae428a8a3d8 # v4
         with:
-          poetry-version: '2.0.1'
+          poetry-version: '2.1.2'
 
       - name: Setup environment
         run: poetry install

@@ -18,10 +18,7 @@
 
 """
 
-try:
-    import psycopg2
-except ImportError:
-    psycopg2 = None
+import psycopg2
 
 import shapely.wkb
 

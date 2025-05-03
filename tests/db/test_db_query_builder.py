@@ -20,6 +20,8 @@
 
 import datetime
 
+import pytest
+import shapely
 from assertpy import assert_that
 
 import blitzortung
@@ -28,16 +30,35 @@ from blitzortung.db.query import TimeInterval
 from blitzortung.geom import Grid
 
 
-class StrikeTest(object):
-    def setUp(self):
-        self.query_builder = blitzortung.db.query_builder.Strike()
-        self.end_time = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
-        self.start_time = self.end_time - datetime.timedelta(minutes=10)
-        self.srid = 1234
+@pytest.fixture
+def start_time(end_time, interval_duration):
+    return end_time - interval_duration
 
-    def test_select_query(self):
-        query = self.query_builder.select_query("<table_name>", self.srid,
-                                                time_interval=TimeInterval(self.start_time, self.end_time))
+
+@pytest.fixture
+def interval_duration(end_time):
+    return datetime.timedelta(minutes=10)
+
+
+@pytest.fixture
+def end_time():
+    return datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
+
+
+@pytest.fixture
+def srid():
+    return 1234
+
+
+class TestStrike:
+
+    @pytest.fixture
+    def query_builder(self):
+        return blitzortung.db.query_builder.Strike()
+
+    def test_select_query(self, query_builder, start_time, end_time, srid):
+        query = query_builder.select_query("<table_name>", srid,
+                                                time_interval=TimeInterval(start_time, end_time))
 
         assert_that(str(query)).is_equal_to(
             "SELECT id, \"timestamp\", nanoseconds, ST_X(ST_Transform(geog::geometry, %(srid)s))"
@@ -45,14 +66,14 @@ class StrikeTest(object):
             "FROM <table_name> WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s")
         parameters = query.get_parameters()
         assert_that(parameters.keys()).contains('srid', 'start_time', 'end_time')
-        assert_that(parameters['start_time']).is_equal_to(self.start_time)
-        assert_that(parameters['end_time']).is_equal_to(self.end_time)
-        assert_that(parameters['srid']).is_equal_to(self.srid)
+        assert_that(parameters['start_time']).is_equal_to(start_time)
+        assert_that(parameters['end_time']).is_equal_to(end_time)
+        assert_that(parameters['srid']).is_equal_to(srid)
 
-    def test_grid_query(self):
-        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, self.srid)
-        query = self.query_builder.grid_query("<table_name>", grid, count_threshold=0,
-                                              time_interval=TimeInterval(self.start_time, self.end_time))
+    def test_grid_query(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, srid)
+        query = query_builder.grid_query("<table_name>", grid, count_threshold=0,
+                                              time_interval=TimeInterval(start_time, end_time))
 
         assert_that(str(query)).is_equal_to(
             "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
@@ -69,15 +90,20 @@ class StrikeTest(object):
         assert_that(parameters['xdiv']).is_equal_to(0.1)
         assert_that(parameters['ydiv']).is_equal_to(0.2)
         assert_that(parameters['envelope']).is_not_none()
-        assert_that(parameters['envelope_srid']).is_equal_to(self.srid)
-        assert_that(parameters['start_time']).is_equal_to(self.start_time)
-        assert_that(parameters['end_time']).is_equal_to(self.end_time)
-        assert_that(parameters['srid']).is_equal_to(self.srid)
+        assert_that(parameters['envelope_srid']).is_equal_to(srid)
+        assert_that(parameters['start_time']).is_equal_to(start_time)
+        assert_that(parameters['end_time']).is_equal_to(end_time)
+        assert_that(parameters['srid']).is_equal_to(srid)
 
-    def test_grid_query_with_count_threshold(self):
-        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, self.srid)
-        query = self.query_builder.grid_query("<table_name>", grid, count_threshold=5,
-                                              time_interval=TimeInterval(self.start_time, self.end_time))
+    def test_grid_query_spanning_equator(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 18.0, -5.0, 5.0, 0.25, 0.5, srid)
+        query = query_builder.grid_query("<table_name>", grid, count_threshold=0,
+                                              time_interval=TimeInterval(start_time, end_time))
+
+    def test_grid_query_with_count_threshold(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, srid)
+        query = query_builder.grid_query("<table_name>", grid, count_threshold=5,
+                                              time_interval=TimeInterval(start_time, end_time))
 
         parameters = query.get_parameters()
         assert_that(parameters.keys()).contains('count_threshold', 'xmin', 'ymin', 'xdiv', 'ydiv', 'envelope',
@@ -94,22 +120,21 @@ class StrikeTest(object):
             "GROUP BY rx, ry HAVING count(*) > %(count_threshold)s")
 
 
-class StrikeClusterTest(object):
-    def setUp(self):
-        self.query_builder = blitzortung.db.query_builder.StrikeCluster()
-        self.end_time = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
-        self.interval_duration = datetime.timedelta(minutes=10)
-        self.srid = "<srid>"
+class TestStrikeCluster:
 
-    def test_select_query(self):
-        query = self.query_builder.select_query("<table_name>", self.srid, self.end_time, self.interval_duration, 6,
-                                                self.interval_duration)
+    @pytest.fixture
+    def query_builder(self):
+        return blitzortung.db.query_builder.StrikeCluster()
+
+    def test_select_query(self, query_builder, start_time, end_time, interval_duration, srid):
+        query = query_builder.select_query("<table_name>", srid, end_time, interval_duration, 6,
+                                                interval_duration)
 
         assert_that(str(query)).is_equal_to(
             "SELECT id, \"timestamp\", ST_Transform(geog::geometry, %(srid)s) as geom, strike_count FROM <table_name> WHERE \"timestamp\" in %(timestamps)s AND interval_seconds=%(interval_seconds)s")
         parameters = query.get_parameters()
         assert_that(parameters.keys()).contains('timestamps', 'srid', 'interval_seconds')
         assert_that(tuple(parameters['timestamps'])).is_equal_to(
-            tuple(str(self.end_time - self.interval_duration * i) for i in range(0, 6)))
-        assert_that(parameters['srid']).is_equal_to(self.srid)
-        assert_that(parameters['interval_seconds']).is_equal_to(self.interval_duration.total_seconds())
+            tuple(str(end_time - interval_duration * i) for i in range(0, 6)))
+        assert_that(parameters['srid']).is_equal_to(srid)
+        assert_that(parameters['interval_seconds']).is_equal_to(interval_duration.total_seconds())
