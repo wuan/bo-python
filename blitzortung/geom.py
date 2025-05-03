@@ -150,7 +150,7 @@ class GridFactory:
     def fix_max(minimum, maximum, delta):
         return minimum + math.floor((maximum - minimum) / delta) * delta
 
-    def get_for(self, base_length):
+    def get_for(self, base_length) -> Grid:
         if base_length not in self.grid_data:
             ref_lon = self.ref_lon if self.ref_lon else (self.min_lon + self.max_lon) / 2.0
             ref_lat = self.ref_lat if self.ref_lat else (self.min_lat + self.max_lat) / 2.0
