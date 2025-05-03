@@ -208,4 +208,3 @@ def test_bench_object_cache_generate_cache_key(benchmark):
     benchmark.pedantic(cache.generate_cache_key, args=(CachedObject, ("foo", "bar"), {"baz": "asdf", "qux": "quux"}), rounds=1000, iterations=100)
 
     print("hit count", cache.total_hit_count)
-

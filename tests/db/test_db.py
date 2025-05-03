@@ -1,15 +1,15 @@
 import datetime
 import os
-from typing import Optional, Generator
-
-import blitzortung
-import pytest
-import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
-from testcontainers.postgres import PostgresContainer
+from typing import Optional
 from zoneinfo import ZoneInfo
 
+import psycopg2
+import pytest
 from assertpy import assert_that
+from psycopg2.pool import ThreadedConnectionPool
+from testcontainers.postgres import PostgresContainer
+
+import blitzortung
 
 image = "postgres:16-alpine"
 image = "postgis/postgis:16-3.5"
@@ -234,6 +234,46 @@ def test_insert_and_select_strike(strikes, strike_factory, time_interval):
     assert len(list(result)) == 1
 
 
+def test_get_latest_time(strikes, strike_factory, time_interval):
+    strike = strike_factory(11, 49)
+    strikes.insert(strike)
+    strikes.commit()
+
+    result = strikes.get_latest_time()
+
+    assert result == strike.timestamp
+
+
+def test_get_latest_time_with_region(strikes, strike_factory, time_interval):
+    strike = strike_factory(11, 49)
+    strikes.insert(strike, 5)
+    strikes.commit()
+
+    result = strikes.get_latest_time()
+
+    assert result == strike.timestamp
+
+
+def test_get_latest_time_with_region_match(strikes, strike_factory, time_interval):
+    strike = strike_factory(11, 49)
+    strikes.insert(strike, 5)
+    strikes.commit()
+
+    result = strikes.get_latest_time(5)
+
+    assert result == strike.timestamp
+
+
+def test_get_latest_time_with_region_mismatch(strikes, strike_factory, time_interval):
+    strike = strike_factory(11, 49)
+    strikes.insert(strike, 5)
+    strikes.commit()
+
+    result = strikes.get_latest_time(4)
+
+    assert result is None
+
+
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (1, 1, 1, 0)),
     (50000, (2, 1, 1, 0)),
@@ -268,7 +308,7 @@ def test_global_grid_query(strikes, strike_factory, global_grid_factory, time_in
     assert result == (expected,)
 
 
-def test_empty_query2(strikes, strike_factory, now):
+def test_empty_query2(strikes, strike_factory):
     result = strikes.select()
 
     assert len(list(result)) == 0
@@ -280,7 +320,7 @@ def test_empty_query2(strikes, strike_factory, now):
     (-15, [0, 8, 7, 6, 5, 4]),
     (-30, [0, 0, 0, 0, 8, 7])
 ])
-def test_histogram_query(strikes, strike_factory, now, minute_offset, expected):
+def test_histogram_query(strikes, strike_factory, minute_offset, expected):
     for offset in range(8):
         timedelta = datetime.timedelta(minutes=offset * 5)
         for _ in range(offset + 1):
