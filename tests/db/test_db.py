@@ -189,7 +189,7 @@ def strike_factory(now):
         strike_builder = blitzortung.builder.strike.Strike()
         offset = offset if offset is not None else datetime.timedelta()
 
-        strike_builder.set_timestamp(datetime.datetime.utcnow() - offset)
+        strike_builder.set_timestamp(datetime.datetime.now(datetime.UTC) - offset)
         strike_builder.set_x(x)
         strike_builder.set_y(y)
         strike_builder.set_lateral_error(0.5)
