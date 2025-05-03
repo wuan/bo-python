@@ -61,38 +61,3 @@ class Strike(ObjectMapper):
         self.strike_builder.set_lateral_error(result['error2d'])
 
         return self.strike_builder.build()
-
-
-class Station(ObjectMapper):
-    @inject
-    def __init__(self, station_builder: builder.Station):
-        self.station_builder = station_builder
-
-    def create_object(self, result, **kwargs):
-        timezone = kwargs['timezone'] if 'timezone' in kwargs else datetime.timezone.utc
-
-        self.station_builder.set_number(result['number'])
-        self.station_builder.set_user(result['user'])
-        self.station_builder.set_name(result['name'])
-        self.station_builder.set_country(result['country'])
-        location = shapely.wkb.loads(result['geog'], hex=True)
-        self.station_builder.set_x(location.x)
-        self.station_builder.set_y(location.y)
-        self.station_builder.set_timestamp(
-            self.convert_to_timezone(result['begin'], timezone))
-
-        return self.station_builder.build()
-
-
-class StationOffline(ObjectMapper):
-    @inject
-    def __init__(self, station_offline_builder: builder.StationOffline):
-        self.station_offline_builder = station_offline_builder
-
-    def create_object(self, result, **kwargs):
-        self.station_offline_builder.set_id(result['id'])
-        self.station_offline_builder.set_number(result['number'])
-        self.station_offline_builder.set_begin(result['begin'])
-        self.station_offline_builder.set_end(result['end'])
-
-        return self.station_offline_builder.build()
