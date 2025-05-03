@@ -18,9 +18,6 @@
 
 """
 
-"""
-blitzortung python modules
-"""
 import logging
 
 __version__ = '1.7.1'
@@ -51,6 +48,7 @@ import injector
 
 from . import builder
 from . import config
+from . import data
 from . import dataimport
 from . import db
 from . import geom

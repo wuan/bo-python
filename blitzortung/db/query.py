@@ -23,13 +23,7 @@ import datetime
 import shapely.geometry.base
 import shapely.wkb
 
-try:
-    import psycopg2
-except ImportError:
-    from . import create_psycopg2_dummy
-
-    psycopg2 = create_psycopg2_dummy()
-
+import psycopg2
 
 class BaseInterval:
     """

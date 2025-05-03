@@ -17,7 +17,7 @@ jobs:
     name: Build
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.11", "3.12", "3.13" ]
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -37,7 +37,7 @@ jobs:
       - name: Set poetry
         uses: abatilo/actions-poetry@0dd19c9498c3dc8728967849d0d2eae428a8a3d8 # v4
         with:
-          poetry-version: '2.0.1'
+          poetry-version: '2.1.2'
 
       - name: Setup environment
         run: poetry install
@@ -51,7 +51,7 @@ jobs:
           poetry build
 
       - name: SonarCloud Scan
-        if: matrix.python-version == '3.10' && matrix.poetry-version == '1.7.1'
+        if: matrix.python-version == '3.12'
         uses: SonarSource/sonarqube-scan-action@v5.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
