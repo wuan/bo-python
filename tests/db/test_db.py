@@ -290,23 +290,21 @@ def test_grid_query(strikes, strike_factory, grid_factory, time_interval, utm_eu
 
     assert result == (expected,)
 
-def test_problematic_grid_query(strikes, strike_factory, local_grid_factory, time_interval, utm_eu):
+def test_issues_with_missing_data_on_grid_query(strikes, strike_factory, local_grid_factory, time_interval, utm_eu):
     grid_size = 100000
     for i in range(10):
         strikes.insert(strike_factory(-90 + i,15))
     strikes.commit()
 
     # get_local_strikes_grid(-6, 0, 60, 10000, 0, >= 0, 15)
-    # GridParameters(grid=Grid(x: -105.5000.. - 59.5371( 0.0907,  # 507), y: -15.0000..29.9527 (0.0904, #497)), base_length=10000, region=None, count_threshold=0),
     local_grid1 = local_grid_factory(-6,0,15)
-    grid1 = local_grid1.get_for(10000)
+    grid1 = local_grid1.get_for(grid_size)
     result1 = strikes.select_grid(grid1, 0, time_interval=time_interval)
     assert len(result1) == 10
 
     # get_local_strikes_grid(-5, 0, 60, 10000, 0, >=0, 15)
-    # GridParameters(grid=Grid(x: -90.5000.. - 44.5371( 0.0907,  # 507), y: -15.0000..29.9527 (0.0904, #497)), base_length=10000, region=None, count_threshold=0)
     local_grid2 = local_grid_factory(-5,0,15)
-    grid2 = local_grid2.get_for(10000)
+    grid2 = local_grid2.get_for(grid_size)
     result2 = strikes.select_grid(grid2, 0, time_interval=time_interval)
     assert len(result2) == 10
 

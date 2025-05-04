@@ -26,7 +26,7 @@ from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-from .general import create_time_interval, TimingState
+from .general import TimingState
 from .. import db
 from ..db.grid_result import build_grid_result
 from ..db.query import TimeInterval
