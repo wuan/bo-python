@@ -50,7 +50,7 @@ class TestCacheEntry(TestCase):
         assert_that(self.cache_entry.get_hit_count()).is_equal_to(0)
 
 
-class CachedObject(object):
+class CachedObject:
     def __init__(self, *args, **kwargs):
         self.__args = args
         self.__kwargs = kwargs

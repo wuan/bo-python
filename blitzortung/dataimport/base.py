@@ -22,19 +22,10 @@ import datetime
 import logging
 import os
 from abc import abstractmethod
-
-try:
-    from html.parser import HTMLParser
-except ImportError:
-    from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 from injector import inject
-
-try:
-    from requests import Session
-except ImportError:
-    class Session:
-        pass
+from requests import Session
 
 from .. import config, util
 
@@ -63,14 +54,6 @@ class HttpFileTransport(FileTransport):
     def __init__(self, configuration: config.Config, session=None):
         self.config = configuration
         self.session = session if session else Session()
-
-    def __del__(self):
-        if self.session:
-            try:
-                self.logger.debug("close http session '%s'" % self.session)
-                self.session.close()
-            except ReferenceError:
-                pass
 
     def read_lines(self, source_url, post_process=None):
         response = self.session.get(

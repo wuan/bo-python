@@ -32,7 +32,7 @@ except ImportError:
     import ConfigParser as configparser
 
 
-class TestConfig(object):
+class TestConfig:
     def setup_method(self):
         self.config_parser = Mock()
         self.config = blitzortung.config.Config(self.config_parser)
@@ -90,7 +90,7 @@ class TestConfig(object):
             call.get('auth', 'password'))
 
 
-class TestConfigModule(object):
+class TestConfigModule:
 
     def setup_method(self):
         self.config_module = blitzortung.config.ConfigModule()

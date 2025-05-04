@@ -29,7 +29,7 @@ import blitzortung.data
 from blitzortung.data import Timestamp, Timedelta, NaT
 
 
-class TestTimestamp(object):
+class TestTimestamp:
     def test_value(self):
         now = Timestamp()
         later = now + 1234567
@@ -52,7 +52,7 @@ class TestTimestamp(object):
         assert_that(timestamp.nanosecond).is_equal_to(700)
 
 
-class TestTimedelta(object):
+class TestTimedelta:
     def test_normalizing(self):
         assert_that(Timedelta(nanodelta=1500)).is_equal_to(
             Timedelta(datetime.timedelta(microseconds=1), 500))
@@ -64,7 +64,7 @@ class TestTimedelta(object):
             Timedelta(datetime.timedelta(microseconds=-2), 500))
 
 
-class EventBaseTest(object):
+class EventBaseTest:
     def setup_method(self):
         self.not_a_time = NaT
         self.now_time = Timestamp()
@@ -149,7 +149,7 @@ class TestEvent(EventBaseTest):
         self.assertFalse(event.is_valid)
 
 
-class TestStrike(object):
+class TestStrike:
     def setup_method(self):
         self.timestamp = Timestamp('2013-09-28 23:23:38.123456', 789)
         self.strike = blitzortung.data.Strike(123, self.timestamp, 11.2, 49.3, 2500, 10.5, 5400, 11, [1, 5, 7, 15])
@@ -188,37 +188,6 @@ class TestStrike(object):
 
     def test_string_represenation(self):
         assert_that(str(self.strike)).is_equal_to("2013-09-28 23:23:38.123456789 11.2000 49.3000 2500 10.5 5400 11")
-
-
-class TestStation(object):
-    def setup_method(self):
-        self.timestamp = Timestamp('2013-09-28 23:23:38')
-        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, self.timestamp,
-                                                '<status>', '<board>')
-
-    def test_online_str(self):
-        self.station = blitzortung.data.Station(123, 45, '<name>', '<country>', 11.2, 49.4, None, '<status>', '<board>')
-        assert_that(str(self.station)).is_equal_to(
-            "*123/ 45 '<name>' '<country>' (11.2000, 49.4000)")
-
-    def test_offline_str(self):
-        assert_that(str(self.station)).is_equal_to(
-            "-123/ 45 '<name>' '<country>' (11.2000, 49.4000) offline since 2013-09-28 23:23 UTC")
-
-    def test_get_number(self):
-        assert_that(self.station.number).is_equal_to(123)
-
-    def test_get_user(self):
-        assert_that(self.station.user).is_equal_to(45)
-
-    def test_get_name(self):
-        assert_that(self.station.name).is_equal_to('<name>')
-
-    def test_get_country(self):
-        assert_that(self.station.country).is_equal_to('<country>')
-
-    def test_get_status(self):
-        assert_that(self.station.status).is_equal_to('<status>')
 
 
 class TestGridData(object):

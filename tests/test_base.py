@@ -20,10 +20,12 @@
 
 import math
 
+from unittest import TestCase
+
 import blitzortung.base
 
 
-class PointTest(object):
+class PointTest(TestCase):
     def setUp(self):
         self.point1 = blitzortung.base.Point(11, 49)
         self.point2 = blitzortung.base.Point(12, 49)

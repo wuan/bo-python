@@ -99,4 +99,9 @@ def time_intervals(start_time, duration, end_time=None):
 
 
 def force_range(lower_limit, value, upper_limit):
-    return lower_limit if value < lower_limit else upper_limit if value > upper_limit else value
+    if value < lower_limit:
+        return lower_limit
+    elif value > upper_limit:
+        return upper_limit
+    else:
+        return value

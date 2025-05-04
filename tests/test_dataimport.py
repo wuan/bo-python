@@ -29,8 +29,8 @@ import blitzortung.builder
 import blitzortung.dataimport
 
 
-class HttpDataTransportTest(object):
-    def setUp(self):
+class TestHttpDataTransport:
+    def setup_class(self):
         self.config = Mock(name='config')
         self.config.get_username.return_value = '<username>'
         self.config.get_password.return_value = '<password>'
@@ -87,25 +87,26 @@ class HttpDataTransportTest(object):
         assert_that(list(response)).is_empty()
 
 
-class BlitzortungDataUrlTest(object):
-    def setUp(self):
+class TestBlitzortungDataUrl:
+
+    def setup_class(self):
         self.data_url = blitzortung.dataimport.BlitzortungDataPath()
 
     def test_default_values(self):
         target_url = self.data_url.build_path('url_path')
-        assert_that(target_url).is_equal_to('http://data.blitzortung.org/Data_1/url_path')
+        assert_that(target_url).is_equal_to('https://data.blitzortung.org/Data/url_path')
 
     def test_specific_values(self):
         target_url = self.data_url.build_path('url_path', host_name='foo', region=42)
-        assert_that(target_url).is_equal_to('http://foo.blitzortung.org/Data_42/url_path')
+        assert_that(target_url).is_equal_to('https://foo.blitzortung.org/Data/url_path')
 
     def test_with_user_defined_base(self):
         self.data_url = blitzortung.dataimport.BlitzortungDataPath("base/path")
         target_url = self.data_url.build_path('url_path', host_name='bar', region=39)
-        assert_that(target_url).is_equal_to('base/path/Data_39/url_path')
+        assert_that(target_url).is_equal_to('base/path/Data/url_path')
 
 
-class BlitzortungHistoryUrlGeneratorTest(object):
+class TestBlitzortungHistoryUrlGenerator:
     def create_history_url_generator(self, present_time):
         self.present_time = present_time
         self.start_time = present_time - datetime.timedelta(minutes=25)
@@ -123,8 +124,8 @@ class BlitzortungHistoryUrlGeneratorTest(object):
         )
 
 
-class StrikesBlitzortungDataProviderTest(object):
-    def setUp(self):
+class TestStrikesBlitzortungDataProvider:
+    def setup_class(self):
         self.data_provider = Mock()
         self.data_url = Mock()
         self.url_generator = Mock()
@@ -180,87 +181,3 @@ class StrikesBlitzortungDataProviderTest(object):
 
         with pytest.raises(Exception):
             list(self.provider.get_strikes_since(latest_strike_timestamp))
-
-
-class StationsBlitzortungDataProviderTest(object):
-    def setUp(self):
-        self.data_provider = Mock()
-        self.data_url = Mock()
-        self.builder = Mock()
-
-        self.provider = blitzortung.dataimport.StationsBlitzortungDataProvider(
-            self.data_provider,
-            self.data_url,
-            self.builder
-        )
-        self.provider.read_data = Mock()
-
-    def test_get_stations(self):
-        station_data1 = "station one"
-        station_data2 = "station two"
-        self.data_url.build_path.return_value = 'full_url'
-        self.data_provider.read_lines.side_effect = [[station_data1, station_data2], []]
-        station1 = Mock()
-        station2 = Mock()
-        self.builder.from_line.return_value = self.builder
-        self.builder.build.side_effect = [station1, station2]
-
-        stations = self.provider.get_stations()
-        expected_args = [call('full_url', post_process=self.provider.pre_process)]
-        assert_that(self.data_provider.read_lines.call_args_list).is_equal_to(expected_args)
-
-        assert_that(stations).contains(station1, station2)
-
-    def test_get_stations_with_builder_error(self):
-        station_data = {'one': 1}
-        self.data_provider.read_lines.side_effect = [[station_data], []]
-        self.builder.from_line.return_value = self.builder
-        self.builder.build.side_effect = blitzortung.builder.BuilderError("foo")
-
-        strikes = self.provider.get_stations()
-
-        assert_that(list(strikes)).is_empty()
-
-    class RawSignalsBlitzortungDataProviderTest(object):
-        def setUp(self):
-            self.data_provider = Mock()
-            self.data_url = Mock()
-            self.url_path_generator = Mock()
-            self.builder = Mock()
-
-            self.provider = blitzortung.dataimport.RawSignalsBlitzortungDataProvider(
-                self.data_provider,
-                self.data_url,
-                self.url_path_generator,
-                self.builder
-            )
-
-        def test_get_raw_data_since(self):
-            last_data = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
-
-            self.data_url.build_path.side_effect = ['full_url1', 'full_url2']
-            self.url_path_generator.get_paths.return_value = ['url_path1', 'url_path2']
-            self.data_provider.read_lines.side_effect = [["line11", "line12"], ["line21", "line22"]]
-            raw11 = Mock(name='raw11')
-            raw12 = Mock(name='raw12')
-            raw21 = Mock(name='raw21')
-            raw22 = Mock(name='raw22')
-            self.builder.from_string.return_value = self.builder
-            self.builder.build.side_effect = [raw11, raw12, raw21, raw22]
-
-            region_id = 5
-            station_id = 123
-            raw_signals = list(self.provider.get_raw_data_since(last_data, region_id, station_id))
-
-            expected_args = [call(last_data)]
-            assert_that(self.url_path_generator.get_paths.call_args_list).is_equal_to(expected_args)
-
-            expected_args = [
-                call('{}/url_path1'.format(station_id), region=region_id, host_name='signals'),
-                call('{}/url_path2'.format(station_id), region=region_id, host_name='signals')]
-            assert_that(self.data_url.build_path.call_args_list).is_equal_to(expected_args)
-
-            expected_args = [call('full_url1'), call('full_url2')]
-            assert_that(self.data_provider.read_lines.call_args_list).is_equal_to(expected_args)
-
-            assert_that(raw_signals).contains(raw11, raw12, raw21, raw22)

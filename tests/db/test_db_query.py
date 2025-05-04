@@ -33,15 +33,15 @@ class IdIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.IdInterval()
 
-        self.assertEqual(id_interval.start, None)
-        self.assertEqual(id_interval.end, None)
+        self.assertIsNone(id_interval.start)
+        self.assertIsNone(id_interval.end)
         self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.IdInterval(1234)
 
         self.assertEqual(id_interval.start, 1234)
-        self.assertEqual(id_interval.end, None)
+        self.assertIsNone(id_interval.end)
         self.assertEqual(str(id_interval), "[1234 : ]")
 
     def test_start_and_stop_set(self):
@@ -64,15 +64,15 @@ class TimeIntervalTest(TestCase):
     def test_nothing_set(self):
         id_interval = blitzortung.db.query.TimeInterval()
 
-        self.assertEqual(id_interval.start, None)
-        self.assertEqual(id_interval.end, None)
+        self.assertIsNone(id_interval.start)
+        self.assertIsNone(id_interval.end)
         self.assertEqual(str(id_interval), "[ : ]")
 
     def test_start_set(self):
         id_interval = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15))
 
         self.assertEqual(id_interval.start, datetime.datetime(2010, 11, 20, 11, 30, 15))
-        self.assertEqual(id_interval.end, None)
+        self.assertIsNone(id_interval.end)
         self.assertEqual(str(id_interval), "[2010-11-20 11:30:15 : ]")
 
     def test_start_and_stop_set(self):

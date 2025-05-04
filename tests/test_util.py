@@ -119,3 +119,15 @@ class TestRoundTime:
         assert_that(time_value.second).is_equal_to(23)
         assert_that(time_value.microsecond).is_equal_to(123456)
         assert_that(time_value.nanosecond).is_equal_to(789)
+
+
+class TestLimit:
+
+    def test_limit_value_in_rage(self):
+        assert blitzortung.util.force_range(10,15,20) == 15
+
+    def test_limit_value_below_rage(self):
+        assert blitzortung.util.force_range(10,9,20) == 10
+
+    def test_limit_value_above_rage(self):
+        assert blitzortung.util.force_range(10,21,20) == 20
