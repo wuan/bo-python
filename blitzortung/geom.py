@@ -148,7 +148,7 @@ class GridFactory:
 
     @staticmethod
     def fix_max(minimum, maximum, delta):
-        return round(minimum + math.floor((maximum - minimum) / delta) * delta, 4)
+        return minimum + math.floor((maximum - minimum) / delta) * delta
 
     def get_for(self, base_length) -> Grid:
         if base_length not in self.grid_data:
@@ -160,8 +160,8 @@ class GridFactory:
             lat_d, lon_d = pyproj.Transformer.from_crs(self.coord_sys, self.WGS84) \
                 .transform(utm_x + base_length, utm_y + base_length)
 
-            delta_lon = round(lon_d - ref_lon, 6)
-            delta_lat = round(lat_d - ref_lat, 6)
+            delta_lon = lon_d - ref_lon
+            delta_lat = lat_d - ref_lat
 
             max_lon = self.fix_max(self.min_lon, self.max_lon, delta_lon)
             max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)

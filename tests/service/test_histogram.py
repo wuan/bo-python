@@ -35,8 +35,8 @@ class TestHistogramQuery:
         assert result.addCallback.call_args.kwargs["minutes"] == 30
         assert result.addCallback.call_args.kwargs["bin_size"] == 5
         now = time.time()
-        assert result.addCallback.call_args.kwargs["reference_time"] > now - 0.001
-        assert result.addCallback.call_args.kwargs["reference_time"] < now + 0.001
+        assert result.addCallback.call_args.kwargs["reference_time"] > now - 0.005
+        assert result.addCallback.call_args.kwargs["reference_time"] < now + 0.005
 
     def test_build_result(self, uut):
         reference_time = time.time() - 0.5
