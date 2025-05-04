@@ -271,7 +271,6 @@ class Strike(Base):
         """ build up raster query """
 
         query = self.query_builder.grid_query(self.table_name, grid, count_threshold, **kwargs)
-
         data = self.execute_many(str(query), query.get_parameters())
 
         grid_result = build_grid_result(data, grid.x_bin_count, grid.y_bin_count, kwargs['time_interval'].end)
@@ -308,4 +307,3 @@ class Strike(Base):
             return result
 
         return self.execute(str(query), query.get_parameters(), prepare_result)
-

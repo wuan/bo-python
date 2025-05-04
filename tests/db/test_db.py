@@ -205,7 +205,7 @@ def test_empty_query(strikes, strike_factory, now):
     assert len(list(result)) == 0
 
 
-def test_insert_without_commit(strikes, strike_factory, time_interval):
+def test_insert_with_rollback(strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
     strikes.insert(strike)
     strikes.rollback()
@@ -289,6 +289,26 @@ def test_grid_query(strikes, strike_factory, grid_factory, time_interval, utm_eu
     result = strikes.select_grid(grid, 0, time_interval=time_interval)
 
     assert result == (expected,)
+
+def test_problematic_grid_query(strikes, strike_factory, local_grid_factory, time_interval, utm_eu):
+    grid_size = 100000
+    for i in range(10):
+        strikes.insert(strike_factory(-90 + i,15))
+    strikes.commit()
+
+    # get_local_strikes_grid(-6, 0, 60, 10000, 0, >= 0, 15)
+    # GridParameters(grid=Grid(x: -105.5000.. - 59.5371( 0.0907,  # 507), y: -15.0000..29.9527 (0.0904, #497)), base_length=10000, region=None, count_threshold=0),
+    local_grid1 = local_grid_factory(-6,0,15)
+    grid1 = local_grid1.get_for(10000)
+    result1 = strikes.select_grid(grid1, 0, time_interval=time_interval)
+    assert len(result1) == 10
+
+    # get_local_strikes_grid(-5, 0, 60, 10000, 0, >=0, 15)
+    # GridParameters(grid=Grid(x: -90.5000.. - 44.5371( 0.0907,  # 507), y: -15.0000..29.9527 (0.0904, #497)), base_length=10000, region=None, count_threshold=0)
+    local_grid2 = local_grid_factory(-5,0,15)
+    grid2 = local_grid2.get_for(10000)
+    result2 = strikes.select_grid(grid2, 0, time_interval=time_interval)
+    assert len(result2) == 10
 
 def test_grid_query_with_count_threshold(strikes, strike_factory, grid_factory, time_interval, utm_eu):
     strikes.insert(strike_factory(11.5, 49.5))
