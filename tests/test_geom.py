@@ -93,7 +93,7 @@ class TestEnvelope(TestCase):
         self.assertFalse(self.envelope.contains(blitzortung.base.Point(4.0001, 0)))
 
     def test_get_env(self):
-        expected_env = shapely.geometry.LinearRing([(-5, -3), (-5, 2), (4, 2), (4, -3)])
+        expected_env = shapely.geometry.Polygon([(-5, -3), (-5, 2), (4, 2), (4, -3), (-5, -3),])
         self.assertTrue(expected_env.equals(self.envelope.env))
 
     def test_str(self):

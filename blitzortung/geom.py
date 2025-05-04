@@ -79,9 +79,9 @@ class Envelope(Geometry):
 
     @property
     def env(self):
-        return shapely.geometry.LinearRing(
+        return shapely.geometry.Polygon(
             [(self.x_min, self.y_min), (self.x_min, self.y_max), (self.x_max, self.y_max),
-             (self.x_max, self.y_min)])
+             (self.x_max, self.y_min), (self.x_min, self.y_min)])
 
     def __repr__(self):
         return 'Envelope(x: %.4f..%.4f, y: %.4f..%.4f)' % (
@@ -150,7 +150,7 @@ class GridFactory:
     def fix_max(minimum, maximum, delta):
         return minimum + math.floor((maximum - minimum) / delta) * delta
 
-    def get_for(self, base_length):
+    def get_for(self, base_length) -> Grid:
         if base_length not in self.grid_data:
             ref_lon = self.ref_lon if self.ref_lon else (self.min_lon + self.max_lon) / 2.0
             ref_lat = self.ref_lat if self.ref_lat else (self.min_lat + self.max_lat) / 2.0
@@ -166,6 +166,7 @@ class GridFactory:
             max_lon = self.fix_max(self.min_lon, self.max_lon, delta_lon)
             max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)
 
+            print(max_lon, max_lat, delta_lon, delta_lat,)
             self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
                                                delta_lon, delta_lat,
                                                Geometry.default_srid)
