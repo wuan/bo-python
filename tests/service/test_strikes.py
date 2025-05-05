@@ -1,14 +1,11 @@
 import datetime
-from typing import Callable
 
 import pytest
-from assertpy import assert_that
 from mock import Mock, call
 
 from blitzortung import geom, builder
 from blitzortung.data import Timestamp
 from blitzortung.service.strike import StrikeQuery, StrikeState
-from blitzortung.service.strike_grid import StrikeGridQuery, GridParameters, StrikeGridState
 from tests.conftest import time_interval
 
 
@@ -39,18 +36,7 @@ class TestStrikeGridQuery:
         return StrikeQuery(query_builder, strike_mapper)
 
     @pytest.fixture
-    def grid_parameters_factory(self, grid_factory) -> Callable[[int, int], GridParameters]:
-        def _factory(raster_baselength, region=1):
-            return GridParameters(
-                grid_factory.get_for(raster_baselength),
-                raster_baselength,
-                region,
-            )
-
-        return _factory
-
-    @pytest.fixture
-    def state(self, statsd_client, time_interval, query_builder, connection, strike_mapper ):
+    def state(self, statsd_client, time_interval, query_builder, connection, strike_mapper):
         return StrikeState(statsd_client, Timestamp(time_interval.end))
 
     def test_create(self, uut, time_interval, query_builder, connection, statsd_client, state):
@@ -84,11 +70,19 @@ class TestStrikeGridQuery:
 
         result = uut.build_result(query_result, state)
 
+        strike_mapper.create_object.assert_called_with(query_result[0])
+
         assert result == {'next': 568, 's': ((60, 123.4, 45.6, 234.1, 3.4, 1.2, 12),)}
 
+    def test_build_empty_result(self, uut, state, time_interval, strike_mapper):
+        query_result = []
+
+        result = uut.build_result(query_result, state)
+
+        strike_mapper.create_object.assert_not_called()
+        assert result == {'s': ()}
 
     def test_build_strikes_response(self, uut, state, time_interval):
-
         grid_result = {'next': 123, 's': ((60, 123.4, 45.6, 234.1, 3.4, 1.2, 12),)}
         histogram_result = [0, 0, 0, 0, 0, 1]
         result = (grid_result, histogram_result)
