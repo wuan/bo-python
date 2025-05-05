@@ -99,6 +99,23 @@ class TimeIntervalTest(TestCase):
         assert isinstance(result, int)
         self.assertEqual(result, 10)
 
+    def test_get_minutes_failes_with_incomplete_range(self):
+        interval1 = blitzortung.db.query.TimeInterval(None,
+                                                      datetime.datetime(2010, 11, 20, 11, 40, 15))
+
+        with pytest.raises(ValueError):
+            interval1.minutes()
+
+        interval2 = blitzortung.db.query.TimeInterval(datetime.datetime(2010, 11, 20, 11, 30, 15),
+                                                     None)
+        with pytest.raises(ValueError):
+            interval2.minutes()
+
+        interval3 = blitzortung.db.query.TimeInterval(None,
+                                                      None)
+        with pytest.raises(ValueError):
+            interval3.minutes()
+
     def test_exception_when_start_is_not_integer(self):
         with pytest.raises(ValueError):
             blitzortung.db.query.TimeInterval("asdf")
