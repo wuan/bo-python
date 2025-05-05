@@ -37,12 +37,6 @@ class Config:
     def get_password(self):
         return self.config_parser.get('auth', 'password')
 
-    def get_raw_path(self):
-        return self.config_parser.get('path', 'raw')
-
-    def get_archive_path(self):
-        return self.config_parser.get('path', 'archive')
-
     def get_db_connection_string(self):
         host = self.config_parser.get('db', 'host')
         dbname = self.config_parser.get('db', 'dbname')

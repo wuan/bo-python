@@ -26,8 +26,8 @@ import blitzortung.util
 from blitzortung.data import Timestamp
 
 
-class TimeIntervalsTest(object):
-    def setUp(self):
+class TestTimeIntervals:
+    def setup_class(self):
         self.duration = datetime.timedelta(minutes=10)
 
     def initialize_times(self, end_time):

@@ -21,6 +21,7 @@ import datetime
 import logging
 
 import math
+from typing import Optional
 
 from blitzortung.db.grid_result import build_grid_result
 from injector import inject
@@ -28,6 +29,7 @@ from injector import inject
 from . import mapper
 from . import query
 from . import query_builder
+from .query import TimeInterval
 from .. import data
 from .. import geom
 from ..logger import get_logger_name
@@ -288,13 +290,13 @@ class Strike(Base):
 
         return grid_result
 
-    def select_histogram(self, minutes, minute_offset=0, binsize=5, region=None, envelope=None):
+    def select_histogram(self, time_interval: TimeInterval, binsize: int = 5, region: Optional[int] = None,
+                         envelope=None):
 
-        query = self.query_builder.histogram_query(
-            self.full_table_name,
-            minutes, minute_offset, binsize,
-            region, envelope
-        )
+        query = self.query_builder.histogram_query( self.full_table_name, time_interval, binsize, region, envelope )
+
+        minutes = time_interval.minutes()
+        print("minutes:", minutes, "binsize:", binsize)
 
         def prepare_result(cursor):
             value_count = minutes // binsize
@@ -302,6 +304,7 @@ class Strike(Base):
             result = [0] * value_count
 
             for bin_data in cursor:
+                print(bin_data)
                 result[bin_data[0] + value_count - 1] = bin_data[1]
 
             return result

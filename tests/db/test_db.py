@@ -10,6 +10,7 @@ from psycopg2.pool import ThreadedConnectionPool
 from testcontainers.postgres import PostgresContainer
 
 import blitzortung
+from blitzortung.service.general import create_time_interval
 
 image = "postgres:16-alpine"
 image = "postgis/postgis:16-3.5"
@@ -351,11 +352,14 @@ def test_empty_query2(strikes, strike_factory):
 ])
 def test_histogram_query(strikes, strike_factory, minute_offset, expected):
     for offset in range(8):
-        timedelta = datetime.timedelta(minutes=offset * 5)
+        timedelta = datetime.timedelta(minutes=offset * 5, seconds=1)
+        print(timedelta)
         for _ in range(offset + 1):
             strikes.insert(strike_factory(11.5, 49.5, timedelta))
     strikes.commit()
 
-    histogram = strikes.select_histogram(30, minute_offset)
+    query_time_interval = create_time_interval(30, minute_offset)
+
+    histogram = strikes.select_histogram(query_time_interval)
 
     assert histogram == expected
