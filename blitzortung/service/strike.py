@@ -27,6 +27,7 @@ from twisted.python import log
 from .general import TimingState, create_time_interval
 from .. import db, geom
 from ..data import Timestamp
+from ..db.query import TimeInterval
 
 
 class StrikeState(TimingState):
@@ -42,22 +43,21 @@ class StrikeQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike, strike_mapper: db.mapper.Strike):
         self.strike_query_builder = strike_query_builder
         self.strike_mapper = strike_mapper
+        self.id_order = db.query.Order('id')
 
-    def create(self, id_or_offset, minute_length, minute_offset, connection, statsd_client):
-        time_interval = create_time_interval(minute_length, minute_offset)
+    def create(self, id_or_offset, time_interval: TimeInterval, connection, statsd_client):
         state = StrikeState(statsd_client, Timestamp(time_interval.end))
 
         id_interval = db.query.IdInterval(id_or_offset) if id_or_offset > 0 else None
-        order = db.query.Order('id')
         query = self.strike_query_builder.select_query(db.table.Strike.table_name, geom.Geometry.default_srid,
-                                                       time_interval=time_interval, order=order,
+                                                       time_interval=time_interval, order=self.id_order,
                                                        id_interval=id_interval)
 
         strikes_result = connection.runQuery(str(query), query.get_parameters())
-        strikes_result.addCallback(self.strike_build_results, state=state)
+        strikes_result.addCallback(self.build_result, state=state)
         return strikes_result, state
 
-    def strike_build_results(self, query_result, state):
+    def build_result(self, query_result, state):
         state.add_info_text("query %.03fs #%d" % (state.get_seconds(), len(query_result)))
         state.log_timing('strikes.query')
 
@@ -89,12 +89,12 @@ class StrikeQuery:
 
     def combine_result(self, strikes_result, histogram_result, state):
         query = gatherResults([strikes_result, histogram_result], consumeErrors=True)
-        query.addCallback(self.compile_strikes_result, state=state)
+        query.addCallback(self.build_strikes_response, state=state)
         query.addErrback(log.err)
         return query
 
     @staticmethod
-    def compile_strikes_result(result, state):
+    def build_strikes_response(result, state):
         strikes_result = result[0]
         histogram_result = result[1]
 
