@@ -17,12 +17,13 @@
    limitations under the License.
 
 """
+from typing import Optional
 
 import psycopg2
 
 import shapely.wkb
 
-from .query import SelectQuery, GridQuery, GlobalGridQuery
+from .query import SelectQuery, GridQuery, GlobalGridQuery, TimeInterval
 
 
 class Strike:
@@ -54,19 +55,16 @@ class Strike:
             .set_default_conditions(**kwargs)
 
     @staticmethod
-    def histogram_query(table_name, minutes, minute_offset, binsize, region=None, envelope=None):
+    def histogram_query(table_name: str, time_interval: TimeInterval, binsize:int, region:Optional[int]=None, envelope=None):
 
         query = SelectQuery() \
             .set_table_name(table_name) \
-            .add_column("-extract(epoch from clock_timestamp() + interval '%(offset)s minutes'"
-                        " - \"timestamp\")::int/60/%(binsize)s as interval") \
+            .add_column("-extract( epoch from %(end_time)s - \"timestamp\")::int/60/%(binsize)s as interval") \
             .add_column("count(*)") \
-            .add_condition("\"timestamp\" >= (select clock_timestamp() + interval '%(offset)s minutes'"
-                           " - interval '%(minutes)s minutes')") \
-            .add_condition("\"timestamp\" < (select clock_timestamp() + interval '%(offset)s minutes') ") \
             .add_group_by("interval") \
             .set_order("interval") \
-            .add_parameters(minutes=minutes, offset=minute_offset, binsize=binsize)
+            .set_default_conditions(time_interval=time_interval) \
+            .add_parameters(binsize=binsize)
 
         if region:
             query.add_condition("region = %(region)s", region=region)
@@ -75,6 +73,9 @@ class Strike:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
                                 envelope=psycopg2.Binary(shapely.wkb.dumps(envelope.env)),
                                 envelope_srid=envelope.srid)
+
+        print(str(query))
+        print(query.get_parameters())
 
         return query
 

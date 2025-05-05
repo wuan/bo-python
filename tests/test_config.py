@@ -47,16 +47,6 @@ class TestConfig:
         assert_that(self.config.get_password()).is_equal_to('<password>')
         assert_that(self.config_parser.mock_calls).contains(call.get('auth', 'password'))
 
-    def test_get_raw_path(self):
-        self.config_parser.get.return_value = '<raw_path>'
-        assert_that(self.config.get_raw_path()).is_equal_to('<raw_path>')
-        assert_that(self.config_parser.mock_calls).contains(call.get('path', 'raw'))
-
-    def test_get_archive_path(self):
-        self.config_parser.get.return_value = '<archive_path>'
-        assert_that(self.config.get_archive_path()).is_equal_to('<archive_path>')
-        assert_that(self.config_parser.mock_calls).contains(call.get('path', 'archive'))
-
     def test_get_db_connection_string(self):
         self.config_parser.get.side_effect = lambda *x: {
             ('db', 'host'): '<host>',

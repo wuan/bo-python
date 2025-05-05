@@ -86,6 +86,12 @@ class TimeInterval(BaseInterval):
     def contains(self, timestamp):
         return self.start <= timestamp < self.end
 
+    def minutes(self) -> int:
+        if self.start and self.end:
+            return int((self.end - self.start).total_seconds() // 60)
+        else:
+            raise ValueError("incomplete time interval")
+
 
 class Query:
     """

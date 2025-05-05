@@ -55,7 +55,7 @@ class StrikesBlitzortungDataProvider:
                 try:
                     strike = self.strike_builder.from_line(strike_line).build()
                 except builder.BuilderError as e:
-                    logger.warn("%s: %s (%s)" % (e.__class__, e.args, strike_line))
+                    logger.warning("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     continue
                 except Exception as e:
                     logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))

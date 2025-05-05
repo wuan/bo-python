@@ -3,6 +3,7 @@ import time
 import pytest
 from mock import Mock, call
 
+from blitzortung.service.general import create_time_interval
 from blitzortung.service.histogram import HistogramQuery
 
 
@@ -23,9 +24,10 @@ class TestHistogramQuery:
         return HistogramQuery(query_builder)
 
     def test_create(self, uut, query_builder, connection):
-        result = uut.create(connection, 30, 0)
+        query_time_interval = create_time_interval(30, 0)
+        result = uut.create(query_time_interval, connection)
 
-        query_builder.histogram_query.assert_called_once_with("strikes", 30, 0, 5, None, None)
+        query_builder.histogram_query.assert_called_once_with("strikes", query_time_interval, 5, None, None)
 
         query = query_builder.histogram_query.return_value
         assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
