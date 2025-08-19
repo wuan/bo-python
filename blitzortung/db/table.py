@@ -296,7 +296,6 @@ class Strike(Base):
         query = self.query_builder.histogram_query( self.full_table_name, time_interval, binsize, region, envelope )
 
         minutes = time_interval.minutes()
-        print("minutes:", minutes, "binsize:", binsize)
 
         def prepare_result(cursor):
             value_count = minutes // binsize
@@ -304,7 +303,6 @@ class Strike(Base):
             result = [0] * value_count
 
             for bin_data in cursor:
-                print(bin_data)
                 result[bin_data[0] + value_count - 1] = bin_data[1]
 
             return result

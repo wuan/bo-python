@@ -166,7 +166,6 @@ class GridFactory:
             max_lon = self.fix_max(self.min_lon, self.max_lon, delta_lon)
             max_lat = self.fix_max(self.min_lat, self.max_lat, delta_lat)
 
-            print(max_lon, max_lat, delta_lon, delta_lat,)
             self.grid_data[base_length] = Grid(self.min_lon, max_lon, self.min_lat, max_lat,
                                                delta_lon, delta_lat,
                                                Geometry.default_srid)

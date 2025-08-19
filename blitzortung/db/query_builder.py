@@ -74,9 +74,6 @@ class Strike:
                                 envelope=psycopg2.Binary(shapely.wkb.dumps(envelope.env)),
                                 envelope_srid=envelope.srid)
 
-        print(str(query))
-        print(query.get_parameters())
-
         return query
 
 
