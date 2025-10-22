@@ -39,11 +39,12 @@ class Config:
 
     def get_db_connection_string(self):
         host = self.config_parser.get('db', 'host')
+        port = self.config_parser.get('db', 'port', fallback='5432')
         dbname = self.config_parser.get('db', 'dbname')
         username = self.config_parser.get('db', 'username')
         password = self.config_parser.get('db', 'password')
 
-        return "host='%s' dbname='%s' user='%s' password='%s'" % (host, dbname, username, password)
+        return "host='%s' port=%s dbname='%s' user='%s' password='%s'" % (host, port, dbname, username, password)
 
     def get_webservice_port(self):
         return int(self.config_parser.get('webservice', 'port'))

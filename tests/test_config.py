@@ -48,17 +48,19 @@ class TestConfig:
         assert_that(self.config_parser.mock_calls).contains(call.get('auth', 'password'))
 
     def test_get_db_connection_string(self):
-        self.config_parser.get.side_effect = lambda *x: {
+        self.config_parser.get.side_effect = lambda *args, **kwargs: {
             ('db', 'host'): '<host>',
+            ('db', 'port'): '<port>',
             ('db', 'dbname'): '<dbname>',
             ('db', 'username'): '<username>',
-            ('db', 'password'): '<password>'}[x]
+            ('db', 'password'): '<password>'}[args]
 
         assert_that(self.config.get_db_connection_string()) \
-            .is_equal_to("host='<host>' dbname='<dbname>' user='<username>' password='<password>'")
+            .is_equal_to("host='<host>' port=<port> dbname='<dbname>' user='<username>' password='<password>'")
 
         assert_that(self.config_parser.mock_calls).contains(
             call.get('db', 'host'),
+            call.get('db', 'port', fallback='5432'),
             call.get('db', 'dbname'),
             call.get('db', 'username'),
             call.get('db', 'password'))
