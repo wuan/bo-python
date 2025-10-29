@@ -1,5 +1,7 @@
 import os.path
-import subprocess
+import sys
+
+from twisted.scripts.twistd import run
 
 
 def main():
@@ -7,9 +9,8 @@ def main():
 
     pid_file = "/var/run/bo-webservice.pid"
 
-    args = [os.path.join(target_dir, "twistd"), "--pidfile", pid_file, "-oy", os.path.join(target_dir, "webservice.py")]
-    print(" ".join(args))
-    subprocess.call(args)
+    sys.argv = ["twistd", "--pidfile", pid_file, "-oy", os.path.join(target_dir, "webservice.py")]
+    sys.exit(run())
 
 
 if __name__ == "__main__":
