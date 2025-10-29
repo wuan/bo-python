@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.11.1'
+version = '1.11.2'
 description = 'blitzortung.org python modules'
 authors = [
     {name = "Andreas Würl",email = "andi@tryb.de"}
@@ -21,6 +21,9 @@ dependencies = [
     "websocket-client (>=1.9.0,<2.0.0)",
     "psycopg2cffi (>=2.9.0,<3.0.0)",
     "statsd (>=4.0.1,<5.0.0)",
+    "geoip2 (>=5.1.0,<6.0.0)",
+    "txpostgres (>=1.7.0,<2.0.0)",
+    "txjsonrpc-ng (>=0.7.4,<0.8.0)",
 ]
 
 [build-system]
@@ -41,8 +44,3 @@ pytest-benchmark = "^5.1"
 mock = "^5.1"
 assertpy = "^1.1"
 testcontainers = {extras = ["postgres"], version = "^4.10"}
-
-[tool.poetry.group.server.dependencies]
-geoip2 = "^5.1.0"
-txpostgres = "^1.7"
-txjsonrpc-ng = "^0.7.4"
