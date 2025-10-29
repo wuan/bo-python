@@ -9,21 +9,21 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "twisted (>=24.07.0)",
-    "requests (>=2.32.3)",
+    "twisted (>=24.07)",
+    "requests (>=2.32)",
     "fasteners (>=0.19)",
-    "shapely (>=2.0.6,<3.0.0)",
-    "pyproj (>=3.7.0,<4.0.0)",
-    "psycopg2 (>=2.9.10)",
-    "injector (>=0.22.0,<0.23.0)",
-    "incremental (>=22.10.0)",
-    "stopit (>=1.1.2)",
-    "websocket-client (>=1.9.0)",
-    "psycopg2cffi (>=2.9.0)",
-    "statsd (>=4.0.1,<5.0.0)",
-    "geoip2 (>=5.1.0,<6.0.0)",
-    "txpostgres (>=1.7.0,<2.0.0)",
-    "txjsonrpc-ng (>=0.7.4,<0.8.0)",
+    "shapely (>=2.0)",
+    "pyproj (>=3.7)",
+    "psycopg2 (>=2.9)",
+    "injector (>=0.22)",
+    "incremental (>=22.10)",
+    "stopit (>=1.1)",
+    "websocket-client (>=1.9)",
+    "psycopg2cffi (>=2.9)",
+    "statsd (>=4.0)",
+    "geoip2 (>=5.1)",
+    "txpostgres (>=1.7)",
+    "txjsonrpc-ng (>=0.7)",
 ]
 
 [build-system]
