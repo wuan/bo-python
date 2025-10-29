@@ -26,7 +26,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 bo-db = "blitzortung.cli.db:main"
-bo-import = "blitzortung.cli.import:main"
+bo-import = "blitzortung.cli.imprt:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
