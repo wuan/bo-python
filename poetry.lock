@@ -858,6 +858,17 @@ docs = ["matplotlib", "numpydoc (==1.1.*)", "sphinx", "sphinx-book-theme", "sphi
 test = ["pytest", "pytest-cov", "scipy-doctest"]
 
 [[package]]
+name = "stopit"
+version = "1.1.2"
+description = "Timeout control decorator and context managers, raise any exception in another thread"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "stopit-1.1.2.tar.gz", hash = "sha256:f7f39c583fd92027bd9d06127b259aee7a5b7945c1f1fa56263811e1e766996d"},
+]
+
+[[package]]
 name = "testcontainers"
 version = "4.13.2"
 description = "Python library for throwaway instances of anything that can run in a Docker container"
@@ -1178,4 +1189,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "20e7c707c9f389f0bda470769ed6b873ac110ed834cd1ebe335cd4bc940a895d"
+content-hash = "1027ea1113b85ae3e751c2b922446327c176e4b27545af5c996018b25f536d00"

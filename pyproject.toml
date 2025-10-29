@@ -16,7 +16,8 @@ dependencies = [
     "pyproj (>=3.7.0,<4.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
     "injector (>=0.22.0,<0.23.0)",
-    "incremental (==22.10.0)"
+    "incremental (==22.10.0)",
+    "stopit (>=1.1.2,<2.0.0)"
 ]
 
 [build-system]
@@ -25,6 +26,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 bo-db = "blitzortung.cli.db:main"
+bo-import = "blitzortung.cli.import:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
