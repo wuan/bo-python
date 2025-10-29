@@ -12,8 +12,6 @@ import gc
 import psycopg2
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
-from twisted.web.resource import IResource
-from twisted.web.static import File
 from txpostgres import reconnection
 from txpostgres.txpostgres import Connection, ConnectionPool
 
@@ -33,14 +31,11 @@ from txjsonrpc_ng.web.data import CacheableResult
 
 from zope.interface import Interface, implementer
 from twisted.cred import portal, checkers, credentials, error as credential_error
-from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse
 from twisted.web import server
-from twisted.web.guard import HTTPAuthSessionWrapper, DigestCredentialFactory
 from twisted.application import service, internet
 from twisted.python.log import ILogObserver, FileLogObserver
 from twisted.python.logfile import DailyLogFile
 
-from txjsonrpc_ng.auth import wrapResource
 from txjsonrpc_ng.web import jsonrpc
 
 import os
@@ -443,7 +438,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.current_data['get_strikes_grid'].append(
             (
                 self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length, minute_offset,
-                -1, count_threshold, client, user_agent, x, y))
+                -1, count_threshold, client, user_agent, x, y, data_area))
 
         statsd_client.incr('strikes_grid.total_count')
         statsd_client.incr('local_strikes_grid.total_count')

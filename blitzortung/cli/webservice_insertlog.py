@@ -40,15 +40,12 @@ def main():
 
     base_dir = '/var/log/blitzortung'
 
-    log_file_name = os.path.join(base_dir, 'webservice.log')
-
     json_file_names = glob.glob(os.path.join(base_dir, '*.json'))
 
     json_file_names.sort()
 
     for json_file_name in json_file_names:
 
-        log_data = []
         with open(json_file_name, 'r') as json_file:
 
             logger.debug(f"opened file {json_file_name}")
@@ -58,19 +55,16 @@ def main():
             global_timestamp = datetime.datetime.fromtimestamp(data['timestamp'] / 1000000)
 
             if 'get_strikes_grid' in data:
-                total_count = len(data['get_strikes_grid'])
 
                 results = []
                 for entry in data['get_strikes_grid']:
                     remote_address = entry[6]
 
                     country_code = None
-                    version = None
-                    longitude = None
-                    latitude = None
                     city = None
                     local_x = None
                     local_y = None
+                    data_area = None
 
                     user_agent = entry[7]
                     version = None
@@ -83,10 +77,6 @@ def main():
 
                     try:
                         geo_info = reader.city(remote_address)
-                        longitude = geo_info.location.longitude
-                        longitude = round(longitude, 4) if longitude else longitude
-                        latitude = geo_info.location.latitude
-                        latitude = round(latitude, 4) if latitude else latitude
                         city = geo_info.city.name
                         country_code = geo_info.country.iso_code
                     except (ValueError, geoip2.errors.AddressNotFoundError):
@@ -103,6 +93,7 @@ def main():
                     if len(entry) > 8:
                         local_x = entry[8]
                         local_y = entry[9]
+                        data_area = entry[10]
 
                     results.append([
                         timestamp_microseconds / 1000000,
@@ -114,11 +105,10 @@ def main():
                         remote_address if remote_address is not None else '-',
                         country_code if country_code is not None else '-',
                         city if city is not None else '-',
-                        longitude if longitude is not None else '-',
-                        latitude if latitude is not None else '-',
                         version,
                         local_x if local_x is not None else '-',
                         local_y if local_y is not None else '-',
+                        data_area if data_area is not None else '-',
                     ])
 
                 with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")), 'a+') as output_file:
