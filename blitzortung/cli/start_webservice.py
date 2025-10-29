@@ -7,7 +7,7 @@ def main():
 
     pid_file = "/var/run/bo-webservice.pid"
 
-    args = ["twistd", "--pidfile", pid_file, "-oy", os.path.join(target_dir, "webservice.py")]
+    args = [os.path.join(target_dir, "twistd"), "--pidfile", pid_file, "-oy", os.path.join(target_dir, "webservice.py")]
     print(" ".join(args))
     subprocess.call(args)
 
