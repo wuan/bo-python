@@ -52,6 +52,9 @@ import statsd
 import json
 import collections
 
+import platform
+is_pypy = platform.python_implementation() == 'PyPy'
+
 statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
 
 import blitzortung.builder
@@ -581,7 +584,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         now = time.time()
         if now > self.next_memory_info:
             print("### MEMORY INFO ###")
-            print(gc.get_stats(True))
+            print(gc.get_stats(True) if is_pypy else gc.get_stats())
             self.next_memory_info = now + 300
 
 
@@ -591,6 +594,7 @@ users = {'test': 'test'}
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
+log_directory = "/Users/andi/.log"
 if os.path.exists(log_directory):
     logfile = DailyLogFile("webservice.log", log_directory)
     application.setComponent(ILogObserver, FileLogObserver(logfile).emit)
