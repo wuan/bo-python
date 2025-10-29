@@ -2,14 +2,19 @@
 # -*- coding: utf8 -*-
 
 """
-Copyright (C) 2011-2014 Andreas Würl
+   Copyright (C) 2011-2025 Andreas Würl
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+       http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
-
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 """
 
 from __future__ import print_function
@@ -18,22 +23,21 @@ import datetime
 import math
 import sys
 from optparse import OptionParser
-
 from zoneinfo import ZoneInfo
 
 import shapely.wkt
 
 import blitzortung.config
+import blitzortung.db.query
 import blitzortung.geom
 import blitzortung.util
-import blitzortung.db.query
 
 DATE_FORMAT = '%Y%m%d'
 TIME_FORMAT = '%H%M'
 SECONDS_FORMAT = '%S'
 
 
-def parse_time(date_string, time_string, description, is_end_time=False):
+def parse_time(date_string, time_string, tz, description, is_end_time=False):
     try:
         has_seconds = len(time_string) > 4
         tmp_date = datetime.datetime.strptime(date_string, DATE_FORMAT).date()
@@ -74,6 +78,7 @@ def prepare_grid_if_applicable(options, area):
         env = area.envelope.bounds
         return blitzortung.geom.Grid(env[0], env[2], env[1], env[3], grid_x, grid_y, options.srid)
 
+
 def main():
     end_time = datetime.datetime.now(datetime.UTC)
     start_time = end_time - datetime.timedelta(hours=1)
@@ -96,7 +101,7 @@ def main():
     parser.add_option("--area", dest="area",
                       help="area for which strikes are selected", type="string")
 
-    parser.add_option("--tz", dest="tz", default=str(tz),
+    parser.add_option("--tz", dest="tz", default=str(datetime.UTC),
                       help="used timezone", type="string")
 
     parser.add_option("--useenv", dest="useenv", default=False, action="store_true",
@@ -141,8 +146,9 @@ def main():
     if options.endtime == 'default':
         options.endtime = end_time.strftime(TIME_FORMAT)
 
-    start_time = parse_time(options.startdate, options.starttime, "starttime")
-    end_time = parse_time(options.enddate, options.endtime, "endtime", is_end_time=True) if non_default_end else None
+    start_time = parse_time(options.startdate, options.starttime, tz, "starttime")
+    end_time = parse_time(options.enddate, options.endtime, tz, "endtime",
+                          is_end_time=True) if non_default_end else None
 
     area = None
     if options.area:
@@ -196,6 +202,7 @@ def main():
         select_time = timer.lap()
 
         sys.stderr.write('received %d strikes in %.3f seconds\n' % (strike_count, select_time))
+
 
 if __name__ == '__main__':
     main()
