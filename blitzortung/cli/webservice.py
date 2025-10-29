@@ -594,7 +594,6 @@ users = {'test': 'test'}
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
-log_directory = "/Users/andi/.log"
 if os.path.exists(log_directory):
     logfile = DailyLogFile("webservice.log", log_directory)
     application.setComponent(ILogObserver, FileLogObserver(logfile).emit)
