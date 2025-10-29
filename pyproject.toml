@@ -9,16 +9,17 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "twisted (>=23.10.0,<24.0.0)",
+    "twisted (>=24.07.0,<25.0.0)",
     "requests (>=2.32.3,<3.0.0)",
     "fasteners (>=0.19,<0.20)",
     "shapely (>=2.0.6,<3.0.0)",
     "pyproj (>=3.7.0,<4.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
     "injector (>=0.22.0,<0.23.0)",
-    "incremental (==22.10.0)",
+    "incremental (>=22.10.0)",
     "stopit (>=1.1.2,<2.0.0)",
     "websocket-client (>=1.9.0,<2.0.0)",
+    "psycopg2cffi (>=2.9.0,<3.0.0)",
 ]
 
 [build-system]
@@ -43,4 +44,4 @@ testcontainers = {extras = ["postgres"], version = "^4.10"}
 [tool.poetry.group.server.dependencies]
 geoip2 = "^5.1.0"
 txpostgres = "^1.7"
-txjsonrpc-ng = "^0.7"
+txjsonrpc-ng = "^0.7.4"
