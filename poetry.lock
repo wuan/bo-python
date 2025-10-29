@@ -991,6 +991,32 @@ files = [
 ]
 
 [[package]]
+name = "txjsonrpc-ng"
+version = "0.7.3"
+description = "Code for creatig Twisted JSON-RPC servers and clients."
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "txjsonrpc_ng-0.7.3-py3-none-any.whl", hash = "sha256:5b29d5a2c4bf23691b691261099b3a6cb8c03662110070f3d4a90a01d348672a"},
+    {file = "txjsonrpc_ng-0.7.3.tar.gz", hash = "sha256:29cf325de6414bf65b4d46afb644c2a04a81cf63801d8104bbf485f50767bdc6"},
+]
+
+[package.dependencies]
+Twisted = ">=23.10,<24.0"
+
+[[package]]
+name = "txpostgres"
+version = "1.7.0"
+description = "Twisted wrapper for asynchronous PostgreSQL connections"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "txpostgres-1.7.0.tar.bz2", hash = "sha256:ff1da9a3c2af540ab7b81d495b639cda55bf740124a411ad1c78dd620af0194e"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -1206,4 +1232,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "e85bb87fb72b1f9e555597b917f97fdeb6a1f0d5245e74b7ee4c1b998693d533"
+content-hash = "6806f69b71c06a51f593c228aedee30c7b47f99014d635d4400673f7a946a2e6"

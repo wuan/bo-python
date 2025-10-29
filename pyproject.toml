@@ -18,7 +18,9 @@ dependencies = [
     "injector (>=0.22.0,<0.23.0)",
     "incremental (==22.10.0)",
     "stopit (>=1.1.2,<2.0.0)",
-    "websocket-client (>=1.9.0,<2.0.0)"
+    "websocket-client (>=1.9.0,<2.0.0)",
+    "txpostgres (>=1.7.0,<2.0.0)",
+    "txjsonrpc-ng (>=0.7.3,<0.8.0)"
 ]
 
 [build-system]
