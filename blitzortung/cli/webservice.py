@@ -82,9 +82,7 @@ UTM_AFRICA = pyproj.CRS('epsg:32633')  # UTM 33 N / WGS84
 UTM_NORTH = pyproj.CRS('epsg:32631')  # UTM 31 N / WGS84
 UTM_SOUTH = pyproj.CRS('epsg:32731')  # UTM 31 S / WGS84
 
-FORBIDDEN_IPS = {'147.32.83.134', '10.146.14.30'}
-
-CORRELATION_ID_HEADER = "orrelation-ID"
+FORBIDDEN_IPS = {}
 
 def connection_factory(*args, **kwargs):
     kwargs['connection_factory'] = psycopg2.extras.DictConnection
@@ -602,27 +600,6 @@ else:
 
 connection_pool = create_connection_pool()
 root = Blitzortung(connection_pool, log_directory)
-
-credentialFactory = DigestCredentialFactory("md5", "blitzortung.org")
-# Define the credential checker the application will be using and wrap the JSON-RPC resource.
-checker = InMemoryUsernamePasswordDatabaseDontUse()
-checker.addUser('test', 'test')
-realm_name = "Blitzortung.org JSON-RPC App"
-wrappedRoot = wrapResource(root, [checker], realmName=realm_name)
-
-
-@implementer(portal.IRealm)
-class PublicHTMLRealm(object):
-
-    def requestAvatar(self, avatarId, mind, *interfaces):
-        if IResource in interfaces:
-            return IResource, File("/home/%s/public_html" % (avatarId,)), lambda: None
-        raise NotImplementedError()
-
-
-service_portal = portal.Portal(PublicHTMLRealm(), [checker])
-
-resource = HTTPAuthSessionWrapper(service_portal, [credentialFactory])
 
 # With the wrapped root, we can set up the server as usual.
 # site = server.Site(resource=wrappedRoot)
