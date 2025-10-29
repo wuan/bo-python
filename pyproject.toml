@@ -31,6 +31,7 @@ build-backend = "poetry.core.masonry.api"
 bo-db = "blitzortung.cli.db:main"
 bo-import = "blitzortung.cli.imprt:main"
 bo-import-websocket = "blitzortung.cli.imprt_websocket:main"
+bo-webservice = "blitzortung.cli.start_webservice:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
