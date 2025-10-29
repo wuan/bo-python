@@ -1735,6 +1735,18 @@ files = [
 ]
 
 [[package]]
+name = "statsd"
+version = "4.0.1"
+description = "A simple statsd client."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "statsd-4.0.1-py2.py3-none-any.whl", hash = "sha256:c2676519927f7afade3723aca9ca8ea986ef5b059556a980a867721ca69df093"},
+    {file = "statsd-4.0.1.tar.gz", hash = "sha256:99763da81bfea8daf6b3d22d11aaccb01a8d0f52ea521daab37e758a4ca7d128"},
+]
+
+[[package]]
 name = "stopit"
 version = "1.1.2"
 description = "Timeout control decorator and context managers, raise any exception in another thread"
@@ -2223,4 +2235,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "d9694450a763a27068f0eeecf5ce2942d480d3ae151b3329fa49555fc7d249ea"
+content-hash = "c616a6237f5190476682fd6629ee29913c8d3ea9284ad4a55d3806acc494cdbe"
