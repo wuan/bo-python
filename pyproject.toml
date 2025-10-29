@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.11.5'
+version = '1.11.6'
 description = 'blitzortung.org python modules'
 authors = [
     {name = "Andreas Würl",email = "andi@tryb.de"}
@@ -9,17 +9,17 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "twisted (>=24.07.0,<25.0.0)",
-    "requests (>=2.32.3,<3.0.0)",
-    "fasteners (>=0.19,<0.20)",
+    "twisted (>=24.07.0)",
+    "requests (>=2.32.3)",
+    "fasteners (>=0.19)",
     "shapely (>=2.0.6,<3.0.0)",
     "pyproj (>=3.7.0,<4.0.0)",
-    "psycopg2 (>=2.9.10,<3.0.0)",
+    "psycopg2 (>=2.9.10)",
     "injector (>=0.22.0,<0.23.0)",
     "incremental (>=22.10.0)",
-    "stopit (>=1.1.2,<2.0.0)",
-    "websocket-client (>=1.9.0,<2.0.0)",
-    "psycopg2cffi (>=2.9.0,<3.0.0)",
+    "stopit (>=1.1.2)",
+    "websocket-client (>=1.9.0)",
+    "psycopg2cffi (>=2.9.0)",
     "statsd (>=4.0.1,<5.0.0)",
     "geoip2 (>=5.1.0,<6.0.0)",
     "txpostgres (>=1.7.0,<2.0.0)",
