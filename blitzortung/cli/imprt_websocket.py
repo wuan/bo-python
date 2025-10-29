@@ -26,6 +26,8 @@ strike_db = None
 
 statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.import')
 
+strike_db = None
+
 strike_count = 0
 last_commit_time = time.time()
 
@@ -36,6 +38,7 @@ except ImportError:
 
 
 def on_message(ws, message):
+    global strike_db
     message = decode(message if isinstance(message, str) else message.decode('utf-8'))
     logger.debug("message: %s", message)
 
@@ -73,7 +76,7 @@ def on_message(ws, message):
 
 
 def on_error(we, error):
-    logger.warning("error %s", str(error))
+    logger.warning("error '%s'", str(error))
 
 
 def on_close(ws, close_status_code, close_msg):
@@ -83,8 +86,6 @@ def on_close(ws, close_status_code, close_msg):
 
 
 def on_open(ws):
-    global latest_time
-    initialization = '{"time":' + str(latest_time) + '}'
     initialization = '{"a":111}'
     logger.info(initialization)
     ws.send(initialization)
@@ -103,6 +104,7 @@ def on_open(ws):
 
 
 def main():
+    global strike_db
     parser = OptionParser()
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="verbose output")
     parser.add_option("-d", "--debug", dest="debug", action="store_true", help="debug output")
@@ -122,12 +124,6 @@ def main():
         with lock.locked(10):
             if not options.test:
                 strike_db = blitzortung.db.strike()
-
-            if strike_db:
-                latest_time = strike_db.get_latest_time()
-                latest_time = latest_time.value if latest_time else 0
-            else:
-                latest_time = 0
 
             while True:
                 # url = "ws://live.lightningmaps.org/"
