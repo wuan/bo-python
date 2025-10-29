@@ -1,5 +1,3 @@
-#!/usr/bin/env pypy3
-
 import json
 import logging
 import os
@@ -104,7 +102,7 @@ def on_open(ws):
     threading.Thread(target=run).start()
 
 
-if __name__ == "__main__":
+def main():
     parser = OptionParser()
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="verbose output")
     parser.add_option("-d", "--debug", dest="debug", action="store_true", help="debug output")
@@ -147,3 +145,6 @@ if __name__ == "__main__":
                 logger.info("finished")
     except FailedToAcquireException:
         logger.warning("could not acquire lock")
+
+if __name__ == "__main__":
+    main()

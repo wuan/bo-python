@@ -1,4 +1,3 @@
-#!/usr/bin/env pypy3
 # -*- coding: utf8 -*-
 
 """
