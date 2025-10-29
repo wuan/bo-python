@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.10.1'
+version = '1.11.0'
 description = 'blitzortung.org python modules'
 authors = [
     {name = "Andreas Würl",email = "andi@tryb.de"}
@@ -19,8 +19,6 @@ dependencies = [
     "incremental (==22.10.0)",
     "stopit (>=1.1.2,<2.0.0)",
     "websocket-client (>=1.9.0,<2.0.0)",
-    "txpostgres (>=1.7.0,<2.0.0)",
-    "txjsonrpc-ng (>=0.7.3,<0.8.0)"
 ]
 
 [build-system]
@@ -32,11 +30,17 @@ bo-db = "blitzortung.cli.db:main"
 bo-import = "blitzortung.cli.imprt:main"
 bo-import-websocket = "blitzortung.cli.imprt_websocket:main"
 bo-webservice = "blitzortung.cli.start_webservice:main"
+bo-webservice-insertlog = "blitzortung.cli.webservice_insertlog:main"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-pytest-cov = "^6.0.0"
-pytest-benchmark = "^5.1.0"
-mock = "^5.1.0"
+pytest = "^8.3"
+pytest-cov = "^6.0"
+pytest-benchmark = "^5.1"
+mock = "^5.1"
 assertpy = "^1.1"
-testcontainers = {extras = ["postgres"], version = "^4.10.0"}
+testcontainers = {extras = ["postgres"], version = "^4.10"}
+
+[tool.poetry.group.server.dependencies]
+geoip2 = "^5.1.0"
+txpostgres = "^1.7"
+txjsonrpc-ng = "^0.7"
