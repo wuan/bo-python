@@ -9,7 +9,7 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "twisted (>=24.07)",
+    "twisted (>=2.07)",
     "requests (>=2.32)",
     "fasteners (>=0.19)",
     "shapely (>=2.0)",
