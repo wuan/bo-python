@@ -1,6 +1,5 @@
 from __future__ import division, print_function
 
-
 try:
     from psycopg2cffi import compat
 
@@ -8,10 +7,28 @@ try:
 except ImportError:
     pass
 
+import calendar
+import collections
+import datetime
 import gc
+import json
+import os
+import platform
+import time
+
 import psycopg2
+import pyproj
+import statsd
+from twisted.application import internet, service
+from twisted.internet import defer
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
+from twisted.python.log import FileLogObserver, ILogObserver
+from twisted.python.logfile import DailyLogFile
+from twisted.web import server
+from txjsonrpc_ng.web import jsonrpc
+from txjsonrpc_ng.web.data import CacheableResult
+from txjsonrpc_ng.web.jsonrpc import with_request
 from txpostgres import reconnection
 from txpostgres.txpostgres import Connection, ConnectionPool
 
@@ -25,47 +42,18 @@ try:
 except ReactorAlreadyInstalledError:
     pass
 
-from twisted.internet import defer
-from txjsonrpc_ng.web.jsonrpc import with_request
-from txjsonrpc_ng.web.data import CacheableResult
+import blitzortung.cache
+import blitzortung.config
+import blitzortung.db
+import blitzortung.geom
+import blitzortung.service
+from blitzortung.db.query import TimeInterval
+from blitzortung.service.general import create_time_interval
+from blitzortung.service.strike_grid import GridParameters
 
-from zope.interface import Interface, implementer
-from twisted.cred import portal, checkers, credentials, error as credential_error
-from twisted.web import server
-from twisted.application import service, internet
-from twisted.python.log import ILogObserver, FileLogObserver
-from twisted.python.logfile import DailyLogFile
-
-from txjsonrpc_ng.web import jsonrpc
-
-import os
-import time
-import datetime
-import calendar
-import pyproj
-import statsd
-import json
-import collections
-
-import platform
 is_pypy = platform.python_implementation() == 'PyPy'
 
 statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
-
-import blitzortung.builder
-import blitzortung.config
-import blitzortung.cache
-import blitzortung.data
-import blitzortung.geom
-import blitzortung.db
-import blitzortung.db.mapper
-import blitzortung.db.query
-import blitzortung.db.query_builder
-import blitzortung.service
-from blitzortung.service.general import create_time_interval
-from blitzortung.db.query import TimeInterval
-from blitzortung.service.strike_grid import GridParameters
-
 
 UTM_EU = pyproj.CRS('epsg:32633')  # UTM 33 N / WGS84
 UTM_NORTH_AMERICA = pyproj.CRS('epsg:32614')  # UTM 14 N / WGS84
@@ -79,12 +67,16 @@ UTM_SOUTH = pyproj.CRS('epsg:32731')  # UTM 31 S / WGS84
 
 FORBIDDEN_IPS = {}
 
+
 def connection_factory(*args, **kwargs):
+    """Create a psycopg2 connection with DictConnection factory."""
     kwargs['connection_factory'] = psycopg2.extras.DictConnection
     return psycopg2.connect(*args, **kwargs)
 
 
 class LoggingDetector(reconnection.DeadConnectionDetector):
+    """Database connection detector that logs reconnection events."""
+
     def startReconnecting(self, f):
         print('[*] database connection is down (error: %r)' % f.value)
         return reconnection.DeadConnectionDetector.startReconnecting(self, f)
@@ -99,6 +91,7 @@ class LoggingDetector(reconnection.DeadConnectionDetector):
 
 
 class DictConnection(Connection):
+    """Database connection using DictConnection factory with logging detector."""
     connectionFactory = staticmethod(connection_factory)
 
     def __init__(self, reactor=None, cooperator=None, detector=None):
@@ -108,6 +101,7 @@ class DictConnection(Connection):
 
 
 class DictConnectionPool(ConnectionPool):
+    """Connection pool using DictConnection instances."""
     connectionFactory = DictConnection
 
     def __init__(self, _ignored, *connargs, **connkw):
@@ -115,56 +109,15 @@ class DictConnectionPool(ConnectionPool):
 
 
 def create_connection_pool():
+    """Create and start the database connection pool."""
     config = blitzortung.config.config()
     db_connection_string = config.get_db_connection_string()
 
-    created_connection_pool = DictConnectionPool(None, db_connection_string)
+    connection_pool = DictConnectionPool(None, db_connection_string)
 
-    d = created_connection_pool.start()
+    d = connection_pool.start()
     d.addErrback(log.err)
-    return created_connection_pool
-
-
-@implementer(checkers.ICredentialsChecker)
-class PasswordDictChecker(object):
-    credentialInterfaces = (credentials.IUsernamePassword,)
-
-    def __init__(self, passwords):
-        self.passwords = passwords
-
-    def requestAvatarId(self, credentials):
-        username = credentials.username
-        if username in self.passwords:
-            if credentials.password == self.passwords[username]:
-                return defer.succeed(username)
-        return defer.fail(credential_error.Unauthorized("invalid username/password"))
-
-
-class IUserAvatar(Interface):
-    """ should have attribute username """
-
-
-@implementer(IUserAvatar)
-class UserAvatar(object):
-
-    def __init__(self, username):
-        self.username = username
-
-
-@implementer(portal.IRealm)
-class TestRealm(object):
-
-    def __init__(self, users):
-        self.users = users
-
-    def requestAvatar(self, avatarId, mind, *interfaces):
-        if IUserAvatar in interfaces:
-            logout = lambda: None
-            return (IUserAvatar,
-                    UserAvatar(avatarId),
-                    logout)
-        else:
-            raise KeyError('none of the requested interfaces is supported')
+    return connection_pool
 
 
 grid = {
@@ -180,12 +133,14 @@ grid = {
 global_grid = blitzortung.geom.GridFactory(-180, 180, -90, 90, UTM_EU, 11, 48)
 
 USER_AGENT_PREFIX = 'bo-android-'
-NOT_ALLOWED_RESPONSE = {'e': 'not_allowed'}
 
 
 class Blitzortung(jsonrpc.JSONRPC):
     """
-    An example object to be published.
+    Blitzortung.org JSON-RPC webservice for lightning strike data.
+
+    Provides endpoints for querying strike data, grid-based visualizations,
+    station information, and histograms with caching and rate limiting.
     """
 
     def __init__(self, db_connection_pool, log_directory):
@@ -199,13 +154,17 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.check_count = 0
         cache_cleanup_period = 300
         self.strikes_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=20, cleanup_period=cache_cleanup_period)
-        self.strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60, cleanup_period=cache_cleanup_period)
-        self.global_strikes_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=20, cleanup_period=cache_cleanup_period)
-        self.global_strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60, cleanup_period=cache_cleanup_period)
-        self.local_strikes_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=20, size=100, cleanup_period=cache_cleanup_period)
-        self.local_strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60, size=400, cleanup_period=cache_cleanup_period)
+        self.strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60,
+                                                                        cleanup_period=cache_cleanup_period)
+        self.global_strikes_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=20,
+                                                                       cleanup_period=cache_cleanup_period)
+        self.global_strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60,
+                                                                               cleanup_period=cache_cleanup_period)
+        self.local_strikes_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=20, size=100,
+                                                                      cleanup_period=cache_cleanup_period)
+        self.local_strikes_history_grid_cache = blitzortung.cache.ObjectCache(ttl_seconds=60, size=400,
+                                                                              cleanup_period=cache_cleanup_period)
         self.histogram_cache = blitzortung.cache.ObjectCache(ttl_seconds=60, cleanup_period=cache_cleanup_period)
-        self.test = None
         self.current_period = self.__current_period()
         self.current_data = collections.defaultdict(list)
         self.next_memory_info = 0.0
@@ -268,14 +227,13 @@ class Blitzortung(jsonrpc.JSONRPC):
         print('get_strikes(%d, %d) %s %s' % (minute_length, id_or_offset, client, user_agent))
         return combined_result
 
-    def jsonrpc_get_strikes_around(self, longitude, latitude, minute_length, min_id=None):
-        pass
-
     def get_strikes_grid(self, minute_length, grid_baselength, minute_offset, region, count_threshold):
-        grid_parameters = GridParameters(grid[region].get_for(grid_baselength), grid_baselength, region, count_threshold=count_threshold)
+        grid_parameters = GridParameters(grid[region].get_for(grid_baselength), grid_baselength, region,
+                                         count_threshold=count_threshold)
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool, statsd_client)
+        grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
+                                                           statsd_client)
 
         histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
             if minute_length > 10 else self.deferred_with([])
@@ -287,10 +245,12 @@ class Blitzortung(jsonrpc.JSONRPC):
         return combined_result
 
     def get_global_strikes_grid(self, minute_length, grid_baselength, minute_offset, count_threshold):
-        grid_parameters = GridParameters(global_grid.get_for(grid_baselength), grid_baselength, count_threshold=count_threshold)
+        grid_parameters = GridParameters(global_grid.get_for(grid_baselength), grid_baselength,
+                                         count_threshold=count_threshold)
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        grid_result, state = self.global_strike_grid_query.create(grid_parameters, time_interval, self.connection_pool, statsd_client)
+        grid_result, state = self.global_strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
+                                                                  statsd_client)
 
         histogram_result = self.get_histogram(time_interval) if minute_length > 10 else self.deferred_with([])
 
@@ -317,10 +277,12 @@ class Blitzortung(jsonrpc.JSONRPC):
             utm_longitude,
             reference_latitude + size / 2.0
         )
-        grid_parameters = GridParameters(local_grid.get_for(grid_baselength), grid_baselength, count_threshold=count_threshold)
+        grid_parameters = GridParameters(local_grid.get_for(grid_baselength), grid_baselength,
+                                         count_threshold=count_threshold)
         time_interval = create_time_interval(minute_length, minute_offset)
 
-        grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool, statsd_client)
+        grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
+                                                           statsd_client)
 
         histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
             if minute_length > 10 else self.deferred_with([])
@@ -383,7 +345,8 @@ class Blitzortung(jsonrpc.JSONRPC):
 
         self.__check_period()
         self.current_data['get_strikes_grid'].append(
-            (self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length, minute_offset,
+            (self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length,
+             minute_offset,
              0, count_threshold, client, user_agent))
 
         statsd_client.incr('strikes_grid.total_count')
@@ -437,7 +400,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.__check_period()
         self.current_data['get_strikes_grid'].append(
             (
-                self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length, minute_offset,
+                self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length,
+                minute_offset,
                 -1, count_threshold, client, user_agent, x, y, data_area))
 
         statsd_client.incr('strikes_grid.total_count')
@@ -488,7 +452,8 @@ class Blitzortung(jsonrpc.JSONRPC):
 
         self.__check_period()
         self.current_data['get_strikes_grid'].append(
-            (self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length, minute_offset,
+            (self.__get_epoch(datetime.datetime.now(datetime.UTC)), minute_length, original_grid_base_length,
+             minute_offset,
              region,
              count_threshold, client, user_agent))
 
@@ -502,6 +467,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         return response
 
     def parse_user_agent(self, request):
+        """Parse user agent string to extract version information."""
         user_agent = request.getHeader("User-Agent")
         if user_agent and user_agent.startswith(USER_AGENT_PREFIX):
             user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
@@ -511,17 +477,17 @@ class Blitzortung(jsonrpc.JSONRPC):
             user_agent_version = 0
         return user_agent, user_agent_version
 
-    @staticmethod
-    def fix_bad_accept_header(request, user_agent):
-        if user_agent is not None:
+    def fix_bad_accept_header(self, request, user_agent):
+        """Remove Accept-Encoding header for old Android client versions that have bugs."""
+        if user_agent and user_agent.startswith(USER_AGENT_PREFIX):
             user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
-            version_string = user_agent_parts[1] if len(user_agent_parts) > 1 else None
-            if user_agent_parts[0] == 'bo-android':
-                version = int(version_string)
-            else:
-                version = None
-            if version and version <= 177:
-                request.requestHeaders.removeHeader("Accept-Encoding")
+            if len(user_agent_parts) > 1 and user_agent_parts[0] == 'bo-android':
+                try:
+                    version = int(user_agent_parts[1])
+                    if version <= 177:
+                        request.requestHeaders.removeHeader("Accept-Encoding")
+                except ValueError:
+                    pass
 
     def get_histogram(self, time_interval: TimeInterval, region=None, envelope=None):
         return self.histogram_cache.get(self.histogram_query.create,
@@ -529,10 +495,6 @@ class Blitzortung(jsonrpc.JSONRPC):
                                         connection=self.connection_pool,
                                         region=region,
                                         envelope=envelope)
-
-    @with_request
-    def jsonrpc_get_clusters(self, minute_length, minute_offset, interval_length, interval_offset):
-        pass
 
     @with_request
     def jsonrpc_get_stations(self, request):
@@ -581,9 +543,6 @@ class Blitzortung(jsonrpc.JSONRPC):
             self.next_memory_info = now + 300
 
 
-users = {'test': 'test'}
-
-# Set up the application and the JSON-RPC resource.
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
@@ -596,8 +555,6 @@ else:
 connection_pool = create_connection_pool()
 root = Blitzortung(connection_pool, log_directory)
 
-# With the wrapped root, we can set up the server as usual.
-# site = server.Site(resource=wrappedRoot)
 config = blitzortung.config.config()
 site = server.Site(root)
 site.displayTracebacks = False
