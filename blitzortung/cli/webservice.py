@@ -559,17 +559,18 @@ class Blitzortung(jsonrpc.JSONRPC):
 
 class LogObserver(FileLogObserver):
 
-    def __init__(self, f, prefix):
+    def __init__(self, f, prefix=None):
+        prefix = '' if prefix is None else prefix
         if len(prefix) > 0:
             prefix += ''
         self.prefix = prefix
         FileLogObserver.__init__(self, f)
 
-    def emit(self, eventDict):
-        text = textFromEventDict(eventDict)
+    def emit(self, event_dict):
+        text = textFromEventDict(event_dict)
         if text is None:
             return
-        timeStr = self.formatTime(eventDict["time"])
+        timeStr = self.formatTime(event_dict["time"])
         msgStr = _safeFormat("[%(prefix)s] %(text)s\n", {
             "prefix": self.prefix,
             "text": text.replace("\n", "\n\t")
