@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from twisted.python.util import untilConcludes
 
 try:
     from psycopg2cffi import compat
@@ -24,9 +24,9 @@ from twisted.application import internet, service
 from twisted.internet import defer
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
-from twisted.python.log import FileLogObserver, ILogObserver
+from twisted.python.log import FileLogObserver, ILogObserver, textFromEventDict, _safeFormat
 from twisted.python.logfile import DailyLogFile
-from twisted.web import server
+from twisted.web import server, util
 from txjsonrpc_ng.web import jsonrpc
 from txjsonrpc_ng.web.data import CacheableResult
 from txjsonrpc_ng.web.jsonrpc import with_request
@@ -557,13 +557,33 @@ class Blitzortung(jsonrpc.JSONRPC):
             log.msg(gc.get_stats(True) if is_pypy else gc.get_stats())
             self.next_memory_info = now + self.MEMORY_INFO_INTERVAL
 
+class LogObserver(FileLogObserver):
+
+    def __init__(self, f, prefix):
+        if len(prefix) > 0:
+            prefix += ''
+        self.prefix = prefix
+        FileLogObserver.__init__(self, f)
+
+    def emit(self, eventDict):
+        text = textFromEventDict(eventDict)
+        if text is None:
+            return
+        timeStr = self.formatTime(eventDict["time"])
+        msgStr = _safeFormat("[%(prefix)s] %(text)s\n", {
+            "prefix": self.prefix,
+            "text": text.replace("\n", "\n\t")
+        })
+        untilConcludes(self.write, timeStr + " " + msgStr)
+        untilConcludes(self.flush)
+
 
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
 if os.path.exists(log_directory):
     logfile = DailyLogFile("webservice.log", log_directory)
-    application.setComponent(ILogObserver, FileLogObserver(logfile).emit)
+    application.setComponent(ILogObserver, LogObserver(logfile).emit)
 else:
     log_directory = None
 
