@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.11.6'
+version = '1.11.7'
 description = 'blitzortung.org python modules'
 authors = [
     {name = "Andreas Würl",email = "andi@tryb.de"}
@@ -9,7 +9,7 @@ license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "twisted (>=2.07)",
+    "twisted (>=25.5)",
     "requests (>=2.32)",
     "fasteners (>=0.19)",
     "shapely (>=2.0)",
@@ -23,19 +23,21 @@ dependencies = [
     "statsd (>=4.0)",
     "geoip2 (>=5.1)",
     "txpostgres (>=1.7)",
-    "txjsonrpc-ng (>=0.7)",
+    "txjsonrpc-ng (>=0.8)",
 ]
+
+[project.scripts]
+bo-db = "blitzortung.cli.db:main"
+bo-import = "blitzortung.cli.imprt:main"
+bo-import-websocket = "blitzortung.cli.imprt_websocket:main"
+bo-webservice = "blitzortung.cli.start_webservice:main"
+bo-webservice-insertlog = "blitzortung.cli.webservice_insertlog:main"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-bo-db = "blitzortung.cli.db:main"
-bo-import = "blitzortung.cli.imprt:main"
-bo-import-websocket = "blitzortung.cli.imprt_websocket:main"
-bo-webservice = "blitzortung.cli.start_webservice:main"
-bo-webservice-insertlog = "blitzortung.cli.webservice_insertlog:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"
