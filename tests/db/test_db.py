@@ -12,8 +12,7 @@ from testcontainers.postgres import PostgresContainer
 import blitzortung
 from blitzortung.service.general import create_time_interval
 
-image = "postgres:16-alpine"
-image = "postgis/postgis:16-3.5"
+image = "postgis/postgis:18-3.6"
 postgres = PostgresContainer(image)
 
 
@@ -99,26 +98,30 @@ class TestBase:
     def test_get_timezone(self, base):
         assert_that(base.get_timezone()).is_equal_to(datetime.timezone.utc)
 
-    def test_fix_timezone(self, base):
+    @pytest.fixture
+    def cet_timezone(self):
+        return ZoneInfo("Europe/Berlin")
+
+    def test_fix_timezone(self, base, cet_timezone):
         assert_that(base.fix_timezone(None)).is_none()
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=cet_timezone)
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0, tzinfo=ZoneInfo("UTC"))
 
         assert_that(base.fix_timezone(time)).is_equal_to(utc_time)
 
-    def test_from_bare_utc_to_timezone(self, base):
-        base.set_timezone(ZoneInfo("CET"))
+    def test_from_bare_utc_to_timezone(self, base, cet_timezone):
+        base.set_timezone(cet_timezone)
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=cet_timezone)
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
         assert_that(base.from_bare_utc_to_timezone(utc_time)).is_equal_to(time)
 
-    def test_from_timezone_to_bare_utc(self, base):
-        base.set_timezone(ZoneInfo("CET"))
+    def test_from_timezone_to_bare_utc(self, base, cet_timezone):
+        base.set_timezone(cet_timezone)
 
-        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("CET"))
+        time = datetime.datetime(2013, 1, 1, 12, 0, 0, tzinfo=cet_timezone)
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
         assert_that(base.from_timezone_to_bare_utc(time)).is_equal_to(utc_time)
