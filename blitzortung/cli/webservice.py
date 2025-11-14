@@ -524,18 +524,19 @@ class LogObserver(FileLogObserver):
 
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
-log_directory = "/var/log/blitzortung"
+if os.environ.get('BLITZORTUNG_TEST'):
+    import tempfile
+    log_directory = tempfile.mkdtemp()
+    print("LOG_DIR", log_directory)
+else:
+    log_directory = "/var/log/blitzortung"
 if os.path.exists(log_directory):
     logfile = DailyLogFile("webservice.log", log_directory)
     application.setComponent(ILogObserver, LogObserver(logfile).emit)
 else:
     log_directory = None
 
-from twisted.internet import defer, reactor
-
-# Block until connection pool is ready
-connection_pool_deferred = create_connection_pool()
-connection_pool = defer.blockingCallFromThread(reactor, lambda: connection_pool_deferred)
+connection_pool = create_connection_pool()
 
 root = Blitzortung(connection_pool, log_directory)
 
