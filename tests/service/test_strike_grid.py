@@ -2,8 +2,10 @@ import datetime
 from typing import Callable
 
 import pytest
+import pytest_twisted
 from assertpy import assert_that
 from mock import Mock, call
+from twisted.internet import defer
 
 from blitzortung.service.strike_grid import StrikeGridQuery, GridParameters, StrikeGridState
 from tests.conftest import time_interval
@@ -31,6 +33,10 @@ class TestStrikeGridQuery:
         return StrikeGridQuery(query_builder)
 
     @pytest.fixture
+    def now(self):
+        return datetime.datetime.now(tz=datetime.timezone.utc)
+
+    @pytest.fixture
     def grid_parameters_factory(self, grid_factory) -> Callable[[int, int], GridParameters]:
         def _factory(raster_baselength, region=1):
             return GridParameters(
@@ -41,20 +47,28 @@ class TestStrikeGridQuery:
 
         return _factory
 
-    def test_create(self, uut, grid_parameters_factory, time_interval, query_builder, connection, statsd_client):
+    @pytest_twisted.inlineCallbacks
+    def test_create(self, uut, now, grid_parameters_factory, time_interval, query_builder, connection, statsd_client):
         grid_parameters = grid_parameters_factory(10000)
+        connection.runQuery.return_value = defer.succeed([{
+            "rx": 7,
+            "ry": 9,
+            "strike_count": 3,
+            "timestamp": now - datetime.timedelta(seconds=65)
+        }])
+        pool = defer.succeed(connection)
 
-        result, state = uut.create(grid_parameters, time_interval, connection, statsd_client)
+        deferred_result, state = uut.create(grid_parameters, time_interval, pool, statsd_client)
+        result = yield deferred_result
+
+        assert result == ((7, 102, 3, -66),)
 
         query_builder.grid_query.assert_called_once_with("strikes", grid_parameters.grid, time_interval=time_interval,
                                                          count_threshold=grid_parameters.count_threshold)
 
         query = query_builder.grid_query.return_value
         assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
-        assert result == connection.runQuery.return_value
-
-        assert result.addCallback.call_args.args == (uut.build_result,)
-        assert result.addCallback.call_args.kwargs["state"] == state
+        assert state.grid_parameters == grid_parameters
 
     def test_build_result(self, uut, statsd_client, grid_parameters_factory, time_interval, ):
         grid_parameters = grid_parameters_factory(10000)
@@ -122,20 +136,27 @@ class TestGlobalStrikeGridQuery:
 
         return _factory
 
-    def test_create(self, uut, grid_parameters_factory, time_interval, query_builder, connection, statsd_client):
+    @pytest_twisted.inlineCallbacks
+    def test_create(self, uut, now, grid_parameters_factory, time_interval, query_builder, connection, statsd_client):
         grid_parameters = grid_parameters_factory(10000)
+        connection.runQuery.return_value = defer.succeed([{
+            "rx": 7,
+            "ry": 9,
+            "strike_count": 3,
+            "timestamp": now - datetime.timedelta(seconds=65)
+        }])
+        pool = defer.succeed(connection)
 
-        result, state = uut.create(grid_parameters, time_interval, connection, statsd_client)
+        deferred_result, state = uut.create(grid_parameters, time_interval, pool, statsd_client)
+        result = yield deferred_result
+
+        assert result == ((7, 1898, 3, -66),)
 
         query_builder.grid_query.assert_called_once_with("strikes", grid_parameters.grid, time_interval=time_interval,
                                                          count_threshold=grid_parameters.count_threshold)
 
         query = query_builder.grid_query.return_value
         assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
-        assert result == connection.runQuery.return_value
-
-        assert result.addCallback.call_args.args == (uut.build_result,)
-        assert result.addCallback.call_args.kwargs["state"] == state
 
     def test_build_result(self, uut, statsd_client, grid_parameters_factory, time_interval, ):
         grid_parameters = grid_parameters_factory(10000)
