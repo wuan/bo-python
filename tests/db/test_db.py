@@ -1,5 +1,6 @@
 import datetime
 import os
+import random
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -277,6 +278,36 @@ def test_get_latest_time_with_region_mismatch(strikes, strike_factory, time_inte
 
     assert result is None
 
+def test_bench_insert(strike_factory, strikes, benchmark):
+    strike = strike_factory(11, 49)
+    def insert():
+        strikes.insert(strike, 1)
+
+    benchmark.pedantic(insert, args=(), rounds=10, iterations=20)
+
+def test_bench_select(strike_factory, strikes, benchmark):
+    for i in range(100):
+        strike = strike_factory(11 + random.randrange(-100, 100, 1) / 100, 49 + random.randrange(-100, 100, 1) / 100)
+        strikes.insert(strike, 1)
+
+    def select():
+        result = strikes.select()
+        assert len(list(result)) == 100
+
+    benchmark.pedantic(select, args=(), rounds=10, iterations=100)
+
+def test_bench_select_grid(strike_factory, grid_factory, strikes, time_interval, benchmark):
+    for i in range(100):
+        strike = strike_factory(11 + random.randrange(-100, 100, 1) / 100, 49 + random.randrange(-100, 100, 1) / 100)
+        strikes.insert(strike, 1)
+
+    grid = grid_factory.get_for(5000)
+
+    def select():
+        result = strikes.select_grid(grid, 0, time_interval=time_interval)
+        assert len(list(result)) <= 100
+
+    benchmark.pedantic(select, args=(), rounds=10, iterations=100)
 
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (1, 1, 1, 0)),
