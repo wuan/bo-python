@@ -18,13 +18,10 @@
 
 """
 
-from unittest.mock import Mock, patch, MagicMock
-
-import psycopg2.extras
 import pytest
 import pytest_twisted
 from assertpy import assert_that
-import time
+from mock import Mock, patch
 
 import blitzortung.service.db
 

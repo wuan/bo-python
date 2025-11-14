@@ -18,9 +18,10 @@
 
 """
 
-from mock import Mock
+from mock import Mock, patch
 
 import blitzortung.db
+import blitzortung.db.table
 
 
 class TestDbModule:
@@ -29,3 +30,16 @@ class TestDbModule:
         connection_pool = Mock()
         blitzortung.db.DbModule.cleanup(connection_pool)
         connection_pool.closeall.assert_called_once()
+
+
+class TestHelperFunctions:
+
+    @patch('blitzortung.INJECTOR')
+    def test_strike(self, mock_injector):
+        mock_strike_table = Mock(spec=blitzortung.db.table.Strike)
+        mock_injector.get.return_value = mock_strike_table
+
+        result = blitzortung.db.strike()
+
+        mock_injector.get.assert_called_once_with(blitzortung.db.table.Strike)
+        assert result == mock_strike_table

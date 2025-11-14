@@ -20,10 +20,8 @@
 
 import os
 import tempfile
-from unittest.mock import Mock, patch, MagicMock
 
 from assertpy import assert_that  # pylint: disable=import-error
-import pytest  # pylint: disable=import-error
 
 import blitzortung.dataimport.base
 
