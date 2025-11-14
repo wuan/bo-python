@@ -17,7 +17,7 @@ poetry run pytest --cov blitzortung --cov-report xml --cov-report term --junitxm
 
 # Run a single test file or test
 poetry run pytest tests/test_base.py
-poetry run pytest tests/test_base.py::PointTest::test_get_coordinate_components
+poetry run pytest tests/test_base.py::TestPoint::test_get_coordinate_components
 
 # Run linter (pylint)
 poetry run pylint blitzortung
@@ -31,11 +31,13 @@ pre-commit run --all-files
 
 ## Testing Notes
 
-**Framework**: Pytest-based with unittest.TestCase; uses pytest fixtures in conftest.py for reusable setup.
+**Framework**: Pure pytest-based with fixtures. All tests use pytest idioms and fixtures in conftest.py.
 
 **Database tests** (tests/db/): Use testcontainers with PostgreSQL/PostGIS. Requires Docker/Podman running. Module-scoped fixtures auto-start containers.
 
-**Assertions**: unittest assertions, assertpy, and pytest assertions. Mock available via `mock` package.
+**Assertions**: Use pytest assertions and assertpy. Available: `assert x == y`, `pytest.approx()`, `assert_that()` (assertpy). Mock available via `mock` package.
+
+**Test Structure**: Tests use pytest-style classes (no inheritance), fixtures for setup, and docstrings documenting test intent.
 
 ## Code Style Guidelines
 
