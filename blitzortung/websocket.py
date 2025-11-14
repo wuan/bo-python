@@ -34,7 +34,3 @@ def decode(data):
         o += 1
         f = a
     return g
-
-
-
-

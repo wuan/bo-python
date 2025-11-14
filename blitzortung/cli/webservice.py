@@ -16,12 +16,9 @@ import os
 import platform
 import time
 
-import psycopg2
-import psycopg2.extras
 import pyproj
 import statsd
 from twisted.application import internet, service
-from twisted.internet import defer
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
 from twisted.python.log import FileLogObserver, ILogObserver, textFromEventDict, _safeFormat
@@ -30,8 +27,6 @@ from twisted.web import server, util
 from txjsonrpc_ng.web import jsonrpc
 from txjsonrpc_ng.web.data import CacheableResult
 from txjsonrpc_ng.web.jsonrpc import with_request
-from txpostgres import reconnection
-from txpostgres.txpostgres import Connection, ConnectionPool
 
 try:
     from twisted.internet import epollreactor as reactor
@@ -49,6 +44,7 @@ import blitzortung.db
 import blitzortung.geom
 import blitzortung.service
 from blitzortung.db.query import TimeInterval
+from blitzortung.service.db import create_connection_pool
 from blitzortung.service.general import create_time_interval
 from blitzortung.service.strike_grid import GridParameters
 
@@ -67,59 +63,6 @@ UTM_NORTH = pyproj.CRS('epsg:32631')  # UTM 31 N / WGS84
 UTM_SOUTH = pyproj.CRS('epsg:32731')  # UTM 31 S / WGS84
 
 FORBIDDEN_IPS = {}
-
-
-def connection_factory(*args, **kwargs):
-    """Create a psycopg2 connection with DictConnection factory."""
-    kwargs['connection_factory'] = psycopg2.extras.DictConnection
-    return psycopg2.connect(*args, **kwargs)
-
-
-class LoggingDetector(reconnection.DeadConnectionDetector):
-    """Database connection detector that logs reconnection events."""
-
-    def startReconnecting(self, f):
-        print('[*] database connection is down (error: %r)' % f.value)
-        return reconnection.DeadConnectionDetector.startReconnecting(self, f)
-
-    def reconnect(self):
-        print('[*] reconnecting...')
-        return reconnection.DeadConnectionDetector.reconnect(self)
-
-    def connectionRecovered(self):
-        print('[*] connection recovered')
-        return reconnection.DeadConnectionDetector.connectionRecovered(self)
-
-
-class DictConnection(Connection):
-    """Database connection using DictConnection factory with logging detector."""
-    connectionFactory = staticmethod(connection_factory)
-
-    def __init__(self, reactor=None, cooperator=None, detector=None):
-        if not detector:
-            detector = LoggingDetector()
-        super(DictConnection, self).__init__(reactor, cooperator, detector)
-
-
-class DictConnectionPool(ConnectionPool):
-    """Connection pool using DictConnection instances."""
-    connectionFactory = DictConnection
-
-    def __init__(self, _ignored, *connargs, **connkw):
-        super(DictConnectionPool, self).__init__(_ignored, *connargs, **connkw)
-
-
-def create_connection_pool():
-    """Create and start the database connection pool."""
-    config = blitzortung.config.config()
-    db_connection_string = config.get_db_connection_string()
-
-    connection_pool = DictConnectionPool(None, db_connection_string)
-
-    d = connection_pool.start()
-    d.addErrback(log.err)
-    return connection_pool
-
 
 grid = {
     1: blitzortung.geom.GridFactory(-25, 57, 27, 72, UTM_EU),
@@ -588,7 +531,12 @@ if os.path.exists(log_directory):
 else:
     log_directory = None
 
-connection_pool = create_connection_pool()
+from twisted.internet import defer, reactor
+
+# Block until connection pool is ready
+connection_pool_deferred = create_connection_pool()
+connection_pool = defer.blockingCallFromThread(reactor, lambda: connection_pool_deferred)
+
 root = Blitzortung(connection_pool, log_directory)
 
 config = blitzortung.config.config()

@@ -6,4 +6,3 @@ def strikes():
     from .. import INJECTOR
 
     return INJECTOR.get(StrikesBlitzortungDataProvider)
-

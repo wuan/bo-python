@@ -12,48 +12,9 @@ from testcontainers.postgres import PostgresContainer
 import blitzortung
 from blitzortung.service.general import create_time_interval
 
-image = "postgres:16-alpine"
-image = "postgis/postgis:16-3.5"
-postgres = PostgresContainer(image)
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup(request):
-    postgres.start()
 
-    def remove_container():
-        postgres.stop()
-
-    request.addfinalizer(remove_container)
-    os.environ["DB_CONN"] = postgres.get_connection_url()
-    os.environ["DB_HOST"] = postgres.get_container_host_ip()
-    os.environ["DB_PORT"] = str(postgres.get_exposed_port(5432))
-    os.environ["DB_USERNAME"] = postgres.username
-    os.environ["DB_PASSWORD"] = postgres.password
-    os.environ["DB_NAME"] = postgres.dbname
-
-
-@pytest.fixture
-def connection_string() -> str:
-    host = os.getenv("DB_HOST", "localhost")
-    port = os.getenv("DB_PORT", "5432")
-    username = os.getenv("DB_USERNAME", "postgres")
-    password = os.getenv("DB_PASSWORD", "postgres")
-    database = os.getenv("DB_NAME", "postgres")
-    return f"host={host} dbname={database} user={username} password={password} port={port}"
-
-
-@pytest.fixture
-def conn(connection_string):
-    with psycopg2.connect(connection_string) as connection:
-        yield connection
-
-
-@pytest.fixture
-def connection_pool(connection_string):
-    connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, connection_string)
-    yield connection_pool
-    connection_pool.closeall()
 
 
 class BaseForTest(blitzortung.db.table.Base):
@@ -124,11 +85,14 @@ class TestBase:
         assert_that(base.from_timezone_to_bare_utc(time)).is_equal_to(utc_time)
 
 
-def test_db_version(conn):
-    with conn.cursor() as cur:
-        cur.execute("""SELECT version()""")
-        foo = cur.fetchone()
-        print(foo)
+def test_db_version(connection_string):
+    with psycopg2.connect(connection_string) as connection:
+        with connection.cursor() as cur:
+            cur.execute("""SELECT version()""")
+            result = cur.fetchone()
+            assert result is not None
+            assert len(result) == 1
+            assert result[0].startswith("PostgreSQL")
 
 
 def test_db_version_pool(connection_pool):
@@ -140,48 +104,6 @@ def test_db_version_pool(connection_pool):
     connection_pool.putconn(conn)
 
 
-@pytest.fixture
-def strikes(connection_pool):
-    conn = connection_pool.getconn()
-
-    with conn.cursor() as cur:
-        cur.execute("""
-                    CREATE TABLE strikes
-                    (
-                        id          bigserial,
-                        "timestamp" timestamptz,
-                        nanoseconds SMALLINT,
-                        geog        GEOGRAPHY(Point),
-                        PRIMARY KEY (id)
-                    );
-                    ALTER TABLE strikes
-                        ADD COLUMN altitude SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN region SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN amplitude REAL;
-                    ALTER TABLE strikes
-                        ADD COLUMN error2d SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN stationcount SMALLINT;
-                    CREATE INDEX strikes_geog ON strikes USING gist(geog);
-                    CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
-                    """)
-    conn.commit()
-
-    query_builder = blitzortung.db.query_builder.Strike()
-    strike_builder = blitzortung.builder.strike.Strike()
-    mapper = blitzortung.db.mapper.Strike(strike_builder)
-
-    strike = blitzortung.db.table.Strike(connection_pool, query_builder, mapper)
-    yield strike
-    strike.close()
-
-    with conn.cursor() as cur:
-        cur.execute("""DROP TABLE strikes""")
-    conn.commit()
-
-    connection_pool.putconn(conn)
 
 
 @pytest.fixture
@@ -199,78 +121,78 @@ def strike_factory(now):
     return factory
 
 
-def test_empty_query(strikes, strike_factory, now):
-    result = strikes.select()
+def test_empty_query(db_strikes, strike_factory, now):
+    result = db_strikes.select()
     print("result", list(result))
 
     assert len(list(result)) == 0
 
 
-def test_insert_with_rollback(strikes, strike_factory, time_interval):
+def test_insert_with_rollback(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike)
-    strikes.rollback()
+    db_strikes.insert(strike)
+    db_strikes.rollback()
 
-    result = strikes.select(time_interval=time_interval)
+    result = db_strikes.select(time_interval=time_interval)
 
     assert len(list(result)) == 0
 
 
-def test_insert_without_commit(strikes, strike_factory, time_interval):
+def test_insert_without_commit(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike)
+    db_strikes.insert(strike)
 
-    result = strikes.select(time_interval=time_interval)
+    result = db_strikes.select(time_interval=time_interval)
 
     assert len(list(result)) == 1
 
 
-def test_insert_and_select_strike(strikes, strike_factory, time_interval):
+def test_insert_and_select_strike(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike)
-    strikes.commit()
+    db_strikes.insert(strike)
+    db_strikes.commit()
 
-    result = strikes.select(time_interval=time_interval)
+    result = db_strikes.select(time_interval=time_interval)
 
     assert len(list(result)) == 1
 
 
-def test_get_latest_time(strikes, strike_factory, time_interval):
+def test_get_latest_time(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike)
-    strikes.commit()
+    db_strikes.insert(strike)
+    db_strikes.commit()
 
-    result = strikes.get_latest_time()
+    result = db_strikes.get_latest_time()
 
     assert result == strike.timestamp
 
 
-def test_get_latest_time_with_region(strikes, strike_factory, time_interval):
+def test_get_latest_time_with_region(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike, 5)
-    strikes.commit()
+    db_strikes.insert(strike, 5)
+    db_strikes.commit()
 
-    result = strikes.get_latest_time()
+    result = db_strikes.get_latest_time()
 
     assert result == strike.timestamp
 
 
-def test_get_latest_time_with_region_match(strikes, strike_factory, time_interval):
+def test_get_latest_time_with_region_match(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike, 5)
-    strikes.commit()
+    db_strikes.insert(strike, 5)
+    db_strikes.commit()
 
-    result = strikes.get_latest_time(5)
+    result = db_strikes.get_latest_time(5)
 
     assert result == strike.timestamp
 
 
-def test_get_latest_time_with_region_mismatch(strikes, strike_factory, time_interval):
+def test_get_latest_time_with_region_mismatch(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
-    strikes.insert(strike, 5)
-    strikes.commit()
+    db_strikes.insert(strike, 5)
+    db_strikes.commit()
 
-    result = strikes.get_latest_time(4)
+    result = db_strikes.get_latest_time(4)
 
     assert result is None
 
@@ -281,43 +203,43 @@ def test_get_latest_time_with_region_mismatch(strikes, strike_factory, time_inte
     (25000, (4, 2, 1, 0)),
     (10000, (11, 6, 1, 0)),
     (5000, (23, 11, 1, 0))])
-def test_grid_query(strikes, strike_factory, grid_factory, time_interval, utm_eu, raster_size, expected):
-    strikes.insert(strike_factory(11.5, 49.5))
-    strikes.commit()
+def test_grid_query(db_strikes, strike_factory, grid_factory, time_interval, utm_eu, raster_size, expected):
+    db_strikes.insert(strike_factory(11.5, 49.5))
+    db_strikes.commit()
 
     grid = grid_factory.get_for(raster_size)
 
-    result = strikes.select_grid(grid, 0, time_interval=time_interval)
+    result = db_strikes.select_grid(grid, 0, time_interval=time_interval)
 
     assert result == (expected,)
 
-def test_issues_with_missing_data_on_grid_query(strikes, strike_factory, local_grid_factory, time_interval, utm_eu):
+def test_issues_with_missing_data_on_grid_query(db_strikes, strike_factory, local_grid_factory, time_interval, utm_eu):
     grid_size = 100000
     for i in range(10):
-        strikes.insert(strike_factory(-90 + i,15))
-    strikes.commit()
+        db_strikes.insert(strike_factory(-90 + i, 15))
+    db_strikes.commit()
 
     # get_local_strikes_grid(-6, 0, 60, 10000, 0, >= 0, 15)
     local_grid1 = local_grid_factory(-6,0,15)
     grid1 = local_grid1.get_for(grid_size)
-    result1 = strikes.select_grid(grid1, 0, time_interval=time_interval)
+    result1 = db_strikes.select_grid(grid1, 0, time_interval=time_interval)
     assert len(result1) == 10
 
     # get_local_strikes_grid(-5, 0, 60, 10000, 0, >=0, 15)
     local_grid2 = local_grid_factory(-5,0,15)
     grid2 = local_grid2.get_for(grid_size)
-    result2 = strikes.select_grid(grid2, 0, time_interval=time_interval)
+    result2 = db_strikes.select_grid(grid2, 0, time_interval=time_interval)
     assert len(result2) == 10
 
-def test_grid_query_with_count_threshold(strikes, strike_factory, grid_factory, time_interval, utm_eu):
-    strikes.insert(strike_factory(11.5, 49.5))
-    strikes.insert(strike_factory(12.5, 49.5))
-    strikes.insert(strike_factory(12.5, 49.5))
-    strikes.commit()
+def test_grid_query_with_count_threshold(db_strikes, strike_factory, grid_factory, time_interval, utm_eu):
+    db_strikes.insert(strike_factory(11.5, 49.5))
+    db_strikes.insert(strike_factory(12.5, 49.5))
+    db_strikes.insert(strike_factory(12.5, 49.5))
+    db_strikes.commit()
 
     grid = grid_factory.get_for(10000)
 
-    result = strikes.select_grid(grid, 1, time_interval=time_interval)
+    result = db_strikes.select_grid(grid, 1, time_interval=time_interval)
 
     assert result == ((19, 6, 2, 0),)
 
@@ -327,19 +249,19 @@ def test_grid_query_with_count_threshold(strikes, strike_factory, grid_factory, 
     (25000, (36, 553, 1, 0)),
     (10000, (90, 1383, 1, 0)),
     (5000, (181, 2766, 1, 0))])
-def test_global_grid_query(strikes, strike_factory, global_grid_factory, time_interval, utm_eu, raster_size, expected):
-    strikes.insert(strike_factory(11.5, 49.5))
-    strikes.commit()
+def test_global_grid_query(db_strikes, strike_factory, global_grid_factory, time_interval, utm_eu, raster_size, expected):
+    db_strikes.insert(strike_factory(11.5, 49.5))
+    db_strikes.commit()
 
     grid = global_grid_factory.get_for(raster_size)
 
-    result = strikes.select_global_grid(grid, 0, time_interval=time_interval)
+    result = db_strikes.select_global_grid(grid, 0, time_interval=time_interval)
 
     assert result == (expected,)
 
 
-def test_empty_query2(strikes, strike_factory):
-    result = strikes.select()
+def test_empty_query2(db_strikes, strike_factory):
+    result = db_strikes.select()
 
     assert len(list(result)) == 0
 
@@ -350,16 +272,16 @@ def test_empty_query2(strikes, strike_factory):
     (-15, [0, 8, 7, 6, 5, 4]),
     (-30, [0, 0, 0, 0, 8, 7])
 ])
-def test_histogram_query(strikes, strike_factory, minute_offset, expected):
+def test_histogram_query(db_strikes, strike_factory, minute_offset, expected):
     for offset in range(8):
         timedelta = datetime.timedelta(minutes=offset * 5, seconds=1)
         print(timedelta)
         for _ in range(offset + 1):
-            strikes.insert(strike_factory(11.5, 49.5, timedelta))
-    strikes.commit()
+            db_strikes.insert(strike_factory(11.5, 49.5, timedelta))
+    db_strikes.commit()
 
     query_time_interval = create_time_interval(30, minute_offset)
 
-    histogram = strikes.select_histogram(query_time_interval)
+    histogram = db_strikes.select_histogram(query_time_interval)
 
     assert histogram == expected

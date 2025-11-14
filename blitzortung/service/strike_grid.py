@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from injector import inject
-from twisted.internet.defer import gatherResults
+from twisted.internet.defer import gatherResults, Deferred
 from twisted.python import log
 
 from .general import TimingState

@@ -46,3 +46,4 @@ pytest-benchmark = "^5.1"
 mock = "^5.1"
 assertpy = "^1.1"
 testcontainers = {extras = ["postgres"], version = "^4.10"}
+pytest-twisted = "^1.14.3"
