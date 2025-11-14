@@ -537,6 +537,7 @@ else:
     log_directory = None
 
 def start_server(connection_pool):
+    print("Connection pool is ready")
     root = Blitzortung(connection_pool, log_directory)
     config = blitzortung.config.config()
     site = server.Site(root)
