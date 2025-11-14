@@ -136,12 +136,12 @@ class GlobalStrikeGridQuery:
                                                             count_threshold=grid_parameters.count_threshold)
 
         result = execute(connection_pool, query)
-        result.addCallback(self.build_strikes_grid_result, state=state)
+        result.addCallback(self.build_result, state=state)
         result.addErrback(log.err)
         return result, state
 
     @staticmethod
-    def build_strikes_grid_result(results, state):
+    def build_result(results, state):
         state.add_info_text(
             "global grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('global_strikes_grid.query')
@@ -176,15 +176,15 @@ class GlobalStrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('global_strikes_grid.size', len(grid_data))
-        state.log_gauge(f'global_strikes_grid.size.{state.grid_metadata.base_length}', len(grid_data))
+        state.log_gauge(f'global_strikes_grid.size.{state.grid_parameters.base_length}', len(grid_data))
         state.log_incr('global_strikes_grid')
 
         grid_parameters = state.grid_parameters
         end_time = state.time_interval.end
         duration = state.time_interval.duration
         response = {'r': grid_data,
-                    'xd': round(grid_parameters.x_div, 6),
-                    'yd': round(grid_parameters.y_div, 6),
+                    'xd': round(grid_parameters.grid.x_div, 6),
+                    'yd': round(grid_parameters.grid.y_div, 6),
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
                     'dt': duration.seconds,
                     'h': histogram_data}

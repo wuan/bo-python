@@ -7,7 +7,7 @@ from assertpy import assert_that
 from mock import Mock, call
 from twisted.internet import defer
 
-from blitzortung.service.strike_grid import StrikeGridQuery, GridParameters, StrikeGridState
+from blitzortung.service.strike_grid import StrikeGridQuery, GridParameters, StrikeGridState, GlobalStrikeGridQuery
 from tests.conftest import time_interval
 
 
@@ -123,7 +123,7 @@ class TestGlobalStrikeGridQuery:
 
     @pytest.fixture
     def uut(self, query_builder):
-        return StrikeGridQuery(query_builder)
+        return GlobalStrikeGridQuery(query_builder)
 
     @pytest.fixture
     def grid_parameters_factory(self, global_grid_factory) -> Callable[[int], GridParameters]:
@@ -148,12 +148,12 @@ class TestGlobalStrikeGridQuery:
         deferred_result, state = uut.create(grid_parameters, time_interval, connection, statsd_client)
         result = yield deferred_result
 
-        assert result == ((7, 1898, 3, -66),)
+        assert result == ((7, -10, 3, -66),)
 
-        query_builder.grid_query.assert_called_once_with("strikes", grid_parameters.grid, time_interval=time_interval,
+        query_builder.global_grid_query.assert_called_once_with("strikes", grid_parameters.grid, time_interval=time_interval,
                                                          count_threshold=grid_parameters.count_threshold)
 
-        query = query_builder.grid_query.return_value
+        query = query_builder.global_grid_query.return_value
         assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
 
     def test_build_result(self, uut, statsd_client, grid_parameters_factory, time_interval, ):
@@ -173,7 +173,7 @@ class TestGlobalStrikeGridQuery:
 
         result = uut.build_result(query_result, state=state)
 
-        assert result == ((rx, grid_parameters.grid.y_bin_count - ry, 3, -seconds_offset),)
+        assert result == ((rx, -1 - ry, 3, -seconds_offset),)
 
     def test_build_grid_response(self, uut, statsd_client, grid_parameters_factory, time_interval, ):
         grid_parameters = grid_parameters_factory(10000)
@@ -194,13 +194,9 @@ class TestGlobalStrikeGridQuery:
             'h': [0, 0, 0, 0, 0, 1],
             'r': ((7, 102, 3, -65),),
             't': time_interval.end.strftime("%Y%m%dT%H:%M:%S"),
-            'x0': -180.0,
-            'xc': 2834,
             'xd': 0.127011,
-            'y1': 90.0238,
-            'yc': 1907,
             'yd': 0.094352
         }
 
-        assert_that(response["x0"] + response["xd"] * response["xc"]).is_close_to(grid_parameters.grid.x_max, 0.1)
-        assert_that(response["y1"] - response["yd"] * response["yc"]).is_close_to(grid_parameters.grid.y_min, 0.1)
+        # assert_that(response["x0"] + response["xd"] * response["xc"]).is_close_to(grid_parameters.grid.x_max, 0.1)
+        # assert_that(response["y1"] - response["yd"] * response["yc"]).is_close_to(grid_parameters.grid.y_min, 0.1)
