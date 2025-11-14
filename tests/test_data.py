@@ -51,6 +51,64 @@ class TestTimestamp:
             datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, datetime.timezone.utc))
         assert_that(timestamp.nanosecond).is_equal_to(700)
 
+    def test_comparison_with_datetime(self):
+        ts = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc))
+        dt_before = datetime.datetime(2019, 12, 31, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        dt_after = datetime.datetime(2020, 1, 2, 12, 0, 0, tzinfo=datetime.timezone.utc)
+
+        # Test __lt__ with datetime
+        assert_that(ts < dt_after).is_true()
+        assert_that(ts < dt_before).is_false()
+
+        # Test __le__ with datetime
+        assert_that(ts <= dt_after).is_true()
+        assert_that(ts <= dt_before).is_false()
+
+        # Test __gt__ with datetime
+        assert_that(ts > dt_before).is_true()
+        assert_that(ts > dt_after).is_false()
+
+        # Test __ge__ with datetime
+        assert_that(ts >= dt_before).is_true()
+        assert_that(ts >= dt_after).is_false()
+
+    def test_addition_operations(self):
+        ts = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc))
+
+        # Test adding Timedelta
+        td = Timedelta(datetime.timedelta(hours=1), 500)
+        result = ts + td
+        assert_that(result.datetime).is_equal_to(datetime.datetime(2020, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc))
+        assert_that(result.nanosecond).is_equal_to(500)
+
+        # Test adding datetime.timedelta
+        delta = datetime.timedelta(hours=2)
+        result = ts + delta
+        assert_that(result.datetime).is_equal_to(datetime.datetime(2020, 1, 1, 14, 0, 0, tzinfo=datetime.timezone.utc))
+
+        # Test adding int (nanoseconds)
+        result = ts + 500
+        assert_that(result.nanosecond).is_equal_to(500)
+
+    def test_subtraction_operations(self):
+        ts = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc))
+
+        # Test subtracting datetime.timedelta
+        delta = datetime.timedelta(hours=2)
+        result = ts - delta
+        assert_that(result.datetime).is_equal_to(datetime.datetime(2020, 1, 1, 10, 0, 0, tzinfo=datetime.timezone.utc))
+
+        # Test subtracting int (nanoseconds)
+        ts_with_ns = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc), 500)
+        result = ts_with_ns - 200
+        assert_that(result.nanosecond).is_equal_to(300)
+
+    def test_replace_with_nanosecond(self):
+        ts = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc), 100)
+        result = ts.replace(nanosecond=500)
+        assert_that(result.nanosecond).is_equal_to(500)
+        assert_that(result.datetime).is_equal_to(ts.datetime)
+
 
 class TestTimedelta:
     def test_normalizing(self):
@@ -62,6 +120,17 @@ class TestTimedelta:
             Timedelta(datetime.timedelta(microseconds=-1), nanodelta=500))
         assert_that(Timedelta(nanodelta=-1500)).is_equal_to(
             Timedelta(datetime.timedelta(microseconds=-2), 500))
+
+    def test_properties(self):
+        td = Timedelta(datetime.timedelta(days=5, seconds=3661), 500)
+        assert_that(td.days).is_equal_to(5)
+        assert_that(td.seconds).is_equal_to(3661)
+
+    def test_repr(self):
+        td = Timedelta(datetime.timedelta(hours=2), 500)
+        result = repr(td)
+        assert_that(result).contains("Timedelta")
+        assert_that(result).contains("500")
 
 
 class EventBaseTest:
@@ -147,6 +216,19 @@ class TestEvent(EventBaseTest):
 
         event = blitzortung.data.Event(self.not_a_time, 0.0, 0.0)
         self.assertFalse(event.is_valid)
+
+    def test_has_same_location(self):
+        event1 = blitzortung.data.Event(self.now_time, 11.0, 49.0)
+        event2 = blitzortung.data.Event(self.later_time, 11.0, 49.0)
+        event3 = blitzortung.data.Event(self.now_time, 12.0, 49.0)
+
+        self.assertTrue(event1.has_same_location(event2))
+        self.assertFalse(event1.has_same_location(event3))
+
+    def test_string_with_nat(self):
+        event = blitzortung.data.Event(self.not_a_time, 11.0, 49.0)
+        result = str(event)
+        assert_that(result).contains("NaT")
 
 
 class TestStrike:
@@ -296,3 +378,33 @@ total count: 35, max per area: 20""")
     def test_raster_set_outside_valid_index_value_does_not_throw_exception(self):
         self.grid_data.set(1000, 0, blitzortung.geom.GridElement(20, self.reference_time - datetime.timedelta(hours=1)))
         assert_that(self.grid_data.to_reduced_array(self.reference_time)).is_equal_to(())
+
+
+class TestChannelWaveform:
+    def test_init(self):
+        waveform_data = [1, 2, 3, 4, 5]
+        waveform = blitzortung.data.ChannelWaveform(
+            channel_number=1,
+            amplifier_version=2,
+            antenna=3,
+            gain=4.5,
+            values=100,
+            start=0,
+            bits=12,
+            shift=0,
+            conversion_gap=10,
+            conversion_time=5,
+            waveform=waveform_data
+        )
+
+        assert_that(waveform.channel_number).is_equal_to(1)
+        assert_that(waveform.amplifier_version).is_equal_to(2)
+        assert_that(waveform.antenna).is_equal_to(3)
+        assert_that(waveform.gain).is_equal_to(4.5)
+        assert_that(waveform.values).is_equal_to(100)
+        assert_that(waveform.start).is_equal_to(0)
+        assert_that(waveform.bits).is_equal_to(12)
+        assert_that(waveform.shift).is_equal_to(0)
+        assert_that(waveform.conversion_gap).is_equal_to(10)
+        assert_that(waveform.conversion_time).is_equal_to(5)
+        assert_that(waveform.waveform).is_equal_to(waveform_data)

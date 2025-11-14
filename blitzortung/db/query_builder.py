@@ -55,7 +55,7 @@ class Strike:
             .set_default_conditions(**kwargs)
 
     @staticmethod
-    def histogram_query(table_name: str, time_interval: TimeInterval, binsize:int, region:Optional[int]=None, envelope=None):
+    def histogram_query(table_name: str, time_interval: TimeInterval, binsize:int, region:Optional[int]=None, envelope=None) -> SelectQuery:
 
         query = SelectQuery() \
             .set_table_name(table_name) \

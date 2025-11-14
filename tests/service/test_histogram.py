@@ -1,7 +1,9 @@
 import time
 
 import pytest
+import pytest_twisted
 from mock import Mock, call
+from twisted.internet import defer
 
 from blitzortung.service.general import create_time_interval
 from blitzortung.service.histogram import HistogramQuery
@@ -20,25 +22,22 @@ def connection():
 class TestHistogramQuery:
 
     @pytest.fixture
-    def uut(self, query_builder):
+    def uut(self, query_builder) -> HistogramQuery:
         return HistogramQuery(query_builder)
 
+    @pytest_twisted.inlineCallbacks
     def test_create(self, uut, query_builder, connection):
+        connection.runQuery.return_value = defer.succeed([[-4, 5], [-3, 3], [-2, 1], [-1, 2], [0, 4]])
+
         query_time_interval = create_time_interval(30, 0)
-        result = uut.create(query_time_interval, connection)
 
+        result = yield uut.create(query_time_interval, connection)
+
+        assert result == [0,5,3,1,2,4]
         query_builder.histogram_query.assert_called_once_with("strikes", query_time_interval, 5, None, None)
-
         query = query_builder.histogram_query.return_value
-        assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
-        assert result == connection.runQuery.return_value
 
-        assert result.addCallback.call_args.args == (uut.build_result,)
-        assert result.addCallback.call_args.kwargs["minutes"] == 30
-        assert result.addCallback.call_args.kwargs["bin_size"] == 5
-        now = time.time()
-        assert result.addCallback.call_args.kwargs["reference_time"] > now - 0.005
-        assert result.addCallback.call_args.kwargs["reference_time"] < now + 0.005
+        assert connection.runQuery.call_args == call(str(query), query.get_parameters.return_value)
 
     def test_build_result(self, uut):
         reference_time = time.time() - 0.5

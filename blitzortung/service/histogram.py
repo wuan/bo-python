@@ -22,6 +22,7 @@ import time
 
 from injector import inject
 
+from .db import execute
 from .. import db
 from ..db.query import TimeInterval
 
@@ -31,13 +32,16 @@ class HistogramQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, time_interval: TimeInterval, connection, region=None, envelope=None):
+    def create(self, time_interval: TimeInterval, connection_pool, region=None, envelope=None):
         reference_time = time.time()
-        query = self.strike_query_builder.histogram_query(db.table.Strike.table_name, time_interval, 5, region, envelope)
-        histogram_query = connection.runQuery(str(query), query.get_parameters())
-        histogram_query.addCallback(self.build_result, minutes=time_interval.minutes(), bin_size=5,
-                                    reference_time=reference_time)
-        return histogram_query
+
+        query = self.strike_query_builder.histogram_query(db.table.Strike.table_name, time_interval, 5, region,
+                                                          envelope)
+
+        result = execute(connection_pool, query)
+        result.addCallback(self.build_result, minutes=time_interval.minutes(), bin_size=5,
+                           reference_time=reference_time)
+        return result
 
     @staticmethod
     def build_result(query_result, minutes, bin_size, reference_time):

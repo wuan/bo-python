@@ -20,7 +20,7 @@ limitations under the License.
 
 import datetime
 import time
-from unittest.mock import Mock
+from mock import Mock
 
 from assertpy import assert_that  # pylint: disable=import-error
 import pytest  # pylint: disable=import-error

@@ -19,27 +19,30 @@
 """
 
 from . import histogram, strike, strike_grid
+from .histogram import HistogramQuery
+from .strike import StrikeQuery
+from .strike_grid import GlobalStrikeGridQuery, StrikeGridQuery
 
 
-def strike_query():
+def strike_query() -> StrikeQuery:
     from .. import INJECTOR
 
     return INJECTOR.get(strike.StrikeQuery)
 
 
-def strike_grid_query():
+def strike_grid_query() -> StrikeGridQuery:
     from .. import INJECTOR
 
     return INJECTOR.get(strike_grid.StrikeGridQuery)
 
 
-def global_strike_grid_query():
+def global_strike_grid_query() -> GlobalStrikeGridQuery:
     from .. import INJECTOR
 
     return INJECTOR.get(strike_grid.GlobalStrikeGridQuery)
 
 
-def histogram_query():
+def histogram_query() -> HistogramQuery:
     from .. import INJECTOR
 
     return INJECTOR.get(histogram.HistogramQuery)

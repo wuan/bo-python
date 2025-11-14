@@ -26,6 +26,7 @@ from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
+from .db import execute
 from .general import TimingState
 from .. import db
 from ..db.grid_result import build_grid_result
@@ -55,16 +56,17 @@ class StrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection, statsd_client):
+    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection_pool, statsd_client):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
         query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters.grid,
-                                                     time_interval=time_interval, count_threshold=grid_parameters.count_threshold)
+                                                     time_interval=time_interval,
+                                                     count_threshold=grid_parameters.count_threshold)
 
-        grid_query = connection.runQuery(str(query), query.get_parameters())
-        grid_query.addCallback(self.build_result, state=state)
-        grid_query.addErrback(log.err)
-        return grid_query, state
+        result = execute(connection_pool, query)
+        result.addCallback(self.build_result, state=state)
+        result.addErrback(log.err)
+        return result, state
 
     @staticmethod
     def build_result(results, state: StrikeGridState):
@@ -126,22 +128,20 @@ class GlobalStrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection,
-               statsd_client):
-
+    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection_pool, statsd_client):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
         query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                             time_interval=time_interval,
                                                             count_threshold=grid_parameters.count_threshold)
 
-        grid_query = connection.runQuery(str(query), query.get_parameters())
-        grid_query.addCallback(self.build_strikes_grid_result, state=state)
-        grid_query.addErrback(log.err)
-        return grid_query, state
+        result = execute(connection_pool, query)
+        result.addCallback(self.build_result, state=state)
+        result.addErrback(log.err)
+        return result, state
 
     @staticmethod
-    def build_strikes_grid_result(results, state):
+    def build_result(results, state):
         state.add_info_text(
             "global grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('global_strikes_grid.query')
@@ -176,15 +176,15 @@ class GlobalStrikeGridQuery:
         histogram_data = results[1]
 
         state.log_gauge('global_strikes_grid.size', len(grid_data))
-        state.log_gauge(f'global_strikes_grid.size.{state.grid_metadata.base_length}', len(grid_data))
+        state.log_gauge(f'global_strikes_grid.size.{state.grid_parameters.base_length}', len(grid_data))
         state.log_incr('global_strikes_grid')
 
         grid_parameters = state.grid_parameters
         end_time = state.time_interval.end
         duration = state.time_interval.duration
         response = {'r': grid_data,
-                    'xd': round(grid_parameters.x_div, 6),
-                    'yd': round(grid_parameters.y_div, 6),
+                    'xd': round(grid_parameters.grid.x_div, 6),
+                    'yd': round(grid_parameters.grid.y_div, 6),
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
                     'dt': duration.seconds,
                     'h': histogram_data}

@@ -19,7 +19,7 @@ limitations under the License.
 """
 
 import tempfile
-from unittest.mock import patch
+from mock import patch
 
 from assertpy import assert_that  # pylint: disable=import-error
 import pytest  # pylint: disable=import-error
