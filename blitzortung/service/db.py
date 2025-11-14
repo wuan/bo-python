@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 """
 
    Copyright 2025 Andreas Würl
@@ -75,6 +73,10 @@ def create_connection_pool():
     connection_pool = DictConnectionPool(None, db_connection_string)
 
     d = connection_pool.start()
+    def log_pool(pool):
+        print("pool created:", pool)
+        return pool
+    d.addCallback(log_pool)
     d.addErrback(log.err)
 
     return d

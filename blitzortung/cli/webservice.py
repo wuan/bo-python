@@ -29,7 +29,7 @@ from txjsonrpc_ng.web.data import CacheableResult
 from txjsonrpc_ng.web.jsonrpc import with_request
 
 try:
-    from twisted.internet import epollreactor as reactor
+    from twisted.internet import epollreactor as reactor, defer
 except ImportError:
     from twisted.internet import kqreactor as reactor
 
