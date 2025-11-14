@@ -80,3 +80,7 @@ def create_connection_pool():
     d.addErrback(log.err)
 
     return d
+
+def execute(connection, query):
+    print("execute:", connection, query)
+    return connection.runQuery(str(query), query.get_parameters())

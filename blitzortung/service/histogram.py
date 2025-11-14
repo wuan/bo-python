@@ -23,6 +23,7 @@ import time
 from injector import inject
 from twisted.internet.defer import DeferredList, Deferred
 
+from .db import execute
 from .. import db
 from ..db.query import TimeInterval, SelectQuery
 
@@ -35,9 +36,9 @@ class HistogramQuery:
     def create(self, time_interval: TimeInterval, deferred_pool: Deferred, region=None, envelope=None):
         reference_time = time.time()
 
-        query = self.strike_query_builder.histogram_query(db.table.Strike.table_name, time_interval, 5, region, envelope)
+        histogram_query = self.strike_query_builder.histogram_query(db.table.Strike.table_name, time_interval, 5, region, envelope)
 
-        result = deferred_pool.addCallback(lambda connection: connection.runQuery(str(query), query.get_parameters()))
+        result = deferred_pool.addCallback(execute, histogram_query)
 
         result.addCallback(self.build_result, minutes=time_interval.minutes(), bin_size=5,
                                     reference_time=reference_time)

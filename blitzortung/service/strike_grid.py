@@ -26,6 +26,7 @@ from injector import inject
 from twisted.internet.defer import gatherResults, Deferred
 from twisted.python import log
 
+from .db import execute
 from .general import TimingState
 from .. import db
 from ..db.grid_result import build_grid_result
@@ -61,7 +62,7 @@ class StrikeGridQuery:
         query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                      time_interval=time_interval, count_threshold=grid_parameters.count_threshold)
 
-        result = deferred_pool.addCallback(lambda connection: connection.runQuery(str(query), query.get_parameters()))
+        result = deferred_pool.addCallback(execute, query)
         result.addCallback(self.build_result, state=state)
         result.addErrback(log.err)
         return result, state
@@ -126,8 +127,7 @@ class GlobalStrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection,
-               statsd_client):
+    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, deferred_pool: Deferred, statsd_client):
 
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
@@ -135,10 +135,10 @@ class GlobalStrikeGridQuery:
                                                             time_interval=time_interval,
                                                             count_threshold=grid_parameters.count_threshold)
 
-        grid_query = connection.runQuery(str(query), query.get_parameters())
-        grid_query.addCallback(self.build_strikes_grid_result, state=state)
-        grid_query.addErrback(log.err)
-        return grid_query, state
+        result = deferred_pool.addCallback(execute, query)
+        result.addCallback(self.build_strikes_grid_result, state=state)
+        result.addErrback(log.err)
+        return result, state
 
     @staticmethod
     def build_strikes_grid_result(results, state):
