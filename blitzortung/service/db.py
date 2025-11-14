@@ -19,6 +19,7 @@
 import psycopg2
 import psycopg2.extras
 from pytest_twisted import inlineCallbacks
+from twisted.internet.defer import Deferred
 from twisted.python import log
 from txpostgres import reconnection
 from txpostgres.txpostgres import Connection, ConnectionPool
@@ -65,7 +66,7 @@ class DictConnectionPool(ConnectionPool):
     def __init__(self, _ignored, *connargs, **connkw):
         super(DictConnectionPool, self).__init__(_ignored, *connargs, **connkw)
 
-def create_connection_pool():
+def create_connection_pool() -> Deferred:
     """Create and start the database connection pool."""
     config = blitzortung.config.config()
     db_connection_string = config.get_db_connection_string()

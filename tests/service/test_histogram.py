@@ -31,8 +31,7 @@ class TestHistogramQuery:
 
         query_time_interval = create_time_interval(30, 0)
 
-        pool = defer.succeed(connection)
-        result = yield uut.create(query_time_interval, pool)
+        result = yield uut.create(query_time_interval, connection)
 
         assert result == [0,5,3,1,2,4]
         query_builder.histogram_query.assert_called_once_with("strikes", query_time_interval, 5, None, None)

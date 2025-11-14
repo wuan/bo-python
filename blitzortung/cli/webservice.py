@@ -536,12 +536,18 @@ if os.path.exists(log_directory):
 else:
     log_directory = None
 
+def start_server(result):
+    root = Blitzortung(connection_pool, log_directory)
+    config = blitzortung.config.config()
+    site = server.Site(root)
+    site.displayTracebacks = False
+    jsonrpc_server = internet.TCPServer(config.get_webservice_port(), site, interface='127.0.0.1')
+    jsonrpc_server.setServiceParent(application)
+    return jsonrpc_server
+
+def on_error(failure):
+    log.err(failure, "Failed to create connection pool")
+    raise failure.value
+
 connection_pool = create_connection_pool()
-
-root = Blitzortung(connection_pool, log_directory)
-
-config = blitzortung.config.config()
-site = server.Site(root)
-site.displayTracebacks = False
-jsonrpc_server = internet.TCPServer(config.get_webservice_port(), site, interface='127.0.0.1')
-jsonrpc_server.setServiceParent(application)
+connection_pool.addCallback(start_server).addErrback(on_error)

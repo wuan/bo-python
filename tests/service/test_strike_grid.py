@@ -56,9 +56,8 @@ class TestStrikeGridQuery:
             "strike_count": 3,
             "timestamp": now - datetime.timedelta(seconds=65)
         }])
-        pool = defer.succeed(connection)
 
-        deferred_result, state = uut.create(grid_parameters, time_interval, pool, statsd_client)
+        deferred_result, state = uut.create(grid_parameters, time_interval, connection, statsd_client)
         result = yield deferred_result
 
         assert result == ((7, 102, 3, -66),)
@@ -145,9 +144,8 @@ class TestGlobalStrikeGridQuery:
             "strike_count": 3,
             "timestamp": now - datetime.timedelta(seconds=65)
         }])
-        pool = defer.succeed(connection)
 
-        deferred_result, state = uut.create(grid_parameters, time_interval, pool, statsd_client)
+        deferred_result, state = uut.create(grid_parameters, time_interval, connection, statsd_client)
         result = yield deferred_result
 
         assert result == ((7, 1898, 3, -66),)

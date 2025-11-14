@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from injector import inject
-from twisted.internet.defer import gatherResults, Deferred
+from twisted.internet.defer import gatherResults
 from twisted.python import log
 
 from .db import execute
@@ -56,13 +56,14 @@ class StrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, deferred_pool: Deferred, statsd_client):
+    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection_pool, statsd_client):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
         query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters.grid,
-                                                     time_interval=time_interval, count_threshold=grid_parameters.count_threshold)
+                                                     time_interval=time_interval,
+                                                     count_threshold=grid_parameters.count_threshold)
 
-        result = deferred_pool.addCallback(execute, query)
+        result = execute(connection_pool, query)
         result.addCallback(self.build_result, state=state)
         result.addErrback(log.err)
         return result, state
@@ -127,15 +128,14 @@ class GlobalStrikeGridQuery:
     def __init__(self, strike_query_builder: db.query_builder.Strike):
         self.strike_query_builder = strike_query_builder
 
-    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, deferred_pool: Deferred, statsd_client):
-
+    def create(self, grid_parameters: GridParameters, time_interval: TimeInterval, connection_pool, statsd_client):
         state = StrikeGridState(statsd_client, grid_parameters, time_interval)
 
         query = self.strike_query_builder.global_grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                             time_interval=time_interval,
                                                             count_threshold=grid_parameters.count_threshold)
 
-        result = deferred_pool.addCallback(execute, query)
+        result = execute(connection_pool, query)
         result.addCallback(self.build_strikes_grid_result, state=state)
         result.addErrback(log.err)
         return result, state
