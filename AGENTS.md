@@ -1,0 +1,46 @@
+# AGENTS.md - Blitzortung Python Project Guidelines
+
+## Build, Lint & Test Commands
+
+```bash
+# Install dependencies
+poetry install
+
+# Run all tests with coverage
+poetry run pytest --cov blitzortung --cov-report xml --cov-report term --junitxml=junit.xml tests
+
+# Run a single test file or test
+poetry run pytest tests/test_base.py
+poetry run pytest tests/test_base.py::PointTest::test_get_coordinate_components
+
+# Run linter (pylint)
+poetry run pylint blitzortung
+
+# Build package
+poetry build
+
+# Run pre-commit hooks
+pre-commit run --all-files
+```
+
+## Code Style Guidelines
+
+**Imports**: Order by stdlib, third-party, local. No star imports. Use `from . import` for relative imports.
+
+**Formatting**: Max 120 chars/line (pylint.rc), 4-space indentation, UTF-8 header `# -*- coding: utf8 -*-` in all files.
+
+**Types**: No type hints enforced; use docstrings for documentation.
+
+**Naming**: Classes `CamelCase`, functions/methods/variables `snake_case`. Min 3 chars (min-similarity-lines=4). Good names: `i,j,k,ex,Run,_`. Avoid: `foo,bar,baz,toto,tutu,tata`.
+
+**Functions/Methods**: Max 5 args, max 15 locals, max 6 returns, max 12 branches, max 50 statements per function.
+
+**Classes**: Min 2 public methods, max 20 public methods, max 7 attributes, max 7 parent classes.
+
+**Error Handling**: Use base `Error` exception class from `blitzortung.base`. Catch specific exceptions; avoid bare `except:`.
+
+**Docstrings**: Required except for `__*__` methods. Use Apache 2.0 header in all source files.
+
+**Testing**: Use `unittest.TestCase`, place tests in `tests/` directory matching module structure.
+
+**Pre-commit**: Runs gitleaks, trailing whitespace fixer, and pylint.
