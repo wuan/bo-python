@@ -450,7 +450,7 @@ class Blitzortung(jsonrpc.JSONRPC):
     def get_histogram(self, time_interval: TimeInterval, region=None, envelope=None):
         return self.histogram_cache.get(self.histogram_query.create,
                                         time_interval=time_interval,
-                                        deferred_pool=self.connection_pool,
+                                        connection_pool=self.connection_pool,
                                         region=region,
                                         envelope=envelope)
 
