@@ -25,6 +25,7 @@ from txpostgres import reconnection
 from txpostgres.txpostgres import Connection, ConnectionPool
 
 import blitzortung.config
+from blitzortung.db.query import SelectQuery
 
 
 def connection_factory(*args, **kwargs):
@@ -82,6 +83,5 @@ def create_connection_pool() -> Deferred:
 
     return d
 
-def execute(connection, query):
-    print("execute:", connection, query)
+def execute(connection, query: SelectQuery):
     return connection.runQuery(str(query), query.get_parameters())
