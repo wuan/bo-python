@@ -536,7 +536,7 @@ if os.path.exists(log_directory):
 else:
     log_directory = None
 
-def start_server(result):
+def start_server(connection_pool):
     root = Blitzortung(connection_pool, log_directory)
     config = blitzortung.config.config()
     site = server.Site(root)
@@ -549,5 +549,5 @@ def on_error(failure):
     log.err(failure, "Failed to create connection pool")
     raise failure.value
 
-connection_pool = create_connection_pool()
-connection_pool.addCallback(start_server).addErrback(on_error)
+deferred_connection_pool = create_connection_pool()
+deferred_connection_pool.addCallback(start_server).addErrback(on_error)
