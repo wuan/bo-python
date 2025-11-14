@@ -19,7 +19,9 @@
 """
 
 import datetime
+import time
 
+import pytest
 from assertpy import assert_that
 
 import blitzortung.util
@@ -134,84 +136,46 @@ class TestLimit:
 
 
 class TestTimer:
-    """Test Timer class for time measurements."""
 
-    def test_timer_initialization(self):
-        """Test that Timer initializes with start and lap times."""
+    def test_initialization(self):
         timer = blitzortung.util.Timer()
-
         assert_that(timer.start_time).is_not_none()
         assert_that(timer.lap_time).is_equal_to(timer.start_time)
 
-    def test_timer_read(self):
-        """Test reading elapsed time from timer."""
-        import time
+    def test_read(self):
         timer = blitzortung.util.Timer()
         time.sleep(0.01)
+        assert_that(timer.read()).is_between(0.01, 1.0)
 
-        elapsed = timer.read()
-
-        assert_that(elapsed).is_greater_than_or_equal_to(0.01)
-        assert_that(elapsed).is_less_than(1.0)
-
-    def test_timer_lap(self):
-        """Test lap functionality returns lap time and resets."""
-        import time
+    def test_lap(self):
         timer = blitzortung.util.Timer()
         time.sleep(0.01)
-
         lap1 = timer.lap()
-        assert_that(lap1).is_greater_than_or_equal_to(0.01)
-        assert_that(lap1).is_less_than(1.0)
-
         time.sleep(0.01)
         lap2 = timer.lap()
-        assert_that(lap2).is_greater_than_or_equal_to(0.01)
-        assert_that(lap2).is_less_than(1.0)
+
+        assert_that(lap1).is_between(0.01, 1.0)
+        assert_that(lap2).is_between(0.01, 1.0)
 
 
 class TestTotalSeconds:
-    """Test total_seconds function with different time types."""
 
-    def test_total_seconds_with_datetime(self):
-        """Test total_seconds with datetime object."""
-        time_value = datetime.datetime(2013, 8, 20, 12, 30, 45)
+    def test_with_datetime(self):
+        result = blitzortung.util.total_seconds(datetime.datetime(2013, 8, 20, 12, 30, 45))
+        assert_that(result).is_equal_to(12 * 3600 + 30 * 60 + 45)
 
-        result = blitzortung.util.total_seconds(time_value)
+    def test_with_timestamp(self):
+        result = blitzortung.util.total_seconds(Timestamp(datetime.datetime(2013, 8, 20, 5, 15, 30), 123))
+        assert_that(result).is_equal_to(5 * 3600 + 15 * 60 + 30)
 
-        expected = 12 * 3600 + 30 * 60 + 45
-        assert_that(result).is_equal_to(expected)
+    def test_with_timedelta(self):
+        result = blitzortung.util.total_seconds(datetime.timedelta(hours=2, minutes=30, seconds=15))
+        assert_that(result).is_equal_to(2 * 3600 + 30 * 60 + 15)
 
-    def test_total_seconds_with_timestamp(self):
-        """Test total_seconds with Timestamp object."""
-        time_value = Timestamp(datetime.datetime(2013, 8, 20, 5, 15, 30), 123)
+    def test_with_timedelta_and_days(self):
+        result = blitzortung.util.total_seconds(datetime.timedelta(days=2, hours=3, minutes=15, seconds=30))
+        assert_that(result).is_equal_to(2 * 24 * 3600 + 3 * 3600 + 15 * 60 + 30)
 
-        result = blitzortung.util.total_seconds(time_value)
-
-        expected = 5 * 3600 + 15 * 60 + 30
-        assert_that(result).is_equal_to(expected)
-
-    def test_total_seconds_with_timedelta(self):
-        """Test total_seconds with timedelta object."""
-        time_value = datetime.timedelta(hours=2, minutes=30, seconds=15)
-
-        result = blitzortung.util.total_seconds(time_value)
-
-        expected = 2 * 3600 + 30 * 60 + 15
-        assert_that(result).is_equal_to(expected)
-
-    def test_total_seconds_with_timedelta_including_days(self):
-        """Test total_seconds with timedelta including days."""
-        time_value = datetime.timedelta(days=2, hours=3, minutes=15, seconds=30)
-
-        result = blitzortung.util.total_seconds(time_value)
-
-        expected = 2 * 24 * 3600 + 3 * 3600 + 15 * 60 + 30
-        assert_that(result).is_equal_to(expected)
-
-    def test_total_seconds_with_invalid_type(self):
-        """Test total_seconds raises ValueError with invalid type."""
-        import pytest
-
+    def test_invalid_type_raises_error(self):
         with pytest.raises(ValueError, match="unhandled type"):
             blitzortung.util.total_seconds("invalid")

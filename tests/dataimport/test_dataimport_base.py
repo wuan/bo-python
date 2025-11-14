@@ -161,103 +161,66 @@ class TestBlitzortungDataPath:
 
 
 class TestBlitzortungDataPathGenerator:
-    """Test suite for BlitzortungDataPathGenerator class."""
 
     def test_time_granularity(self):
-        """Test that time granularity is 10 minutes."""
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
-        assert_that(generator.time_granularity.total_seconds()).is_equal_to(
-            600
-        )  # 10 minutes
+        assert_that(generator.time_granularity.total_seconds()).is_equal_to(600)
 
     def test_url_path_format(self):
-        """Test URL path format string."""
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
         assert_that(generator.url_path_format).is_equal_to("%Y/%m/%d/%H/%M.log")
 
     def test_get_paths_single_interval(self):
-        """Test get_paths with single time interval."""
         import datetime
-
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
+        start = datetime.datetime(2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 1, 15, 12, 10, 0, tzinfo=datetime.timezone.utc)
 
-        start_time = datetime.datetime(
-            2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc
-        )
-        end_time = datetime.datetime(
-            2025, 1, 15, 12, 10, 0, tzinfo=datetime.timezone.utc
-        )
+        paths = list(generator.get_paths(start, end))
 
-        paths = list(generator.get_paths(start_time, end_time))
-        assert_that(paths).is_length(2)
-        assert_that(paths[0]).is_equal_to("2025/01/15/12/00.log")
-        assert_that(paths[1]).is_equal_to("2025/01/15/12/10.log")
+        assert_that(paths).is_equal_to(["2025/01/15/12/00.log", "2025/01/15/12/10.log"])
 
     def test_get_paths_multiple_intervals(self):
-        """Test get_paths with multiple time intervals."""
         import datetime
-
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
+        start = datetime.datetime(2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 1, 15, 12, 30, 0, tzinfo=datetime.timezone.utc)
 
-        start_time = datetime.datetime(
-            2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc
-        )
-        end_time = datetime.datetime(
-            2025, 1, 15, 12, 30, 0, tzinfo=datetime.timezone.utc
-        )
+        paths = list(generator.get_paths(start, end))
 
-        paths = list(generator.get_paths(start_time, end_time))
-        # Should have 4 intervals: 12:00, 12:10, 12:20, 12:30
-        assert_that(paths).is_length(4)
-        assert_that(paths[0]).is_equal_to("2025/01/15/12/00.log")
-        assert_that(paths[1]).is_equal_to("2025/01/15/12/10.log")
-        assert_that(paths[2]).is_equal_to("2025/01/15/12/20.log")
-        assert_that(paths[3]).is_equal_to("2025/01/15/12/30.log")
+        assert_that(paths).is_equal_to([
+            "2025/01/15/12/00.log",
+            "2025/01/15/12/10.log",
+            "2025/01/15/12/20.log",
+            "2025/01/15/12/30.log"
+        ])
 
     def test_get_paths_without_end_time(self):
-        """Test get_paths without end_time defaults to current time."""
         import datetime
-
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
+        start = datetime.datetime.now(datetime.timezone.utc)
 
-        # Use current time for start to avoid generating thousands of intervals
-        start_time = datetime.datetime.now(datetime.timezone.utc)
+        paths = list(generator.get_paths(start))
 
-        paths = list(generator.get_paths(start_time))
-        # Should yield at least the start time interval
         assert_that(paths).is_not_empty()
-        # First path should be for the rounded start time
         assert_that(paths[0]).matches(r'\d{4}/\d{2}/\d{2}/\d{2}/\d{2}\.log')
 
-    def test_get_paths_formatting(self):
-        """Test that paths are correctly formatted with timestamp and rounded to 10-minute intervals."""
+    def test_get_paths_rounds_to_intervals(self):
         import datetime
-
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
+        start = datetime.datetime(2025, 11, 14, 13, 45, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 11, 14, 13, 55, 0, tzinfo=datetime.timezone.utc)
 
-        start_time = datetime.datetime(
-            2025, 11, 14, 13, 45, 0, tzinfo=datetime.timezone.utc
-        )
-        end_time = datetime.datetime(
-            2025, 11, 14, 13, 55, 0, tzinfo=datetime.timezone.utc
-        )
+        paths = list(generator.get_paths(start, end))
 
-        paths = list(generator.get_paths(start_time, end_time))
-        # Times are rounded down to 10-minute intervals
-        assert_that(paths).is_length(2)
-        assert_that(paths[0]).is_equal_to("2025/11/14/13/40.log")
-        assert_that(paths[1]).is_equal_to("2025/11/14/13/50.log")
+        assert_that(paths).is_equal_to(["2025/11/14/13/40.log", "2025/11/14/13/50.log"])
 
-    def test_get_paths_is_generator(self):
-        """Test that get_paths returns a generator."""
+    def test_get_paths_returns_generator(self):
         import datetime
-
         generator = blitzortung.dataimport.base.BlitzortungDataPathGenerator()
+        start = datetime.datetime(2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
 
-        start_time = datetime.datetime(
-            2025, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc
-        )
+        result = generator.get_paths(start)
 
-        result = generator.get_paths(start_time)
         assert_that(hasattr(result, "__iter__")).is_true()
         assert_that(hasattr(result, "__next__")).is_true()
