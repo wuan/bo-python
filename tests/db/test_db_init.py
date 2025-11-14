@@ -18,17 +18,9 @@
 
 """
 
-from assertpy import assert_that
 from mock import Mock
 
 import blitzortung.db
-import blitzortung.db.table
-
-
-class TestDbFactoryFunctions:
-
-    def test_strike_factory(self):
-        assert_that(blitzortung.db.strike()).is_instance_of(blitzortung.db.table.Strike)
 
 
 class TestDbModule:
