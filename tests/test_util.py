@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2016 Andreas Würl
+   Copyright 2013-2025 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@
 """
 
 import datetime
+import time
 
+import pytest
 from assertpy import assert_that
 
 import blitzortung.util
@@ -131,3 +133,49 @@ class TestLimit:
 
     def test_limit_value_above_rage(self):
         assert blitzortung.util.force_range(10,21,20) == 20
+
+
+class TestTimer:
+
+    def test_initialization(self):
+        timer = blitzortung.util.Timer()
+        assert_that(timer.start_time).is_not_none()
+        assert_that(timer.lap_time).is_equal_to(timer.start_time)
+
+    def test_read(self):
+        timer = blitzortung.util.Timer()
+        time.sleep(0.01)
+        assert_that(timer.read()).is_between(0.01, 1.0)
+
+    def test_lap(self):
+        timer = blitzortung.util.Timer()
+        time.sleep(0.01)
+        lap1 = timer.lap()
+        time.sleep(0.01)
+        lap2 = timer.lap()
+
+        assert_that(lap1).is_between(0.01, 1.0)
+        assert_that(lap2).is_between(0.01, 1.0)
+
+
+class TestTotalSeconds:
+
+    def test_with_datetime(self):
+        result = blitzortung.util.total_seconds(datetime.datetime(2013, 8, 20, 12, 30, 45))
+        assert_that(result).is_equal_to(12 * 3600 + 30 * 60 + 45)
+
+    def test_with_timestamp(self):
+        result = blitzortung.util.total_seconds(Timestamp(datetime.datetime(2013, 8, 20, 5, 15, 30), 123))
+        assert_that(result).is_equal_to(5 * 3600 + 15 * 60 + 30)
+
+    def test_with_timedelta(self):
+        result = blitzortung.util.total_seconds(datetime.timedelta(hours=2, minutes=30, seconds=15))
+        assert_that(result).is_equal_to(2 * 3600 + 30 * 60 + 15)
+
+    def test_with_timedelta_and_days(self):
+        result = blitzortung.util.total_seconds(datetime.timedelta(days=2, hours=3, minutes=15, seconds=30))
+        assert_that(result).is_equal_to(2 * 24 * 3600 + 3 * 3600 + 15 * 60 + 30)
+
+    def test_invalid_type_raises_error(self):
+        with pytest.raises(ValueError, match="unhandled type"):
+            blitzortung.util.total_seconds("invalid")

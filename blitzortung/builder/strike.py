@@ -2,7 +2,7 @@
 
 """
 
-   Copyright 2014-2022 Andreas Würl
+   Copyright 2014-2025 Andreas Würl
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ class Strike(Event):
     position_parser = re.compile(r'pos;([-0-9.]+);([-0-9.]+);([-0-9.]+)')
     amplitude_parser = re.compile(r'str;([0-9.]+)')
     deviation_parser = re.compile(r'dev;([0-9.]+)')
-    stations_parser = re.compile(r'sta;(\d+);(\d+);([^ ]+)')
+    stations_parser = re.compile(r'sta;(\d+);(\d+);([^ ]*)')
 
     def __init__(self):
         super().__init__()
