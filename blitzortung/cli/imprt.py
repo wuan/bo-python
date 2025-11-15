@@ -94,7 +94,7 @@ def import_strikes_for(region, start_time, is_update=False):
 
 
 def update_start_time() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)
+    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=30)
 
 
 def import_strikes(regions, start_time, no_timeout=False, is_update=False):
