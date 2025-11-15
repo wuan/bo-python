@@ -158,6 +158,7 @@ def fetch_strikes_from_url(url, auth=None):
                           .set_y(data['lat'])
                           .set_altitude(data.get('alt', 0))
                           .set_amplitude(data.get('pol', 0))
+                          .set_lateral_error(data.get('mds', 0))
                           .build())
 
                 strike_count += 1
