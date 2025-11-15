@@ -19,18 +19,16 @@
 import datetime
 import logging
 import os
-import time
 from contextlib import nullcontext
 
 import requests
 import statsd
-import stopit
 from optparse import OptionParser
 
-import blitzortung.dataimport
+import blitzortung.config
 import blitzortung.db
+import blitzortung.db.query
 import blitzortung.logger
-from blitzortung import util
 from blitzortung.data import Timestamp
 from blitzortung.lock import LockWithTimeout, FailedToAcquireException
 
@@ -40,78 +38,6 @@ blitzortung.add_log_handler(blitzortung.logger.create_console_handler())
 
 statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.import')
 
-
-def timestamp_is_newer_than(timestamp, latest_time):
-    if not latest_time:
-        return True
-    return timestamp and timestamp > latest_time and timestamp - latest_time != datetime.timedelta()
-
-
-def import_strikes_for(region, start_time, is_update=False):
-    logger.debug("work on region %d", region)
-    strike_db = blitzortung.db.strike()
-    latest_time_timer = util.Timer()
-    latest_time = strike_db.get_latest_time(region)
-    logger.debug("latest time for region %d: %s (%.03fs) ", region, latest_time, latest_time_timer.lap())
-    if not latest_time:
-        latest_time = start_time
-
-    if is_update:
-        start_time = update_start_time()
-        if not latest_time or start_time > latest_time:
-            latest_time = start_time
-
-    reference_time = time.time()
-    strike_source = blitzortung.dataimport.strikes()
-    strikes = strike_source.get_strikes_since(latest_time, region=region)
-    query_time = time.time()
-
-    strike_group_size = 10000
-    strike_count = 0
-    global_start_time = start_time = time.time()
-    for strike in strikes:
-        strike_db.insert(strike, region)
-
-        strike_count += 1
-        if strike_count % strike_group_size == 0:
-            strike_db.commit()
-            logger.info("commit #{} ({:.1f}/s) @{} for region {}".format(
-                strike_count, strike_group_size / (time.time() - start_time), strike.timestamp, region))
-            start_time = time.time()
-
-    if strike_count > 0:
-        strike_db.commit()
-
-    insert_time = time.time()
-    stat_name = "strikes.%d" % region
-    statsd_client.incr(stat_name)
-    statsd_client.gauge(stat_name + ".count", strike_count)
-    statsd_client.timing(stat_name + ".get", max(1, int((query_time - reference_time) * 1000)))
-    statsd_client.timing(stat_name + ".insert", max(1, int((insert_time - query_time) * 1000)))
-
-    logger.info("imported {} strikes ({:.1f}/s) for region {}".format(
-        strike_count, strike_count / (time.time() - global_start_time), region))
-
-
-def update_start_time() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=30)
-
-
-def import_strikes(regions, start_time, no_timeout=False, is_update=False):
-
-    error_count = 0
-    for region in regions:
-        for retry in range(5):
-            try:
-                with nullcontext() if no_timeout else stopit.SignalTimeout(300):
-                    import_strikes_for(region, start_time, is_update=is_update)
-                break
-            except (requests.exceptions.ConnectionError, stopit.TimeoutException):
-                logger.warning('import failed: retry {} region {}'.format(retry, region))
-                error_count += 1
-                time.sleep(2)
-                continue
-    statsd_client.gauge("strikes.error_count", error_count)
 
 def fetch_strikes_from_url(url, auth=None):
     """
@@ -193,22 +119,15 @@ def create_strike_key(strike):
     Returns:
         Tuple representing the strike's unique characteristics
     """
-    # Get timestamp value (handle both Timestamp and datetime objects)
-    if hasattr(strike.timestamp, 'value'):
-        timestamp_value = strike.timestamp.value
-    else:
-        # For datetime objects, convert to nanoseconds since epoch
-        timestamp_value = int(strike.timestamp.timestamp() * 1_000_000_000)
-
     return (
-        timestamp_value,
+        strike.timestamp.value,
         round(strike.x, 6),  # Round to 6 decimal places for location
         round(strike.y, 6),
         strike.amplitude
     )
 
 
-def get_existing_strike_keys(strike_db, time_interval, region=None):
+def get_existing_strike_keys(strike_db, time_interval):
     """
     Retrieve keys of strikes already present in the database for a given time interval.
 
@@ -218,17 +137,14 @@ def get_existing_strike_keys(strike_db, time_interval, region=None):
     Args:
         strike_db: Database connection for strikes
         time_interval: Time interval to query
-        region: Optional region filter
 
     Returns:
         Set of strike keys (tuples of timestamp, x, y, amplitude)
     """
-    logger.debug("Querying existing strikes for interval %s - %s (region: %s)",
-                 time_interval.start, time_interval.end, region)
+    logger.debug("Querying existing strikes for interval %s - %s",
+                 time_interval.start, time_interval.end)
 
     kwargs = {'time_interval': time_interval, 'order': 'timestamp'}
-    if region is not None:
-        kwargs['region'] = region
 
     existing_strikes = strike_db.select(**kwargs)
     strike_keys = {create_strike_key(strike) for strike in existing_strikes}
@@ -237,7 +153,7 @@ def get_existing_strike_keys(strike_db, time_interval, region=None):
     return strike_keys
 
 
-def update_strikes(url=None, region=None, hours=1):
+def update_strikes(url=None, hours=1):
     """
     Update strike database by fetching data from a URL and inserting new strikes.
 
@@ -249,13 +165,12 @@ def update_strikes(url=None, region=None, hours=1):
 
     Args:
         url: URL to fetch strike data from (if None, uses default config URL)
-        region: Optional region to filter/tag strikes
         hours: Number of hours to look back (default: 1)
 
     Returns:
         Number of new strikes inserted into the database
     """
-    logger.info("Starting strike update for region %s (looking back %d hour(s))", region, hours)
+    logger.info("Starting strike update (looking back %d hour(s))", hours)
 
     now = datetime.datetime.now(datetime.timezone.utc)
     start_time = now - datetime.timedelta(hours=hours)
@@ -282,7 +197,7 @@ def update_strikes(url=None, region=None, hours=1):
     strike_db = blitzortung.db.strike()
 
     # Get existing strikes from database (identified by timestamp/location/amplitude)
-    existing_strike_keys = get_existing_strike_keys(strike_db, time_interval, region)
+    existing_strike_keys = get_existing_strike_keys(strike_db, time_interval)
 
     # Fetch strikes from URL
     try:
@@ -315,7 +230,7 @@ def update_strikes(url=None, region=None, hours=1):
     insert_count = 0
     for strike in new_strikes:
         try:
-            strike_db.insert(strike, region)
+            strike_db.insert(strike)
             insert_count += 1
 
             if insert_count % 1000 == 0:
@@ -352,8 +267,6 @@ def main():
     parser = OptionParser(description="Import strike data from URL into database")
     parser.add_option("-u", "--url", dest="url", type="string", default=None,
                       help="URL to fetch strike data from (optional, uses default if not provided)")
-    parser.add_option("-r", "--region", dest="region", type="int", default=None,
-                      help="Region number (optional)")
     parser.add_option("--hours", dest="hours", type="int", default=1,
                       help="Number of hours to look back (default: 1)")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
@@ -378,7 +291,7 @@ def main():
 
     try:
         with lock_context:
-            count = update_strikes(url=options.url, region=options.region, hours=options.hours)
+            count = update_strikes(url=options.url, hours=options.hours)
             logger.info("Import completed: %d new strikes inserted", count)
             return 0
 

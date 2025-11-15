@@ -172,7 +172,7 @@ class TestGetExistingStrikeKeys:
         end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
         time_interval = TimeInterval(start, end)
 
-        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=1)
+        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval)
 
         assert_that(result).is_empty()
         mock_strike_db.select.assert_called_once()
@@ -200,7 +200,7 @@ class TestGetExistingStrikeKeys:
         end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
         time_interval = TimeInterval(start, end)
 
-        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=1)
+        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval)
 
         assert_that(result).is_length(2)
         assert_that(result).contains(
@@ -208,19 +208,6 @@ class TestGetExistingStrikeKeys:
             (1000000000000000002, 11.5, 21.5, 200)
         )
 
-    def test_get_existing_strikes_passes_region_filter(self, mock_strike_db):
-        """Test that region parameter is passed to database query."""
-        mock_strike_db.select.return_value = []
-
-        start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
-        end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
-        time_interval = TimeInterval(start, end)
-
-        imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=2)
-
-        # Check that region was passed in kwargs
-        call_kwargs = mock_strike_db.select.call_args[1]
-        assert_that(call_kwargs['region']).is_equal_to(2)
 
 
 class TestUpdateStrikes:
@@ -263,7 +250,7 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike1, strike2]
 
         # Run update
-        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
 
         # Verify
         assert_that(result).is_equal_to(2)
@@ -309,7 +296,7 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike_from_url]
 
         # Run update
-        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
 
         # Verify - no inserts should happen
         assert_that(result).is_equal_to(0)
@@ -353,9 +340,9 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike_in_interval, strike_outside_interval]
 
         # Run update with 1 hour lookback
-        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
 
         # Verify - only the strike within interval should be inserted
         assert_that(result).is_equal_to(1)
         assert_that(mock_strike_db.insert.call_count).is_equal_to(1)
-        mock_strike_db.insert.assert_called_with(strike_in_interval, 1)
+        mock_strike_db.insert.assert_called_with(strike_in_interval)
