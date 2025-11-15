@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.11.24'
+version = '1.11.25'
 description = 'blitzortung.org python modules'
 authors = [
     {name = "Andreas Würl",email = "andi@tryb.de"}

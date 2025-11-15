@@ -58,7 +58,6 @@ def fetch_strikes_from_url(url, auth=None):
     import json
     from blitzortung.builder import Strike as StrikeBuilder
 
-
     try:
         timer = util.Timer()
         response = requests.get(url, auth=auth, timeout=30)
@@ -83,8 +82,8 @@ def fetch_strikes_from_url(url, auth=None):
                 # Build strike object (create new builder for each strike)
                 strike = (builder
                           .set_timestamp(Timestamp(data['time']))
-                          .set_x(round(data['lon'],4))
-                          .set_y(round(data['lat'],4))
+                          .set_x(round(data['lon'], 4))
+                          .set_y(round(data['lat'], 4))
                           .set_altitude(data.get('alt', 0))
                           .set_amplitude(data.get('pol', 0))
                           .set_lateral_error(data.get('mds', 0))
@@ -217,8 +216,8 @@ def update_strikes(hours=1):
         # Check if strike already exists in database (by timestamp/location/amplitude)
         strike_key = create_strike_key(strike)
         if strike_key in existing_strike_keys:
-            logger.debug("Strike at %s (%.4f, %.64) already exists, skipping",
-                        strike.timestamp, strike.x, strike.y)
+            logger.debug("Strike %s at %s (%.4f, %.4f) already exists, skipping", str(strike_key),
+                         strike.timestamp, strike.x, strike.y)
             continue
 
         new_strikes.append(strike)
@@ -251,9 +250,6 @@ def update_strikes(hours=1):
     statsd_client.gauge("strikes.imported", insert_count)
 
     return insert_count
-
-
-
 
 
 def main():
@@ -299,4 +295,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())
