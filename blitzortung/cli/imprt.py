@@ -30,6 +30,7 @@ from optparse import OptionParser
 import blitzortung.dataimport
 import blitzortung.db
 import blitzortung.logger
+from blitzortung import util
 from blitzortung.data import Timestamp
 from blitzortung.lock import LockWithTimeout, FailedToAcquireException
 
@@ -49,8 +50,9 @@ def timestamp_is_newer_than(timestamp, latest_time):
 def import_strikes_for(region, start_time, is_update=False):
     logger.debug("work on region %d", region)
     strike_db = blitzortung.db.strike()
+    latest_time_timer = util.Timer()
     latest_time = strike_db.get_latest_time(region)
-    logger.debug("latest time for region %d: %s", region, latest_time)
+    logger.debug("latest time for region %d: %s $.03f", region, latest_time, latest_time_timer.lap())
     if not latest_time:
         latest_time = start_time
 
