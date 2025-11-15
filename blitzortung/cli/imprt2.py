@@ -113,23 +113,31 @@ def import_strikes(regions, start_time, no_timeout=False, is_update=False):
                 continue
     statsd_client.gauge("strikes.error_count", error_count)
 
-def fetch_strikes_from_url(url, strike_builder, auth=None):
+def fetch_strikes_from_url(url, auth=None):
     """
     Fetch strike data from a given URL and parse it into Strike objects.
 
+    The URL returns JSON-formatted strike data, one strike per line.
+    Each line has the format:
+    {"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"pol":0,...}
+
     Args:
         url: The URL to fetch strike data from
-        strike_builder: Builder instance to parse strike data
         auth: Optional tuple of (username, password) for authentication
 
     Yields:
         Strike objects parsed from the URL response
     """
+    import json
+    from blitzortung.builder import Strike as StrikeBuilder
+
     logger.info("Fetching strikes from URL: %s", url)
 
     try:
         response = requests.get(url, auth=auth, timeout=30)
         response.raise_for_status()
+
+        builder = StrikeBuilder()
 
         strike_count = 0
 
@@ -139,12 +147,27 @@ def fetch_strikes_from_url(url, strike_builder, auth=None):
                 continue
 
             try:
-                strike = strike_builder.from_line(line).build()
-                if strike.timestamp.is_valid:
-                    strike_count += 1
-                    yield strike
-            except Exception as e:
+                # Parse JSON data
+                data = json.loads(line)
+
+                # Create strike from JSON data
+                # Build strike object (create new builder for each strike)
+                strike = (builder
+                          .set_timestamp(Timestamp(data['time']))
+                          .set_x(data['lon'])
+                          .set_y(data['lat'])
+                          .set_altitude(data.get('alt', 0))
+                          .set_amplitude(data.get('pol', 0))
+                          .build())
+
+                strike_count += 1
+                yield strike
+
+            except (json.JSONDecodeError, KeyError) as e:
                 logger.warning("Failed to parse strike: %s (%s)", e, line)
+                continue
+            except Exception as e:
+                logger.warning("Failed to create strike object: %s (%s)", e, line)
                 continue
 
         logger.info("Fetched %d strikes from URL", strike_count)
@@ -259,9 +282,8 @@ def update_strikes(url=None, region=None, hours=1):
     existing_strike_keys = get_existing_strike_keys(strike_db, time_interval, region)
 
     # Fetch strikes from URL
-    strike_builder = blitzortung.builder.Strike()
     try:
-        url_strikes = list(fetch_strikes_from_url(url, strike_builder, auth=auth))
+        url_strikes = list(fetch_strikes_from_url(url, auth=auth))
     except requests.RequestException as e:
         logger.error("Failed to fetch strikes from URL: %s", e)
         return 0
