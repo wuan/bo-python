@@ -56,6 +56,7 @@ class HttpFileTransport(FileTransport):
         self.session = session if session else Session()
 
     def read_lines(self, source_url, post_process=None):
+        timer = util.Timer()
         response = self.session.get(
             source_url,
             auth=(self.config.get_username(), self.config.get_password()),
@@ -63,8 +64,10 @@ class HttpFileTransport(FileTransport):
             timeout=self.TIMEOUT_SECONDS)
 
         if response.status_code != 200:
-            self.logger.debug("http status %d for get '%s" % (response.status_code, source_url))
+            self.logger.debug("http status %d for get '%s' (%.03fs)" % (response.status_code, source_url, timer.lap()))
             return []
+        else:
+            self.logger.debug("get '%s' (%.03fs)" % (source_url, timer.lap()))
 
         return self.split_lines(post_process(response.content).splitlines() if post_process else response.iter_lines())
 
