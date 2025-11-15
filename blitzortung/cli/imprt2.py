@@ -29,6 +29,7 @@ import blitzortung.config
 import blitzortung.db
 import blitzortung.db.query
 import blitzortung.logger
+from blitzortung import util
 from blitzortung.data import Timestamp
 from blitzortung.lock import LockWithTimeout, FailedToAcquireException
 
@@ -57,11 +58,13 @@ def fetch_strikes_from_url(url, auth=None):
     import json
     from blitzortung.builder import Strike as StrikeBuilder
 
-    logger.info("Fetching strikes from URL: %s", url)
 
     try:
+        timer = util.Timer()
         response = requests.get(url, auth=auth, timeout=30)
         response.raise_for_status()
+
+        logger.info("Fetching strikes from URL: %s (%.03fs)", url, timer.lap())
 
         builder = StrikeBuilder()
 
