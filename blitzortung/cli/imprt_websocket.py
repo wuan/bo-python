@@ -126,7 +126,6 @@ def main():
                 strike_db = blitzortung.db.strike()
 
             while True:
-                # url = "ws://live.lightningmaps.org/"
                 server_index = random.choices([1, 7, 8])[0]
                 url = f"wss://ws{server_index}.blitzortung.org/"
                 logger.info(f"connect to {url}")
@@ -137,7 +136,7 @@ def main():
                     on_error=on_error,
                     on_close=on_close,
                 )
-                retry = ws.run_forever(origin='https://www.blitzortung.org', skip_utf8_validation=True)
+                ws.run_forever(origin='https://www.blitzortung.org', skip_utf8_validation=True)
                 logger.info("finished")
     except FailedToAcquireException:
         logger.warning("could not acquire lock")

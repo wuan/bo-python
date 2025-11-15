@@ -21,17 +21,19 @@
 from __future__ import print_function
 
 import datetime
-import math
 import sys
-from optparse import OptionParser
 from zoneinfo import ZoneInfo
 
+import math
 import shapely.wkt
+from optparse import OptionParser
 
 import blitzortung.config
 import blitzortung.db.query
 import blitzortung.geom
 import blitzortung.util
+
+DEFAULT_GRID = 1.0, 1.0
 
 DATE_FORMAT = '%Y%m%d'
 TIME_FORMAT = '%H%M'
@@ -56,12 +58,10 @@ def parse_time(date_string, time_string, tz, description, is_end_time=False):
 def prepare_grid_if_applicable(options, area):
     if options.grid is not None or options.xgrid is not None or options.ygrid is not None:
 
-        grid_x = 1.0
-        grid_y = 1.0
+        grid_x, grid_y = DEFAULT_GRID
 
         if options.grid is not None:
-            grid_x = options.grid
-            grid_y = options.grid
+            grid_x, grid_y = options.grid, options.grid
 
         if options.xgrid is not None:
             grid_x = options.xgrid
@@ -76,6 +76,7 @@ def prepare_grid_if_applicable(options, area):
         if options.area is None:
             print("grid options requires declaration of envelope area")
             sys.exit(1)
+
         env = area.envelope.bounds
         return blitzortung.geom.Grid(env[0], env[2], env[1], env[3], grid_x, grid_y, options.srid)
 
@@ -155,10 +156,10 @@ def main():
     if options.area:
         try:
             area = shapely.wkt.loads(options.area)
-        except:
+        except shapely.errors.GEOSException:
             print('parse error in area "' + options.area + '"')
 
-        if options.useenv:
+        if area and options.useenv:
             area = area.envelope
 
     # open strike database
@@ -172,7 +173,6 @@ def main():
     time_interval = blitzortung.db.query.TimeInterval(start_time, end_time)
 
     # set query parameters
-    limit = 5
     order = 'timestamp'
 
     grid = prepare_grid_if_applicable(options, area)
@@ -193,16 +193,14 @@ def main():
 
         precision_factor = math.pow(10.0, options.precision)
 
-        strike_count = 0
         for strike in strikes:
-            location_x = round(strike.x * precision_factor) / precision_factor
-            location_y = round(strike.y * precision_factor) / precision_factor
-            strike_count += 1
+            strike.x = round(strike.x * precision_factor) / precision_factor
+            strike.y = round(strike.y * precision_factor) / precision_factor
             print(str(strike))
 
         select_time = timer.lap()
 
-        sys.stderr.write('received %d strikes in %.3f seconds\n' % (strike_count, select_time))
+        sys.stderr.write('received %d strikes in %.3f seconds\n' % (len(strikes), select_time))
 
 
 if __name__ == '__main__':
