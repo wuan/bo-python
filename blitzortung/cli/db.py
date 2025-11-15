@@ -30,6 +30,7 @@ import shapely.wkt
 
 import blitzortung.config
 import blitzortung.db.query
+import blitzortung.gis.geo
 import blitzortung.geom
 import blitzortung.util
 
@@ -54,23 +55,23 @@ def parse_time(date_string, time_string, tz, description, is_end_time=False):
 
 
 def prepare_grid_if_applicable(options, area):
-    if options.grid is not None or options.xgrid is not None or options.ygrid is not None:
+    if blitzortung.gis.geo.grid is not None or options.xgrid is not None or options.ygrid is not None:
 
         grid_x = 1.0
         grid_y = 1.0
 
-        if options.grid is not None:
-            grid_x = options.grid
-            grid_y = options.grid
+        if blitzortung.gis.geo.grid is not None:
+            grid_x = blitzortung.gis.geo.grid
+            grid_y = blitzortung.gis.geo.grid
 
         if options.xgrid is not None:
             grid_x = options.xgrid
-            if options.ygrid is None and options.grid is None:
+            if options.ygrid is None and blitzortung.gis.geo.grid is None:
                 grid_y = grid_x
 
         if options.ygrid is not None:
             grid_y = options.ygrid
-            if options.xgrid is None and options.grid is None:
+            if options.xgrid is None and blitzortung.gis.geo.grid is None:
                 grid_x = grid_y
 
         if options.area is None:
