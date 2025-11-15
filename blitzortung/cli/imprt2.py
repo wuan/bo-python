@@ -126,7 +126,7 @@ def create_strike_key(strike):
         strike.timestamp.value,
         round(strike.x, 4),  # Round to 6 decimal places for location
         round(strike.y, 4),
-        strike.amplitude
+        strike.lateral_error
     )
 
 

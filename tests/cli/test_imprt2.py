@@ -139,11 +139,11 @@ class TestCreateStrikeKey:
         strike.timestamp.value = 1234567890123456789
         strike.x = 12.345678
         strike.y = 45.678901
-        strike.amplitude = 100
+        strike.lateral_error = 100
 
         key = imprt2.create_strike_key(strike)
 
-        assert_that(key).is_equal_to((1234567890123456789, 12.345678, 45.678901, 100))
+        assert_that(key).is_equal_to((1234567890123456789, 12.3457, 45.6789, 100))
 
     def test_create_strike_key_rounds_location(self):
         """Test that location is rounded to 6 decimal places."""
@@ -152,13 +152,13 @@ class TestCreateStrikeKey:
         strike.timestamp.value = 1000000000000000000
         strike.x = 12.34567890123  # More than 6 decimals
         strike.y = 45.67890123456
-        strike.amplitude = 50
+        strike.lateral_error = 50
 
         key = imprt2.create_strike_key(strike)
 
         # Should be rounded to 6 decimals
-        assert_that(key[1]).is_equal_to(12.345679)
-        assert_that(key[2]).is_equal_to(45.678901)
+        assert_that(key[1]).is_equal_to(12.3457)
+        assert_that(key[2]).is_equal_to(45.6789)
 
 
 class TestGetExistingStrikeKeys:
@@ -185,14 +185,14 @@ class TestGetExistingStrikeKeys:
         strike1.timestamp.value = 1000000000000000001
         strike1.x = 10.5
         strike1.y = 20.5
-        strike1.amplitude = 100
+        strike1.lateral_error = 100
 
         strike2 = Mock(spec=Strike)
         strike2.timestamp = Mock()
         strike2.timestamp.value = 1000000000000000002
         strike2.x = 11.5
         strike2.y = 21.5
-        strike2.amplitude = 200
+        strike2.lateral_error = 200
 
         mock_strike_db.select.return_value = [strike1, strike2]
 
@@ -275,7 +275,7 @@ class TestUpdateStrikes:
         existing_strike.timestamp.value = timestamp_value
         existing_strike.x = 10.5
         existing_strike.y = 20.5
-        existing_strike.amplitude = 100
+        existing_strike.lateral_error = 100
 
         mock_strike_db.select.return_value = [existing_strike]
         mock_strike_db.insert = Mock()
@@ -291,7 +291,7 @@ class TestUpdateStrikes:
         strike_from_url.timestamp.__ge__ = Mock(return_value=True)
         strike_from_url.x = 10.5
         strike_from_url.y = 20.5
-        strike_from_url.amplitude = 100
+        strike_from_url.lateral_error = 100
 
         mock_fetch.return_value = [strike_from_url]
 
