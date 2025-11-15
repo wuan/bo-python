@@ -46,13 +46,18 @@ def timestamp_is_newer_than(timestamp, latest_time):
     return timestamp and timestamp > latest_time and timestamp - latest_time != datetime.timedelta()
 
 
-def import_strikes_for(region, start_time):
+def import_strikes_for(region, start_time, is_update=False):
     logger.debug("work on region %d", region)
     strike_db = blitzortung.db.strike()
     latest_time = strike_db.get_latest_time(region)
     logger.debug("latest time for region %d: %s", region, latest_time)
     if not latest_time:
         latest_time = start_time
+
+    if is_update:
+        start_time = update_start_time()
+        if not latest_time or start_time > latest_time:
+            latest_time = start_time
 
     reference_time = time.time()
     strike_source = blitzortung.dataimport.strikes()
@@ -86,15 +91,18 @@ def import_strikes_for(region, start_time):
         strike_count, strike_count / (time.time() - global_start_time), region))
 
 
-def import_strikes(regions, start_time, no_timeout=False):
-    # TODO add file based lock around import call
+def update_start_time() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)
+
+
+def import_strikes(regions, start_time, no_timeout=False, is_update=False):
 
     error_count = 0
     for region in regions:
         for retry in range(5):
             try:
                 with nullcontext() if no_timeout else stopit.SignalTimeout(300):
-                    import_strikes_for(region, start_time)
+                    import_strikes_for(region, start_time, is_update=is_update)
                 break
             except (requests.exceptions.ConnectionError, stopit.TimeoutException):
                 logger.warning('import failed: retry {} region {}'.format(retry, region))
@@ -110,6 +118,7 @@ def main():
     parser.add_option("-d", "--debug", dest="debug", action="store_true", help="debug output")
     parser.add_option("--no-timeout", dest="no_timeout", action="store_true", help="do not apply 5 minute timeout")
     parser.add_option("--startdate", dest="startdate", default=None, help="import start date")
+    parser.add_option("--update", dest="update", action="store_true", help="run as regular update")
 
     (options, args) = parser.parse_args()
 
@@ -125,7 +134,7 @@ def main():
                 tzinfo=datetime.timezone.utc)) if options.startdate else None
 
             regions = range(20)
-            import_strikes(regions=regions, start_time=start_time, no_timeout=options.no_timeout)
+            import_strikes(regions=regions, start_time=start_time, no_timeout=options.no_timeout, is_update=options.update)
     except FailedToAcquireException:
         logger.warning("could not acquire lock")
 
