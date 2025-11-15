@@ -220,7 +220,14 @@ def update_strikes(hours=1):
                          strike.timestamp, strike.x, strike.y)
             continue
 
-        new_strikes.append(strike)
+        if strike.timestamp < now - datetime.timedelta(minutes=1):
+            logger.debug("Strike %s at %s (%.4f, %.4f) new", str(strike_key),
+                     strike.timestamp, strike.x, strike.y)
+            new_strikes.append(strike)
+        else:
+            logger.debug("Strike %s at %s (%.4f, %.4f) too new", str(strike_key),
+                         strike.timestamp, strike.x, strike.y)
+
 
     logger.info("Found %d new strikes to insert (out of %d from URL)",
                 len(new_strikes), len(url_strikes))
