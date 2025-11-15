@@ -156,7 +156,7 @@ def get_existing_strike_keys(strike_db, time_interval):
     return strike_keys
 
 
-def update_strikes(url=None, hours=1):
+def update_strikes(hours=1):
     """
     Update strike database by fetching data from a URL and inserting new strikes.
 
@@ -180,12 +180,9 @@ def update_strikes(url=None, hours=1):
 
     # Get configuration if URL not provided
     config = blitzortung.config.config()
-    if url is None:
-        start_timestamp_ns = int(start_time.timestamp() * 1e6) * 1000
-        url = f"https://data.blitzortung.org/Data/Protected/last_strikes.php?time={start_timestamp_ns}"
-        auth = (config.get_username(), config.get_password())
-    else:
-        auth = None
+    start_timestamp_ns = int(start_time.timestamp() * 1e6) * 1000
+    url = f"https://data.blitzortung.org/Data/Protected/last_strikes.php?time={start_timestamp_ns}"
+    auth = (config.get_username(), config.get_password())
 
     # Calculate time interval (last N hours)
     end_time = now
@@ -268,8 +265,6 @@ def main():
     Command-line interface for the strike import tool.
     """
     parser = OptionParser(description="Import strike data from URL into database")
-    parser.add_option("-u", "--url", dest="url", type="string", default=None,
-                      help="URL to fetch strike data from (optional, uses default if not provided)")
     parser.add_option("--hours", dest="hours", type="int", default=1,
                       help="Number of hours to look back (default: 1)")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
@@ -294,7 +289,7 @@ def main():
 
     try:
         with lock_context:
-            count = update_strikes(url=options.url, hours=options.hours)
+            count = update_strikes(hours=options.hours)
             logger.info("Import completed: %d new strikes inserted", count)
             return 0
 

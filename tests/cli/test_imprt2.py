@@ -250,7 +250,7 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike1, strike2]
 
         # Run update
-        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
+        result = imprt2.update_strikes(hours=1)
 
         # Verify
         assert_that(result).is_equal_to(2)
@@ -296,7 +296,7 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike_from_url]
 
         # Run update
-        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
+        result = imprt2.update_strikes(hours=1)
 
         # Verify - no inserts should happen
         assert_that(result).is_equal_to(0)
@@ -340,7 +340,7 @@ class TestUpdateStrikes:
         mock_fetch.return_value = [strike_in_interval, strike_outside_interval]
 
         # Run update with 1 hour lookback
-        result = imprt2.update_strikes(url='http://example.com/strikes', hours=1)
+        result = imprt2.update_strikes(hours=1)
 
         # Verify - only the strike within interval should be inserted
         assert_that(result).is_equal_to(1)
