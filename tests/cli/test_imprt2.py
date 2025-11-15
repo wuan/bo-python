@@ -346,3 +346,38 @@ class TestUpdateStrikes:
         assert_that(result).is_equal_to(1)
         assert_that(mock_strike_db.insert.call_count).is_equal_to(1)
         mock_strike_db.insert.assert_called_with(strike_in_interval)
+
+    @patch('blitzortung.cli.imprt2.blitzortung.db.strike')
+    @patch('blitzortung.cli.imprt2.fetch_strikes_from_url')
+    @patch('blitzortung.cli.imprt2.blitzortung.config.config')
+    def test_failure_at_insert(self, mock_config, mock_fetch, mock_db_func):
+        # Setup mocks
+        mock_strike_db = Mock()
+        mock_strike_db.select.return_value = []
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
+        mock_strike_db.close = Mock()
+        mock_db_func.return_value = mock_strike_db
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # One strike within interval, one outside
+        strike = Mock(spec=Strike)
+        strike.timestamp = Mock()
+        strike.timestamp.value = int((now - datetime.timedelta(minutes=30)).timestamp() * 1_000_000_000)
+        strike.timestamp.__le__ = Mock(return_value=True)
+        strike.timestamp.__ge__ = Mock(return_value=True)
+        strike.x = 10.5
+        strike.y = 20.5
+        strike.amplitude = 100
+
+        mock_fetch.return_value = [strike]
+
+        mock_strike_db.insert.side_effect = Exception("Database error")
+
+        with pytest.raises(Exception) as exc_info:
+            imprt2.update_strikes(hours=1)
+
+        assert exc_info.value.args[0] == "Database error"
+
+        mock_strike_db.rollback.assert_called()
