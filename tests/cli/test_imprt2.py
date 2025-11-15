@@ -1,7 +1,15 @@
+import datetime
+import json
 import pytest
-from mock import patch
+from assertpy import assert_that
+from mock import Mock, patch, MagicMock
+
+import blitzortung.cli.imprt2 as imprt2
+from blitzortung.data import Strike, Timestamp
+from blitzortung.db.query import TimeInterval
 
 
+# Example strike data in JSON format (line-by-line)
 example_data = """{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"pol":0,"mds":12581,"mcg":162,"status":0,"region":2}
 {"time":1763202124297904000,"lat":44.283328,"lon":8.910987,"alt":0,"pol":0,"mds":6830,"mcg":84,"status":2,"region":9}
 {"time":1763202124297904000,"lat":44.283328,"lon":8.910987,"alt":0,"pol":0,"mds":6830,"mcg":84,"status":1,"region":8}
@@ -32,7 +40,364 @@ example_data = """{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,
 {"time":1763202117194435300,"lat":36.959022,"lon":-9.187297,"alt":0,"pol":0,"mds":12547,"mcg":169,"status":1,"region":8}
 {"time":1763202117194433500,"lat":36.845773,"lon":-9.083014,"alt":0,"pol":0,"mds":14208,"mcg":228,"status":0,"region":1}"""
 
+
 @pytest.fixture
-def data_request():
-    with patch('blitzortung.cli.imprt2.requests.get') as mock_get:
-        yield mock_get
+def mock_strike_builder():
+    """Create a mock strike builder that parses JSON data."""
+    def from_json_line(line):
+        """Parse JSON line and create a mock builder that returns a strike."""
+        try:
+            data = json.loads(line)
+
+            # Create mock strike with valid timestamp
+            strike = Mock(spec=Strike)
+            strike.id = data.get('time')  # Use timestamp as ID for testing
+
+            # Create timestamp with is_valid property
+            timestamp = Mock(spec=Timestamp)
+            timestamp.is_valid = True  # Mock allows setting this
+            timestamp.__le__ = Mock(return_value=True)
+            timestamp.__ge__ = Mock(return_value=True)
+            timestamp.__lt__ = Mock(return_value=False)
+            timestamp.__gt__ = Mock(return_value=False)
+
+            strike.timestamp = timestamp
+            strike.x = data['lon']
+            strike.y = data['lat']
+            strike.altitude = data['alt']
+            strike.amplitude = data.get('pol', 0)
+            strike.lateral_error = data.get('mds', 0)
+            strike.station_count = 0
+            strike.stations = []
+
+            # Create a mock builder that returns this strike
+            mock_builder = Mock()
+            mock_builder.build = Mock(return_value=strike)
+            return mock_builder
+
+        except (json.JSONDecodeError, KeyError) as e:
+            raise Exception(f"Failed to parse: {e}")
+
+    builder = Mock()
+    builder.from_line = Mock(side_effect=from_json_line)
+    return builder
+
+
+@pytest.fixture
+def mock_response():
+    """Create a mock HTTP response with example data."""
+    response = Mock()
+    response.status_code = 200
+    response.text = example_data
+    response.raise_for_status = Mock()
+    return response
+
+
+@pytest.fixture
+def mock_strike_db():
+    """Create a mock strike database."""
+    db = Mock()
+    db.select = Mock(return_value=[])
+    db.insert = Mock()
+    db.commit = Mock()
+    db.rollback = Mock()
+    db.close = Mock()
+    return db
+
+
+class TestFetchStrikesFromUrl:
+    """Tests for fetching strikes from URL."""
+
+    def test_fetch_strikes_successfully(self, mock_response, mock_strike_builder):
+        """Test successful fetch and parse of strike data."""
+        with patch('blitzortung.cli.imprt2.requests.get', return_value=mock_response):
+            strikes = list(imprt2.fetch_strikes_from_url('http://example.com/strikes', mock_strike_builder))
+
+        # Should parse all valid lines (28 strikes in example data)
+        assert_that(strikes).is_not_empty()
+        assert_that(len(strikes)).is_greater_than(0)
+
+    def test_fetch_handles_empty_lines(self, mock_strike_builder):
+        """Test that empty lines are skipped."""
+        response = Mock()
+        response.status_code = 200
+        response.text = '\n\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0}\n\n'
+        response.raise_for_status = Mock()
+
+        with patch('blitzortung.cli.imprt2.requests.get', return_value=response):
+            strikes = list(imprt2.fetch_strikes_from_url('http://example.com/strikes', mock_strike_builder))
+
+        assert_that(strikes).is_length(1)
+
+    def test_fetch_handles_invalid_strike_data(self, mock_strike_builder):
+        """Test that invalid strikes are logged and skipped."""
+        response = Mock()
+        response.status_code = 200
+        response.text = 'invalid json line\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0}'
+        response.raise_for_status = Mock()
+
+        # Make builder raise exception for invalid data
+        def from_line_with_error(line):
+            if line == 'invalid json line':
+                raise Exception("Invalid JSON")
+            return mock_strike_builder.from_line.return_value
+
+        mock_strike_builder.from_line.side_effect = from_line_with_error
+
+        with patch('blitzortung.cli.imprt2.requests.get', return_value=response):
+            strikes = list(imprt2.fetch_strikes_from_url('http://example.com/strikes', mock_strike_builder))
+
+        # Should skip invalid line but parse valid one
+        assert_that(strikes).is_length(1)
+
+    def test_fetch_raises_on_http_error(self, mock_strike_builder):
+        """Test that HTTP errors are propagated."""
+        import requests
+
+        with patch('blitzortung.cli.imprt2.requests.get', side_effect=requests.RequestException("Connection error")):
+            with pytest.raises(requests.RequestException):
+                list(imprt2.fetch_strikes_from_url('http://example.com/strikes', mock_strike_builder))
+
+    def test_fetch_with_authentication(self, mock_response, mock_strike_builder):
+        """Test fetch with authentication credentials."""
+        with patch('blitzortung.cli.imprt2.requests.get', return_value=mock_response) as mock_get:
+            list(imprt2.fetch_strikes_from_url('http://example.com/strikes', mock_strike_builder, auth=('user', 'pass')))
+
+            mock_get.assert_called_once()
+            call_kwargs = mock_get.call_args[1]
+            assert_that(call_kwargs['auth']).is_equal_to(('user', 'pass'))
+
+
+class TestCreateStrikeKey:
+    """Tests for creating unique strike keys."""
+
+    def test_create_strike_key_with_timestamp_value(self):
+        """Test strike key creation with Timestamp object."""
+        strike = Mock(spec=Strike)
+        strike.timestamp = Mock()
+        strike.timestamp.value = 1234567890123456789
+        strike.x = 12.345678
+        strike.y = 45.678901
+        strike.amplitude = 100
+
+        key = imprt2.create_strike_key(strike)
+
+        assert_that(key).is_equal_to((1234567890123456789, 12.345678, 45.678901, 100))
+
+    def test_create_strike_key_rounds_location(self):
+        """Test that location is rounded to 6 decimal places."""
+        strike = Mock(spec=Strike)
+        strike.timestamp = Mock()
+        strike.timestamp.value = 1000000000000000000
+        strike.x = 12.34567890123  # More than 6 decimals
+        strike.y = 45.67890123456
+        strike.amplitude = 50
+
+        key = imprt2.create_strike_key(strike)
+
+        # Should be rounded to 6 decimals
+        assert_that(key[1]).is_equal_to(12.345679)
+        assert_that(key[2]).is_equal_to(45.678901)
+
+
+class TestGetExistingStrikeKeys:
+    """Tests for querying existing strikes from database."""
+
+    def test_get_existing_strikes_empty_result(self, mock_strike_db):
+        """Test with no existing strikes."""
+        mock_strike_db.select.return_value = []
+
+        start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
+        time_interval = TimeInterval(start, end)
+
+        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=1)
+
+        assert_that(result).is_empty()
+        mock_strike_db.select.assert_called_once()
+
+    def test_get_existing_strikes_with_results(self, mock_strike_db):
+        """Test with existing strikes."""
+        # Create mock strikes with unique characteristics
+        strike1 = Mock(spec=Strike)
+        strike1.timestamp = Mock()
+        strike1.timestamp.value = 1000000000000000001
+        strike1.x = 10.5
+        strike1.y = 20.5
+        strike1.amplitude = 100
+
+        strike2 = Mock(spec=Strike)
+        strike2.timestamp = Mock()
+        strike2.timestamp.value = 1000000000000000002
+        strike2.x = 11.5
+        strike2.y = 21.5
+        strike2.amplitude = 200
+
+        mock_strike_db.select.return_value = [strike1, strike2]
+
+        start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
+        time_interval = TimeInterval(start, end)
+
+        result = imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=1)
+
+        assert_that(result).is_length(2)
+        assert_that(result).contains(
+            (1000000000000000001, 10.5, 20.5, 100),
+            (1000000000000000002, 11.5, 21.5, 200)
+        )
+
+    def test_get_existing_strikes_passes_region_filter(self, mock_strike_db):
+        """Test that region parameter is passed to database query."""
+        mock_strike_db.select.return_value = []
+
+        start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
+        time_interval = TimeInterval(start, end)
+
+        imprt2.get_existing_strike_keys(mock_strike_db, time_interval, region=2)
+
+        # Check that region was passed in kwargs
+        call_kwargs = mock_strike_db.select.call_args[1]
+        assert_that(call_kwargs['region']).is_equal_to(2)
+
+
+class TestUpdateStrikes:
+    """Integration tests for update_strikes function."""
+
+    @patch('blitzortung.cli.imprt2.blitzortung.db.strike')
+    @patch('blitzortung.cli.imprt2.fetch_strikes_from_url')
+    @patch('blitzortung.cli.imprt2.blitzortung.builder.Strike')
+    @patch('blitzortung.cli.imprt2.blitzortung.config.config')
+    def test_update_strikes_inserts_new_strikes(self, mock_config, mock_builder_class, mock_fetch, mock_db_func):
+        """Test that new strikes are inserted."""
+        # Setup mocks
+        mock_strike_db = Mock()
+        mock_strike_db.select.return_value = []  # No existing strikes
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
+        mock_strike_db.close = Mock()
+        mock_db_func.return_value = mock_strike_db
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # Create mock strikes from URL (no IDs, identified by timestamp/location/amplitude)
+        strike1 = Mock(spec=Strike)
+        strike1.timestamp = Mock()
+        strike1.timestamp.value = int(now.timestamp() * 1_000_000_000)
+        strike1.timestamp.__le__ = Mock(return_value=True)
+        strike1.timestamp.__ge__ = Mock(return_value=True)
+        strike1.x = 10.5
+        strike1.y = 20.5
+        strike1.amplitude = 100
+
+        strike2 = Mock(spec=Strike)
+        strike2.timestamp = Mock()
+        strike2.timestamp.value = int(now.timestamp() * 1_000_000_000) + 1000
+        strike2.timestamp.__le__ = Mock(return_value=True)
+        strike2.timestamp.__ge__ = Mock(return_value=True)
+        strike2.x = 11.5
+        strike2.y = 21.5
+        strike2.amplitude = 200
+
+        mock_fetch.return_value = [strike1, strike2]
+
+        # Run update
+        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+
+        # Verify
+        assert_that(result).is_equal_to(2)
+        assert_that(mock_strike_db.insert.call_count).is_equal_to(2)
+        mock_strike_db.commit.assert_called()
+        mock_strike_db.close.assert_called_once()
+
+    @patch('blitzortung.cli.imprt2.blitzortung.db.strike')
+    @patch('blitzortung.cli.imprt2.fetch_strikes_from_url')
+    @patch('blitzortung.cli.imprt2.blitzortung.builder.Strike')
+    @patch('blitzortung.cli.imprt2.blitzortung.config.config')
+    def test_update_strikes_skips_duplicates(self, mock_config, mock_builder_class, mock_fetch, mock_db_func):
+        """Test that existing strikes are not re-inserted."""
+        # Setup mocks
+        mock_strike_db = Mock()
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        timestamp_value = int(now.timestamp() * 1_000_000_000)
+
+        # Existing strike in database (identified by timestamp/location/amplitude)
+        existing_strike = Mock(spec=Strike)
+        existing_strike.timestamp = Mock()
+        existing_strike.timestamp.value = timestamp_value
+        existing_strike.x = 10.5
+        existing_strike.y = 20.5
+        existing_strike.amplitude = 100
+
+        mock_strike_db.select.return_value = [existing_strike]
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
+        mock_strike_db.close = Mock()
+        mock_db_func.return_value = mock_strike_db
+
+        # Strike from URL (same timestamp/location/amplitude as existing)
+        strike_from_url = Mock(spec=Strike)
+        strike_from_url.timestamp = Mock()
+        strike_from_url.timestamp.value = timestamp_value
+        strike_from_url.timestamp.__le__ = Mock(return_value=True)
+        strike_from_url.timestamp.__ge__ = Mock(return_value=True)
+        strike_from_url.x = 10.5
+        strike_from_url.y = 20.5
+        strike_from_url.amplitude = 100
+
+        mock_fetch.return_value = [strike_from_url]
+
+        # Run update
+        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+
+        # Verify - no inserts should happen
+        assert_that(result).is_equal_to(0)
+        mock_strike_db.insert.assert_not_called()
+        mock_strike_db.close.assert_called_once()
+
+    @patch('blitzortung.cli.imprt2.blitzortung.db.strike')
+    @patch('blitzortung.cli.imprt2.fetch_strikes_from_url')
+    @patch('blitzortung.cli.imprt2.blitzortung.builder.Strike')
+    @patch('blitzortung.cli.imprt2.blitzortung.config.config')
+    def test_update_strikes_filters_by_time_interval(self, mock_config, mock_builder_class, mock_fetch, mock_db_func):
+        """Test that strikes outside time interval are filtered."""
+        # Setup mocks
+        mock_strike_db = Mock()
+        mock_strike_db.select.return_value = []
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
+        mock_strike_db.close = Mock()
+        mock_db_func.return_value = mock_strike_db
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # One strike within interval, one outside
+        strike_in_interval = Mock(spec=Strike)
+        strike_in_interval.timestamp = Mock()
+        strike_in_interval.timestamp.value = int((now - datetime.timedelta(minutes=30)).timestamp() * 1_000_000_000)
+        strike_in_interval.timestamp.__le__ = Mock(return_value=True)
+        strike_in_interval.timestamp.__ge__ = Mock(return_value=True)
+        strike_in_interval.x = 10.5
+        strike_in_interval.y = 20.5
+        strike_in_interval.amplitude = 100
+
+        strike_outside_interval = Mock(spec=Strike)
+        strike_outside_interval.timestamp = Mock()
+        strike_outside_interval.timestamp.value = int((now - datetime.timedelta(hours=2)).timestamp() * 1_000_000_000)
+        strike_outside_interval.timestamp.__le__ = Mock(return_value=False)  # Outside interval
+        strike_outside_interval.timestamp.__ge__ = Mock(return_value=True)
+        strike_outside_interval.x = 11.5
+        strike_outside_interval.y = 21.5
+        strike_outside_interval.amplitude = 200
+
+        mock_fetch.return_value = [strike_in_interval, strike_outside_interval]
+
+        # Run update with 1 hour lookback
+        result = imprt2.update_strikes(url='http://example.com/strikes', region=1, hours=1)
+
+        # Verify - only the strike within interval should be inserted
+        assert_that(result).is_equal_to(1)
+        assert_that(mock_strike_db.insert.call_count).is_equal_to(1)
+        mock_strike_db.insert.assert_called_with(strike_in_interval, 1)

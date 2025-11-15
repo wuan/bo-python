@@ -113,46 +113,258 @@ def import_strikes(regions, start_time, no_timeout=False, is_update=False):
                 continue
     statsd_client.gauge("strikes.error_count", error_count)
 
-def update_strikes():
-    config = blitzortung.config.config()
+def fetch_strikes_from_url(url, strike_builder, auth=None):
+    """
+    Fetch strike data from a given URL and parse it into Strike objects.
 
+    Args:
+        url: The URL to fetch strike data from
+        strike_builder: Builder instance to parse strike data
+        auth: Optional tuple of (username, password) for authentication
+
+    Yields:
+        Strike objects parsed from the URL response
+    """
+    logger.info("Fetching strikes from URL: %s", url)
+
+    try:
+        response = requests.get(url, auth=auth, timeout=30)
+        response.raise_for_status()
+
+        strike_count = 0
+
+        for line in response.text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                strike = strike_builder.from_line(line).build()
+                if strike.timestamp.is_valid:
+                    strike_count += 1
+                    yield strike
+            except Exception as e:
+                logger.warning("Failed to parse strike: %s (%s)", e, line)
+                continue
+
+        logger.info("Fetched %d strikes from URL", strike_count)
+
+    except requests.RequestException as e:
+        logger.error("Failed to fetch data from URL %s: %s", url, e)
+        raise
+
+
+def create_strike_key(strike):
+    """
+    Create a unique key for a strike based on its attributes.
+
+    Since strikes from URLs don't have IDs, we identify them by:
+    - timestamp (nanosecond precision)
+    - location (x, y coordinates)
+    - amplitude
+
+    Args:
+        strike: Strike object
+
+    Returns:
+        Tuple representing the strike's unique characteristics
+    """
+    # Get timestamp value (handle both Timestamp and datetime objects)
+    if hasattr(strike.timestamp, 'value'):
+        timestamp_value = strike.timestamp.value
+    else:
+        # For datetime objects, convert to nanoseconds since epoch
+        timestamp_value = int(strike.timestamp.timestamp() * 1_000_000_000)
+
+    return (
+        timestamp_value,
+        round(strike.x, 6),  # Round to 6 decimal places for location
+        round(strike.y, 6),
+        strike.amplitude
+    )
+
+
+def get_existing_strike_keys(strike_db, time_interval, region=None):
+    """
+    Retrieve keys of strikes already present in the database for a given time interval.
+
+    Strikes are identified by their timestamp, location, and amplitude since
+    strikes from URLs don't have database IDs.
+
+    Args:
+        strike_db: Database connection for strikes
+        time_interval: Time interval to query
+        region: Optional region filter
+
+    Returns:
+        Set of strike keys (tuples of timestamp, x, y, amplitude)
+    """
+    logger.debug("Querying existing strikes for interval %s - %s (region: %s)",
+                 time_interval.start, time_interval.end, region)
+
+    kwargs = {'time_interval': time_interval, 'order': 'timestamp'}
+    if region is not None:
+        kwargs['region'] = region
+
+    existing_strikes = strike_db.select(**kwargs)
+    strike_keys = {create_strike_key(strike) for strike in existing_strikes}
+
+    logger.info("Found %d existing strikes in database", len(strike_keys))
+    return strike_keys
+
+
+def update_strikes(url=None, region=None, hours=1):
+    """
+    Update strike database by fetching data from a URL and inserting new strikes.
+
+    This function:
+    1. Calculates a time interval (default: last 1 hour)
+    2. Retrieves existing strikes from the database for that interval
+    3. Fetches strikes from the provided URL
+    4. Inserts only strikes that are not already in the database
+
+    Args:
+        url: URL to fetch strike data from (if None, uses default config URL)
+        region: Optional region to filter/tag strikes
+        hours: Number of hours to look back (default: 1)
+
+    Returns:
+        Number of new strikes inserted into the database
+    """
+    logger.info("Starting strike update for region %s (looking back %d hour(s))", region, hours)
+
+    # Get configuration if URL not provided
+    config = blitzortung.config.config()
+    if url is None:
+        url = "https://data.blitzortung.org/Data/Protected/last_strikes.php"
+        auth = (config.get_username(), config.get_password())
+    else:
+        auth = None
+
+    # Calculate time interval (last N hours)
     now = datetime.datetime.now(datetime.timezone.utc)
+    start_time = now - datetime.timedelta(hours=hours)
+    end_time = now
+    time_interval = blitzortung.db.query.TimeInterval(
+        start_time,
+        end_time
+    )
+
+    logger.info("Time interval: %s to %s", start_time, end_time)
+
+    # Get database connection
     strike_db = blitzortung.db.strike()
 
-    start_time = now - datetime.timedelta(hours=1)
-    time_interval = blitzortung.db.query.TimeInterval(start_time, None)
-    order = 'timestamp'
+    # Get existing strikes from database (identified by timestamp/location/amplitude)
+    existing_strike_keys = get_existing_strike_keys(strike_db, time_interval, region)
 
-    strikes = strike_db.select(time_interval=time_interval, order=order)
+    # Fetch strikes from URL
+    strike_builder = blitzortung.builder.Strike()
+    try:
+        url_strikes = list(fetch_strikes_from_url(url, strike_builder, auth=auth))
+    except requests.RequestException as e:
+        logger.error("Failed to fetch strikes from URL: %s", e)
+        return 0
 
-    data = requests.get("https://data.blitzortung.org/Data/Protected/last_strikes.php", auth=(config.get_username(), config.get_password()))
+    # Filter strikes: only those within time interval and not in database
+    new_strikes = []
+    for strike in url_strikes:
+        # Check if strike is within the time interval
+        if not (time_interval.start <= strike.timestamp <= time_interval.end):
+            logger.debug("Strike at %s outside time interval, skipping", strike.timestamp)
+            continue
+
+        # Check if strike already exists in database (by timestamp/location/amplitude)
+        strike_key = create_strike_key(strike)
+        if strike_key in existing_strike_keys:
+            logger.debug("Strike at %s (%.6f, %.6f) already exists, skipping",
+                        strike.timestamp, strike.x, strike.y)
+            continue
+
+        new_strikes.append(strike)
+
+    logger.info("Found %d new strikes to insert (out of %d from URL)",
+                len(new_strikes), len(url_strikes))
+
+    # Insert new strikes
+    insert_count = 0
+    for strike in new_strikes:
+        try:
+            strike_db.insert(strike, region)
+            insert_count += 1
+
+            if insert_count % 1000 == 0:
+                strike_db.commit()
+                logger.info("Committed %d strikes so far", insert_count)
+
+        except Exception as e:
+            logger.error("Failed to insert strike %s: %s", strike.id, e)
+            strike_db.rollback()
+            raise
+
+    # Final commit
+    if insert_count > 0:
+        strike_db.commit()
+        logger.info("Successfully inserted %d new strikes", insert_count)
+    else:
+        logger.info("No new strikes to insert")
+
+    strike_db.close()
+
+    # Update statistics
+    statsd_client.gauge("strikes.imported", insert_count)
+
+    return insert_count
 
 
 
 
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="verbose output")
-    parser.add_option("-d", "--debug", dest="debug", action="store_true", help="debug output")
+    """
+    Command-line interface for the strike import tool.
+    """
+    parser = OptionParser(description="Import strike data from URL into database")
+    parser.add_option("-u", "--url", dest="url", type="string", default=None,
+                      help="URL to fetch strike data from (optional, uses default if not provided)")
+    parser.add_option("-r", "--region", dest="region", type="int", default=None,
+                      help="Region number (optional)")
+    parser.add_option("--hours", dest="hours", type="int", default=1,
+                      help="Number of hours to look back (default: 1)")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                      help="Enable verbose logging")
+    parser.add_option("-d", "--debug", dest="debug", action="store_true",
+                      help="Enable debug logging")
+    parser.add_option("--no-lock", dest="no_lock", action="store_true",
+                      help="Skip file locking (use with caution)")
 
     (options, args) = parser.parse_args()
 
-    lock = LockWithTimeout('/tmp/.bo-import2.lock')
+    # Set logging level
+    if options.debug:
+        blitzortung.set_log_level(logging.DEBUG)
+    elif options.verbose:
+        blitzortung.set_log_level(logging.INFO)
+    else:
+        blitzortung.set_log_level(logging.WARNING)
+
+    # Use lock unless disabled
+    lock_context = nullcontext() if options.no_lock else LockWithTimeout('/tmp/.bo-import2.lock').locked(10)
 
     try:
-        with lock.locked(10):
-            if options.debug:
-                blitzortung.set_log_level(logging.DEBUG)
-            elif options.verbose:
-                blitzortung.set_log_level(logging.INFO)
-
-            update_strikes()
-
+        with lock_context:
+            count = update_strikes(url=options.url, region=options.region, hours=options.hours)
+            logger.info("Import completed: %d new strikes inserted", count)
+            return 0
 
     except FailedToAcquireException:
-        logger.warning("could not acquire lock")
+        logger.warning("Could not acquire lock - another import may be running")
+        return 1
+    except Exception as e:
+        logger.error("Import failed: %s", e, exc_info=options.debug)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())
