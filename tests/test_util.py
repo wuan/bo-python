@@ -179,3 +179,88 @@ class TestTotalSeconds:
     def test_invalid_type_raises_error(self):
         with pytest.raises(ValueError, match="unhandled type"):
             blitzortung.util.total_seconds("invalid")
+
+
+class TestTimeConstraint:
+
+    @pytest.fixture
+    def constraint(self):
+        """Fixture providing a TimeConstraint with default=60, max=1440."""
+        return blitzortung.util.TimeConstraint(60, 1440)
+
+    def test_initialization(self, constraint):
+        assert_that(constraint.default_minute_length).is_equal_to(60)
+        assert_that(constraint.max_minute_length).is_equal_to(1440)
+
+    def test_enforce_with_valid_values(self, constraint):
+        minute_length, minute_offset = constraint.enforce(120, -60)
+
+        assert_that(minute_length).is_equal_to(120)
+        assert_that(minute_offset).is_equal_to(-60)
+
+    def test_enforce_with_zero_minute_length_uses_default(self, constraint):
+        minute_length, minute_offset = constraint.enforce(0, 0)
+
+        assert_that(minute_length).is_equal_to(60)
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_clamps_minute_length_to_max(self, constraint):
+        minute_length, minute_offset = constraint.enforce(2000, 0)
+
+        assert_that(minute_length).is_equal_to(1440)
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_clamps_negative_minute_length_to_zero_then_defaults(self, constraint):
+        minute_length, minute_offset = constraint.enforce(-100, 0)
+
+        # Negative minute_length gets clamped, then defaults
+        assert_that(minute_length).is_equal_to(60)
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_clamps_minute_offset_to_zero_max(self, constraint):
+        minute_length, minute_offset = constraint.enforce(60, 100)
+
+        assert_that(minute_length).is_equal_to(60)
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_clamps_minute_offset_to_valid_negative_range(self, constraint):
+        minute_length, minute_offset = constraint.enforce(60, -2000)
+
+        assert_that(minute_length).is_equal_to(60)
+        # Minimum offset is -max_minute_length + minute_length = -1440 + 60 = -1380
+        assert_that(minute_offset).is_equal_to(-1380)
+
+    def test_enforce_with_small_minute_length_allows_small_offset_range(self, constraint):
+        minute_length, minute_offset = constraint.enforce(10, -20)
+
+        assert_that(minute_length).is_equal_to(10)
+        # Minimum offset is -1440 + 10 = -1430
+        # -20 is within range, so it should remain -20
+        assert_that(minute_offset).is_equal_to(-20)
+
+    def test_enforce_boundary_minute_length_equals_max(self, constraint):
+        minute_length, minute_offset = constraint.enforce(1440, -100)
+
+        assert_that(minute_length).is_equal_to(1440)
+        # With minute_length = 1440 (max), minimum offset is -1440 + 1440 = 0
+        # So -100 gets clamped to 0
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_boundary_minute_offset_at_zero(self, constraint):
+        minute_length, minute_offset = constraint.enforce(60, 0)
+
+        assert_that(minute_length).is_equal_to(60)
+        assert_that(minute_offset).is_equal_to(0)
+
+    def test_enforce_boundary_minute_offset_at_minimum(self, constraint):
+        minute_length, minute_offset = constraint.enforce(60, -1380)
+
+        assert_that(minute_length).is_equal_to(60)
+        assert_that(minute_offset).is_equal_to(-1380)
+
+    def test_enforce_with_maximum_minute_length_allows_zero_offset_only(self, constraint):
+        minute_length, minute_offset = constraint.enforce(1440, -10)
+
+        assert_that(minute_length).is_equal_to(1440)
+        # With minute_length = 1440, minimum offset is -1440 + 1440 = 0
+        assert_that(minute_offset).is_equal_to(0)

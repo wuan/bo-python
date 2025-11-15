@@ -113,7 +113,7 @@ class TimeConstraint:
         self.max_minute_length = max_minute_length
 
     def enforce(self, minute_length, minute_offset):
-        minute_length = force_range(minute_length, 0, self.max_minute_length)
+        minute_length = force_range(0, minute_length, self.max_minute_length)
         minute_length = self.default_minute_length if minute_length == 0 else minute_length
-        minute_offset = force_range(minute_offset, -self.max_minute_length + minute_length, 0)
+        minute_offset = force_range(-self.max_minute_length + minute_length, minute_offset, 0)
         return minute_length, minute_offset
