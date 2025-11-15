@@ -52,7 +52,7 @@ def import_strikes_for(region, start_time, is_update=False):
     strike_db = blitzortung.db.strike()
     latest_time_timer = util.Timer()
     latest_time = strike_db.get_latest_time(region)
-    logger.debug("latest time for region %d: %s $.03f", region, latest_time, latest_time_timer.lap())
+    logger.debug("latest time for region %d: %s %.03f", region, latest_time, latest_time_timer.lap())
     if not latest_time:
         latest_time = start_time
 
