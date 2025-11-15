@@ -206,11 +206,12 @@ class Strike(Base):
     ALTER TABLE strikes ADD COLUMN stationcount SMALLINT;
 
     CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
-    CREATE INDEX strikes_region_timestamp_nanoseconds ON strikes USING btree(region, "timestamp", nanoseconds);
+    CREATE INDEX strikes_timestamp_geog ON strikes USING gist("timestamp", geog);
+    CREATE INDEX strikes_region_timestamp ON strikes USING btree(region, "timestamp");
     CREATE INDEX strikes_id_timestamp ON strikes USING btree(id, "timestamp");
     CREATE INDEX strikes_geog ON strikes USING gist(geog);
-    CREATE INDEX strikes_timestamp_geog ON strikes USING gist("timestamp", geog);
     CREATE INDEX strikes_id_timestamp_geog ON strikes USING gist(id, "timestamp", geog);
+    CREATE INDEX strikes_region_timestamp_nanoseconds ON strikes USING btree(region, "timestamp", nanoseconds);
 
     empty the table with the following commands:
 
