@@ -114,7 +114,7 @@ def create_strike_key(strike):
     Since strikes from URLs don't have IDs, we identify them by:
     - timestamp (nanosecond precision)
     - location (x, y coordinates)
-    - amplitude
+    - lateral error
 
     Args:
         strike: Strike object
@@ -124,7 +124,7 @@ def create_strike_key(strike):
     """
     return (
         strike.timestamp.value,
-        round(strike.x, 4),  # Round to 6 decimal places for location
+        round(strike.x, 4),  # Round to 4 decimal places for location
         round(strike.y, 4),
         strike.lateral_error
     )
@@ -196,6 +196,8 @@ def update_strikes(hours=1):
 
     # Get existing strikes from database (identified by timestamp/location/amplitude)
     existing_strike_keys = get_existing_strike_keys(strike_db, time_interval)
+    for existing_strike_key in existing_strike_keys:
+        logger.debug("Existing strike key: %s", existing_strike_key)
 
     # Fetch strikes from URL
     try:
