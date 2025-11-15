@@ -135,7 +135,7 @@ def main():
             start_time = Timestamp(datetime.datetime.strptime(options.startdate, "%Y%m%d").replace(
                 tzinfo=datetime.timezone.utc)) if options.startdate else None
 
-            regions = range(20)
+            regions = [1, 2, 3, 4, 5, 6, 7, 10, 18, 19]
             import_strikes(regions=regions, start_time=start_time, no_timeout=options.no_timeout, is_update=options.update)
     except FailedToAcquireException:
         logger.warning("could not acquire lock")
