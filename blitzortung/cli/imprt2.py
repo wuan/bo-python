@@ -233,10 +233,6 @@ def update_strikes(hours=1):
             strike_db.insert(strike)
             insert_count += 1
 
-            if insert_count % 1000 == 0:
-                strike_db.commit()
-                logger.info("Committed %d strikes so far", insert_count)
-
         except Exception as e:
             logger.error("Failed to insert strike %s: %s", strike.id, e)
             strike_db.rollback()
