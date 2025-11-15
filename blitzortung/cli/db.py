@@ -193,14 +193,16 @@ def main():
 
         precision_factor = math.pow(10.0, options.precision)
 
+        strike_count = 0
         for strike in strikes:
+            strike_count += 1
             strike.x = round(strike.x * precision_factor) / precision_factor
             strike.y = round(strike.y * precision_factor) / precision_factor
             print(str(strike))
 
         select_time = timer.lap()
 
-        sys.stderr.write('received %d strikes in %.3f seconds\n' % (len(strikes), select_time))
+        sys.stderr.write('received %d strikes in %.3f seconds\n' % (strike_count, select_time))
 
 
 if __name__ == '__main__':
