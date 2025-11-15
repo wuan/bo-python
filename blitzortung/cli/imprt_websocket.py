@@ -49,8 +49,8 @@ def on_message(ws, message):
     timestamp = blitzortung.data.Timestamp.from_nanoseconds(data['time'])
     strike = strike_builder \
         .set_altitude(data['alt']) \
-        .set_x(data['lon']) \
-        .set_y(data['lat']) \
+        .set_x(round(data['lon'],4)) \
+        .set_y(round(data['lat'],4)) \
         .set_timestamp(*timestamp) \
         .set_lateral_error(data['mds']) \
         .build()
