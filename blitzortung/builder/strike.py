@@ -58,7 +58,7 @@ class Strike(Event):
     def set_lateral_error(self, lateral_error):
         self.lateral_error = force_range(0, lateral_error, 32767) if lateral_error is not None else None
         return self
-g
+
     def set_station_count(self, station_count):
         self.station_count = station_count
         return self
