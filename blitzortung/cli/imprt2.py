@@ -124,8 +124,8 @@ def create_strike_key(strike):
     """
     return (
         strike.timestamp.value,
-        round(strike.x, 6),  # Round to 6 decimal places for location
-        round(strike.y, 6),
+        round(strike.x, 4),  # Round to 6 decimal places for location
+        round(strike.y, 4),
         strike.amplitude
     )
 
@@ -147,9 +147,7 @@ def get_existing_strike_keys(strike_db, time_interval):
     logger.debug("Querying existing strikes for interval %s - %s",
                  time_interval.start, time_interval.end)
 
-    kwargs = {'time_interval': time_interval, 'order': 'timestamp'}
-
-    existing_strikes = strike_db.select(**kwargs)
+    existing_strikes = strike_db.select(time_interval=time_interval, order="timestamp")
     strike_keys = {create_strike_key(strike) for strike in existing_strikes}
 
     logger.info("Found %d existing strikes in database", len(strike_keys))
@@ -217,7 +215,7 @@ def update_strikes(hours=1):
         # Check if strike already exists in database (by timestamp/location/amplitude)
         strike_key = create_strike_key(strike)
         if strike_key in existing_strike_keys:
-            logger.debug("Strike at %s (%.6f, %.6f) already exists, skipping",
+            logger.debug("Strike at %s (%.4f, %.64) already exists, skipping",
                         strike.timestamp, strike.x, strike.y)
             continue
 
