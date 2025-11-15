@@ -256,17 +256,19 @@ def update_strikes(url=None, region=None, hours=1):
     """
     logger.info("Starting strike update for region %s (looking back %d hour(s))", region, hours)
 
+    now = datetime.datetime.now(datetime.timezone.utc)
+    start_time = now - datetime.timedelta(hours=hours)
+
     # Get configuration if URL not provided
     config = blitzortung.config.config()
     if url is None:
-        url = "https://data.blitzortung.org/Data/Protected/last_strikes.php"
+        start_timestamp_ns = int(start_time.timestamp() * 1e6) * 1000
+        url = f"https://data.blitzortung.org/Data/Protected/last_strikes.php?time={start_timestamp_ns}"
         auth = (config.get_username(), config.get_password())
     else:
         auth = None
 
     # Calculate time interval (last N hours)
-    now = datetime.datetime.now(datetime.timezone.utc)
-    start_time = now - datetime.timedelta(hours=hours)
     end_time = now
     time_interval = blitzortung.db.query.TimeInterval(
         start_time,
