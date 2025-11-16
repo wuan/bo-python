@@ -99,7 +99,7 @@ class TestFetchStrikesFromUrl:
         """Test that empty lines are skipped."""
         response = Mock()
         response.status_code = 200
-        response.text = '\n\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"pol":100}\n\n'
+        response.text = '\n\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"mds":100}\n\n'
         response.raise_for_status = Mock()
 
         with patch('blitzortung.cli.update.requests.get', return_value=response):
@@ -113,7 +113,7 @@ class TestFetchStrikesFromUrl:
         """Test that invalid strikes are logged and skipped."""
         response = Mock()
         response.status_code = 200
-        response.text = 'invalid json line\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"pol":50}'
+        response.text = 'invalid json line\n{"time":1763202124325980200,"lat":-15.296556,"lon":134.589548,"alt":0,"mds":20}'
         response.raise_for_status = Mock()
 
         with patch('blitzortung.cli.update.requests.get', return_value=response):
@@ -121,7 +121,7 @@ class TestFetchStrikesFromUrl:
 
         # Should skip invalid line but parse valid one
         assert_that(strikes).is_length(1)
-        assert_that(strikes[0].amplitude).is_equal_to(50)
+        assert_that(strikes[0].lateral_error).is_equal_to(20)
 
     def test_fetch_raises_on_http_error(self):
         """Test that HTTP errors are propagated."""
