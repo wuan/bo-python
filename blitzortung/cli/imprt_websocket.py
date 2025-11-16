@@ -45,18 +45,17 @@ def on_message(ws, message):
     global strike_count, last_commit_time
 
     data = json.loads(message)
+    try:
+        strike = strike_builder.from_json(data).build()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise
+    logger.debug("strike: %s", strike)
 
-    timestamp = blitzortung.data.Timestamp.from_nanoseconds(data['time'])
-    strike = strike_builder \
-        .set_altitude(data['alt']) \
-        .set_x(round(data['lon'],4)) \
-        .set_y(round(data['lat'],4)) \
-        .set_timestamp(*timestamp) \
-        .set_lateral_error(data['mds']) \
-        .build()
     delay = data['delay']
     local_time = time.time()
-    local_delay = local_time - timestamp[0].timestamp()
+    local_delay = local_time - strike.timestamp.datetime.timestamp()
     logger.info("%s - region %d - delay %.1f, local delay %.1f", strike, data['region'], delay, local_delay)
 
     if strike_db:

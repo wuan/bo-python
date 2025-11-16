@@ -79,15 +79,7 @@ def fetch_strikes_from_url(url, auth=None):
                 data = json.loads(line)
 
                 # Create strike from JSON data
-                # Build strike object (create new builder for each strike)
-                strike = (builder
-                          .set_timestamp(Timestamp(data['time']))
-                          .set_x(round(data['lon'], 4))
-                          .set_y(round(data['lat'], 4))
-                          .set_altitude(data.get('alt', 0))
-                          .set_amplitude(data.get('pol', 0))
-                          .set_lateral_error(data.get('mds', 0))
-                          .build())
+                strike = builder.from_json(data).build()
 
                 strike_count += 1
                 yield strike

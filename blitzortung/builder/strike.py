@@ -22,6 +22,7 @@ import re
 
 from .base import Event, BuilderError
 from .. import data
+from ..data import Timestamp
 from ..util import force_range
 
 
@@ -83,6 +84,23 @@ class Strike(Event):
             stations = self.stations_parser.findall(line)[0]
             self.set_station_count(int(stations[0]))
             self.set_stations([int(station) for station in stations[2].split(',') if station])
+        except (KeyError, ValueError, IndexError) as e:
+            raise BuilderError(e)
+
+        return self
+
+    def from_json(self, json_data: dict):
+        """ Construct strike from json data """
+        try:
+            self.set_altitude(json_data['alt'])
+            self.set_x(round(json_data['lon'], 4))
+            self.set_y(round(json_data['lat'], 4))
+            self.set_timestamp(Timestamp(json_data['time']))
+            self.set_lateral_error(json_data['mds'])
+
+            self.set_altitude(0)
+            self.set_amplitude(0)
+            self.set_station_count(0)
         except (KeyError, ValueError, IndexError) as e:
             raise BuilderError(e)
 

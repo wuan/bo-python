@@ -20,11 +20,11 @@ limitations under the License.
 
 import datetime
 
-from assertpy import assert_that  # pylint: disable=import-error
 import pytest  # pylint: disable=import-error
+from assertpy import assert_that  # pylint: disable=import-error
 
-import blitzortung.builder.strike
 import blitzortung.builder.base
+import blitzortung.builder.strike
 import blitzortung.data
 
 
@@ -155,15 +155,30 @@ class TestStrikeBuilder:
         # Example line format with all required fields
         line = "2025-01-15T12:30:45.123456+00:00 pos;48.5;-10.2;500.5 str;45.2 dev;250.0 sta;5;10;1,2,3,4,5"
 
-        result = strike.from_line(line)
-        assert_that(result).is_same_as(strike)
-        assert_that(strike.x_coord).is_equal_to(-10.2)
-        assert_that(strike.y_coord).is_equal_to(48.5)
-        assert_that(strike.altitude).is_equal_to(500.5)
-        assert_that(strike.amplitude).is_equal_to(45.2)
-        assert_that(strike.lateral_error).is_equal_to(250)
-        assert_that(strike.station_count).is_equal_to(5)
-        assert_that(strike.stations).is_equal_to([1, 2, 3, 4, 5])
+        result = strike.from_line(line).build()
+        assert_that(result.x).is_equal_to(-10.2)
+        assert_that(result.y).is_equal_to(48.5)
+        assert_that(result.altitude).is_equal_to(500.5)
+        assert_that(result.amplitude).is_equal_to(45.2)
+        assert_that(result.lateral_error).is_equal_to(250)
+        assert_that(result.station_count).is_equal_to(5)
+        assert_that(result.stations).is_equal_to([1, 2, 3, 4, 5])
+
+    def test_from_json_with_valid_data(self):
+        strike = blitzortung.builder.strike.Strike()
+
+        json_data = {"time": 1763202124297904000, "lat": 44.283328, "lon": 8.910987, "alt": 0, "pol": 0, "mds": 6830,
+                     "mcg": 84, "status": 2, "region": 9}
+
+        result = strike.from_json(json_data).build()
+
+        assert_that(result.x).is_equal_to(8.911)
+        assert_that(result.y).is_equal_to(44.2833)
+        assert_that(result.altitude).is_equal_to(0)
+        assert_that(result.amplitude).is_equal_to(0)
+        assert_that(result.lateral_error).is_equal_to(6830)
+        assert_that(result.station_count).is_equal_to(0)
+        assert_that(result.stations).is_equal_to([])
 
     def test_from_line_with_missing_stations(self):
         """Test parsing strike with missing stations in list."""
