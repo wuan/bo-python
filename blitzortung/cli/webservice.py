@@ -92,7 +92,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.next_memory_info = 0.0
         self.minute_constraints = TimeConstraint(self.DEFAULT_MINUTE_LENGTH, self.MAX_MINUTES_PER_DAY)
 
-        self.metrics = StatsDMetrics(statsd_client)
+        self.metrics = StatsDMetrics()
 
     addSlash = True
 
