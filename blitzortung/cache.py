@@ -117,7 +117,7 @@ class ObjectCache:
     def get_time_to_live(self):
         return self.__ttl_seconds
 
-    def get_ratio(self):
+    def get_ratio(self) -> float:
         if self.total_hit_count == 0:
             return 0.0
         return self.total_hit_count / self.total_count

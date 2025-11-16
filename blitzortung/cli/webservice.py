@@ -23,6 +23,7 @@ from txjsonrpc_ng.web.jsonrpc import with_request
 from blitzortung.gis.constants import grid, global_grid
 from blitzortung.gis.local_grid import LocalGrid
 from blitzortung.service.cache import ServiceCache
+from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
 
 try:
@@ -46,8 +47,6 @@ from blitzortung.service.general import create_time_interval
 from blitzortung.service.strike_grid import GridParameters
 
 is_pypy = platform.python_implementation() == 'PyPy'
-
-statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
 
 FORBIDDEN_IPS = {}
 
@@ -92,6 +91,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.current_data = collections.defaultdict(list)
         self.next_memory_info = 0.0
         self.minute_constraints = TimeConstraint(self.DEFAULT_MINUTE_LENGTH, self.MAX_MINUTES_PER_DAY)
+
+        self.metrics = StatsDMetrics(statsd_client)
 
     addSlash = True
 
@@ -143,7 +144,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         time_interval = create_time_interval(minute_length, minute_offset)
 
         grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
-                                                           statsd_client)
+                                                           self.metrics.statsd)
 
         histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
             if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
@@ -160,7 +161,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         time_interval = create_time_interval(minute_length, minute_offset)
 
         grid_result, state = self.global_strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
-                                                                  statsd_client)
+                                                                  self.metrics.statsd)
 
         histogram_result = self.get_histogram(
             time_interval) if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
@@ -179,7 +180,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         time_interval = create_time_interval(minute_length, minute_offset)
 
         grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
-                                                           statsd_client)
+                                                           self.metrics.statsd)
 
         histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
             if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
@@ -237,12 +238,7 @@ class Blitzortung(jsonrpc.JSONRPC):
              minute_offset,
              0, count_threshold, client, user_agent))
 
-        statsd_client.incr('strikes_grid.total_count')
-        statsd_client.incr('global_strikes_grid.total_count')
-        statsd_client.gauge('global_strikes_grid.cache_hits', cache.get_ratio())
-        if minute_length == 10:
-            statsd_client.incr('strikes_grid.bg_count')
-            statsd_client.incr('global_strikes_grid.bg_count')
+        self.metrics.for_global_strikes(minute_length, cache.get_ratio())
 
         return response
 
@@ -289,13 +285,7 @@ class Blitzortung(jsonrpc.JSONRPC):
                 minute_offset,
                 -1, count_threshold, client, user_agent, x, y, data_area))
 
-        statsd_client.incr('strikes_grid.total_count')
-        statsd_client.incr('local_strikes_grid.total_count')
-        statsd_client.incr(f'local_strikes_grid.data_area.{data_area}')
-        statsd_client.gauge('local_strikes_grid.cache_hits', cache.get_ratio())
-        if minute_length == 10:
-            statsd_client.incr('strikes_grid.bg_count')
-            statsd_client.incr('local_strikes_grid.bg_count')
+        self.metrics.for_local_strikes(minute_length, data_area, cache.get_ratio())
 
         return response
 
@@ -340,12 +330,7 @@ class Blitzortung(jsonrpc.JSONRPC):
              region,
              count_threshold, client, user_agent))
 
-        statsd_client.incr('strikes_grid.total_count')
-        statsd_client.incr('strikes_grid.total_count.{}'.format(region))
-        statsd_client.gauge('strikes_grid.cache_hits', cache.get_ratio())
-        if minute_length == 10:
-            statsd_client.incr('strikes_grid.bg_count')
-            statsd_client.incr('strikes_grid.bg_count.{}'.format(region))
+        self.metrics.for_strikes(minute_length, region, cache.get_ratio())
 
         return response
 
