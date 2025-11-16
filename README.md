@@ -19,20 +19,26 @@ Please have a look at https://github.com/wuan/bo-server for related scripts/cron
 
 # Installation
 
-## Install pip
+It is recommended to install the package in a virtual environment:
 
-> wget https://bootstrap.pypa.io/get-pip.py
-> sudo pypy3 get-pip.py
-Install manually by entering
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install blitzortung
+```
 
-## Install library with dependencies
+For development installation from source:
 
-> sudo pypy3 -m pip install -e .
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -e .
+```
 
-or build a debian package by entering
+## Optional Dependencies
 
-> dpkg-buildpackage
+Scipy and fastcluster are required for the (optional) clustering functionality. These can be installed via:
 
-The following software has to be installed manually, depending on their availability as debian/ubuntu packages.
-
-Scipy and fastcluster is required for the (optional) clustering
+```bash
+pip install scipy fastcluster
+```
