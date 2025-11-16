@@ -92,11 +92,11 @@ class Strike(Event):
     def from_json(self, json_data: dict):
         """ Construct strike from json data """
         try:
-            self.set_altitude(json_data['alt'])
+            self.set_altitude(json_data.get('alt',0))
             self.set_x(round(json_data['lon'], 4))
             self.set_y(round(json_data['lat'], 4))
             self.set_timestamp(Timestamp(json_data['time']))
-            self.set_lateral_error(json_data['mds'])
+            self.set_lateral_error(json_data.get('mds', 0))
 
             self.set_altitude(0)
             self.set_amplitude(0)
