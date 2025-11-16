@@ -11,11 +11,10 @@ python-blitzortung a python module for blitzortung.org related stuff
 
 This module contains the following independent components
 
-* strike and station data import from data.blitzortung.org
-* database setup and access for local storage of blitzortung.org data.
-* clustering of strike data
-
-Please have a look at https://github.com/wuan/bo-server for related scripts/cronjobs
+* Database setup and access for local storage of blitzortung.org data.
+* Strike data import from data.blitzortung.org.
+* JsonRPC Webservice providing strike data in different formats.
+* Clustering of strike data (under development).
 
 # Installation
 
