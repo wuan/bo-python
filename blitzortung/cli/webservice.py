@@ -7,7 +7,6 @@ import os
 import platform
 import time
 
-import statsd
 from twisted.application import internet, service
 from twisted.internet.defer import succeed
 from twisted.internet.error import ReactorAlreadyInstalledError

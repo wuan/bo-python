@@ -4,8 +4,6 @@ Inserts the generated json reports from the service into a compact line-based fi
 
 """
 
-from __future__ import print_function
-
 import datetime
 import glob
 import json
@@ -13,6 +11,8 @@ import logging
 import os
 import sys
 from optparse import OptionParser
+
+import statsd
 
 from blitzortung.convert import value_to_string
 
@@ -23,8 +23,10 @@ logger.setLevel(logging.INFO)
 import geoip2.database
 
 
+
 def main():
     reader = geoip2.database.Reader('/var/lib/GeoIP/GeoLite2-City.mmdb')
+    statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
 
     parser = OptionParser()
 
@@ -111,12 +113,32 @@ def main():
                         data_area if data_area is not None else '-',
                     ])
 
-                with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")), 'a+') as output_file:
+                    tags = {
+                        "version": version if version is not None else '-',
+                        "region": region,
+                        "minutes": minute_length,
+                        "offset": minute_offset,
+                        "grid": grid_baselength
+                    }
+                    if local_x and local_y and data_area:
+                        tags["data_area"] = f"{local_x}x{local_y}-{data_area}"
+                    if country_code:
+                        tags["country"] = country_code
+                    #if city:
+                    #    tags["city"] = city
+
+                    tag_values = ",".join([f"{key}={value}" for key, value in tags.items()])
+
+                    statsd_client.incr(f'access,{tag_values}')
+
+                with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")),
+                          'a+') as output_file:
                     for result in results:
                         line = "\t".join([value_to_string(value) for value in result])
                         output_file.write(line + "\n")
 
         os.unlink(json_file_name)
+
 
 if __name__ == "__main__":
     main()
