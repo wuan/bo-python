@@ -31,6 +31,7 @@ def main():
     parser = OptionParser()
 
     parser.add_option("--debug", dest="debug", default=False, action="store_true", help="enable debug output")
+    parser.add_option("--metrics", dest="metrics", default=False, action="store_true", help="produce metrics")
 
     (options, args) = parser.parse_args()
 
@@ -113,23 +114,24 @@ def main():
                         data_area if data_area is not None else '-',
                     ])
 
-                    tags = {
-                        "version": version if version is not None else '-',
-                        "region": region,
-                        "minutes": minute_length,
-                        "offset": minute_offset,
-                        "grid": grid_baselength
-                    }
-                    if local_x and local_y and data_area:
-                        tags["data_area"] = f"{local_x}x{local_y}-{data_area}"
-                    if country_code:
-                        tags["country"] = country_code
-                    #if city:
-                    #    tags["city"] = city
+                    if options.metrics:
+                        tags = {
+                            "version": version if version is not None else '-',
+                            "region": region,
+                            "minutes": minute_length,
+                            "offset": minute_offset,
+                            "grid": grid_baselength
+                        }
+                        if local_x and local_y and data_area:
+                            tags["data_area"] = f"{local_x}x{local_y}-{data_area}"
+                        if country_code:
+                            tags["country"] = country_code
+                        #if city:
+                        #    tags["city"] = city
 
-                    tag_values = ",".join([f"{key}={value}" for key, value in tags.items()])
+                        tag_values = ",".join([f"{key}={value}" for key, value in tags.items()])
 
-                    statsd_client.incr(f'access,{tag_values}')
+                        statsd_client.incr(f'access,{tag_values}')
 
                 with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")),
                           'a+') as output_file:
