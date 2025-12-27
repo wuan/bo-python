@@ -25,6 +25,8 @@ from blitzortung.service.cache import ServiceCache
 from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
 
+JSON_CONTENT_TYPE = 'text/json'
+
 try:
     from twisted.internet import epollreactor as reactor, defer
 except ImportError:
@@ -114,14 +116,14 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.current_period = self.__current_period()
         self.current_data = collections.defaultdict(list)
 
-    def __force_range(self, number, min_number, max_number):
+    @staticmethod
+    def __force_range(number, min_number, max_number):
         if number < min_number:
             return min_number
         elif number > max_number:
             return max_number
         else:
             return number
-            # return max(min_number, min(max_number, number))
 
     def jsonrpc_check(self):
         self.check_count += 1
@@ -206,7 +208,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in FORBIDDEN_IPS or user_agent_version == 0 or request.getHeader(
-                'content-type') != 'text/json' or request.getHeader(
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
@@ -249,7 +251,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in FORBIDDEN_IPS or request.getHeader(
-                'content-type') != 'text/json' or request.getHeader(
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
@@ -296,7 +298,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in FORBIDDEN_IPS or user_agent_version == 0 or request.getHeader(
-                'content-type') != 'text/json' or request.getHeader(
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
@@ -390,12 +392,12 @@ class LogObserver(FileLogObserver):
         text = textFromEventDict(event_dict)
         if text is None:
             return
-        timeStr = self.formatTime(event_dict["time"])
-        msgStr = _safeFormat("[%(prefix)s] %(text)s\n", {
+        time_str = self.formatTime(event_dict["time"])
+        msg_str = _safeFormat("[%(prefix)s] %(text)s\n", {
             "prefix": self.prefix,
             "text": text.replace("\n", "\n\t")
         })
-        untilConcludes(self.write, timeStr + " " + msgStr)
+        untilConcludes(self.write, time_str + " " + msg_str)
         untilConcludes(self.flush)
 
 

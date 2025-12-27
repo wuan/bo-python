@@ -30,7 +30,6 @@ import blitzortung.db
 import blitzortung.db.query
 import blitzortung.logger
 from blitzortung import util
-from blitzortung.data import Timestamp
 from blitzortung.lock import LockWithTimeout, FailedToAcquireException
 
 logger = logging.getLogger(os.path.basename(__file__))
@@ -276,7 +275,7 @@ def main():
         blitzortung.set_log_level(logging.WARNING)
 
     # Use lock unless disabled
-    lock_context = nullcontext() if options.no_lock else LockWithTimeout('/tmp/.bo-import2.lock').locked(10)
+    lock_context = nullcontext() if options.no_lock else LockWithTimeout('/tmp/.bo-update.lock').locked(10)
 
     try:
         with lock_context:

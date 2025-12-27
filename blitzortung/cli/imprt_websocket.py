@@ -22,7 +22,6 @@ blitzortung.set_parent_logger(logger)
 blitzortung.add_log_handler(blitzortung.logger.create_console_handler())
 
 strike_builder = blitzortung.builder.Strike()
-strike_db = None
 
 statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.import')
 
@@ -47,7 +46,7 @@ def on_message(ws, message):
     data = json.loads(message)
     try:
         strike = strike_builder.from_json(data).build()
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         raise
