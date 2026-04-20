@@ -1,13 +1,10 @@
 import datetime
-import os
 from typing import Optional
 from zoneinfo import ZoneInfo
 
 import psycopg2
 import pytest
 from assertpy import assert_that
-from psycopg2.pool import ThreadedConnectionPool
-from testcontainers.postgres import PostgresContainer
 
 import blitzortung
 from blitzortung.service.general import create_time_interval

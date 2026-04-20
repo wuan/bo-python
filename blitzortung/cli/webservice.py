@@ -7,6 +7,8 @@ import os
 import platform
 import time
 
+from typing import Any
+
 from twisted.application import internet, service
 from twisted.internet.defer import succeed
 from twisted.internet.error import ReactorAlreadyInstalledError
@@ -28,9 +30,10 @@ from blitzortung.util import TimeConstraint
 JSON_CONTENT_TYPE = 'text/json'
 
 try:
-    from twisted.internet import epollreactor as reactor, defer
+    from twisted.internet import epollreactor  # type: ignore[attr-defined, no-redef]
+    reactor = epollreactor
 except ImportError:
-    from twisted.internet import kqreactor as reactor
+    from twisted.internet import kqreactor as reactor  # type: ignore[assignment, no-redef]
 
 try:
     reactor.install()
@@ -49,7 +52,7 @@ from blitzortung.service.strike_grid import GridParameters
 
 is_pypy = platform.python_implementation() == 'PyPy'
 
-FORBIDDEN_IPS = {}
+FORBIDDEN_IPS: dict[str, Any] = {}
 
 USER_AGENT_PREFIX = 'bo-android-'
 
@@ -341,7 +344,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         if user_agent and user_agent.startswith(USER_AGENT_PREFIX):
             user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
             version_string = user_agent_parts[1] if len(user_agent_parts) > 1 else None
-            user_agent_version = int(version_string) if user_agent_parts[0] == 'bo-android' else 0
+            user_agent_version = int(version_string) if user_agent_parts[0] == 'bo-android' and version_string is not None else 0
         else:
             user_agent_version = 0
         return user_agent, user_agent_version
@@ -375,7 +378,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         now = time.time()
         if now > self.next_memory_info:
             log.msg("### MEMORY INFO ###")
-            log.msg(gc.get_stats(True) if is_pypy else gc.get_stats())
+            # pylint: disable=no-member
+            log.msg(gc.get_stats(True) if is_pypy else gc.get_stats())  # type: ignore[call-arg]
             self.next_memory_info = now + self.MEMORY_INFO_INTERVAL
 
 
@@ -406,11 +410,11 @@ application = service.Application("Blitzortung.org JSON-RPC Server")
 if os.environ.get('BLITZORTUNG_TEST'):
     import tempfile
 
-    log_directory = tempfile.mkdtemp()
+    log_directory: str | None = tempfile.mkdtemp()
     print("LOG_DIR", log_directory)
 else:
     log_directory = "/var/log/blitzortung"
-if os.path.exists(log_directory):
+if log_directory and os.path.exists(log_directory):
     logfile = DailyLogFile("webservice.log", log_directory)
     application.setComponent(ILogObserver, LogObserver(logfile).emit)
 else:

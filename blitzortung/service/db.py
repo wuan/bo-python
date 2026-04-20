@@ -74,7 +74,7 @@ def create_connection_pool() -> Deferred:
 
     connection_pool = DictConnectionPool(None, db_connection_string)
 
-    d = connection_pool.start()
+    d: Deferred = connection_pool.start()
     d.addErrback(log.err)
 
     return d

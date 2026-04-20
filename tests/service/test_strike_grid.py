@@ -8,7 +8,6 @@ from mock import Mock, call
 from twisted.internet import defer
 
 from blitzortung.service.strike_grid import StrikeGridQuery, GridParameters, StrikeGridState, GlobalStrikeGridQuery
-from tests.conftest import time_interval
 
 
 @pytest.fixture

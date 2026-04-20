@@ -109,7 +109,7 @@ def main():
 
     start_time = parse_time(options.startdate, options.starttime, tz, "starttime")
     end_time = parse_time(options.enddate, options.endtime, tz, "endtime",
-                          is_end_time=True) if non_default_end else None
+                          is_end_time=True) if non_default_end else None  # type: ignore[assignment]
 
     area = None
     if options.area:

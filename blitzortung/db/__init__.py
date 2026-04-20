@@ -20,14 +20,13 @@
 
 import atexit
 
-from injector import Module, singleton, inject, provider
-
-from . import compat  # Register psycopg2cffi compatibility
-
 import psycopg2
 import psycopg2.pool
 import psycopg2.extras
 import psycopg2.extensions
+from injector import Module, singleton, inject, provider
+
+from . import compat  # Register psycopg2cffi compatibility
 
 from .. import config
 
@@ -49,55 +48,54 @@ class DbModule(Module):
 
 
 def strike():
-    from .. import INJECTOR
+    import blitzortung
 
-    strike_db = INJECTOR.get(table.Strike)
-    return strike_db
+    return blitzortung.INJECTOR.get(table.Strike)
 
 
 def strike_cluster():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.StrikeCluster)
+    return blitzortung.INJECTOR.get(table.StrikeCluster)  # type: ignore[attr-defined]
 
 
 def station():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.Station)
+    return blitzortung.INJECTOR.get(table.Station)  # type: ignore[attr-defined]
 
 
 def station_offline():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.StationOffline)
+    return blitzortung.INJECTOR.get(table.StationOffline)  # type: ignore[attr-defined]
 
 
 def location():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.Location)
+    return blitzortung.INJECTOR.get(table.Location)  # type: ignore[attr-defined]
 
 
 def servicelog_total():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.ServiceLogTotal)
+    return blitzortung.INJECTOR.get(table.ServiceLogTotal)  # type: ignore[attr-defined]
 
 
 def servicelog_country():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.ServiceLogCountry)
+    return blitzortung.INJECTOR.get(table.ServiceLogCountry)  # type: ignore[attr-defined]
 
 
 def servicelog_version():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.ServiceLogVersion)
+    return blitzortung.INJECTOR.get(table.ServiceLogVersion)  # type: ignore[attr-defined]
 
 
 def servicelog_parameters():
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(table.ServiceLogParameters)
+    return blitzortung.INJECTOR.get(table.ServiceLogParameters)  # type: ignore[attr-defined]

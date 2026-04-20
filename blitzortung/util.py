@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import datetime
 import time
-from typing import Generator, TypeVar, Union
+from typing import Generator, TypeVar
 
 from .data import Timestamp, Timedelta
 

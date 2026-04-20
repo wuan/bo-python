@@ -218,14 +218,14 @@ class SelectQuery(Query):
     def __init__(self):
         super().__init__()
         self.table_name = ""
-        self.columns = []
+        self.columns : list[str] = []
 
     def set_table_name(self, table_name):
         self.table_name = table_name
         return self
 
     def set_columns(self, *columns):
-        self.columns = columns
+        self.columns = list(columns)
         return self
 
     def add_column(self, column):

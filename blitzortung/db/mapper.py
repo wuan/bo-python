@@ -20,7 +20,6 @@
 import datetime
 from abc import abstractmethod
 
-import shapely.wkb
 from injector import inject
 
 from .. import builder

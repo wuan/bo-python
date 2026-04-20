@@ -1,11 +1,12 @@
 import datetime
 from typing import Callable
 
-import blitzortung.db
 import psycopg2
 import pyproj
 import pytest
 from testcontainers.postgres import PostgresContainer
+
+import blitzortung.db
 
 
 @pytest.fixture

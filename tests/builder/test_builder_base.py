@@ -19,6 +19,7 @@ limitations under the License.
 """
 
 import datetime
+import pytest
 
 from assertpy import assert_that  # pylint: disable=import-error
 
@@ -159,6 +160,14 @@ class TestTimestamp:
 class TestEvent:
     """Test suite for Event builder class."""
 
+    @pytest.fixture
+    def event(self):
+        """Fixture for Event builder with initialized timestamp."""
+        dt = datetime.datetime(2026, 4, 20, 21, 0, tzinfo=datetime.timezone.utc)
+        event = blitzortung.builder.base.Event()
+        event.set_timestamp(dt)
+        return event
+
     def test_event_initialization(self):
         """Test that Event initializes with zero coordinates."""
         event = blitzortung.builder.base.Event()
@@ -174,96 +183,80 @@ class TestEvent:
             )
         ).is_true()
 
-    def test_set_x_coordinate(self):
+    def test_set_x_coordinate(self, event):
         """Test setting x coordinate."""
-        event = blitzortung.builder.base.Event()
         result = event.set_x(5.5)
 
         assert_that(result).is_equal_to(event)  # Returns self
         assert_that(event.x_coord).is_equal_to(5.5)
 
-    def test_set_y_coordinate(self):
+    def test_set_y_coordinate(self, event):
         """Test setting y coordinate."""
-        event = blitzortung.builder.base.Event()
         result = event.set_y(7.2)
 
         assert_that(result).is_equal_to(event)  # Returns self
         assert_that(event.y_coord).is_equal_to(7.2)
 
-    def test_set_x_returns_self_for_chaining(self):
+    def test_set_x_returns_self_for_chaining(self, event):
         """Test that set_x returns self for method chaining."""
-        event = blitzortung.builder.base.Event()
         result = event.set_x(10)
         assert_that(result).is_same_as(event)
 
-    def test_set_y_returns_self_for_chaining(self):
+    def test_set_y_returns_self_for_chaining(self, event):
         """Test that set_y returns self for method chaining."""
-        event = blitzortung.builder.base.Event()
         result = event.set_y(20)
         assert_that(result).is_same_as(event)
 
-    def test_method_chaining(self):
+    def test_method_chaining(self, event):
         """Test that methods can be chained together."""
-        event = blitzortung.builder.base.Event()
-        dt = datetime.datetime.now(datetime.timezone.utc)
-
-        result = event.set_timestamp(dt).set_x(5).set_y(10)
+        result = event.set_x(5).set_y(10)
 
         assert_that(result).is_same_as(event)
         assert_that(event.timestamp).is_not_none()
         assert_that(event.x_coord).is_equal_to(5)
         assert_that(event.y_coord).is_equal_to(10)
 
-    def test_build_returns_event_object(self):
+    def test_build_returns_event_object(self, event):
         """Test that build returns a data.Event object."""
-        event = blitzortung.builder.base.Event()
-        dt = datetime.datetime.now(datetime.timezone.utc)
-        event.set_timestamp(dt).set_x(3.5).set_y(4.5)
+        event.set_x(3.5).set_y(4.5)
 
         result = event.build()
         assert_that(result).is_instance_of(blitzortung.data.Event)
 
-    def test_build_event_with_coordinates(self):
+    def test_build_event_with_coordinates(self, event):
         """Test that built event has correct coordinates."""
-        event = blitzortung.builder.base.Event()
-        dt = datetime.datetime.now(datetime.timezone.utc)
-        event.set_timestamp(dt).set_x(1.5).set_y(2.5)
+        event.set_x(1.5).set_y(2.5)
 
         result = event.build()
         # Event should have x and y attributes
         assert_that(result.x).is_equal_to(1.5)
         assert_that(result.y).is_equal_to(2.5)
 
-    def test_build_event_with_timestamp(self):
+    def test_build_event_with_timestamp(self, event):
         """Test that built event has correct timestamp."""
-        event = blitzortung.builder.base.Event()
-        dt = datetime.datetime.now(datetime.timezone.utc)
-        event.set_timestamp(dt).set_x(1).set_y(2)
+        event.set_x(1).set_y(2)
 
         result = event.build()
         assert_that(result.timestamp).is_not_none()
 
-    def test_build_with_negative_coordinates(self):
+    def test_build_with_negative_coordinates(self, event):
         """Test building event with negative coordinates."""
-        event = blitzortung.builder.base.Event()
         event.set_x(-10.5).set_y(-20.3)
 
         result = event.build()
         assert_that(result.x).is_equal_to(-10.5)
         assert_that(result.y).is_equal_to(-20.3)
 
-    def test_build_with_zero_coordinates(self):
+    def test_build_with_zero_coordinates(self, event):
         """Test building event with zero coordinates."""
-        event = blitzortung.builder.base.Event()
         event.set_x(0).set_y(0)
 
         result = event.build()
         assert_that(result.x).is_equal_to(0)
         assert_that(result.y).is_equal_to(0)
 
-    def test_build_with_large_coordinates(self):
+    def test_build_with_large_coordinates(self, event):
         """Test building event with large coordinates."""
-        event = blitzortung.builder.base.Event()
         event.set_x(999999.999).set_y(888888.888)
 
         result = event.build()
@@ -290,9 +283,8 @@ class TestEvent:
         assert_that(result2.x).is_equal_to(3)
         assert_that(result2.y).is_equal_to(4)
 
-    def test_overwriting_coordinates(self):
+    def test_overwriting_coordinates(self, event):
         """Test that coordinates can be overwritten."""
-        event = blitzortung.builder.base.Event()
         event.set_x(5).set_y(10)
         assert_that(event.x_coord).is_equal_to(5)
         assert_that(event.y_coord).is_equal_to(10)

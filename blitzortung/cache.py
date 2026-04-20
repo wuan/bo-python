@@ -54,7 +54,7 @@ class ObjectCache:
 
         self.cache = {}
         self.keys = {}
-        self.last_cleanup = 0
+        self.last_cleanup = 0.0
         self.cleanup_period = cleanup_period
 
     def get(self, cached_object_creator, *args, **kwargs):

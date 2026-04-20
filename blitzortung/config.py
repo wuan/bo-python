@@ -60,7 +60,8 @@ class Config:
 def config() -> Config:
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(Config)
+    result : Config = INJECTOR.get(Config)
+    return result
 
 
 class ConfigModule(Module):

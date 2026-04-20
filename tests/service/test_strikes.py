@@ -6,7 +6,6 @@ from mock import Mock, call
 from blitzortung import geom, builder
 from blitzortung.data import Timestamp
 from blitzortung.service.strike import StrikeQuery, StrikeState
-from tests.conftest import time_interval
 
 
 @pytest.fixture

@@ -17,29 +17,25 @@
    limitations under the License.
 
 """
+from abc import ABCMeta, abstractmethod
 import datetime
 import logging
-
-import math
 from typing import Optional
 
-from blitzortung.db.grid_result import build_grid_result
+import psycopg2
+import psycopg2.extensions
+import psycopg2.extras
+import psycopg2.pool
 from injector import inject
 
+from blitzortung.db.grid_result import build_grid_result
+
 from . import mapper
-from . import query
 from . import query_builder
 from .query import TimeInterval
 from .. import data
 from .. import geom
 from ..logger import get_logger_name
-
-import psycopg2
-import psycopg2.pool
-import psycopg2.extras
-import psycopg2.extensions
-
-from abc import ABCMeta, abstractmethod
 
 
 class Base:

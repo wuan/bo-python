@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pyproj
 import shapely.geometry
@@ -89,8 +89,8 @@ class Envelope(Geometry):
     def contains(self, point: object) -> bool:
         if not hasattr(point, 'x') or not hasattr(point, 'y'):
             return False
-        return (self.x_min <= point.x <= self.x_max) and \
-               (self.y_min <= point.y <= self.y_max)  # type: ignore[return-value]
+        return bool((self.x_min <= point.x <= self.x_max) and \
+                    (self.y_min <= point.y <= self.y_max))
 
     @property
     def env(self) -> shapely.geometry.Polygon:
@@ -106,12 +106,12 @@ class Envelope(Geometry):
 class Grid(Envelope):
     """ grid characteristics"""
 
-    __slots__ = ['x_div', 'y_div', '_Grid__x_bin_count', '_Grid__y_bin_count']
+    __slots__ = ['x_div', 'y_div', '__x_bin_count', '__y_bin_count']
 
     x_div: float
     y_div: float
-    _Grid__x_bin_count: int | None
-    _Grid__y_bin_count: int | None
+    __x_bin_count: int | None
+    __y_bin_count: int | None
 
     def __init__(
         self,
@@ -126,8 +126,8 @@ class Grid(Envelope):
         super().__init__(x_min, x_max, y_min, y_max, srid)
         self.x_div = x_div
         self.y_div = y_div
-        self._Grid__x_bin_count = None
-        self._Grid__y_bin_count = None
+        self.__x_bin_count = None
+        self.__y_bin_count = None
 
     def get_x_bin(self, x_pos: float) -> int:
         return int(math.ceil(float(x_pos - self.x_min) / self.x_div)) - 1
@@ -137,15 +137,15 @@ class Grid(Envelope):
 
     @property
     def x_bin_count(self) -> int:
-        if not self._Grid__x_bin_count:
-            self._Grid__x_bin_count = self.get_x_bin(self.x_max) + 1
-        return self._Grid__x_bin_count
+        if not self.__x_bin_count:
+            self.__x_bin_count = self.get_x_bin(self.x_max) + 1
+        return self.__x_bin_count
 
     @property
     def y_bin_count(self) -> int:
-        if not self._Grid__y_bin_count:
-            self._Grid__y_bin_count = self.get_y_bin(self.y_max) + 1
-        return self._Grid__y_bin_count
+        if not self.__y_bin_count:
+            self.__y_bin_count = self.get_y_bin(self.y_max) + 1
+        return self.__y_bin_count
 
     def get_x_center(self, cell_index: int) -> float:
         return self.x_min + (cell_index + 0.5) * self.x_div

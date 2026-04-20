@@ -24,7 +24,7 @@ from injector import inject
 from twisted.internet.defer import gatherResults
 from twisted.python import log
 
-from .general import TimingState, create_time_interval
+from .general import TimingState
 from .. import db, geom
 from ..data import Timestamp
 from ..db.query import TimeInterval

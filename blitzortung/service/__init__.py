@@ -25,24 +25,28 @@ from .strike_grid import GlobalStrikeGridQuery, StrikeGridQuery
 
 
 def strike_query() -> StrikeQuery:
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(strike.StrikeQuery)
+    result : StrikeQuery = blitzortung.INJECTOR.get(strike.StrikeQuery)
+    return result
 
 
 def strike_grid_query() -> StrikeGridQuery:
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(strike_grid.StrikeGridQuery)
+    result : StrikeGridQuery = blitzortung.INJECTOR.get(strike_grid.StrikeGridQuery)
+    return result
 
 
 def global_strike_grid_query() -> GlobalStrikeGridQuery:
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(strike_grid.GlobalStrikeGridQuery)
+    result : GlobalStrikeGridQuery = blitzortung.INJECTOR.get(strike_grid.GlobalStrikeGridQuery)
+    return result
 
 
 def histogram_query() -> HistogramQuery:
-    from .. import INJECTOR
+    import blitzortung
 
-    return INJECTOR.get(histogram.HistogramQuery)
+    result : HistogramQuery =  blitzortung.INJECTOR.get(histogram.HistogramQuery)
+    return result

@@ -20,12 +20,12 @@ import datetime
 import logging
 import os
 import time
+from optparse import OptionParser
 from contextlib import nullcontext
 
 import requests
 import statsd
 import stopit
-from optparse import OptionParser
 
 import blitzortung.dataimport
 import blitzortung.db

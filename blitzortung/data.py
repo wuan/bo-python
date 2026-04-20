@@ -20,40 +20,39 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt_module
 import math
-from typing import Any, Union
+from typing import Any
 
 from . import base
-from .geom import GridElement
-from .geom import GridElement
+from .geom import Grid, GridElement
 
 
 class Timestamp(base.EqualityAndHash):
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
-    __slots__ = ['datetime', 'nanosecond']
+    __slots__ = ['_datetime', 'nanosecond']
 
-    datetime: datetime.datetime
+    _datetime: dt_module.datetime
     nanosecond: int
 
     def __init__(
         self,
-        date_time: datetime.datetime | str | int | None = ...,  # type: ignore[assignment]
+        date_time: dt_module.datetime | str | int | None = ...,  # type: ignore[assignment]
         nanosecond: int = 0,
     ) -> None:
         # Use a sentinel to detect if no argument was provided
         if date_time is ...:
-            dt: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
+            dt: dt_module.datetime = dt_module.datetime.now(dt_module.timezone.utc)
         elif date_time is None:
-            dt = None
+            dt = None  # type: ignore[assignment]
         elif isinstance(date_time, str):
             parsed_dt, date_time_nanosecond = Timestamp.from_timestamp(date_time)
             if parsed_dt is not None:
                 dt = parsed_dt
             else:
-                dt = None
+                dt = None  # type: ignore[assignment]
             nanosecond += date_time_nanosecond
         elif isinstance(date_time, int):
             dt, date_time_nanosecond = Timestamp.from_nanoseconds(date_time)
@@ -63,73 +62,77 @@ class Timestamp(base.EqualityAndHash):
 
         if dt is not None and (nanosecond < 0 or nanosecond > 999):
             microdelta = nanosecond // 1000
-            dt += datetime.timedelta(microseconds=microdelta)
+            dt += dt_module.timedelta(microseconds=microdelta)
             nanosecond -= microdelta * 1000
 
-        self.datetime = dt
+        self._datetime = dt
         self.nanosecond = nanosecond
 
     @staticmethod
-    def from_timestamp(timestamp_string: str) -> tuple[datetime.datetime | None, int]:
+    def from_timestamp(timestamp_string: str) -> tuple[dt_module.datetime | None, int]:
         try:
             if len(timestamp_string) > Timestamp.timestamp_string_minimal_fractional_seconds_length:
                 divider_index = Timestamp.timestamp_string_microseconds_length
-                date_time = datetime.datetime.strptime(timestamp_string[:divider_index], '%Y-%m-%d %H:%M:%S.%f')
+                date_time = dt_module.datetime.strptime(timestamp_string[:divider_index], '%Y-%m-%d %H:%M:%S.%f')
                 nanosecond_string = timestamp_string[divider_index:]
                 nanosecond = int(
                     float(nanosecond_string) * math.pow(10, 3 - len(nanosecond_string))) if nanosecond_string else 0
             else:
-                date_time = datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
+                date_time = dt_module.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
                 nanosecond = 0
 
-            return date_time.replace(tzinfo=datetime.timezone.utc), nanosecond
+            return date_time.replace(tzinfo=dt_module.timezone.utc), nanosecond
         except ValueError:
             return None, 0
 
     @staticmethod
-    def from_nanoseconds(total_nanoseconds: int) -> tuple[datetime.datetime, int]:
+    def from_nanoseconds(total_nanoseconds: int) -> tuple[dt_module.datetime, int]:
         total_microseconds = total_nanoseconds // 1000
         residual_nanoseconds = total_nanoseconds % 1000
         total_seconds = total_microseconds // 1000000
         residual_microseconds = total_microseconds % 1000000
-        return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + \
-               datetime.timedelta(seconds=total_seconds,
-                                  microseconds=residual_microseconds), \
+        return dt_module.datetime(1970, 1, 1, tzinfo=dt_module.timezone.utc) + \
+            dt_module.timedelta(seconds=total_seconds,
+                               microseconds=residual_microseconds), \
             residual_nanoseconds
 
     @property
     def year(self) -> int:
-        return self.datetime.year
+        return self._datetime.year
 
     @property
     def month(self) -> int:
-        return self.datetime.month
+        return self._datetime.month
 
     @property
     def day(self) -> int:
-        return self.datetime.day
+        return self._datetime.day
 
     @property
     def hour(self) -> int:
-        return self.datetime.hour
+        return self._datetime.hour
 
     @property
     def minute(self) -> int:
-        return self.datetime.minute
+        return self._datetime.minute
 
     @property
     def second(self) -> int:
-        return self.datetime.second
+        return self._datetime.second
 
     @property
     def microsecond(self) -> int:
-        return self.datetime.microsecond
+        return self._datetime.microsecond
 
     @property
-    def tzinfo(self) -> datetime.timezone | None:
-        return self.datetime.tzinfo
+    def tzinfo(self) -> dt_module.tzinfo | None:
+        return self._datetime.tzinfo
 
-    epoch: datetime.datetime = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+    @property
+    def datetime(self) -> dt_module.datetime:
+        return self._datetime
+
+    epoch: dt_module.datetime = dt_module.datetime.fromtimestamp(0, dt_module.timezone.utc)
 
     @property
     def value(self) -> int:
@@ -146,7 +149,7 @@ class Timestamp(base.EqualityAndHash):
         return self.datetime != other.datetime or self.nanosecond != other.nanosecond
 
     def __lt__(self, other: object) -> bool:
-        if isinstance(other, datetime.datetime):
+        if isinstance(other, dt_module.datetime):
             return self.datetime < other
         elif isinstance(other, Timestamp):
             return self.datetime < other.datetime or (
@@ -154,7 +157,7 @@ class Timestamp(base.EqualityAndHash):
         return False
 
     def __le__(self, other: object) -> bool:
-        if isinstance(other, datetime.datetime):
+        if isinstance(other, dt_module.datetime):
             return self.datetime <= other
         elif isinstance(other, Timestamp):
             return self.datetime < other.datetime or (
@@ -162,7 +165,7 @@ class Timestamp(base.EqualityAndHash):
         return False
 
     def __gt__(self, other: object) -> bool:
-        if isinstance(other, datetime.datetime):
+        if isinstance(other, dt_module.datetime):
             return self.datetime > other
         elif isinstance(other, Timestamp):
             return self.datetime > other.datetime or (
@@ -170,7 +173,7 @@ class Timestamp(base.EqualityAndHash):
         return False
 
     def __ge__(self, other: object) -> bool:
-        if isinstance(other, datetime.datetime):
+        if isinstance(other, dt_module.datetime):
             return self.datetime >= other
         elif isinstance(other, Timestamp):
             return self.datetime > other.datetime or (
@@ -180,7 +183,7 @@ class Timestamp(base.EqualityAndHash):
     def __add__(self, other: object) -> Timestamp:
         if isinstance(other, Timedelta):
             return Timestamp(self.datetime + other.timedelta, self.nanosecond + other.nanodelta)
-        elif isinstance(other, datetime.timedelta):
+        elif isinstance(other, dt_module.timedelta):
             return Timestamp(self.datetime + other, self.nanosecond)
         elif isinstance(other, int):
             return Timestamp(self.datetime, self.nanosecond + other)
@@ -189,7 +192,7 @@ class Timestamp(base.EqualityAndHash):
     def __sub__(self, other: object) -> Timedelta | Timestamp:
         if isinstance(other, Timestamp):
             return Timedelta(self.datetime - other.datetime, self.nanosecond - other.nanosecond)
-        elif isinstance(other, datetime.timedelta):
+        elif isinstance(other, dt_module.timedelta):
             return Timestamp(self.datetime - other, self.nanosecond)
         elif isinstance(other, int):
             return Timestamp(self.datetime, self.nanosecond - other)
@@ -198,26 +201,26 @@ class Timestamp(base.EqualityAndHash):
     def strftime(self, datetime_format: str) -> str:
         return self.datetime.strftime(datetime_format)
 
-    def replace(self, **kwargs: GridElement) -> Timestamp:
+    def replace(self, **kwargs: Any) -> Timestamp:
         if 'nanosecond' in kwargs:
             nanosecond = kwargs['nanosecond']
             del kwargs['nanosecond']
         else:
             nanosecond = self.nanosecond
-        return Timestamp(self.datetime.replace(**kwargs), nanosecond)
+        return Timestamp(self._datetime.replace(**kwargs), nanosecond)
 
     def __repr__(self) -> str:
-        return "Timestamp({}{:03d})".format(self.datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond)
+        return "Timestamp({}{:03d})".format(self._datetime.strftime("%Y-%m-%d %H:%M:%S.%f"), self.nanosecond)
 
 
 NaT = Timestamp(None)
 
 
 class Timedelta(base.EqualityAndHash):
-    def __init__(self, timedelta: datetime.timedelta = datetime.timedelta(), nanodelta: int = 0) -> None:
+    def __init__(self, timedelta: dt_module.timedelta = dt_module.timedelta(), nanodelta: int = 0) -> None:
         if nanodelta < 0 or nanodelta > 999:
             microdelta = nanodelta // 1000
-            timedelta += datetime.timedelta(microseconds=microdelta)
+            timedelta += dt_module.timedelta(microseconds=microdelta)
             nanodelta -= microdelta * 1000
         self.timedelta = timedelta
         self.nanodelta = nanodelta
@@ -398,11 +401,11 @@ class ChannelWaveform:
 class GridData:
     """ class for grid characteristics"""
 
-    grid: GridElement
+    grid: Grid
     no_data: GridElement
     data: list[list[GridElement | None]]
 
-    def __init__(self, grid: GridElement, no_data: GridElement | None = None) -> None:
+    def __init__(self, grid: Grid, no_data: GridElement | None = None) -> None:
         self.grid = grid
         self.no_data = no_data if no_data else GridElement(0, None)
         self.data = [[None for _ in range(grid.x_bin_count)] for _ in range(grid.y_bin_count)]
@@ -475,16 +478,23 @@ class GridData:
 
         reduced_array: list[tuple[int, int, int, int]] = []
 
+        ref_ts = reference_time if isinstance(reference_time, Timestamp) else Timestamp(reference_time)
+
         for row_index, row in enumerate(self.data[::-1]):
             for column_index, cell in enumerate(row):
                 if cell and cell.timestamp is not None:
-                    time_diff = reference_time - cell.timestamp
-                    if isinstance(time_diff, Timedelta):
-                        reduced_array.append((
-                            column_index,
-                            row_index,
-                            int(cell.count),
-                            -time_diff.seconds,
-                        ))
+                    # check if cell.timestamp is a Timestamp object or a datetime.datetime object
+                    # in some tests, it might be a datetime.datetime object
+                    ts = cell.timestamp if isinstance(cell.timestamp, Timestamp) else Timestamp(cell.timestamp)
+
+                    if ts.is_valid:
+                        time_diff = ref_ts - ts
+                        if isinstance(time_diff, Timedelta):
+                            reduced_array.append((
+                                column_index,
+                                row_index,
+                                int(cell.count),
+                                -time_diff.seconds,
+                            ))
 
         return tuple(reduced_array)  # type: ignore[return-value]
