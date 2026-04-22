@@ -85,7 +85,7 @@ class Strike(Event):
             self.set_station_count(int(stations[0]))
             self.set_stations([int(station) for station in stations[2].split(',') if station])
         except (KeyError, ValueError, IndexError) as e:
-            raise BuilderError(e)
+            raise BuilderError(e) from e
 
         return self
 
@@ -107,5 +107,7 @@ class Strike(Event):
         return self
 
     def build(self):
+        if self.timestamp is None:
+            raise BuilderError("Timestamp not set")
         return data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
                            self.amplitude, self.lateral_error, self.station_count, self.stations)

@@ -17,7 +17,7 @@ class StatsDMetrics:
     def __init__(self, statsd: Optional[StatsClient] = None):
         self.statsd = statsd if statsd else StatsClient('localhost', 8125, prefix='org.blitzortung.service')
 
-    def for_global_strikes(self, minute_length: int, cache_ratio: float):
+    def for_global_strikes(self, minute_length: int, cache_ratio: float) -> None:
         self.statsd.incr(self.name(STRIKES_GRID, TOTAL_COUNT))
         self.statsd.incr(self.name(GLOBAL_STRIKES_GRID, TOTAL_COUNT))
         self.statsd.gauge(self.name(GLOBAL_STRIKES_GRID, CACHE_HITS), cache_ratio)
@@ -25,7 +25,7 @@ class StatsDMetrics:
             self.statsd.incr(self.name(STRIKES_GRID, BG_COUNT))
             self.statsd.incr(self.name(GLOBAL_STRIKES_GRID, BG_COUNT))
 
-    def for_local_strikes(self, minute_length: int, data_area, cache_ratio: float):
+    def for_local_strikes(self, minute_length: int, data_area: int, cache_ratio: float) -> None:
         self.statsd.incr(self.name(STRIKES_GRID, TOTAL_COUNT))
         self.statsd.incr(self.name(LOCAL_STRIKES_GRID, TOTAL_COUNT))
         self.statsd.incr(self.name(LOCAL_STRIKES_GRID, DATA_AREA, str(data_area)))
@@ -34,7 +34,7 @@ class StatsDMetrics:
             self.statsd.incr(self.name(STRIKES_GRID, BG_COUNT))
             self.statsd.incr(self.name(LOCAL_STRIKES_GRID, BG_COUNT))
 
-    def for_strikes(self, minute_length: int, region: int, cache_ratio: float):
+    def for_strikes(self, minute_length: int, region: int, cache_ratio: float) -> None:
         self.statsd.incr(self.name(STRIKES_GRID, TOTAL_COUNT))
         self.statsd.incr(self.name(STRIKES_GRID, TOTAL_COUNT, str(region)))
         self.statsd.gauge(self.name(STRIKES_GRID, CACHE_HITS), cache_ratio)
@@ -43,5 +43,5 @@ class StatsDMetrics:
             self.statsd.incr(self.name(STRIKES_GRID, BG_COUNT, str(region)))
 
     @staticmethod
-    def name(*args):
+    def name(*args: str) -> str:
         return '.'.join(args)

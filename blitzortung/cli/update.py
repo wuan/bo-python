@@ -19,11 +19,11 @@
 import datetime
 import logging
 import os
+from optparse import OptionParser
 from contextlib import nullcontext
 
 import requests
 import statsd
-from optparse import OptionParser
 
 import blitzortung.config
 import blitzortung.db

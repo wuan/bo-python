@@ -25,11 +25,7 @@ from mock import Mock, call, patch
 
 import blitzortung
 
-config_parser_module = "ConfigParser" if sys.version < '3' else "configparser"
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+config_parser_module = "configparser"
 
 
 class TestConfig:

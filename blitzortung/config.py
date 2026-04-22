@@ -18,6 +18,8 @@
 
 """
 
+from __future__ import annotations
+
 import configparser
 import os
 from typing import Optional
@@ -27,17 +29,19 @@ from injector import Module, singleton, inject, provider
 
 @singleton
 class Config:
+    config_parser: configparser.ConfigParser
+
     @inject
-    def __init__(self, config_parser: configparser.ConfigParser):
+    def __init__(self, config_parser: configparser.ConfigParser) -> None:
         self.config_parser = config_parser
 
-    def get_username(self):
+    def get_username(self) -> str:
         return self.config_parser.get('auth', 'username')
 
-    def get_password(self):
+    def get_password(self) -> str:
         return self.config_parser.get('auth', 'password')
 
-    def get_db_connection_string(self):
+    def get_db_connection_string(self) -> str:
         host = self.config_parser.get('db', 'host')
         port = self.config_parser.get('db', 'port', fallback='5432')
         dbname = self.config_parser.get('db', 'dbname')
@@ -46,17 +50,18 @@ class Config:
 
         return "host='%s' port=%s dbname='%s' user='%s' password='%s'" % (host, port, dbname, username, password)
 
-    def get_webservice_port(self):
+    def get_webservice_port(self) -> int:
         return int(self.config_parser.get('webservice', 'port'))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Config(user: %s, pass: %s)" % (self.get_username(), len(self.get_password()) * '*')
 
 
-def config():
+def config() -> Config:
     from blitzortung import INJECTOR
 
-    return INJECTOR.get(Config)
+    result: Config = INJECTOR.get(Config)
+    return result
 
 
 class ConfigModule(Module):
@@ -78,3 +83,4 @@ class ConfigModule(Module):
             config_file_path = os.path.join(config_dir_name, config_file_name)
             if os.path.exists(config_file_path):
                 return config_file_path
+        return None

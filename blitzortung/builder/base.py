@@ -62,4 +62,6 @@ class Event(Timestamp):
         return self
 
     def build(self):
+        if self.timestamp is None:
+            raise BuilderError("Timestamp not set")
         return data.Event(self.timestamp, self.x_coord, self.y_coord)

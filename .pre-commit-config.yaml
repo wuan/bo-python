@@ -1,14 +1,20 @@
 repos:
 - repo: https://github.com/gitleaks/gitleaks
-  rev: v8.25.1
+  rev: v8.30.0
   hooks:
   - id: gitleaks
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: end-of-file-fixer
   - id: trailing-whitespace
 - repo: https://github.com/pylint-dev/pylint
-  rev: v3.3.6
+  rev: v4.0.5
   hooks:
   - id: pylint
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.20.1
+  hooks:
+  - id: mypy
+    files: ^blitzortung/
+    additional_dependencies: [pyproj, shapely, psycopg2-binary, fasteners, txpostgres]

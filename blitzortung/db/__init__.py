@@ -20,14 +20,13 @@
 
 import atexit
 
-from injector import Module, singleton, inject, provider
-
-from . import compat  # Register psycopg2cffi compatibility
-
 import psycopg2
 import psycopg2.pool
 import psycopg2.extras
 import psycopg2.extensions
+from injector import Module, singleton, inject, provider
+
+from . import compat  # Register psycopg2cffi compatibility
 
 from .. import config
 
@@ -51,8 +50,7 @@ class DbModule(Module):
 def strike():
     from .. import INJECTOR
 
-    strike_db = INJECTOR.get(table.Strike)
-    return strike_db
+    return INJECTOR.get(table.Strike)
 
 
 def strike_cluster():

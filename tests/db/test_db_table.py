@@ -21,7 +21,6 @@ limitations under the License.
 import datetime
 
 from assertpy import assert_that  # pylint: disable=import-error
-import pytest  # pylint: disable=import-error
 
 import blitzortung.db.table
 

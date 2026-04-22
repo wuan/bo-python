@@ -21,7 +21,6 @@
 import datetime
 
 import pytest
-import shapely
 from assertpy import assert_that
 
 import blitzortung

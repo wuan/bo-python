@@ -22,7 +22,7 @@ import datetime
 
 import pytest
 from assertpy import assert_that
-from mock import Mock, call
+from mock import Mock
 
 import blitzortung
 import blitzortung.builder

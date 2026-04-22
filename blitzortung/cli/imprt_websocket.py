@@ -8,11 +8,11 @@ from optparse import OptionParser
 
 import statsd
 import websocket
+from websocket import WebSocketConnectionClosedException
 
 import blitzortung.builder
 import blitzortung.data
 import blitzortung.logger
-from websocket import WebSocketConnectionClosedException
 
 from blitzortung.lock import LockWithTimeout, FailedToAcquireException
 from blitzortung.websocket import decode
@@ -29,11 +29,6 @@ strike_db = None
 
 strike_count = 0
 last_commit_time = time.time()
-
-try:
-    import thread
-except ImportError:
-    import _thread as thread
 
 
 def on_message(ws, message):
