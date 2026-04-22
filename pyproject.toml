@@ -20,7 +20,7 @@ dependencies = [
     "incremental (>=22.10)",
     "stopit (>=1.1)",
     "websocket-client (>=1.9)",
-    "psycopg2cffi (>=2.9)",
+    "psycopg2cffi (>=2.9) ; implementation_name == 'pypy'",
     "statsd (>=4.0)",
     "geoip2 (>=5.1)",
     "txpostgres (>=1.7)",
