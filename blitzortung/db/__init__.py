@@ -20,13 +20,13 @@
 
 import atexit
 
+from . import compat  # Register psycopg2cffi compatibility
+
 import psycopg2
 import psycopg2.pool
 import psycopg2.extras
 import psycopg2.extensions
 from injector import Module, singleton, inject, provider
-
-from . import compat  # Register psycopg2cffi compatibility
 
 from .. import config
 
