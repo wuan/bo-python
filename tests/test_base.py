@@ -147,9 +147,14 @@ class TestEqualityAndHash:
         assert hash(obj1) == hash(obj2)
 
     def test_hash_different_dict(self):
-        """Test hash of objects with different __dict__."""
+        """Test hash of objects with different __dict__ are distinct in dict/set."""
         obj1 = EqualityAndHash()
         obj1.value = 42
         obj2 = EqualityAndHash()
         obj2.value = 100
-        assert hash(obj1) != hash(obj2)
+        # Verify objects are distinct when used as dict keys or in sets
+        # (hash collisions are allowed in Python, but unequal objects should be distinct)
+        assert len({obj1, obj2}) == 2
+        d = {obj1: "value1", obj2: "value2"}
+        assert d[obj1] == "value1"
+        assert d[obj2] == "value2"

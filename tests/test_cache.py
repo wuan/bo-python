@@ -58,20 +58,21 @@ class TestCacheEntry:
 
     def test_repr_valid_entry(self):
         """Test string representation of valid cache entry."""
-        self.cache_entry = CacheEntry("payload", time.time() + 100)
+        # Use deterministic large expiry time (100 > initial hit_count of 0)
+        self.cache_entry = CacheEntry("payload", 100)
         result = repr(self.cache_entry)
         assert_that(result).contains("cached<+")
         assert_that(result).contains("payload")
 
     def test_repr_with_hit_count(self):
         """Test string representation after retrieving payload (increases hit count)."""
-        # Use hit_count as expiry_time to trigger "-" (hit_count > expiry_time)
-        # This works because __repr__ passes hit_count to is_valid()
-        self.cache_entry = CacheEntry("payload", 0)
+        # Use expiry time of 1, after 2 hits hit_count=2 > expiry_time=1
+        # This tests that invalid entries (expired) show "-" in repr
+        self.cache_entry = CacheEntry("payload", 1)
         _ = self.cache_entry.get_payload()
         _ = self.cache_entry.get_payload()
         result = repr(self.cache_entry)
-        assert_that(result).contains("cached<-")  # hit_count (2) > expiry_time (0)
+        assert_that(result).contains("cached<-")  # hit_count (2) > expiry_time (1)
         assert_that(result).contains("payload")
         assert_that(result).contains("2")  # hit count
 
