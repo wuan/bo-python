@@ -20,6 +20,30 @@
 
 import logging
 
+__version__ = '1.7.1'
+
+
+# -----------------------------------------------------------------------------
+# Constants.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+#   Custom exceptions.
+# -----------------------------------------------------------------------------
+
+
+class Error(Exception):
+    """
+    General Blitzortung error class.
+    """
+    pass
+
+
+# -----------------------------------------------------------------------------
+#   Public interface and exports.
+# -----------------------------------------------------------------------------
+
+
 import injector
 
 from . import builder
@@ -30,14 +54,6 @@ from . import db
 from . import geom
 from . import util
 from . import base
-
-__version__ = '1.7.1'
-
-
-class Error(Exception):
-    """
-    General Blitzortung error class.
-    """
 
 
 INJECTOR = injector.Injector(
