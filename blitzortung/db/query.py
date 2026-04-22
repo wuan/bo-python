@@ -218,7 +218,7 @@ class SelectQuery(Query):
     def __init__(self):
         super().__init__()
         self.table_name = ""
-        self.columns : list[str] = []
+        self.columns: list[str] = []
 
     def set_table_name(self, table_name):
         self.table_name = table_name

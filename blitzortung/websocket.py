@@ -10,7 +10,7 @@ def decode(data):
     g = c
     o = h
     for b, char in enumerate(data[1:]):
-        a : Any  = ord(char)
+        a: Any  = ord(char)
         a = char if h > a else e.get(a, f + c)
         g += a
 

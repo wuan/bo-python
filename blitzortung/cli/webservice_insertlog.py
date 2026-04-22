@@ -69,13 +69,15 @@ def main():
                     data_area = None
 
                     user_agent = entry[7]
-                    version : int | None = None
+                    version: int | None = None
                     if user_agent:
                         user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
                         version_prefix = user_agent_parts[0]
-                        version_value = int(user_agent_parts[1]) if len(user_agent_parts) > 1 else None
-                        if version_prefix == 'bo-android':
-                            version = version_value
+                        if version_prefix == 'bo-android' and len(user_agent_parts) > 1:
+                            try:
+                                version = int(user_agent_parts[1])
+                            except ValueError:
+                                pass
 
                     try:
                         geo_info = reader.city(remote_address)

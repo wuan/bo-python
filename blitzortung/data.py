@@ -136,8 +136,10 @@ class Timestamp(base.EqualityAndHash):
 
     @property
     def value(self) -> int:
+        if self.datetime is None:
+            return -1
         total_microseconds = int((self.datetime - self.epoch).total_seconds() * 1000000)
-        return (total_microseconds * 1000 + self.nanosecond) if self.datetime is not None else -1
+        return total_microseconds * 1000 + self.nanosecond
 
     @property
     def is_valid(self) -> bool:

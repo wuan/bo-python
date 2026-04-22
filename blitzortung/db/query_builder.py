@@ -57,7 +57,7 @@ class Strike:
     @staticmethod
     def histogram_query(table_name: str, time_interval: TimeInterval, binsize:int, region:Optional[int]=None, envelope=None) -> SelectQuery:
 
-        query : SelectQuery = SelectQuery() \
+        query: SelectQuery = SelectQuery() \
             .set_table_name(table_name) \
             .add_column("-extract( epoch from %(end_time)s - \"timestamp\")::int/60/%(binsize)s as interval") \
             .add_column("count(*)") \

@@ -27,14 +27,14 @@ from .strike_grid import GlobalStrikeGridQuery, StrikeGridQuery
 def strike_query() -> StrikeQuery:
     import blitzortung
 
-    result : StrikeQuery = blitzortung.INJECTOR.get(strike.StrikeQuery)
+    result: StrikeQuery = blitzortung.INJECTOR.get(strike.StrikeQuery)
     return result
 
 
 def strike_grid_query() -> StrikeGridQuery:
     import blitzortung
 
-    result : StrikeGridQuery = blitzortung.INJECTOR.get(strike_grid.StrikeGridQuery)
+    result: StrikeGridQuery = blitzortung.INJECTOR.get(strike_grid.StrikeGridQuery)
     return result
 
 
