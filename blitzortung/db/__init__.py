@@ -48,54 +48,54 @@ class DbModule(Module):
 
 
 def strike():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.Strike)
+    return INJECTOR.get(table.Strike)
 
 
 def strike_cluster():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.StrikeCluster)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.StrikeCluster)
 
 
 def station():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.Station)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.Station)
 
 
 def station_offline():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.StationOffline)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.StationOffline)
 
 
 def location():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.Location)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.Location)
 
 
 def servicelog_total():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.ServiceLogTotal)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.ServiceLogTotal)
 
 
 def servicelog_country():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.ServiceLogCountry)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.ServiceLogCountry)
 
 
 def servicelog_version():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.ServiceLogVersion)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.ServiceLogVersion)
 
 
 def servicelog_parameters():
-    import blitzortung
+    from .. import INJECTOR
 
-    return blitzortung.INJECTOR.get(table.ServiceLogParameters)  # type: ignore[attr-defined]
+    return INJECTOR.get(table.ServiceLogParameters)
