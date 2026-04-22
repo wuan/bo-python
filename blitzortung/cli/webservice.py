@@ -341,12 +341,14 @@ class Blitzortung(jsonrpc.JSONRPC):
     def parse_user_agent(self, request):
         """Parse user agent string to extract version information."""
         user_agent = request.getHeader("User-Agent")
+        user_agent_version = 0
         if user_agent and user_agent.startswith(USER_AGENT_PREFIX):
             user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
-            version_string = user_agent_parts[1] if len(user_agent_parts) > 1 else None
-            user_agent_version = int(version_string) if user_agent_parts[0] == 'bo-android' and version_string is not None else 0
-        else:
-            user_agent_version = 0
+            if len(user_agent_parts) > 1 and user_agent_parts[0] == 'bo-android':
+                try:
+                    user_agent_version = int(user_agent_parts[1])
+                except ValueError:
+                    pass
         return user_agent, user_agent_version
 
     def fix_bad_accept_header(self, request, user_agent):

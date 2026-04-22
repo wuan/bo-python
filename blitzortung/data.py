@@ -34,7 +34,7 @@ class Timestamp(base.EqualityAndHash):
 
     __slots__ = ['_datetime', 'nanosecond']
 
-    _datetime: dt_module.datetime
+    _datetime: dt_module.datetime | None
     nanosecond: int
 
     def __init__(
@@ -156,7 +156,7 @@ class Timestamp(base.EqualityAndHash):
         elif isinstance(other, Timestamp):
             return self.datetime < other.datetime or (
                     self.datetime == other.datetime and self.nanosecond < other.nanosecond)
-        return False
+        return NotImplemented
 
     def __le__(self, other: object) -> bool:
         if isinstance(other, dt_module.datetime):
@@ -164,7 +164,7 @@ class Timestamp(base.EqualityAndHash):
         elif isinstance(other, Timestamp):
             return self.datetime < other.datetime or (
                     self.datetime == other.datetime and self.nanosecond <= other.nanosecond)
-        return False
+        return NotImplemented
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, dt_module.datetime):
@@ -172,7 +172,7 @@ class Timestamp(base.EqualityAndHash):
         elif isinstance(other, Timestamp):
             return self.datetime > other.datetime or (
                     self.datetime == other.datetime and self.nanosecond > other.nanosecond)
-        return False
+        return NotImplemented
 
     def __ge__(self, other: object) -> bool:
         if isinstance(other, dt_module.datetime):
@@ -180,7 +180,7 @@ class Timestamp(base.EqualityAndHash):
         elif isinstance(other, Timestamp):
             return self.datetime > other.datetime or (
                     self.datetime == other.datetime and self.nanosecond >= other.nanosecond)
-        return False
+        return NotImplemented
 
     def __add__(self, other: object) -> Timestamp:
         if isinstance(other, Timedelta):
@@ -283,12 +283,12 @@ class Event(base.Point):
 
     def __lt__(self, other: object) -> bool:
         if not isinstance(other, Event):
-            return False
+            return NotImplemented
         return self.timestamp.value < other.timestamp.value
 
     def __le__(self, other: object) -> bool:
         if not isinstance(other, Event):
-            return False
+            return NotImplemented
         return self.timestamp.value <= other.timestamp.value
 
     def __str__(self) -> str:
