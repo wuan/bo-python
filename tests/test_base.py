@@ -23,6 +23,7 @@ import math
 import pytest
 
 import blitzortung.base
+from blitzortung.base import EqualityAndHash, Point
 
 
 class TestPoint:
@@ -70,3 +71,85 @@ class TestPoint:
     def test_to_string(self):
         """Test string representation of a point."""
         assert str(self.point1) == "(11.0000, 49.0000)"
+
+    def test_point_from_another_point(self):
+        """Test initializing Point from another Point."""
+        point_copy = Point(self.point1)
+        assert point_copy.x == self.point1.x
+        assert point_copy.y == self.point1.y
+
+    def test_point_with_single_arg(self):
+        """Test Point initialization with single argument."""
+        point = Point(10.5)
+        assert point.x == 10.5
+        assert point.y == 0.0
+
+    def test_point_equality_same_coordinates(self):
+        """Test equality of points with same coordinates."""
+        p1 = Point(11, 49)
+        p2 = Point(11, 49)
+        assert p1 == p2
+
+    def test_point_equality_different_coordinates(self):
+        """Test inequality of points with different coordinates."""
+        p1 = Point(11, 49)
+        p2 = Point(12, 49)
+        assert p1 != p2
+
+    def test_point_equality_different_type(self):
+        """Test equality comparison with different type."""
+        p = Point(11, 49)
+        assert (p == "not a point") is False
+
+    def test_point_hash(self):
+        """Test hash of points."""
+        p1 = Point(11, 49)
+        p2 = Point(11, 49)
+        assert hash(p1) == hash(p2)
+
+    def test_point_equal_static_method(self):
+        """Test Point.equal static method."""
+        assert Point.equal(1.0, 1.00001) is True
+        assert Point.equal(1.0, 1.001) is False
+
+
+class TestEqualityAndHash:
+    """Test suite for EqualityAndHash mixin class."""
+
+    def test_equality_same_dict(self):
+        """Test equality of objects with same __dict__."""
+        obj1 = EqualityAndHash()
+        obj1.value = 42
+        obj2 = EqualityAndHash()
+        obj2.value = 42
+        assert obj1 == obj2
+
+    def test_equality_different_dict(self):
+        """Test inequality of objects with different __dict__."""
+        obj1 = EqualityAndHash()
+        obj1.value = 42
+        obj2 = EqualityAndHash()
+        obj2.value = 100
+        assert obj1 != obj2
+
+    def test_equality_different_type(self):
+        """Test equality with different type."""
+        obj = EqualityAndHash()
+        assert (obj == "string") is False
+        assert (obj != "string") is True
+
+    def test_hash_same_dict(self):
+        """Test hash of objects with same __dict__."""
+        obj1 = EqualityAndHash()
+        obj1.value = 42
+        obj2 = EqualityAndHash()
+        obj2.value = 42
+        assert hash(obj1) == hash(obj2)
+
+    def test_hash_different_dict(self):
+        """Test hash of objects with different __dict__."""
+        obj1 = EqualityAndHash()
+        obj1.value = 42
+        obj2 = EqualityAndHash()
+        obj2.value = 100
+        assert hash(obj1) != hash(obj2)
