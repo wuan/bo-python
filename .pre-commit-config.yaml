@@ -17,4 +17,4 @@ repos:
   hooks:
   - id: mypy
     files: ^blitzortung/
-    additional_dependencies: [pyproj, shapely, psycopg2-binary, fasteners, txpostgres]
+    additional_dependencies: [pyproj, shapely, psycopg, fasteners, txpostgres]

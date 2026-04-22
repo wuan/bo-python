@@ -1,7 +1,8 @@
 import datetime
 from typing import Callable
 
-import psycopg2
+import psycopg
+import psycopg_pool
 import pyproj
 import pytest
 from testcontainers.postgres import PostgresContainer
@@ -95,7 +96,11 @@ def connection_string(postgres_container: PostgresContainer):
 
 @pytest.fixture
 def connection_pool(connection_string):
-    connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, connection_string)
+    connection_pool = psycopg_pool.ConnectionPool(
+        connection_string,
+        min_connections=4,
+        max_connections=50
+    )
     yield connection_pool
     connection_pool.closeall()
 

@@ -2,7 +2,7 @@ import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-import psycopg2
+import psycopg
 import pytest
 from assertpy import assert_that
 
@@ -83,7 +83,7 @@ class TestBase:
 
 
 def test_db_version(connection_string):
-    with psycopg2.connect(connection_string) as connection:
+    with psycopg.connect(connection_string) as connection:
         with connection.cursor() as cur:
             cur.execute("""SELECT version()""")
             result = cur.fetchone()

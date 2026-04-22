@@ -22,10 +22,8 @@ import datetime
 import logging
 from typing import Optional
 
-import psycopg2
-import psycopg2.extensions
-import psycopg2.extras
-import psycopg2.pool
+import psycopg
+import psycopg_pool
 from injector import inject
 
 from blitzortung.db.grid_result import build_grid_result
@@ -78,15 +76,11 @@ class Base:
             self.conn.cancel()
             try:
                 self.conn.reset()
-            except psycopg2.OperationalError:
+            except psycopg.OperationalError:
                 print("reconnect to db")
                 self.db_connection_pool.putconn(self.conn, close=True)
                 continue
             break
-
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, self.conn)
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, self.conn)
-        self.conn.set_client_encoding('UTF8')
 
         self.srid = geom.Geometry.default_srid
         self.tz = None
@@ -94,8 +88,8 @@ class Base:
 
         cur = None
         try:
-            cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        except psycopg2.DatabaseError as error:
+            cur = self.conn.cursor(row_factory=psycopg.rows.DictRow)
+        except psycopg.DatabaseError as error:
             self.logger.error(error)
 
             if self.conn:
@@ -164,7 +158,7 @@ class Base:
         pass
 
     def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
-        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+        with self.conn.cursor(row_factory=psycopg.rows.DictRow) as cursor:
             cursor.execute(sql_statement, parameters)
             if factory_method:
                 method = factory_method(cursor, **factory_method_args)
@@ -179,7 +173,7 @@ class Base:
 
     def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         factory_method = factory_method or (lambda values, **_: values)
-        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+        with self.conn.cursor(row_factory=psycopg.rows.DictRow) as cursor:
             cursor.execute(sql_statement, parameters)
             for value in cursor:
                 yield factory_method(value, **factory_method_args)
@@ -219,7 +213,7 @@ class Strike(Base):
     table_name = 'strikes'
 
     @inject
-    def __init__(self, db_connection_pool: psycopg2.pool.ThreadedConnectionPool, query_builder_: query_builder.Strike,
+    def __init__(self, db_connection_pool: psycopg_pool.ConnectionPool, query_builder_: query_builder.Strike,
                  strike_mapper: mapper.Strike):
         super().__init__(db_connection_pool)
 

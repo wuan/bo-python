@@ -23,7 +23,7 @@ import datetime
 import shapely.geometry.base
 import shapely.wkb
 
-import psycopg2
+import psycopg
 
 class BaseInterval:
     """
@@ -200,13 +200,13 @@ class Query:
     def add_geometry(self, geometry):
         if geometry.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(srid)s) && geog',
-                               envelope=psycopg2.Binary(shapely.wkb.dumps(geometry.envelope)))
+                               envelope=psycopg.Binary(shapely.wkb.dumps(geometry.envelope)))
 
             if not geometry.equals(geometry.envelope):
                 self.add_condition(
                     'ST_Intersects(ST_GeomFromWKB(%(geometry)s, %(srid)s), ' +
                     'ST_Transform(geog::geometry, %(srid)s))',
-                    geometry=psycopg2.Binary(shapely.wkb.dumps(geometry)))
+                    geometry=psycopg.Binary(shapely.wkb.dumps(geometry)))
 
         else:
             raise ValueError("invalid geometry in db.Strike.select()")
@@ -272,7 +272,7 @@ class GridQuery(SelectQuery):
 
         if env.is_valid:
             self.add_condition('ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog',
-                               envelope=psycopg2.Binary(shapely.wkb.dumps(env)),
+                               envelope=psycopg.Binary(shapely.wkb.dumps(env)),
                                envelope_srid=grid.srid)
         else:
             raise ValueError("invalid Raster geometry in db.query.GridQuery.__init__()")

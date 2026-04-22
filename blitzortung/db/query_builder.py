@@ -19,7 +19,7 @@
 """
 from typing import Optional
 
-import psycopg2
+import psycopg
 
 import shapely.wkb
 
@@ -71,7 +71,7 @@ class Strike:
 
         if envelope and envelope.env.is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',
-                                envelope=psycopg2.Binary(shapely.wkb.dumps(envelope.env)),
+                                envelope=psycopg.Binary(shapely.wkb.dumps(envelope.env)),
                                 envelope_srid=envelope.srid)
 
         return query

@@ -20,12 +20,9 @@
 
 import atexit
 
-from . import compat  # Register psycopg2cffi compatibility
-
-import psycopg2
-import psycopg2.pool
-import psycopg2.extras
-import psycopg2.extensions
+import psycopg
+import psycopg.rows
+import psycopg_pool
 from injector import Module, singleton, inject, provider
 
 from .. import config
@@ -41,8 +38,12 @@ class DbModule(Module):
     @singleton
     @provider
     @inject
-    def provide_psycopg2_connection_pool(self, config: config.Config) -> psycopg2.pool.ThreadedConnectionPool:
-        connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
+    def provide_psycopg_connection_pool(self, config: config.Config) -> psycopg_pool.ConnectionPool:
+        connection_pool = psycopg_pool.ConnectionPool(
+            config.get_db_connection_string(),
+            min_connections=4,
+            max_connections=50
+        )
         atexit.register(self.cleanup, connection_pool)
         return connection_pool
 

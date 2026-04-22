@@ -16,8 +16,8 @@
 
 """
 
-import psycopg2
-import psycopg2.extras
+import psycopg
+import psycopg.rows
 from twisted.internet.defer import Deferred
 from twisted.python import log
 from txpostgres import reconnection
@@ -28,9 +28,9 @@ from blitzortung.db.query import SelectQuery
 
 
 def connection_factory(*args, **kwargs):
-    """Create a psycopg2 connection with DictConnection factory."""
-    kwargs['connection_factory'] = psycopg2.extras.DictConnection
-    return psycopg2.connect(*args, **kwargs)
+    """Create a psycopg connection with DictRow factory."""
+    kwargs['row_factory'] = psycopg.rows.DictRow
+    return psycopg.connect(*args, **kwargs)
 
 
 class LoggingDetector(reconnection.DeadConnectionDetector):
