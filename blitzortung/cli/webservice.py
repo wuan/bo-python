@@ -381,7 +381,10 @@ class Blitzortung(jsonrpc.JSONRPC):
         if now > self.next_memory_info:
             log.msg("### MEMORY INFO ###")
             # pylint: disable=no-member
-            log.msg(gc.get_stats(True) if is_pypy else gc.get_stats())  # type: ignore[call-arg]
+            if is_pypy:
+                log.msg(gc.get_stats(True))  # type: ignore[call-arg]
+            else:
+                log.msg(gc.get_stats())  # type: ignore[call-arg]
             self.next_memory_info = now + self.MEMORY_INFO_INTERVAL
 
 
