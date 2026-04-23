@@ -109,6 +109,65 @@ class TestTimestamp:
         assert_that(result.nanosecond).is_equal_to(500)
         assert_that(result.datetime).is_equal_to(ts.datetime)
 
+    def test_timestamp_with_none_datetime_value(self):
+        """Test that Timestamp with None datetime returns -1 for value."""
+        ts = Timestamp(None)
+        assert_that(ts.value).is_equal_to(-1)
+
+    def test_timestamp_with_none_datetime_is_valid(self):
+        """Test that Timestamp with None datetime is invalid."""
+        ts = Timestamp(None)
+        assert_that(ts.is_valid).is_false()
+
+    def test_timestamp_none_neq_with_non_timestamp(self):
+        """Test that Timestamp with None datetime != non-Timestamp returns True."""
+        ts = Timestamp(None)
+        assert_that(ts != "not a timestamp").is_true()
+
+    def test_timestamp_comparison_with_none_raises(self):
+        """Test that comparing Timestamp with None datetime raises TypeError."""
+        ts = Timestamp(None)
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # Comparisons with datetime raise TypeError when datetime is None
+        with pytest.raises(TypeError):
+            _ = ts < now
+        with pytest.raises(TypeError):
+            _ = ts <= now
+        with pytest.raises(TypeError):
+            _ = ts > now
+        with pytest.raises(TypeError):
+            _ = ts >= now
+
+    def test_timestamp_comparison_with_timestamp_where_other_has_none(self):
+        """Test comparison with another Timestamp that has None datetime raises TypeError."""
+        ts_valid = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+        ts_none = Timestamp(None)
+
+        # Comparisons raise TypeError when other Timestamp has None datetime
+        with pytest.raises(TypeError):
+            _ = ts_valid < ts_none
+        with pytest.raises(TypeError):
+            _ = ts_valid <= ts_none
+        with pytest.raises(TypeError):
+            _ = ts_valid > ts_none
+        with pytest.raises(TypeError):
+            _ = ts_valid >= ts_none
+
+    def test_timestamp_add_with_invalid_type_raises(self):
+        """Test that adding invalid type raises TypeError."""
+        ts = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+
+        with pytest.raises(TypeError):
+            _ = ts + "invalid"
+
+    def test_timestamp_sub_with_invalid_type_raises(self):
+        """Test that subtracting invalid type raises TypeError."""
+        ts = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+
+        with pytest.raises(TypeError):
+            _ = ts - "invalid"
+
 
 class TestTimedelta:
     def test_normalizing(self):

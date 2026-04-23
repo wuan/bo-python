@@ -147,8 +147,37 @@ class TestTimeInterval:
         """Test raising exception for non-datetime end."""
         with pytest.raises(ValueError):
             blitzortung.db.query.TimeInterval(
-                datetime.datetime.now(datetime.timezone.utc), "asdf"
-            )
+                datetime.datetime(2010, 11, 20, 11, 30, 15), "asdf")
+
+    def test_contains_timestamp_within_interval(self):
+        """Test contains returns True for timestamp within interval."""
+        interval = blitzortung.db.query.TimeInterval(
+            datetime.datetime(2010, 11, 20, 11, 30, 15),
+            datetime.datetime(2010, 11, 20, 12, 30, 15),
+        )
+        ts = blitzortung.data.Timestamp(datetime.datetime(2010, 11, 20, 12, 0, 0))
+
+        assert interval.contains(ts) is True
+
+    def test_contains_timestamp_before_interval(self):
+        """Test contains returns False for timestamp before interval."""
+        interval = blitzortung.db.query.TimeInterval(
+            datetime.datetime(2010, 11, 20, 11, 30, 15),
+            datetime.datetime(2010, 11, 20, 12, 30, 15),
+        )
+        ts = blitzortung.data.Timestamp(datetime.datetime(2010, 11, 20, 11, 0, 0))
+
+        assert interval.contains(ts) is False
+
+    def test_contains_timestamp_after_interval(self):
+        """Test contains returns False for timestamp after interval."""
+        interval = blitzortung.db.query.TimeInterval(
+            datetime.datetime(2010, 11, 20, 11, 30, 15),
+            datetime.datetime(2010, 11, 20, 12, 30, 15),
+        )
+        ts = blitzortung.data.Timestamp(datetime.datetime(2010, 11, 20, 13, 0, 0))
+
+        assert interval.contains(ts) is False
 
 
 class TestQuery:

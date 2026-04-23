@@ -25,6 +25,7 @@ from mock import Mock
 import pytest
 
 from blitzortung.cache import CacheEntry, ObjectCache
+from blitzortung.service.cache import ServiceCache
 
 
 class TestCacheEntry:
@@ -287,3 +288,75 @@ def test_bench_object_cache_generate_cache_key(benchmark):
     )
 
     print("hit count", cache.total_hit_count)
+
+
+class TestServiceCache:
+    """Test suite for ServiceCache class."""
+
+    def test_default_ttl_values(self):
+        """Test default TTL values."""
+        service_cache = ServiceCache()
+
+        assert_that(service_cache.CACHE_CLEANUP_PERIOD).is_equal_to(300)
+        assert_that(service_cache.CACHE_TTL_SHORT).is_equal_to(20)
+        assert_that(service_cache.CACHE_TTL_LONG).is_equal_to(60)
+        assert_that(service_cache.LOCAL_CACHE_SIZE_CURRENT).is_equal_to(100)
+        assert_that(service_cache.LOCAL_CACHE_SIZE_HISTORY).is_equal_to(400)
+
+    def test_global_strikes_current(self):
+        """Test global_strikes returns current cache for minute_offset=0."""
+        service_cache = ServiceCache()
+        cache = service_cache.global_strikes(0)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(20)
+
+    def test_global_strikes_history(self):
+        """Test global_strikes returns history cache for minute_offset>0."""
+        service_cache = ServiceCache()
+        cache = service_cache.global_strikes(60)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(60)
+
+    def test_local_strikes_current(self):
+        """Test local_strikes returns current cache for minute_offset=0."""
+        service_cache = ServiceCache()
+        cache = service_cache.local_strikes(0)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(20)
+
+    def test_local_strikes_history(self):
+        """Test local_strikes returns history cache for minute_offset>0."""
+        service_cache = ServiceCache()
+        cache = service_cache.local_strikes(60)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(60)
+
+    def test_strikes_current(self):
+        """Test strikes returns current cache for minute_offset=0."""
+        service_cache = ServiceCache()
+        cache = service_cache.strikes(0)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(20)
+
+    def test_strikes_history(self):
+        """Test strikes returns history cache for minute_offset>0."""
+        service_cache = ServiceCache()
+        cache = service_cache.strikes(60)
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(60)
+
+    def test_histogram_cache(self):
+        """Test histogram cache exists and has correct TTL."""
+        service_cache = ServiceCache()
+        cache = service_cache.histogram
+        assert_that(cache).is_not_none()
+        assert_that(cache.get_time_to_live()).is_equal_to(60)
+
+    def test_different_caches_for_different_methods(self):
+        """Test that different cache methods return different caches."""
+        service_cache = ServiceCache()
+
+        # All should be different objects
+        assert_that(service_cache.strikes(0)).is_not_same_as(service_cache.global_strikes(0))
+        assert_that(service_cache.strikes(0)).is_not_same_as(service_cache.local_strikes(0))
+        assert_that(service_cache.global_strikes(0)).is_not_same_as(service_cache.local_strikes(0))
