@@ -1,4 +1,4 @@
-"""Tests for blitzortung.cli.webservice module."""
+"""Tests for blitzortung.service.base module."""
 
 import datetime
 import time
@@ -8,7 +8,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 import pytest
 from assertpy import assert_that
 
-from blitzortung.cli.webservice import Blitzortung, LogObserver
+from blitzortung.service.base import Blitzortung, LogObserver
 
 
 class MockRequest:
@@ -362,9 +362,9 @@ class TestForceRange:
 class TestMemoryInfo:
     """Test memory_info method."""
 
-    @patch('blitzortung.cli.webservice.gc')
-    @patch('blitzortung.cli.webservice.log')
-    @patch('blitzortung.cli.webservice.is_pypy', False)
+    @patch('blitzortung.service.base.gc')
+    @patch('blitzortung.service.base.log')
+    @patch('blitzortung.service.base.is_pypy', False)
     def test_logs_memory_info_first_call(self, mock_log, mock_gc, blitzortung):
         mock_gc.get_stats = Mock(return_value={'test': 'stats'})
         blitzortung.next_memory_info = 0.0
@@ -375,16 +375,16 @@ class TestMemoryInfo:
         assert_that(mock_log.msg.call_count).is_greater_than(0)
 
     def test_skips_logging_when_within_interval(self, blitzortung):
-        with patch('blitzortung.cli.webservice.log') as mock_log:
+        with patch('blitzortung.service.base.log') as mock_log:
             blitzortung.next_memory_info = 1000.0
             with patch('time.time', return_value=500.0):
                 blitzortung.memory_info()
 
             mock_log.msg.assert_not_called()
 
-    @patch('blitzortung.cli.webservice.gc')
-    @patch('blitzortung.cli.webservice.log')
-    @patch('blitzortung.cli.webservice.is_pypy', True)
+    @patch('blitzortung.service.base.gc')
+    @patch('blitzortung.service.base.log')
+    @patch('blitzortung.service.base.is_pypy', True)
     def test_logs_with_pypy_stats(self, mock_log, mock_gc, blitzortung):
         mock_gc.get_stats = Mock(return_value={'test': 'stats'})
         blitzortung.next_memory_info = 0.0
@@ -517,8 +517,8 @@ class TestGetStrikesGrid:
     """Test get_strikes_grid method."""
 
     def test_creates_grid_parameters(self, blitzortung, mock_strike_grid_query):
-        with patch('blitzortung.cli.webservice.GridParameters') as mock_params:
-            with patch('blitzortung.cli.webservice.create_time_interval') as mock_interval:
+        with patch('blitzortung.service.base.GridParameters') as mock_params:
+            with patch('blitzortung.service.base.create_time_interval') as mock_interval:
                 mock_interval.return_value = Mock()
                 mock_strike_grid_query.create.return_value = (Mock(), Mock())
                 mock_strike_grid_query.combine_result.return_value = Mock()
@@ -528,8 +528,8 @@ class TestGetStrikesGrid:
                 mock_params.assert_called()
 
     def test_creates_time_interval(self, blitzortung, mock_strike_grid_query):
-        with patch('blitzortung.cli.webservice.GridParameters') as mock_params:
-            with patch('blitzortung.cli.webservice.create_time_interval') as mock_interval:
+        with patch('blitzortung.service.base.GridParameters') as mock_params:
+            with patch('blitzortung.service.base.create_time_interval') as mock_interval:
                 mock_interval.return_value = Mock()
                 mock_strike_grid_query.create.return_value = (Mock(), Mock())
                 mock_strike_grid_query.combine_result.return_value = Mock()
@@ -543,8 +543,8 @@ class TestGetGlobalStrikesGrid:
     """Test get_global_strikes_grid method."""
 
     def test_creates_global_grid_parameters(self, blitzortung, mock_global_strike_grid_query):
-        with patch('blitzortung.cli.webservice.GridParameters') as mock_params:
-            with patch('blitzortung.cli.webservice.create_time_interval') as mock_interval:
+        with patch('blitzortung.service.base.GridParameters') as mock_params:
+            with patch('blitzortung.service.base.create_time_interval') as mock_interval:
                 mock_interval.return_value = Mock()
                 mock_global_strike_grid_query.create.return_value = (Mock(), Mock())
                 mock_global_strike_grid_query.combine_result.return_value = Mock()
@@ -558,9 +558,9 @@ class TestGetLocalStrikesGrid:
     """Test get_local_strikes_grid method."""
 
     def test_creates_local_grid_parameters(self, blitzortung, mock_strike_grid_query):
-        with patch('blitzortung.cli.webservice.LocalGrid') as mock_local_grid:
-            with patch('blitzortung.cli.webservice.GridParameters') as mock_params:
-                with patch('blitzortung.cli.webservice.create_time_interval') as mock_interval:
+        with patch('blitzortung.service.base.LocalGrid') as mock_local_grid:
+            with patch('blitzortung.service.base.GridParameters') as mock_params:
+                with patch('blitzortung.service.base.create_time_interval') as mock_interval:
                     mock_grid_factory = Mock()
                     mock_grid_factory.get_for.return_value = Mock()
                     mock_local_grid.return_value.get_grid_factory.return_value = mock_grid_factory
