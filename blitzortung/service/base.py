@@ -69,12 +69,8 @@ class Blitzortung(jsonrpc.JSONRPC):
     def __init__(self, db_connection_pool=None, log_directory=None,
                  strike_query=None, strike_grid_query=None,
                  global_strike_grid_query=None, histogram_query=None,
-                 cache=None, metrics=None, forbidden_ips=None,
-                 create_connection_pool=None):
+                 cache=None, metrics=None, forbidden_ips=None):
         super().__init__()
-        if db_connection_pool is None and create_connection_pool is not None:
-            # Synchronous connection pool creation for testing
-            db_connection_pool = create_connection_pool()
         self.connection_pool = db_connection_pool
         self.log_directory = log_directory
         self.strike_query = strike_query if strike_query is not None else blitzortung.service.strike_query()
