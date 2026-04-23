@@ -686,27 +686,8 @@ class TestJsonRpcGetStrikesGrid:
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
         assert_that(result).is_equal_to({})
 
-    def test_returns_empty_for_existing_referer(self, blitzortung):
-        """Test that requests with referer are blocked."""
-        request = MockRequest(
-            client_ip='192.168.1.1',
-            content_type='text/json',
-            referer="http://example.com",
-            user_agent='bo-android-150'
-        )
-        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
-        assert_that(result).is_equal_to({})
-
-    def test_allows_request_without_referer(self, blitzortung, mock_cache):
+    def test_allows_request_without_referer(self, blitzortung):
         """Test that requests without referer are allowed."""
-        # Set up mock to return non-empty response for valid requests
-        mock_strikes_cache = Mock(
-            get=Mock(return_value={"strokes": [[1, 2, 3]]}),
-            get_ratio=Mock(return_value=0.5),
-            get_size=Mock(return_value=100)
-        )
-        mock_cache.strikes.return_value = mock_strikes_cache
-
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
@@ -714,8 +695,20 @@ class TestJsonRpcGetStrikesGrid:
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
-        # Should return the cached response with data, not empty dict from blocked request
-        assert_that(result).is_equal_to({"strokes": [[1, 2, 3]]})
+        # Should return cached response (empty dict from mock)
+        assert_that(result).is_equal_to({})
+
+    def test_blocks_request_with_referer(self, blitzortung):
+        """Test that requests with referer are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        # Should return empty dict because request with referer is blocked
+        assert_that(result).is_equal_to({})
 
     def test_returns_empty_for_small_grid_baselength(self, blitzortung):
         """Test that requests with too small grid_baselength are blocked."""
@@ -739,16 +732,16 @@ class TestJsonRpcGetStrikesGrid:
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 1000001, 0, 1)
         assert_that(result).is_equal_to({})
 
-    def test_returns_response_for_valid_request(self, blitzortung):
-        """Test that valid requests get a response."""
+    def test_returns_empty_for_request_with_referer(self, blitzortung):
+        """Test that requests with referer are blocked."""
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer=None,
+            referer='http://example.com',
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
-        # Should return the cached response (empty dict from mock)
+        # Should return empty dict because request with referer is blocked
         assert_that(result).is_equal_to({})
 
 
@@ -782,7 +775,7 @@ class TestJsonRpcGetGlobalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer=None,
+            referer='http://example.com',
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
@@ -817,7 +810,7 @@ class TestJsonRpcGetLocalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer=None
+            referer='http://example.com'
         )
         result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
         assert_that(result).is_equal_to({})
