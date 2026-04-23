@@ -20,7 +20,9 @@ def start_server(connection_pool):
     site = server.Site(root)
     site.displayTracebacks = False
     jsonrpc_server = internet.TCPServer(port, site, interface='127.0.0.1')
+    print(f"Setting service parent, jsonrpc_server={jsonrpc_server}")
     jsonrpc_server.setServiceParent(application)
+    print("Service parent set, returning")
     return jsonrpc_server
 
 
