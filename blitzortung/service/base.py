@@ -50,6 +50,7 @@ class Blitzortung(jsonrpc.JSONRPC):
     MIN_GRID_BASE_LENGTH = 5000
     INVALID_GRID_BASE_LENGTH = 1000001
     GLOBAL_MIN_GRID_BASE_LENGTH = 10000
+    MAX_REGION = 7
 
     # Time validation constants
     MAX_MINUTES_PER_DAY = 24 * 60  # 1440 minutes
@@ -297,7 +298,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         original_grid_base_length = grid_base_length
         grid_base_length = max(self.MIN_GRID_BASE_LENGTH, grid_base_length)
         minute_length, minute_offset = self.minute_constraints.enforce(minute_length, minute_offset, )
-        region = max(1, region)
+        region = self.__force_range(region, 1, self.MAX_REGION)
         count_threshold = max(0, count_threshold)
 
         cache = self.cache.strikes(minute_offset)
