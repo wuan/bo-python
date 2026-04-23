@@ -2,12 +2,14 @@
 
 import os
 
-from twisted.application import service
+from twisted.application import internet, service
+from twisted.python import log
 from twisted.python.log import ILogObserver
 from twisted.python.logfile import DailyLogFile
+from twisted.web import server
 
-# Import classes - these are used by the application
-from blitzortung.service.base import Blitzortung, LogObserver  # noqa: F401
+from blitzortung.service.base import Blitzortung, LogObserver
+import blitzortung.config
 
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
@@ -22,31 +24,26 @@ except Exception:
     log_directory = None
 
 
-# Set up connection pool when running via twistd
-if not os.environ.get('BLITZORTUNG_TEST'):
-    from twisted.application import internet
-    from twisted.python import log
-    from twisted.web import server
-    import blitzortung.config
+def start_server(connection_pool):
+    """Start the JSON-RPC server with the given connection pool."""
+    print("Connection pool is ready")
+    config = blitzortung.config.config()
+    port = config.get_webservice_port()
+    root = Blitzortung(connection_pool, log_directory)
+    site = server.Site(root)
+    site.displayTracebacks = False
+    jsonrpc_server = internet.TCPServer(port, site, interface='127.0.0.1')
+    jsonrpc_server.setServiceParent(application)
+    jsonrpc_server.startService()
+    return jsonrpc_server
 
-    def start_server(connection_pool):
-        """Start the JSON-RPC server with the given connection pool."""
-        print("Connection pool is ready")
-        config = blitzortung.config.config()
-        port = config.get_webservice_port()
-        root = Blitzortung(connection_pool, log_directory)
-        site = server.Site(root)
-        site.displayTracebacks = False
-        jsonrpc_server = internet.TCPServer(port, site, interface='127.0.0.1')
-        jsonrpc_server.setServiceParent(application)
-        jsonrpc_server.startService()
-        return jsonrpc_server
 
-    def on_error(failure):
-        """Error handler for connection pool failures."""
-        log.err(failure, "Failed to create connection pool")
-        raise failure.value
+def on_error(failure):
+    """Error handler for connection pool failures."""
+    log.err(failure, "Failed to create connection pool")
+    raise failure.value
 
-    from blitzortung.service.db import create_connection_pool
-    deferred_connection_pool = create_connection_pool()
-    deferred_connection_pool.addCallback(start_server).addErrback(on_error)
+
+from blitzortung.service.db import create_connection_pool
+deferred_connection_pool = create_connection_pool()
+deferred_connection_pool.addCallback(start_server).addErrback(on_error)
