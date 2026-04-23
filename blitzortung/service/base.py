@@ -2,24 +2,12 @@
 
 import os
 
-from twisted.application import internet, service
+from twisted.application import internet
 from twisted.python import log
-from twisted.python.log import ILogObserver
-from twisted.python.logfile import DailyLogFile
 from twisted.web import server
 
-from blitzortung.cli.webservice import Blitzortung, LogObserver
+from blitzortung.cli.webservice import Blitzortung, application, log_directory
 import blitzortung.config
-
-
-application = service.Application("Blitzortung.org JSON-RPC Server")
-
-log_directory = "/var/log/blitzortung"
-if log_directory and os.path.exists(log_directory):
-    logfile = DailyLogFile("webservice.log", log_directory)
-    application.setComponent(ILogObserver, LogObserver(logfile).emit)
-else:
-    log_directory = None
 
 
 def start_server(connection_pool):

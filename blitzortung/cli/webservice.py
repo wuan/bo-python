@@ -13,7 +13,8 @@ from twisted.application import internet, service
 from twisted.internet.defer import succeed
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
-from twisted.python.log import FileLogObserver, textFromEventDict, _safeFormat
+from twisted.python.log import FileLogObserver, ILogObserver, textFromEventDict, _safeFormat
+from twisted.python.logfile import DailyLogFile
 from twisted.python.util import untilConcludes
 from twisted.web import server
 from txjsonrpc_ng.web import jsonrpc
@@ -25,6 +26,15 @@ from blitzortung.gis.local_grid import LocalGrid
 from blitzortung.service.cache import ServiceCache
 from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
+
+application = service.Application("Blitzortung.org JSON-RPC Server")
+
+log_directory = "/var/log/blitzortung"
+if log_directory and os.path.exists(log_directory):
+    logfile = DailyLogFile("webservice.log", log_directory)
+    application.setComponent(ILogObserver, LogObserver(logfile).emit)
+else:
+    log_directory = None
 
 JSON_CONTENT_TYPE = 'text/json'
 
