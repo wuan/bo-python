@@ -185,6 +185,10 @@ class GlobalStrikeGridQuery:
         response = {'r': grid_data,
                     'xd': round(grid_parameters.grid.x_div, 6),
                     'yd': round(grid_parameters.grid.y_div, 6),
+                    'x0': round(grid_parameters.grid.x_min, 4),
+                    'y1': round(grid_parameters.grid.y_max + grid_parameters.grid.y_div, 4),
+                    'xc': grid_parameters.grid.x_bin_count,
+                    'yc': grid_parameters.grid.y_bin_count,
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
                     'dt': duration.seconds,
                     'h': histogram_data}

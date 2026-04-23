@@ -194,7 +194,11 @@ class TestGlobalStrikeGridQuery:
             'r': ((7, 102, 3, -65),),
             't': time_interval.end.strftime("%Y%m%dT%H:%M:%S"),
             'xd': 0.127011,
-            'yd': 0.094352
+            'yd': 0.094352,
+            'x0': -180.0,
+            'xc': 2834,
+            'y1': 90.0238,
+            'yc': 1907
         }
 
         # assert_that(response["x0"] + response["xd"] * response["xc"]).is_close_to(grid_parameters.grid.x_max, 0.1)
