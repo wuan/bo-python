@@ -13,8 +13,7 @@ from twisted.application import internet, service
 from twisted.internet.defer import succeed
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
-from twisted.python.log import FileLogObserver, ILogObserver, textFromEventDict, _safeFormat
-from twisted.python.logfile import DailyLogFile
+from twisted.python.log import FileLogObserver, textFromEventDict, _safeFormat
 from twisted.python.util import untilConcludes
 from twisted.web import server
 from txjsonrpc_ng.web import jsonrpc
@@ -46,7 +45,6 @@ import blitzortung.db
 import blitzortung.geom
 import blitzortung.service
 from blitzortung.db.query import TimeInterval
-from blitzortung.service.db import create_connection_pool
 from blitzortung.service.general import create_time_interval
 from blitzortung.service.strike_grid import GridParameters
 
@@ -81,22 +79,29 @@ class Blitzortung(jsonrpc.JSONRPC):
     # Memory info interval
     MEMORY_INFO_INTERVAL = 300  # 5 minutes
 
-    def __init__(self, db_connection_pool, log_directory):
+    def __init__(self, db_connection_pool=None, log_directory=None,
+                 strike_query=None, strike_grid_query=None,
+                 global_strike_grid_query=None, histogram_query=None,
+                 cache=None, metrics=None, forbidden_ips=None,
+                 create_connection_pool=None):
         super().__init__()
+        if db_connection_pool is None and create_connection_pool is not None:
+            # Synchronous connection pool creation for testing
+            db_connection_pool = create_connection_pool()
         self.connection_pool = db_connection_pool
         self.log_directory = log_directory
-        self.strike_query = blitzortung.service.strike_query()
-        self.strike_grid_query = blitzortung.service.strike_grid_query()
-        self.global_strike_grid_query = blitzortung.service.global_strike_grid_query()
-        self.histogram_query = blitzortung.service.histogram_query()
+        self.strike_query = strike_query if strike_query is not None else blitzortung.service.strike_query()
+        self.strike_grid_query = strike_grid_query if strike_grid_query is not None else blitzortung.service.strike_grid_query()
+        self.global_strike_grid_query = global_strike_grid_query if global_strike_grid_query is not None else blitzortung.service.global_strike_grid_query()
+        self.histogram_query = histogram_query if histogram_query is not None else blitzortung.service.histogram_query()
         self.check_count = 0
-        self.cache = ServiceCache()
+        self.cache = cache if cache is not None else ServiceCache()
         self.current_period = self.__current_period()
         self.current_data = collections.defaultdict(list)
         self.next_memory_info = 0.0
         self.minute_constraints = TimeConstraint(self.DEFAULT_MINUTE_LENGTH, self.MAX_MINUTES_PER_DAY)
-
-        self.metrics = StatsDMetrics()
+        self.metrics = metrics if metrics is not None else StatsDMetrics()
+        self.forbidden_ips = forbidden_ips if forbidden_ips is not None else FORBIDDEN_IPS
 
     addSlash = True
 
@@ -109,8 +114,8 @@ class Blitzortung(jsonrpc.JSONRPC):
     def __check_period(self):
         if self.current_period != self.__current_period():
             self.current_data['timestamp'] = self.__get_epoch(self.current_period)
-            if log_directory:
-                with open(os.path.join(log_directory, self.current_period.strftime("%Y%m%d-%H%M.json")),
+            if self.log_directory:
+                with open(os.path.join(self.log_directory, self.current_period.strftime("%Y%m%d-%H%M.json")),
                           'w') as output_file:
                     output_file.write(json.dumps(self.current_data))
             self.__restart_period()
@@ -210,7 +215,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in FORBIDDEN_IPS or user_agent_version == 0 or request.getHeader(
+        if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
                 'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
@@ -253,7 +258,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in FORBIDDEN_IPS or request.getHeader(
+        if client in self.forbidden_ips or request.getHeader(
                 'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
@@ -300,7 +305,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in FORBIDDEN_IPS or user_agent_version == 0 or request.getHeader(
+        if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
                 'content-type') != JSON_CONTENT_TYPE or request.getHeader(
             'referer') == '' or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
@@ -408,39 +413,3 @@ class LogObserver(FileLogObserver):
         })
         untilConcludes(self.write, time_str + " " + msg_str)
         untilConcludes(self.flush)
-
-
-application = service.Application("Blitzortung.org JSON-RPC Server")
-
-if os.environ.get('BLITZORTUNG_TEST'):
-    import tempfile
-
-    log_directory: str | None = tempfile.mkdtemp()
-    print("LOG_DIR", log_directory)
-else:
-    log_directory = "/var/log/blitzortung"
-if log_directory and os.path.exists(log_directory):
-    logfile = DailyLogFile("webservice.log", log_directory)
-    application.setComponent(ILogObserver, LogObserver(logfile).emit)
-else:
-    log_directory = None
-
-
-def start_server(connection_pool):
-    print("Connection pool is ready")
-    root = Blitzortung(connection_pool, log_directory)
-    config = blitzortung.config.config()
-    site = server.Site(root)
-    site.displayTracebacks = False
-    jsonrpc_server = internet.TCPServer(config.get_webservice_port(), site, interface='127.0.0.1')
-    jsonrpc_server.setServiceParent(application)
-    return jsonrpc_server
-
-
-def on_error(failure):
-    log.err(failure, "Failed to create connection pool")
-    raise failure.value
-
-
-deferred_connection_pool = create_connection_pool()
-deferred_connection_pool.addCallback(start_server).addErrback(on_error)

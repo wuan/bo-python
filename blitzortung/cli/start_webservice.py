@@ -3,6 +3,9 @@ import sys
 
 from twisted.scripts.twistd import run
 
+# Import service.base to trigger application setup and connection pool creation
+from blitzortung.service import base  # noqa: F401
+
 
 def main():
     target_dir = os.path.dirname(os.path.abspath(__file__))
