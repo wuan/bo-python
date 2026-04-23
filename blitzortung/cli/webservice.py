@@ -30,10 +30,13 @@ from blitzortung.util import TimeConstraint
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
-if log_directory and os.path.exists(log_directory):
-    logfile = DailyLogFile("webservice.log", log_directory)
-    application.setComponent(ILogObserver, LogObserver(logfile).emit)
-else:
+try:
+    if log_directory and os.path.exists(log_directory):
+        logfile = DailyLogFile("webservice.log", log_directory)
+        application.setComponent(ILogObserver, LogObserver(logfile).emit)
+    else:
+        log_directory = None
+except Exception:
     log_directory = None
 
 JSON_CONTENT_TYPE = 'text/json'
