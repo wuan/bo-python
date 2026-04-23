@@ -13,11 +13,13 @@ import blitzortung.config
 def start_server(connection_pool):
     """Start the JSON-RPC server with the given connection pool."""
     print("Connection pool is ready")
-    root = Blitzortung(connection_pool, log_directory)
     config = blitzortung.config.config()
+    port = config.get_webservice_port()
+    print(f"Starting server on port {port}")
+    root = Blitzortung(connection_pool, log_directory)
     site = server.Site(root)
     site.displayTracebacks = False
-    jsonrpc_server = internet.TCPServer(config.get_webservice_port(), site, interface='127.0.0.1')
+    jsonrpc_server = internet.TCPServer(port, site, interface='127.0.0.1')
     jsonrpc_server.setServiceParent(application)
     return jsonrpc_server
 
