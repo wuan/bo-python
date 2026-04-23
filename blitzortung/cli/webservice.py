@@ -13,14 +13,12 @@ from twisted.web import server
 try:
     from twisted.internet import epollreactor  # type: ignore[attr-defined, no-redef]
     epollreactor.install()
-except ImportError:
+except (ImportError, ReactorAlreadyInstalledError):
     try:
         from twisted.internet import kqreactor  # type: ignore[assignment, no-redef]
         kqreactor.install()
-    except ImportError:
+    except (ImportError, ReactorAlreadyInstalledError):
         pass
-except ReactorAlreadyInstalledError:
-    pass
 
 from blitzortung.service.base import Blitzortung, LogObserver
 import blitzortung.config

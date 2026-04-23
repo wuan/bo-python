@@ -431,16 +431,24 @@ class TestForbiddenIps:
         mock_cache.global_strikes = Mock(return_value=Mock(get=Mock(return_value={})))
         mock_cache.local_strikes = Mock(return_value=Mock(get=Mock(return_value={})))
 
+        mock_strike_query = Mock()
         mock_strike_grid_query = Mock()
         mock_strike_grid_query.create = Mock(return_value=(Mock(), Mock()))
         mock_strike_grid_query.combine_result = Mock(return_value=Mock())
+        mock_global_strike_grid_query = Mock()
+        mock_global_strike_grid_query.create = Mock(return_value=(Mock(), Mock()))
+        mock_global_strike_grid_query.combine_result = Mock(return_value=Mock())
+        mock_histogram_query = Mock()
 
         forbidden_ips = {'192.168.1.100': True}
 
         bt = Blitzortung(
             mock_pool,
             None,
+            strike_query=mock_strike_query,
             strike_grid_query=mock_strike_grid_query,
+            global_strike_grid_query=mock_global_strike_grid_query,
+            histogram_query=mock_histogram_query,
             cache=mock_cache,
             forbidden_ips=forbidden_ips
         )
@@ -469,14 +477,20 @@ class TestForbiddenIps:
         mock_cache.global_strikes = Mock(return_value=Mock(get=Mock(return_value={})))
         mock_cache.local_strikes = Mock(return_value=Mock(get=Mock(return_value={})))
 
+        mock_strike_query = Mock()
         mock_strike_grid_query = Mock()
         mock_strike_grid_query.create = Mock(return_value=(Mock(), Mock()))
         mock_strike_grid_query.combine_result = Mock(return_value=Mock())
+        mock_global_strike_grid_query = Mock()
+        mock_histogram_query = Mock()
 
         bt = Blitzortung(
             mock_pool,
             None,
+            strike_query=mock_strike_query,
             strike_grid_query=mock_strike_grid_query,
+            global_strike_grid_query=mock_global_strike_grid_query,
+            histogram_query=mock_histogram_query,
             cache=mock_cache,
             forbidden_ips={'192.168.1.100': True}
         )
