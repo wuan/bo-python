@@ -457,7 +457,7 @@ class TestForbiddenIps:
         request = MockRequest(
             client_ip='192.168.1.100',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
 
@@ -500,7 +500,7 @@ class TestForbiddenIps:
             client_ip='192.168.1.1',
             user_agent='bo-android-150',
             content_type='text/json',
-            referer='http://example.com'
+            referer=None
         )
 
         # The method should call cache.get for non-forbidden IP
@@ -658,7 +658,7 @@ class TestJsonRpcGetStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.100',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
@@ -669,7 +669,7 @@ class TestJsonRpcGetStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='invalid'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
@@ -680,14 +680,25 @@ class TestJsonRpcGetStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/html',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
         assert_that(result).is_equal_to({})
 
-    def test_returns_empty_for_missing_referer(self, blitzortung):
-        """Test that requests without referer are blocked."""
+    def test_returns_empty_for_existing_referer(self, blitzortung):
+        """Test that requests with referer are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer="http://example.com",
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_allows_request_without_referer(self, blitzortung):
+        """Test that requests without referer are allowed."""
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
@@ -695,6 +706,7 @@ class TestJsonRpcGetStrikesGrid:
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        # Should return the cached response (empty dict from mock), not blocked
         assert_that(result).is_equal_to({})
 
     def test_returns_empty_for_small_grid_baselength(self, blitzortung):
@@ -724,7 +736,7 @@ class TestJsonRpcGetStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
@@ -762,7 +774,7 @@ class TestJsonRpcGetGlobalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
@@ -797,7 +809,7 @@ class TestJsonRpcGetLocalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com'
+            referer=None
         )
         result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
         assert_that(result).is_equal_to({})

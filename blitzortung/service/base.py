@@ -196,8 +196,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or not request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
+            'referer') is not None or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
             log.msg('get_global_strikes_grid(%d, %d, %d, >=%d) BLOCKED %.1f%% %s %s' % (
@@ -239,8 +239,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in self.forbidden_ips or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or not request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
+            'referer') is not None or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
             log.msg('get_local_strikes_grid(%d, %d, %d, %d, %d, >=%d, %d) BLOCKED %.1f%% %s %s' % (
@@ -286,8 +286,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         user_agent, user_agent_version = self.parse_user_agent(request)
 
         if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or not request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
+                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
+            'referer') is not None or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
             log.msg(
                 f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
             log.msg('get_strikes_grid(%d, %d, %d, %d, >=%d) BLOCKED %.1f%% %s %s' % (
