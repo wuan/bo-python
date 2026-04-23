@@ -3,16 +3,22 @@
 import os
 
 from twisted.application import internet, service
-from twisted.internet import reactor
 from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
 from twisted.python.log import ILogObserver
 from twisted.python.logfile import DailyLogFile
 from twisted.web import server
 
-# Install epoll/kqueue reactor for better performance
+# Install epoll/kqueue reactor for better performance (if not already installed)
 try:
-    reactor.install()
+    from twisted.internet import epollreactor  # type: ignore[attr-defined, no-redef]
+    epollreactor.install()
+except ImportError:
+    try:
+        from twisted.internet import kqreactor  # type: ignore[assignment, no-redef]
+        kqreactor.install()
+    except ImportError:
+        pass
 except ReactorAlreadyInstalledError:
     pass
 
