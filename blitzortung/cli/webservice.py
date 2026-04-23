@@ -27,6 +27,29 @@ from blitzortung.service.cache import ServiceCache
 from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
 
+
+class LogObserver(FileLogObserver):
+
+    def __init__(self, f, prefix=None):
+        prefix = '' if prefix is None else prefix
+        if len(prefix) > 0:
+            prefix += ''
+        self.prefix = prefix
+        FileLogObserver.__init__(self, f)
+
+    def emit(self, event_dict):
+        text = textFromEventDict(event_dict)
+        if text is None:
+            return
+        time_str = self.formatTime(event_dict["time"])
+        msg_str = _safeFormat("[%(prefix)s] %(text)s\n", {
+            "prefix": self.prefix,
+            "text": text.replace("\n", "\n\t")
+        })
+        untilConcludes(self.write, time_str + " " + msg_str)
+        untilConcludes(self.flush)
+
+
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
 log_directory = "/var/log/blitzortung"
@@ -404,25 +427,3 @@ class Blitzortung(jsonrpc.JSONRPC):
             else:
                 log.msg(gc.get_stats())  # type: ignore[call-arg]
             self.next_memory_info = now + self.MEMORY_INFO_INTERVAL
-
-
-class LogObserver(FileLogObserver):
-
-    def __init__(self, f, prefix=None):
-        prefix = '' if prefix is None else prefix
-        if len(prefix) > 0:
-            prefix += ''
-        self.prefix = prefix
-        FileLogObserver.__init__(self, f)
-
-    def emit(self, event_dict):
-        text = textFromEventDict(event_dict)
-        if text is None:
-            return
-        time_str = self.formatTime(event_dict["time"])
-        msg_str = _safeFormat("[%(prefix)s] %(text)s\n", {
-            "prefix": self.prefix,
-            "text": text.replace("\n", "\n\t")
-        })
-        untilConcludes(self.write, time_str + " " + msg_str)
-        untilConcludes(self.flush)
