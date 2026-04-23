@@ -697,8 +697,16 @@ class TestJsonRpcGetStrikesGrid:
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
         assert_that(result).is_equal_to({})
 
-    def test_allows_request_without_referer(self, blitzortung):
+    def test_allows_request_without_referer(self, blitzortung, mock_cache):
         """Test that requests without referer are allowed."""
+        # Set up mock to return non-empty response for valid requests
+        mock_strikes_cache = Mock(
+            get=Mock(return_value={"strokes": [[1, 2, 3]]}),
+            get_ratio=Mock(return_value=0.5),
+            get_size=Mock(return_value=100)
+        )
+        mock_cache.strikes.return_value = mock_strikes_cache
+
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
@@ -706,8 +714,8 @@ class TestJsonRpcGetStrikesGrid:
             user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
-        # Should return the cached response (empty dict from mock), not blocked
-        assert_that(result).is_equal_to({})
+        # Should return the cached response with data, not empty dict from blocked request
+        assert_that(result).is_equal_to({"strokes": [[1, 2, 3]]})
 
     def test_returns_empty_for_small_grid_baselength(self, blitzortung):
         """Test that requests with too small grid_baselength are blocked."""
