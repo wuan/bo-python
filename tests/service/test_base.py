@@ -631,3 +631,191 @@ class TestJsonRpcGetStrikes:
         # minute_length of 2000 should be clamped to 1440
         result = blitzortung.jsonrpc_get_strikes(request, 2000, 0)
         assert_that(result).is_none()
+
+
+class TestJsonRpcGetStrikesGrid:
+    """Test jsonrpc_get_strikes_grid method."""
+
+    def test_returns_empty_for_forbidden_ip(self, blitzortung):
+        """Test that requests from forbidden IPs are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.100',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_invalid_user_agent(self, blitzortung):
+        """Test that requests with invalid user agent are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='invalid'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_invalid_content_type(self, blitzortung):
+        """Test that requests without proper content type are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/html',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_missing_referer(self, blitzortung):
+        """Test that requests without referer are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer=None,
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_small_grid_baselength(self, blitzortung):
+        """Test that requests with too small grid_baselength are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 1000, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_invalid_grid_baselength(self, blitzortung):
+        """Test that requests with invalid grid_baselength are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 1000001, 0, 1)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_response_for_valid_request(self, blitzortung):
+        """Test that valid requests get a response."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_strikes_grid(request, 60, 10000, 0, 1)
+        # Should return the cached response (empty dict from mock)
+        assert_that(result).is_equal_to({})
+
+
+class TestJsonRpcGetGlobalStrikesGrid:
+    """Test jsonrpc_get_global_strikes_grid method."""
+
+    def test_returns_empty_for_forbidden_ip(self, blitzortung):
+        """Test that requests from forbidden IPs are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.100',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_invalid_user_agent(self, blitzortung):
+        """Test that requests with invalid user agent are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='invalid'
+        )
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_response_for_valid_request(self, blitzortung):
+        """Test that valid requests get a response."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
+        assert_that(result).is_equal_to({})
+
+
+class TestJsonRpcGetLocalStrikesGrid:
+    """Test jsonrpc_get_local_strikes_grid method."""
+
+    def test_returns_empty_for_forbidden_ip(self, blitzortung):
+        """Test that requests from forbidden IPs are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.100',
+            content_type='text/json',
+            referer='http://example.com'
+        )
+        result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_invalid_content_type(self, blitzortung):
+        """Test that requests without proper content type are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/html',
+            referer='http://example.com'
+        )
+        result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_response_for_valid_request(self, blitzortung):
+        """Test that valid requests get a response."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com'
+        )
+        result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
+        assert_that(result).is_equal_to({})
+
+
+class TestCheckPeriod:
+    """Test __check_period method."""
+
+    def test_restarts_period_when_changed(self, blitzortung):
+        """Test that period is restarted when it changes."""
+        with patch.object(blitzortung, '_Blitzortung__restart_period') as mock_restart:
+            with patch.object(blitzortung, '_Blitzortung__current_period') as mock_current:
+                # Set current period to be different
+                mock_current.return_value = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+                blitzortung.current_period = datetime.datetime(2025, 1, 1, 11, 0, 0, tzinfo=datetime.timezone.utc)
+                blitzortung._Blitzortung__check_period()
+                mock_restart.assert_called_once()
+
+    def test_does_not_restart_when_same_period(self, blitzortung):
+        """Test that period is not restarted when unchanged."""
+        with patch.object(blitzortung, '_Blitzortung__restart_period') as mock_restart:
+            with patch.object(blitzortung, '_Blitzortung__current_period') as mock_current:
+                same_period = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+                mock_current.return_value = same_period
+                blitzortung.current_period = same_period
+                blitzortung._Blitzortung__check_period()
+                mock_restart.assert_not_called()
+
+
+class TestRestartPeriod:
+    """Test __restart_period method."""
+
+    def test_resets_current_data(self, blitzortung):
+        """Test that current_data is reset."""
+        blitzortung.current_data['test'] = [1, 2, 3]
+        blitzortung._Blitzortung__restart_period()
+        assert_that(blitzortung.current_data).is_instance_of(dict)
+        assert_that(blitzortung.current_data['test']).is_equal_to([])
