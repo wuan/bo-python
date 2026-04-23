@@ -5,11 +5,8 @@ import sys
 
 from twisted.scripts.twistd import run
 
-# Import webservice to get application variable (twistd expects it in this module)
+# Import webservice to trigger application setup and connection pool creation
 import blitzortung.cli.webservice  # noqa: F401
-
-# Import service.base to set up connection pool
-from blitzortung.service import base  # noqa: F401
 
 
 def main():

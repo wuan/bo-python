@@ -23,10 +23,6 @@ from blitzortung.gis.local_grid import LocalGrid
 from blitzortung.service.cache import ServiceCache
 from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
-import blitzortung.cache
-import blitzortung.config
-import blitzortung.db
-import blitzortung.geom
 import blitzortung.service
 from blitzortung.db.query import TimeInterval
 from blitzortung.service.general import create_time_interval
@@ -158,7 +154,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         histogram_result = self.get_histogram(
             time_interval) if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
 
-        combined_result = self.strike_grid_query.combine_result(grid_result, histogram_result, state)
+        combined_result = self.global_strike_grid_query.combine_result(grid_result, histogram_result, state)
 
         combined_result.addCallback(lambda value: CacheableResult(value))
 

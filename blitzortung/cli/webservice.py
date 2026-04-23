@@ -3,10 +3,18 @@
 import os
 
 from twisted.application import internet, service
+from twisted.internet import reactor
+from twisted.internet.error import ReactorAlreadyInstalledError
 from twisted.python import log
 from twisted.python.log import ILogObserver
 from twisted.python.logfile import DailyLogFile
 from twisted.web import server
+
+# Install epoll/kqueue reactor for better performance
+try:
+    reactor.install()
+except ReactorAlreadyInstalledError:
+    pass
 
 from blitzortung.service.base import Blitzortung, LogObserver
 import blitzortung.config
@@ -20,7 +28,8 @@ try:
         application.setComponent(ILogObserver, LogObserver(logfile).emit)
     else:
         log_directory = None
-except Exception:
+except OSError as exc:
+    log.err(exc, "Failed to initialize webservice file logging; disabling file logging")
     log_directory = None
 
 
@@ -34,7 +43,6 @@ def start_server(connection_pool):
     site.displayTracebacks = False
     jsonrpc_server = internet.TCPServer(port, site, interface='127.0.0.1')
     jsonrpc_server.setServiceParent(application)
-    jsonrpc_server.startService()
     return jsonrpc_server
 
 

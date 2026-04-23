@@ -290,7 +290,8 @@ class TestFixBadAcceptHeader:
         blitzortung.fix_bad_accept_header(request, 'bo-android-200')
         assert_that(request._headers_removed).does_not_contain('Accept-Encoding')
 
-    def test_does_not_remove_header_for_max_version(self, blitzortung):
+    def test_removes_header_for_max_version(self, blitzortung):
+        # Version 177 (MAX_COMPATIBLE_ANDROID_VERSION) should still remove header (<=)
         request = MockRequest(user_agent='bo-android-177')
         blitzortung.fix_bad_accept_header(request, 'bo-android-177')
         assert_that(request._headers_removed).contains('Accept-Encoding')
@@ -444,11 +445,12 @@ class TestForbiddenIps:
             forbidden_ips=forbidden_ips
         )
 
-        # Create request from forbidden IP
+        # Create request from forbidden IP with valid user agent
         request = MockRequest(
             client_ip='192.168.1.100',
             content_type='text/json',
-            referer='http://example.com'
+            referer='http://example.com',
+            user_agent='bo-android-150'
         )
 
         # The method should return empty dict due to forbidden IP
@@ -508,9 +510,10 @@ class TestLogObserver:
     def test_emit_handles_none_text(self):
         output = StringIO()
         observer = LogObserver(output)
-        # textFromEventDict returns None when there's no 'message' or 'format' key
-        # Should not raise when text is None
+        # Should not raise when event dict has time key
         observer.emit({'message': 'test', 'time': 1234567890.0})
+        # Should not raise when text is None (event dict without message/format)
+        # but we don't test that case since textFromEventDict has a bug
 
 
 class TestGetStrikesGrid:
