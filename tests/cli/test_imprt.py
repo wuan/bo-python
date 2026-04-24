@@ -2,7 +2,7 @@
 
 import datetime
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -95,106 +95,110 @@ class TestUpdateStartTime:
         assert result.tzinfo is not None
 
 
-class TestTimestampLogic:
-    """Tests for timestamp comparison logic."""
+class TestImportStrikesFor:
+    """Tests for import_strikes_for function."""
 
-    def test_timestamp_comparison_newer(self):
-        """Test timestamp comparison when new is newer."""
+    @pytest.fixture(autouse=True)
+    def mock_dependencies(self, monkeypatch):
+        """Mock dependencies for import_strikes_for tests."""
+        mock_stopit = MagicMock()
+        mock_requests = MagicMock()
+        mock_statsd = MagicMock()
+        mock_timer = MagicMock()
+        mock_timer.lap.return_value = 0.001
+
+        monkeypatch.setitem(sys.modules, 'stopit', mock_stopit)
+        monkeypatch.setitem(sys.modules, 'requests', mock_requests)
+        monkeypatch.setitem(sys.modules, 'statsd', mock_statsd)
+        monkeypatch.setitem(sys.modules, 'blitzortung.util', MagicMock())
+        monkeypatch.setitem(sys.modules, 'blitzortung.util.Timer', mock_timer)
+
+    def test_import_strikes_for_with_no_strikes(self):
+        """Test import_strikes_for when no strikes are returned."""
         import datetime
 
-        latest = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
-        timestamp = datetime.datetime(2025, 1, 1, 12, 1, 0, tzinfo=datetime.timezone.utc)
+        mock_strike_db = Mock()
+        mock_strike_db.get_latest_time.return_value = None
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
 
-        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
-        assert is_newer is True
+        mock_strike_source = Mock()
+        mock_strike_source.get_strikes_since.return_value = []
 
-    def test_timestamp_comparison_older(self):
-        """Test timestamp comparison when timestamp is older."""
+        mock_blitzortung = MagicMock()
+        mock_blitzortung.db.strike.return_value = mock_strike_db
+        mock_blitzortung.dataimport.strikes.return_value = mock_strike_source
+
+        with patch('blitzortung.cli.imprt.blitzortung', mock_blitzortung), \
+             patch('blitzortung.cli.imprt.util.Timer') as mock_timer_class:
+            mock_timer_class.return_value = Mock(lap=Mock(return_value=0.001))
+
+            from blitzortung.cli import imprt
+            import_strikes_for = imprt.import_strikes_for
+
+            start_time = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+            import_strikes_for(1, start_time, is_update=False)
+
+        # Verify database methods were called
+        mock_strike_db.get_latest_time.assert_called_once()
+        mock_strike_source.get_strikes_since.assert_called_once()
+
+    def test_import_strikes_for_inserts_strikes(self):
+        """Test import_strikes_for inserts strikes into database."""
         import datetime
 
-        latest = datetime.datetime(2025, 1, 1, 12, 1, 0, tzinfo=datetime.timezone.utc)
-        timestamp = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        mock_strike = Mock()
+        mock_strike.timestamp = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
 
-        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
-        assert is_newer is False
+        mock_strike_db = Mock()
+        mock_strike_db.get_latest_time.return_value = None
+        mock_strike_db.insert = Mock()
+        mock_strike_db.commit = Mock()
 
-    def test_timestamp_comparison_equal(self):
-        """Test timestamp comparison when timestamps are equal."""
+        mock_strike_source = Mock()
+        mock_strike_source.get_strikes_since.return_value = [mock_strike]
+
+        mock_blitzortung = MagicMock()
+        mock_blitzortung.db.strike.return_value = mock_strike_db
+        mock_blitzortung.dataimport.strikes.return_value = mock_strike_source
+
+        with patch('blitzortung.cli.imprt.blitzortung', mock_blitzortung), \
+             patch('blitzortung.cli.imprt.util.Timer') as mock_timer_class:
+            mock_timer_class.return_value = Mock(lap=Mock(return_value=0.001))
+
+            from blitzortung.cli import imprt
+            import_strikes_for = imprt.import_strikes_for
+
+            start_time = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+            import_strikes_for(1, start_time, is_update=False)
+
+        # Verify insert was called
+        mock_strike_db.insert.assert_called_once_with(mock_strike, 1)
+        mock_strike_db.commit.assert_called()
+
+
+class TestImportStrikes:
+    """Tests for import_strikes function."""
+
+    @pytest.fixture(autouse=True)
+    def mock_dependencies(self, monkeypatch):
+        """Mock dependencies for import_strikes tests."""
+        mock_stopit = MagicMock()
+        mock_requests = MagicMock()
+        mock_statsd = MagicMock()
+
+        monkeypatch.setitem(sys.modules, 'stopit', mock_stopit)
+        monkeypatch.setitem(sys.modules, 'requests', mock_requests)
+        monkeypatch.setitem(sys.modules, 'statsd', mock_statsd)
+
+    def test_import_strikes_single_region(self):
+        """Test import_strikes with a single region."""
         import datetime
 
-        timestamp = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
-        latest = timestamp
+        with patch('blitzortung.cli.imprt.import_strikes_for') as mock_import:
+            from blitzortung.cli import imprt
 
-        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
-        assert is_newer is False
+            start_time = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+            imprt.import_strikes([1], start_time, no_timeout=True)
 
-
-class TestStrikeGrouping:
-    """Tests for strike grouping logic."""
-
-    def test_strike_group_size(self):
-        """Test strike group size for commits."""
-        strike_group_size = 10000
-        assert strike_group_size == 10000
-
-    def test_commit_threshold(self):
-        """Test commit threshold calculation."""
-        strike_count = 10000
-        strike_group_size = 10000
-
-        should_commit = strike_count % strike_group_size == 0
-        assert should_commit is True
-
-    def test_commit_threshold_not_divisible(self):
-        """Test commit when strike count not divisible by group size."""
-        strike_count = 5000
-        strike_group_size = 10000
-
-        should_commit = strike_count % strike_group_size == 0
-        assert should_commit is False
-
-
-class TestRetryLogic:
-    """Tests for retry logic."""
-
-    def test_retry_count(self):
-        """Test retry count."""
-        max_retries = 5
-        assert max_retries == 5
-
-    def test_retry_loop(self):
-        """Test retry loop logic."""
-        max_retries = 5
-
-        for retry in range(max_retries):
-            # Simulate a failed attempt on first try
-            if retry == 0:
-                continue
-            break
-
-        # Should have retried
-        assert True
-
-
-class TestTimeoutHandling:
-    """Tests for timeout handling."""
-
-    def test_default_timeout(self):
-        """Test default timeout value."""
-        default_timeout = 300  # 5 minutes in seconds
-        assert default_timeout == 300
-
-    def test_timeout_calculation(self):
-        """Test timeout calculation."""
-        # Simulate checking if timeout should be applied
-        no_timeout = False
-        timeout = 300 if not no_timeout else None
-
-        assert timeout == 300
-
-    def test_no_timeout_option(self):
-        """Test no timeout option."""
-        no_timeout = True
-        timeout = 300 if not no_timeout else None
-
-        assert timeout is None
+        mock_import.assert_called_once()

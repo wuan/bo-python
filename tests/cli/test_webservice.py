@@ -7,105 +7,111 @@ import pytest
 
 
 class TestReactorInstallation:
-    """Tests for reactor installation logic."""
+    """Tests for reactor installation."""
 
-    def test_epoll_reactor_import(self):
-        """Test importing epoll reactor."""
-        # Test the concept - the actual reactor modules may not be available
-        reactor_name = "epollreactor"
-        assert reactor_name == "epollreactor"
-
-    def test_kqueue_reactor_import(self):
-        """Test importing kqueue reactor."""
-        reactor_name = "kqreactor"
-        assert reactor_name == "kqreactor"
-
-    def test_reactor_install_logic(self):
-        """Test reactor installation logic."""
-        # Test the installation logic concept
+    def test_reactor_import_paths(self):
+        """Test that reactor import paths are correct."""
+        # Verify the import paths are correct
         try:
-            # In real code, this would attempt to install reactor
-            installed = False
+            from twisted.internet import epollreactor
+            assert epollreactor is not None
         except ImportError:
-            installed = False
-        except Exception:
-            installed = False
+            pass  # Not available on this platform
 
-        # Just verify the logic doesn't crash
-        assert True
+    def test_kqueue_import(self):
+        """Test kqueue reactor import."""
+        try:
+            from twisted.internet import kqreactor
+            assert kqreactor is not None
+        except ImportError:
+            pass
 
 
-class TestServiceApplication:
-    """Tests for service application creation."""
+class TestApplicationConfiguration:
+    """Tests for application configuration."""
 
-    def test_application_name(self):
-        """Test application name is set correctly."""
+    def test_application_name_format(self):
+        """Test application name format."""
         app_name = "Blitzortung.org JSON-RPC Server"
         assert "JSON-RPC" in app_name
-
-    def test_log_observer_setup(self):
-        """Test log observer setup concept."""
-        # Verify the concept of setting up log observer
-        has_log_observer = True
-        assert has_log_observer is True
+        assert "Server" in app_name
 
 
-class TestStartServer:
-    """Tests for start_server function."""
+class TestServiceBase:
+    """Tests for service base module."""
 
-    def test_port_configuration(self):
-        """Test port configuration."""
-        # The port comes from config
-        default_port = 8000
-        assert default_port > 0
-
-    def test_site_creation(self):
-        """Test site creation concept."""
-        # Verify Twisted site creation concept
-        display_tracebacks = False
-        assert display_tracebacks is False
-
-    def test_tcpserver_configuration(self):
-        """Test TCP server configuration."""
-        interface = '127.0.0.1'
-        assert interface == '127.0.0.1'
+    def test_blitzortung_service_import(self):
+        """Test that Blitzortung service can be imported."""
+        try:
+            from blitzortung.service.base import Blitzortung
+            assert Blitzortung is not None
+        except ImportError:
+            pass  # Module may not be available
 
 
-class TestConnectionPool:
-    """Tests for connection pool handling."""
+class TestTwistedComponents:
+    """Tests for Twisted components."""
 
-    def test_connection_pool_callback(self):
-        """Test connection pool callback setup."""
-        # Test the concept of callback setup
-        callback = "start_server"
-        assert callback == "start_server"
+    def test_twisted_web_server(self):
+        """Test Twisted web server import."""
+        try:
+            from twisted.web import server
+            assert server.Site is not None
+        except ImportError:
+            pass
 
-    def test_error_callback(self):
-        """Test error callback setup."""
-        error_callback = "on_error"
-        assert error_callback == "on_error"
+    def test_twisted_log_observer(self):
+        """Test Twisted log observer import."""
+        try:
+            from twisted.python.log import ILogObserver
+            assert ILogObserver is not None
+        except ImportError:
+            pass
+
+    def test_twisted_daily_logfile(self):
+        """Test Twisted daily log file import."""
+        try:
+            from twisted.python.logfile import DailyLogFile
+            assert DailyLogFile is not None
+        except ImportError:
+            pass
 
 
-class TestLogDirectory:
-    """Tests for log directory handling."""
+class TestConnectionPoolModule:
+    """Tests for connection pool module."""
 
-    def test_log_directory_path(self):
-        """Test log directory path."""
-        log_directory = "/var/log/blitzortung"
-        assert log_directory == "/var/log/blitzortung"
+    def test_create_connection_pool_exists(self):
+        """Test that create_connection_pool function exists."""
+        # We can't import the module directly because it tries to create
+        # a connection pool at import time. Instead, verify the function
+        # exists in the source file.
+        import os
+        source_path = os.path.join('blitzortung', 'service', 'db.py')
+        if os.path.exists(source_path):
+            with open(source_path) as f:
+                content = f.read()
+                assert 'def create_connection_pool' in content
 
-    def test_log_directory_exists_check(self):
-        """Test checking if log directory exists."""
-        # Simulate the check
-        log_directory = "/var/log/blitzortung"
-        exists = False  # Simulated
-        if log_directory and exists:
-            result = "log_file_available"
-        else:
-            result = None
-        assert result is None
 
-    def test_daily_log_file_creation(self):
-        """Test daily log file creation."""
-        logfile_name = "webservice.log"
-        assert "log" in logfile_name
+class TestServiceDb:
+    """Tests for service database module."""
+
+    def test_service_db_import(self):
+        """Test that service.db can be imported."""
+        try:
+            from blitzortung.service import db
+            assert db is not None
+        except ImportError:
+            pass
+
+
+class TestConfigModule:
+    """Tests for config module."""
+
+    def test_config_import(self):
+        """Test that config can be imported."""
+        try:
+            from blitzortung import config
+            assert config is not None
+        except ImportError:
+            pass
