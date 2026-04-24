@@ -4,7 +4,6 @@ Inserts the generated json reports from the service into a compact line-based fi
 
 """
 
-import datetime
 import glob
 import json
 import logging
@@ -60,7 +59,7 @@ def main():
 
             data = json.load(json_file)
 
-            global_timestamp = datetime.datetime.fromtimestamp(data['timestamp'] / 1000000)
+            global_timestamp = datetime.fromtimestamp(data['timestamp'] / 1000000)
 
             if 'get_strikes_grid' in data:
 
