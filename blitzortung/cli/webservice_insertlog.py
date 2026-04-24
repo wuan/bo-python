@@ -10,10 +10,13 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 from optparse import OptionParser
+from typing import Any
 
 import geoip2.database
 import statsd
+from geoip2.database import Reader
 
 from blitzortung.convert import value_to_string
 
@@ -22,14 +25,15 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
 
-
 def main():
     parser = OptionParser()
 
     parser.add_option("--debug", dest="debug", default=False, action="store_true", help="enable debug output")
     parser.add_option("--metrics", dest="metrics", default=False, action="store_true", help="produce metrics")
-    parser.add_option("--base-dir", dest="base_dir", default='/var/log/blitzortung', help="base directory for log files")
-    parser.add_option("--geoip-db", dest="geoip_db", default='/var/lib/GeoIP/GeoLite2-City.mmdb', help="GeoIP database path")
+    parser.add_option("--base-dir", dest="base_dir", default='/var/log/blitzortung',
+                      help="base directory for log files")
+    parser.add_option("--geoip-db", dest="geoip_db", default='/var/lib/GeoIP/GeoLite2-City.mmdb',
+                      help="GeoIP database path")
 
     (options, args) = parser.parse_args()
 
@@ -64,31 +68,16 @@ def main():
                 for entry in data['get_strikes_grid']:
                     remote_address = entry[6]
 
-                    country_code = None
-                    city = None
+                    user_agent = entry[7]
+                    version = user_agent_version(user_agent)
+
+                    city, country_code = geoip_lookup(reader, remote_address)
+
+                    remote_address = None
+
                     local_x = None
                     local_y = None
                     data_area = None
-
-                    user_agent = entry[7]
-                    version: int | None = None
-                    if user_agent:
-                        user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
-                        version_prefix = user_agent_parts[0]
-                        if version_prefix == 'bo-android' and len(user_agent_parts) > 1:
-                            try:
-                                version = int(user_agent_parts[1])
-                            except ValueError:
-                                pass
-
-                    try:
-                        geo_info = reader.city(remote_address)
-                        city = geo_info.city.name
-                        country_code = geo_info.country.iso_code
-                    except (ValueError, geoip2.errors.AddressNotFoundError):
-                        pass
-
-                    remote_address = None
 
                     timestamp_microseconds = entry[0]
                     minute_length = entry[1]
@@ -129,20 +118,47 @@ def main():
                             tags["data_area"] = f"{local_x}x{local_y}-{data_area}"
                         if country_code:
                             tags["country"] = country_code
-                        #if city:
-                        #    tags["city"] = city
 
                         tag_values = ",".join([f"{key}={value}" for key, value in tags.items()])
 
                         statsd_client.incr(f'access,{tag_values}')
 
-                with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")),
-                          'a+') as output_file:
-                    for result in results:
-                        line = "\t".join([value_to_string(value) for value in result])
-                        output_file.write(line + "\n")
+                write_results(global_timestamp, results, base_dir)
 
         os.unlink(json_file_name)
+
+
+def geoip_lookup(reader: Reader, remote_address) -> tuple[Any, Any]:
+    country_code = None
+    city = None
+    try:
+        geo_info = reader.city(remote_address)
+        city = geo_info.city.name
+        country_code = geo_info.country.iso_code
+    except (ValueError, geoip2.errors.AddressNotFoundError):
+        pass
+    return city, country_code
+
+
+def user_agent_version(user_agent) -> int | None:
+    version: int | None = None
+    if user_agent:
+        user_agent_parts = user_agent.split(' ')[0].rsplit('-', 1)
+        version_prefix = user_agent_parts[0]
+        if version_prefix == 'bo-android' and len(user_agent_parts) > 1:
+            try:
+                version = int(user_agent_parts[1])
+            except ValueError:
+                pass
+    return version
+
+
+def write_results(global_timestamp: datetime, results: list[Any], base_dir):
+    with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")),
+              'a+') as output_file:
+        for result in results:
+            line = "\t".join([value_to_string(value) for value in result])
+            output_file.write(line + "\n")
 
 
 if __name__ == "__main__":
