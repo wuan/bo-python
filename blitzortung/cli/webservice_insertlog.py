@@ -24,15 +24,17 @@ logger.setLevel(logging.INFO)
 
 
 def main():
-    reader = geoip2.database.Reader('/var/lib/GeoIP/GeoLite2-City.mmdb')
-    statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
-
     parser = OptionParser()
 
     parser.add_option("--debug", dest="debug", default=False, action="store_true", help="enable debug output")
     parser.add_option("--metrics", dest="metrics", default=False, action="store_true", help="produce metrics")
+    parser.add_option("--base-dir", dest="base_dir", default='/var/log/blitzortung', help="base directory for log files")
+    parser.add_option("--geoip-db", dest="geoip_db", default='/var/lib/GeoIP/GeoLite2-City.mmdb', help="GeoIP database path")
 
     (options, args) = parser.parse_args()
+
+    reader = geoip2.database.Reader(options.geoip_db)
+    statsd_client = statsd.StatsClient('localhost', 8125, prefix='org.blitzortung.service')
 
     if options.debug:
         logger.setLevel(logging.DEBUG)
@@ -40,7 +42,7 @@ def main():
     latest_time = None
     logger.debug("latest time %s" % latest_time)
 
-    base_dir = '/var/log/blitzortung'
+    base_dir = options.base_dir
 
     json_file_names = glob.glob(os.path.join(base_dir, '*.json'))
 

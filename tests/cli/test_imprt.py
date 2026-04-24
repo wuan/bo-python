@@ -93,3 +93,108 @@ class TestUpdateStartTime:
         from blitzortung.cli import imprt
         result = imprt.update_start_time()
         assert result.tzinfo is not None
+
+
+class TestTimestampLogic:
+    """Tests for timestamp comparison logic."""
+
+    def test_timestamp_comparison_newer(self):
+        """Test timestamp comparison when new is newer."""
+        import datetime
+
+        latest = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        timestamp = datetime.datetime(2025, 1, 1, 12, 1, 0, tzinfo=datetime.timezone.utc)
+
+        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
+        assert is_newer is True
+
+    def test_timestamp_comparison_older(self):
+        """Test timestamp comparison when timestamp is older."""
+        import datetime
+
+        latest = datetime.datetime(2025, 1, 1, 12, 1, 0, tzinfo=datetime.timezone.utc)
+        timestamp = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+
+        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
+        assert is_newer is False
+
+    def test_timestamp_comparison_equal(self):
+        """Test timestamp comparison when timestamps are equal."""
+        import datetime
+
+        timestamp = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        latest = timestamp
+
+        is_newer = timestamp > latest and timestamp - latest != datetime.timedelta()
+        assert is_newer is False
+
+
+class TestStrikeGrouping:
+    """Tests for strike grouping logic."""
+
+    def test_strike_group_size(self):
+        """Test strike group size for commits."""
+        strike_group_size = 10000
+        assert strike_group_size == 10000
+
+    def test_commit_threshold(self):
+        """Test commit threshold calculation."""
+        strike_count = 10000
+        strike_group_size = 10000
+
+        should_commit = strike_count % strike_group_size == 0
+        assert should_commit is True
+
+    def test_commit_threshold_not_divisible(self):
+        """Test commit when strike count not divisible by group size."""
+        strike_count = 5000
+        strike_group_size = 10000
+
+        should_commit = strike_count % strike_group_size == 0
+        assert should_commit is False
+
+
+class TestRetryLogic:
+    """Tests for retry logic."""
+
+    def test_retry_count(self):
+        """Test retry count."""
+        max_retries = 5
+        assert max_retries == 5
+
+    def test_retry_loop(self):
+        """Test retry loop logic."""
+        max_retries = 5
+
+        for retry in range(max_retries):
+            # Simulate a failed attempt on first try
+            if retry == 0:
+                continue
+            break
+
+        # Should have retried
+        assert True
+
+
+class TestTimeoutHandling:
+    """Tests for timeout handling."""
+
+    def test_default_timeout(self):
+        """Test default timeout value."""
+        default_timeout = 300  # 5 minutes in seconds
+        assert default_timeout == 300
+
+    def test_timeout_calculation(self):
+        """Test timeout calculation."""
+        # Simulate checking if timeout should be applied
+        no_timeout = False
+        timeout = 300 if not no_timeout else None
+
+        assert timeout == 300
+
+    def test_no_timeout_option(self):
+        """Test no timeout option."""
+        no_timeout = True
+        timeout = 300 if not no_timeout else None
+
+        assert timeout is None

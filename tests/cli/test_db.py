@@ -1,5 +1,6 @@
 """Tests for blitzortung.cli.db module."""
 
+from io import StringIO
 from unittest.mock import Mock, patch
 from zoneinfo import ZoneInfo
 
@@ -179,3 +180,125 @@ class TestParseOptions:
 
         assert options.useenv is True
         assert options.map is True
+
+
+class TestFetchStrikes:
+    """Tests for fetch_strikes function."""
+
+    @pytest.fixture
+    def mock_strike_db(self):
+        """Create a mock strike database."""
+        mock_db = Mock()
+        mock_db.select = Mock(return_value=[])
+        return mock_db
+
+    @pytest.fixture
+    def mock_options(self):
+        """Create mock options."""
+        options = Mock()
+        options.precision = 4
+        return options
+
+    def test_fetch_strikes_empty_result(self, mock_strike_db, mock_options):
+        """Test fetch_strikes with no strikes."""
+        mock_strike_db.select.return_value = []
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout, \
+             patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            db.fetch_strikes(None, mock_options, 'timestamp', mock_strike_db, Mock())
+
+        mock_strike_db.select.assert_called_once()
+
+    def test_fetch_strikes_with_results(self, mock_strike_db, mock_options):
+        """Test fetch_strikes with strike results."""
+        mock_strike = Mock()
+        mock_strike.x = 10.123456
+        mock_strike.y = 20.654321
+        mock_strike.__str__ = Mock(return_value="strike_data")
+        mock_strike_db.select.return_value = [mock_strike]
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout, \
+             patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            db.fetch_strikes(None, mock_options, 'timestamp', mock_strike_db, Mock())
+
+        # Verify strike coordinates were rounded
+        assert mock_strike.x == 10.1235
+        assert mock_strike.y == 20.6543
+        mock_strike_db.select.assert_called_once()
+
+    def test_fetch_strikes_precision(self, mock_strike_db):
+        """Test that precision option is applied correctly."""
+        mock_strike = Mock()
+        mock_strike.x = 10.123456789
+        mock_strike.y = 20.987654321
+        mock_strike.__str__ = Mock(return_value="strike")
+        mock_strike_db.select.return_value = [mock_strike]
+
+        options = Mock()
+        options.precision = 2
+
+        with patch('sys.stdout', new_callable=StringIO), \
+             patch('sys.stderr', new_callable=StringIO):
+            db.fetch_strikes(None, options, 'timestamp', mock_strike_db, Mock())
+
+        # With precision 2, should round to 2 decimal places
+        assert mock_strike.x == 10.12
+        assert mock_strike.y == 20.99
+
+
+class TestFetchStrikesGrid:
+    """Tests for fetch_strikes_grid function."""
+
+    @pytest.fixture
+    def mock_strike_db(self):
+        """Create a mock strike database."""
+        mock_db = Mock()
+        return mock_db
+
+    @pytest.fixture
+    def mock_grid(self):
+        """Create a mock grid."""
+        grid = Mock()
+        return grid
+
+    def test_fetch_strikes_grid_default(self, mock_strike_db, mock_grid):
+        """Test fetch_strikes_grid outputs arcgrid by default."""
+        mock_result = Mock()
+        mock_result.to_arcgrid = Mock(return_value="grid_data")
+        mock_strike_db.select_grid.return_value = mock_result
+
+        options = Mock()
+        options.map = False
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout, \
+             patch('sys.stderr', new_callable=StringIO):
+            db.fetch_strikes_grid(mock_grid, options, mock_strike_db, Mock())
+
+        mock_result.to_arcgrid.assert_called_once()
+
+    def test_fetch_strikes_grid_with_map(self, mock_strike_db, mock_grid):
+        """Test fetch_strikes_grid outputs map when requested."""
+        mock_result = Mock()
+        mock_result.to_map = Mock(return_value="map_data")
+        mock_strike_db.select_grid.return_value = mock_result
+
+        options = Mock()
+        options.map = True
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout, \
+             patch('sys.stderr', new_callable=StringIO):
+            db.fetch_strikes_grid(mock_grid, options, mock_strike_db, Mock())
+
+        mock_result.to_map.assert_called_once()
+
+
+class TestMain:
+    """Tests for main function."""
+
+    def test_main_with_invalid_timezone(self):
+        """Test that main exits with error for invalid timezone."""
+        with patch('sys.argv', ['db.py', '--tz', 'InvalidTimezone']):
+            with pytest.raises(SystemExit) as exc_info:
+                db.main()
+
+            assert exc_info.value.code == 1
