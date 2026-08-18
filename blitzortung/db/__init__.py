@@ -20,7 +20,6 @@
 
 import atexit
 
-from tests.service.test_base import blitzortung
 from . import compat  # Register psycopg2cffi compatibility
 
 import psycopg2
