@@ -43,7 +43,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
-pytest-cov = "^6.0"
+pytest-cov = "^7.1"
 pytest-benchmark = "^5.1"
 mock = "^5.1"
 assertpy = "^1.1"
