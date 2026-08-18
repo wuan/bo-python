@@ -34,7 +34,7 @@ class Timestamp(base.EqualityAndHash):
 
     __slots__ = ['_datetime', 'nanosecond']
 
-    _datetime: dt_module.datetime | None
+    _datetime: dt_module.datetime
     nanosecond: int
 
     def __init__(

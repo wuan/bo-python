@@ -20,6 +20,7 @@
 
 import atexit
 
+from tests.service.test_base import blitzortung
 from . import compat  # Register psycopg2cffi compatibility
 
 import psycopg2
@@ -51,51 +52,3 @@ def strike():
     from .. import INJECTOR
 
     return INJECTOR.get(table.Strike)
-
-
-def strike_cluster():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.StrikeCluster)
-
-
-def station():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.Station)
-
-
-def station_offline():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.StationOffline)
-
-
-def location():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.Location)
-
-
-def servicelog_total():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogTotal)
-
-
-def servicelog_country():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogCountry)
-
-
-def servicelog_version():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogVersion)
-
-
-def servicelog_parameters():
-    from .. import INJECTOR
-
-    return INJECTOR.get(table.ServiceLogParameters)
