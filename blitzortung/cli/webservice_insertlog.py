@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from optparse import OptionParser
 from typing import Any
@@ -54,14 +54,15 @@ def main():
 
     for json_file_name in json_file_names:
 
+        processed = False
         try:
-            with open(json_file_name, 'r') as json_file:
+            with open(json_file_name, 'r', encoding='utf-8') as json_file:
 
                 logger.debug(f"opened file {json_file_name}")
 
                 data = json.load(json_file)
 
-                global_timestamp = datetime.fromtimestamp(data['timestamp'] / 1000000)
+                global_timestamp = datetime.fromtimestamp(data['timestamp'] / 1000000, tz=timezone.utc)
 
                 if 'get_strikes_grid' in data:
 
@@ -74,7 +75,8 @@ def main():
 
                         city, country_code = geoip_lookup(reader, remote_address)
 
-                        remote_address = None
+                        # Mask the raw client IP in the published log for privacy.
+                        remote_address = '-'
 
                         local_x = None
                         local_y = None
@@ -98,7 +100,7 @@ def main():
                             minute_offset,
                             minute_length,
                             count_threshold,
-                            remote_address if remote_address is not None else '-',
+                            remote_address,
                             country_code if country_code is not None else '-',
                             city if city is not None else '-',
                             version,
@@ -126,10 +128,15 @@ def main():
 
                     write_results(global_timestamp, results, base_dir)
 
+            processed = True
+
         except JSONDecodeError:
             logger.warning(f"Invalid JSON in file {json_file_name}, deleting it")
+            processed = True
         finally:
-            if os.path.exists(json_file_name):
+            # Only delete files that were consumed successfully or are known to be
+            # corrupt; an unexpected error must not destroy a valid report.
+            if processed and os.path.exists(json_file_name):
                 os.unlink(json_file_name)
 
 
@@ -160,7 +167,7 @@ def user_agent_version(user_agent) -> int | None:
 
 def write_results(global_timestamp: datetime, results: list[Any], base_dir):
     with open(os.path.join(base_dir, "servicelog_" + global_timestamp.strftime("%Y-%m-%d")),
-              'a+') as output_file:
+              'a+', encoding='utf-8') as output_file:
         for result in results:
             line = "\t".join([value_to_string(value) for value in result])
             output_file.write(line + "\n")

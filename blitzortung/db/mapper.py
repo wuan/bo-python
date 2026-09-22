@@ -18,14 +18,14 @@
 
 """
 import datetime
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from injector import inject
 
 from .. import builder
 
 
-class ObjectMapper:
+class ObjectMapper(metaclass=ABCMeta):
     @abstractmethod
     def create_object(self, result, **kwargs):
         pass

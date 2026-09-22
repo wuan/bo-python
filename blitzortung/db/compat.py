@@ -16,9 +16,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-"""
-
-"""
 Database compatibility layer for psycopg2cffi.
 
 This module registers psycopg2cffi as a drop-in replacement for psycopg2,

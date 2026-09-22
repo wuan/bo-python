@@ -21,7 +21,7 @@
 import datetime
 import logging
 import os
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from html.parser import HTMLParser
 
 from injector import inject
@@ -30,7 +30,7 @@ from requests import Session
 from .. import config, util
 
 
-class TransportAbstract:
+class TransportAbstract(metaclass=ABCMeta):
     @abstractmethod
     def read_lines(self, source_path, post_process=None):
         pass
@@ -39,9 +39,13 @@ class TransportAbstract:
 class FileTransport(TransportAbstract):
     def read_lines(self, source_path, post_process=None):
         if os.path.isfile(source_path):
-            with open(source_path) as data_file:
-                for line in data_file:
-                    yield line
+            if post_process:
+                with open(source_path, 'rb') as data_file:
+                    for line in post_process(data_file.read()).splitlines():
+                        yield line.decode('utf-8')
+            else:
+                with open(source_path, encoding='utf-8') as data_file:
+                    yield from data_file
 
 
 class HttpFileTransport(FileTransport):

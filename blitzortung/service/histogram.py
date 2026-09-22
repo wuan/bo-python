@@ -21,6 +21,7 @@
 import time
 
 from injector import inject
+from twisted.python import log
 
 from .db import execute
 from .. import db
@@ -46,7 +47,7 @@ class HistogramQuery:
     @staticmethod
     def build_result(query_result, minutes, bin_size, reference_time):
         time_duration = time.time() - reference_time
-        print("histogram: query %.03fs" % time_duration)
+        log.msg("histogram: query %.03fs" % time_duration)
         value_count = int(minutes / bin_size)
 
         result = [0] * value_count

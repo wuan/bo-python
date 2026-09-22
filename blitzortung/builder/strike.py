@@ -43,6 +43,7 @@ class Strike(Event):
         self.lateral_error = None
         self.station_count = None
         self.stations = []
+        self.region = None
 
     def set_id(self, id_value):
         self.id_value = id_value
@@ -66,6 +67,11 @@ class Strike(Event):
 
     def set_stations(self, stations):
         self.stations = stations
+        return self
+
+    def set_region(self, region):
+        """Set the strike region (used when importing from the URL feed)."""
+        self.region = region
         return self
 
     def from_line(self, line):
@@ -92,17 +98,16 @@ class Strike(Event):
     def from_json(self, json_data: dict):
         """ Construct strike from json data """
         try:
-            self.set_altitude(json_data.get('alt',0))
             self.set_x(round(json_data['lon'], 4))
             self.set_y(round(json_data['lat'], 4))
             self.set_timestamp(Timestamp(json_data['time']))
-            self.set_lateral_error(json_data.get('mds', 0))
-
-            self.set_altitude(0)
+            self.set_altitude(json_data.get('alt', 0))
             self.set_amplitude(0)
+            self.set_lateral_error(json_data.get('mds', 0))
             self.set_station_count(0)
+            self.set_region(json_data.get('region'))
         except (KeyError, ValueError, IndexError) as e:
-            raise BuilderError(e)
+            raise BuilderError(e) from e
 
         return self
 
@@ -110,4 +115,4 @@ class Strike(Event):
         if self.timestamp is None:
             raise BuilderError("Timestamp not set")
         return data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
-                           self.amplitude, self.lateral_error, self.station_count, self.stations)
+                           self.amplitude, self.lateral_error, self.station_count, self.stations, self.region)

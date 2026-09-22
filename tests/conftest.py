@@ -4,7 +4,7 @@ from typing import Callable
 import psycopg2
 import pyproj
 import pytest
-from testcontainers.postgres import PostgresContainer
+from testcontainers.community.postgres import PostgresContainer
 
 import blitzortung.db
 

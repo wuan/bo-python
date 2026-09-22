@@ -20,7 +20,12 @@
 
 import logging
 
-__version__ = '1.7.1'
+from importlib.metadata import PackageNotFoundError, version as _metadata_version
+
+try:
+    __version__ = _metadata_version("blitzortung")
+except PackageNotFoundError:  # pragma: no cover - running from an uninstalled checkout
+    __version__ = "0.0.0"
 
 
 # -----------------------------------------------------------------------------

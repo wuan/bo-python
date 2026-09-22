@@ -114,11 +114,11 @@ class StrikeGridQuery:
                     'xc': grid_parameters.x_bin_count,
                     'yc': grid_parameters.y_bin_count,
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
-                    'dt': duration.seconds,
+                    'dt': int(duration.total_seconds()),
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('strikes_grid.total')
-        print("".join(state.info_text))
+        log.msg("".join(state.info_text))
 
         return response
 
@@ -153,7 +153,7 @@ class GlobalStrikeGridQuery:
                 result['rx'],
                 -result['ry'] - 1,
                 result['strike_count'],
-                -(end_time - result['timestamp']).seconds
+                -int((end_time - result['timestamp']).total_seconds())
             ) for result in results
         )
         state.add_info_text(", result %.03fs" % state.get_seconds(reference_time))
@@ -190,10 +190,10 @@ class GlobalStrikeGridQuery:
                     'xc': grid_parameters.grid.x_bin_count,
                     'yc': grid_parameters.grid.y_bin_count,
                     't': end_time.strftime("%Y%m%dT%H:%M:%S"),
-                    'dt': duration.seconds,
+                    'dt': int(duration.total_seconds()),
                     'h': histogram_data}
         state.add_info_text(", total %.03fs" % state.get_seconds())
         state.log_timing('global_strikes_grid.total')
-        print("".join(state.info_text))
+        log.msg("".join(state.info_text))
 
         return response

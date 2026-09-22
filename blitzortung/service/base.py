@@ -96,7 +96,7 @@ class Blitzortung(jsonrpc.JSONRPC):
             self.current_data['timestamp'] = self.__get_epoch(self.current_period)
             if self.log_directory:
                 with open(os.path.join(self.log_directory, self.current_period.strftime("%Y%m%d-%H%M.json")),
-                          'w') as output_file:
+                          'w', encoding='utf-8') as output_file:
                     output_file.write(json.dumps(self.current_data))
             self.__restart_period()
 
@@ -113,6 +113,14 @@ class Blitzortung(jsonrpc.JSONRPC):
         else:
             return number
 
+    @staticmethod
+    def __to_int(value):
+        """Coerce a JSON-RPC argument to an int, returning ``None`` if invalid."""
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
     def jsonrpc_check(self):
         self.check_count += 1
         return {'count': self.check_count}
@@ -120,6 +128,12 @@ class Blitzortung(jsonrpc.JSONRPC):
     @with_request
     def jsonrpc_get_strikes(self, request, minute_length, id_or_offset=0):
         """This endpoint is currently blocked for all requests."""
+        minute_length = self.__to_int(minute_length)
+        id_or_offset = self.__to_int(id_or_offset)
+        if minute_length is None or id_or_offset is None:
+            log.msg('get_strikes: invalid request arguments')
+            return None
+
         minute_length = self.__force_range(minute_length, 0, self.MAX_MINUTES_PER_DAY)
 
         client = self.get_request_client(request)
@@ -192,6 +206,14 @@ class Blitzortung(jsonrpc.JSONRPC):
     def jsonrpc_get_global_strikes_grid(self, request, minute_length, grid_base_length=10000, minute_offset=0,
                                         count_threshold=0):
         self.memory_info()
+        minute_length = self.__to_int(minute_length)
+        grid_base_length = self.__to_int(grid_base_length)
+        minute_offset = self.__to_int(minute_offset)
+        count_threshold = self.__to_int(count_threshold)
+        if None in (minute_length, grid_base_length, minute_offset, count_threshold):
+            log.msg('get_global_strikes_grid: invalid request arguments')
+            return {}
+
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
@@ -235,6 +257,17 @@ class Blitzortung(jsonrpc.JSONRPC):
     def jsonrpc_get_local_strikes_grid(self, request, x, y, grid_base_length=10000, minute_length=60, minute_offset=0,
                                        count_threshold=0, data_area=5):
         self.memory_info()
+        x = self.__to_int(x)
+        y = self.__to_int(y)
+        grid_base_length = self.__to_int(grid_base_length)
+        minute_length = self.__to_int(minute_length)
+        minute_offset = self.__to_int(minute_offset)
+        count_threshold = self.__to_int(count_threshold)
+        data_area = self.__to_int(data_area)
+        if None in (x, y, grid_base_length, minute_length, minute_offset, count_threshold, data_area):
+            log.msg('get_local_strikes_grid: invalid request arguments')
+            return {}
+
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
@@ -282,6 +315,15 @@ class Blitzortung(jsonrpc.JSONRPC):
     def jsonrpc_get_strikes_grid(self, request, minute_length, grid_base_length=10000, minute_offset=0, region=1,
                                  count_threshold=0):
         self.memory_info()
+        minute_length = self.__to_int(minute_length)
+        grid_base_length = self.__to_int(grid_base_length)
+        minute_offset = self.__to_int(minute_offset)
+        region = self.__to_int(region)
+        count_threshold = self.__to_int(count_threshold)
+        if None in (minute_length, grid_base_length, minute_offset, region, count_threshold):
+            log.msg('get_strikes_grid: invalid request arguments')
+            return {}
+
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
@@ -380,11 +422,11 @@ class LogObserver(FileLogObserver):
         self.prefix = prefix
         FileLogObserver.__init__(self, f)
 
-    def emit(self, event_dict):
-        text = textFromEventDict(event_dict)
+    def emit(self, eventDict):
+        text = textFromEventDict(eventDict)
         if text is None:
             return
-        time_str = self.formatTime(event_dict["time"])
+        time_str = self.formatTime(eventDict["time"])
         msg_str = _safeFormat("[%(prefix)s] %(text)s\n", {
             "prefix": self.prefix,
             "text": text.replace("\n", "\n\t")

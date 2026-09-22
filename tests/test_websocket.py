@@ -20,8 +20,12 @@ def test_decode_with_special_chars():
     # Simple test with characters in the range 128-255
     source = '{"time":16501358936120880' + chr(0x0106) + '}'
     result = decode(source)
-    # The decode function processes characters based on the algorithm
-    assert isinstance(result, int) or isinstance(result, str)
+    assert result == '{"time":16501358936120880":}'
+
+
+def test_decode_empty_string():
+    """Test decode with an empty string."""
+    assert decode("") == ""
 
 
 def test_decode_single_char():

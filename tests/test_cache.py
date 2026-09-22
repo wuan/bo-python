@@ -59,23 +59,17 @@ class TestCacheEntry:
 
     def test_repr_valid_entry(self):
         """Test string representation of valid cache entry."""
-        # Use deterministic large expiry time (100 > initial hit_count of 0)
-        self.cache_entry = CacheEntry("payload", 100)
+        self.cache_entry = CacheEntry("payload", time.time() + 100)
         result = repr(self.cache_entry)
         assert_that(result).contains("cached<+")
         assert_that(result).contains("payload")
 
-    def test_repr_with_hit_count(self):
-        """Test string representation after retrieving payload (increases hit count)."""
-        # Use expiry time of 1, after 2 hits hit_count=2 > expiry_time=1
-        # This tests that invalid entries (expired) show "-" in repr
-        self.cache_entry = CacheEntry("payload", 1)
-        _ = self.cache_entry.get_payload()
-        _ = self.cache_entry.get_payload()
+    def test_repr_expired_entry(self):
+        """Test string representation of an expired cache entry."""
+        self.cache_entry = CacheEntry("payload", time.time() - 1)
         result = repr(self.cache_entry)
-        assert_that(result).contains("cached<-")  # hit_count (2) > expiry_time (1)
+        assert_that(result).contains("cached<-")
         assert_that(result).contains("payload")
-        assert_that(result).contains("2")  # hit count
 
 
 class CachedObject:
@@ -232,6 +226,16 @@ class TestObjectCacheWithSize:
         assert_that(self.cache.get_size()).is_equal_to(2)
         foo_2 = self.cache.get(CachedObject, name="foo")
         assert_that(foo_1).is_not_same_as(foo_2)
+
+    def test_clear_with_size_limit(self):
+        """Test that clear() resets key tracking so subsequent get() works."""
+        self.cache.get(CachedObject, name="foo")
+        self.cache.get(CachedObject, name="bar")
+
+        self.cache.clear()
+
+        assert_that(self.cache.get_size()).is_equal_to(0)
+        assert_that(self.cache.get(CachedObject, name="baz")).is_instance_of(CachedObject)
 
     def test_track_recent_usage(self):
         """Test that recent usage is tracked."""

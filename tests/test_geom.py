@@ -42,6 +42,11 @@ class GeometryForTest(blitzortung.geom.Geometry):
         """Return environment."""
         return None
 
+    @property
+    def env(self):
+        """Return an empty envelope polygon."""
+        return shapely.geometry.Polygon()
+
 
 class TestGeometry:
     """Test suite for Geometry class."""

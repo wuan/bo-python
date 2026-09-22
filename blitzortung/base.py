@@ -86,10 +86,18 @@ class Point:
 
     @staticmethod
     def equal(a: float, b: float) -> bool:
-        return abs(a - b) < 1e-4
+        """Compare two coordinates with a tolerance of 1e-4.
+
+        Coordinates are quantized to 4 decimal places so that equality is
+        consistent with :meth:`__hash__` (see #hash-invariant).
+        """
+        return round(a, 4) == round(b, 4)
 
     def __str__(self) -> str:
         return "(%.4f, %.4f)" % (self.x, self.y)
 
     def __hash__(self) -> int:
-        return hash(self.x) ^ hash(self.y)
+        # Must stay consistent with ``equal``/``__eq__``, which quantize to 4
+        # decimal places, otherwise equal points could live in different hash
+        # buckets (violating the __eq__/__hash__ contract).
+        return hash((round(self.x, 4), round(self.y, 4)))
