@@ -2654,14 +2654,14 @@ windows-platform = ["appdirs (>=1.4.0)", "bcrypt (>=3.2.1)", "cryptography (>=38
 
 [[package]]
 name = "txjsonrpc-ng"
-version = "0.8.1"
+version = "0.9.0"
 description = "Code for creating Twisted JSON-RPC servers and clients."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "txjsonrpc_ng-0.8.1-py3-none-any.whl", hash = "sha256:f7ee79333df24854b761ef50e89c65dbef8b161296fee18b530bd08be9a9bea0"},
-    {file = "txjsonrpc_ng-0.8.1.tar.gz", hash = "sha256:7113f6273557a5f76b5e02a0f4c48c10c97d55193a487fa4ab4aa812aa7cb73c"},
+    {file = "txjsonrpc_ng-0.9.0-py3-none-any.whl", hash = "sha256:748f6208e5552300890e72d646a9f1e91dcce19d2debe602ad9706d183c0032b"},
+    {file = "txjsonrpc_ng-0.9.0.tar.gz", hash = "sha256:98ba091e544980b00ef17da41929d48502cb10e9e99caf1d551095285fc43a48"},
 ]
 
 [package.dependencies]
