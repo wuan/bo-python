@@ -8,9 +8,12 @@ service's legacy pre-v1 array response being treated as a mapping
 (``AttributeError: 'list' object has no attribute 'get'``).
 """
 
+import json
+from unittest.mock import Mock
+
 from assertpy import assert_that
 
-from .client import normalize_jsonrpc_response
+from .client import JsonRpcClient, normalize_jsonrpc_response
 
 
 class TestNormalizeLegacyArrayResponse:
@@ -59,3 +62,39 @@ class TestNormalizeVersions:
     def test_scalar_response_is_wrapped(self):
         normalized = normalize_jsonrpc_response(True, request_id=6)
         assert_that(normalized["result"]).is_true()
+
+
+class TestCallEnvelopeRequestShape:
+    """Offline checks that ``call_envelope`` reproduces the legacy dialects.
+
+    These guard the live protocol tests: if the request helper stopped
+    omitting the ``jsonrpc`` member (or ignored the zero id), the live
+    assertions would silently stop exercising the legacy path.
+    """
+
+    @staticmethod
+    def _capture_payload(**kwargs):
+        client = JsonRpcClient("http://example.invalid/")
+        response = Mock()
+        response.content = b"[]"
+        response.json.return_value = []
+        client._session = Mock()
+        client._session.post.return_value = response
+        client.call_envelope("get_strikes_grid", (1, 2), **kwargs)
+        data = client._session.post.call_args.kwargs["data"]
+        return json.loads(data)
+
+    def test_default_request_is_versioned(self):
+        payload = self._capture_payload()
+        assert_that(payload["jsonrpc"]).is_equal_to("2.0")
+        assert_that(payload["id"]).is_equal_to(1)
+
+    def test_legacy_request_omits_version_and_uses_zero_id(self):
+        payload = self._capture_payload(request_id=0, version_field=None)
+        assert_that(payload).does_not_contain_key("jsonrpc")
+        assert_that(payload["id"]).is_equal_to(0)
+
+    def test_explicit_version_with_zero_id(self):
+        payload = self._capture_payload(request_id=0, version_field="2.0")
+        assert_that(payload["jsonrpc"]).is_equal_to("2.0")
+        assert_that(payload["id"]).is_equal_to(0)

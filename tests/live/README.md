@@ -11,6 +11,7 @@ The suite is split into three modules:
 | `test_endpoint_limits.py` | Access limits (user agent, content type, global baseline). |
 | `test_endpoint_format.py` | Response format / data consistency, using valid requests. |
 | `test_endpoint_compression.py` | gzip negotiation and legacy-client compatibility. |
+| `test_endpoint_legacy_protocol.py` | Legacy (pre-v1) JSON-RPC response envelope used by the Android client. |
 | `test_client.py` | Offline regression tests for JSON-RPC response normalization. |
 | `endpoints.py` | Shared endpoint definitions, constants and helpers. |
 
@@ -102,6 +103,25 @@ Different deployments answer in different JSON-RPC flavours depending on the
 `{"result": ...}` shape, so the limit assertions work against the public
 service as well. The offline tests in `test_client.py` cover this and run even
 when no endpoint URL is configured.
+
+## Legacy protocol envelope
+
+The Android client sends its requests in the pre-1.0 shape: no `jsonrpc`
+version member and a fixed `id` of `0`. Because such a request is
+indistinguishable from a spec-correct JSON-RPC 1.0 request, the service has to
+opt in to the legacy interpretation (`treat_zero_id_as_pre1`). The live module
+`test_endpoint_legacy_protocol.py` pins that contract against a running
+endpoint:
+
+* a request without `jsonrpc` and with `id=0` must return a **bare array**
+  (`[{...}]`);
+* a request without `jsonrpc` and with a non-zero `id` must return the v1
+  object envelope and echo the id;
+* a request with `jsonrpc: "2.0"` must return the v2 object envelope even when
+  `id` is `0`.
+
+`JsonRpcClient.call_envelope` returns the raw, un-normalized payload for these
+checks; the regular `call` helper always normalizes.
 
 ## Notes
 

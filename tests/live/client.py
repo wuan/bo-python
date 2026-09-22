@@ -77,8 +77,20 @@ class JsonRpcClient:
         self._session = requests.Session()
         self._request_id = 0
 
-    def _build_request(self, method, params, user_agent, content_type, headers):
-        self._request_id += 1
+    def _build_request(
+        self,
+        method,
+        params,
+        user_agent,
+        content_type,
+        headers,
+        *,
+        request_id=None,
+        version_field="2.0",
+    ):
+        if request_id is None:
+            self._request_id += 1
+            request_id = self._request_id
         request_headers = {}
         if user_agent is not None:
             request_headers["User-Agent"] = user_agent
@@ -88,12 +100,54 @@ class JsonRpcClient:
             request_headers.update(headers)
 
         payload = {
-            "jsonrpc": "2.0",
             "method": method,
             "params": list(params) if params is not None else [],
-            "id": self._request_id,
+            "id": request_id,
         }
+        if version_field is not None:
+            payload["jsonrpc"] = version_field
         return request_headers, payload
+
+    def call_envelope(
+        self,
+        method,
+        params=None,
+        *,
+        user_agent=None,
+        content_type=None,
+        headers=None,
+        request_id=None,
+        version_field="2.0",
+    ):
+        """Invoke ``method`` and return the raw, un-normalized JSON payload.
+
+        Unlike :meth:`call`, the response envelope is returned as-is, so
+        callers can assert on the actual protocol dialect (a pre-v1 bare array
+        versus a v1/v2 object).
+
+        ``version_field=None`` omits the ``jsonrpc`` member entirely and
+        ``request_id=0`` models a legacy client that sends a fixed zero id.
+        """
+        request_headers, payload = self._build_request(
+            method,
+            params,
+            user_agent,
+            content_type,
+            headers,
+            request_id=request_id,
+            version_field=version_field,
+        )
+        response = self._session.post(
+            self.url,
+            data=json.dumps(payload),
+            headers=request_headers,
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+
+        if not response.content:
+            return None
+        return response.json()
 
     def call(self, method, params=None, *, user_agent=None, content_type=None, headers=None):
         """Invoke ``method`` and return the normalized JSON-RPC response.

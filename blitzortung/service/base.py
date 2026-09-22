@@ -60,6 +60,13 @@ class Blitzortung(jsonrpc.JSONRPC):
     # User agent validation constants
     MAX_COMPATIBLE_ANDROID_VERSION = 177
 
+    # The Android client predates JSON-RPC 1.0: it sends a fixed request id of
+    # 0 and no ``jsonrpc`` version field, and expects the pre-1.0 bare-array
+    # response.  txjsonrpc-ng treats id 0 as spec-correct JSON-RPC 1.0 by
+    # default, so opt in to the legacy envelope to keep deployed clients
+    # working (requires the txjsonrpc-ng release providing this flag).
+    treat_zero_id_as_pre1 = True
+
     # Memory info interval
     MEMORY_INFO_INTERVAL = 300  # 5 minutes
 

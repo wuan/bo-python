@@ -1,6 +1,6 @@
 [project]
 name = 'blitzortung'
-version = '1.13.3'
+version = '1.13.4'
 description = 'blitzortung.org python modules'
 authors = [
     { name = "Andreas Würl", email = "andi@tryb.de" }
@@ -24,7 +24,7 @@ dependencies = [
     "statsd (>=4.0)",
     "geoip2 (>=5.1)",
     "txpostgres (>=1.7)",
-    "txjsonrpc-ng (>=0.8)",
+    "txjsonrpc-ng (>=0.9.1)",
 ]
 
 [project.scripts]

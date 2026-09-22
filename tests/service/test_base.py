@@ -1,12 +1,14 @@
 """Tests for blitzortung.service.base module."""
 
 import datetime
+import json
 import time
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest.mock import Mock, MagicMock, patch, call
 
 import pytest
 from assertpy import assert_that
+from twisted.web.test.requesthelper import DummyRequest
 
 from blitzortung.service.base import Blitzortung, LogObserver
 
@@ -180,8 +182,54 @@ class TestBlitzortungClassConstants:
     def test_max_compatible_android_version(self):
         assert_that(Blitzortung.MAX_COMPATIBLE_ANDROID_VERSION).is_equal_to(177)
 
+    def test_legacy_zero_id_opt_in(self):
+        # Keep the pre-1.0 envelope for the deployed Android client, which
+        # sends a fixed request id of 0 without a jsonrpc version field.
+        assert_that(Blitzortung.treat_zero_id_as_pre1).is_true()
+
     def test_memory_info_interval(self):
         assert_that(Blitzortung.MEMORY_INFO_INTERVAL).is_equal_to(300)
+
+
+class TestLegacyJsonRpcEnvelope:
+    """Verify the rendered JSON-RPC envelope for the legacy Android client.
+
+    The Android client sends a fixed ``id`` of ``0`` and no ``jsonrpc`` version
+    field and expects a bare pre-1.0 array.  This drives the full render path
+    (the ``Blitzortung`` opt-in plus txjsonrpc-ng version selection), so it
+    guards the regression in CI even though the ``live`` protocol tests only
+    run against a deployed endpoint.
+    """
+
+    ANDROID_PARAMS = [60, 10000, 0, 1, 0]
+
+    @classmethod
+    def _render(cls, blitzortung, payload):
+        request = DummyRequest([''])
+        request.content = BytesIO(json.dumps(payload).encode())
+        request.method = b'POST'
+        request.requestHeaders.setRawHeaders('User-Agent', ['bo-android-190'])
+        request.requestHeaders.setRawHeaders('Content-Type', ['text/json'])
+        blitzortung.render(request)
+        return json.loads(b''.join(request.written))
+
+    def test_legacy_zero_id_yields_bare_array(self, blitzortung):
+        envelope = self._render(blitzortung, {
+            'id': 0,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(envelope).is_instance_of(list)
+
+    def test_explicit_version_2_yields_object(self, blitzortung):
+        envelope = self._render(blitzortung, {
+            'jsonrpc': '2.0',
+            'id': 0,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(envelope).is_instance_of(dict)
+        assert_that(envelope['jsonrpc']).is_equal_to('2.0')
 
 
 class TestBlitzortungInitialization:
