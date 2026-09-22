@@ -22,11 +22,21 @@ import datetime
 
 import pytest
 from assertpy import assert_that
-from mock import Mock
+from mock import Mock, patch
 
 import blitzortung
 import blitzortung.builder
 import blitzortung.dataimport
+
+
+class TestStrikesFactory:
+    @patch('blitzortung.INJECTOR')
+    def test_strikes(self, injector_mock):
+        provider = Mock()
+        injector_mock.get.return_value = provider
+
+        assert_that(blitzortung.dataimport.strikes()).is_same_as(provider)
+        injector_mock.get.assert_called_once_with(blitzortung.dataimport.StrikesBlitzortungDataProvider)
 
 
 class TestHttpDataTransport:

@@ -1,158 +1,269 @@
 """Tests for blitzortung.cli.imprt_websocket module."""
 
+import datetime
 import json
-import sys
-from unittest.mock import Mock, MagicMock, patch
+import time
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-
-class TestModuleStructure:
-    """Tests for module structure."""
-
-    def test_module_can_be_imported(self):
-        """Test module can be imported without errors."""
-        # This will only work if dependencies are mocked properly
-        # For now, just verify we can check the module exists
-        try:
-            import blitzortung.cli.imprt_websocket
-            module_exists = True
-        except Exception:
-            module_exists = False
-        # Module may or may not import depending on environment
-        assert True  # Always pass
+import blitzortung
+import blitzortung.cli.imprt_websocket as imprt_websocket
+from blitzortung.lock import FailedToAcquireException
 
 
-class TestMessageProcessing:
-    """Tests for message processing logic."""
+def make_message(timestamp=None, region=1, delay=1.0):
+    """Create a valid strike message as JSON string."""
+    if timestamp is None:
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
+    return json.dumps({
+        "time": int(timestamp.timestamp() * 1000),
+        "lat": 32.5,
+        "lon": -89.5,
+        "alt": 0,
+        "region": region,
+        "delay": delay,
+    })
 
-    def test_json_parsing(self):
-        """Test JSON message parsing."""
-        message = '{"time": 1234567890123456789, "lat": 45.123, "lon": 12.345, "region": 1, "delay": 1.5}'
+
+@pytest.fixture
+def strike():
+    """A strike returned by the (mocked) builder."""
+    strike = MagicMock()
+    strike.timestamp.datetime = datetime.datetime.now(datetime.timezone.utc)
+    return strike
+
+
+@pytest.fixture
+def strike_builder(strike):
+    """A strike builder whose from_json().build() returns a strike."""
+    builder = MagicMock()
+    builder.from_json.return_value.build.return_value = strike
+    return builder
+
+
+@pytest.fixture(autouse=True)
+def module_state(monkeypatch, strike_builder):
+    """Isolate the module-level mutable state and collaborators."""
+    monkeypatch.setattr(imprt_websocket, "strike_builder", strike_builder)
+    monkeypatch.setattr(imprt_websocket, "statsd_client", MagicMock())
+    monkeypatch.setattr(imprt_websocket, "strike_db", None)
+    monkeypatch.setattr(imprt_websocket, "strike_count", 0)
+    monkeypatch.setattr(imprt_websocket, "last_commit_time", time.time())
+
+
+class TestOnMessage:
+    """Tests for the on_message callback."""
+
+    def test_processes_message_without_database(self, strike, strike_builder):
+        """Test that a message is parsed, tracked and counted."""
+        message = make_message(region=3)
+
+        imprt_websocket.on_message(Mock(), message)
+
         data = json.loads(message)
+        strike_builder.from_json.assert_called_once_with(data)
+        imprt_websocket.statsd_client.incr.assert_called_once_with("strikes")
+        imprt_websocket.statsd_client.gauge.assert_called_once()
+        assert imprt_websocket.strike_count == 1
 
-        assert data['time'] == 1234567890123456789
-        assert data['lat'] == 45.123
-        assert data['lon'] == 12.345
-        assert data['region'] == 1
-        assert data['delay'] == 1.5
+    def test_inserts_into_database_when_available(self, strike):
+        """Test that strikes are inserted into the database."""
+        db = MagicMock()
+        imprt_websocket.strike_db = db
 
-    def test_delay_calculation(self):
-        """Test delay calculation logic."""
-        local_time = 1704067200.0
-        strike_timestamp = 1704067100.0
+        imprt_websocket.on_message(Mock(), make_message(region=5))
 
-        local_delay = local_time - strike_timestamp
+        db.insert.assert_called_once_with(strike, 5)
 
-        assert local_delay == 100.0
+    def test_accepts_utf8_encoded_message(self):
+        """Test that a bytes message is decoded before processing."""
+        imprt_websocket.on_message(Mock(), make_message().encode("utf-8"))
 
-    def test_commit_threshold_logic(self):
-        """Test commit threshold logic."""
-        strike_count = 100
-        last_commit_time = 0
-        current_time = 6  # 6 seconds later
+        assert imprt_websocket.strike_count == 1
 
-        should_commit = strike_count > 100 or (strike_count > 0 and current_time > last_commit_time + 5)
+    def test_commits_after_count_threshold(self):
+        """Test that a commit happens once more than 100 strikes arrived."""
+        db = MagicMock()
+        imprt_websocket.strike_db = db
+        imprt_websocket.strike_count = 100
 
-        assert should_commit is True
+        imprt_websocket.on_message(Mock(), make_message())
 
-    def test_strike_key_creation(self):
-        """Test creating a unique key for a strike."""
-        strike_data = {
-            'timestamp': {'value': 1704067200000000000},
-            'x': 10.123456,
-            'y': 20.654321,
-            'lateral_error': 100
-        }
+        db.commit.assert_called_once_with()
+        assert imprt_websocket.strike_count == 0
 
-        key = (
-            strike_data['timestamp']['value'],
-            round(strike_data['x'], 4),
-            round(strike_data['y'], 4),
-            strike_data['lateral_error']
-        )
+    def test_commits_after_time_threshold(self):
+        """Test that a commit happens when the last one is older than 5s."""
+        db = MagicMock()
+        imprt_websocket.strike_db = db
+        imprt_websocket.strike_count = 1
+        imprt_websocket.last_commit_time = time.time() - 10
 
-        assert key[0] == 1704067200000000000
-        assert key[1] == 10.1235
-        assert key[2] == 20.6543
-        assert key[3] == 100
+        imprt_websocket.on_message(Mock(), make_message())
 
+        db.commit.assert_called_once_with()
+        assert imprt_websocket.strike_count == 0
 
-class TestWebSocketConfiguration:
-    """Tests for WebSocket configuration."""
+    def test_commits_after_count_threshold_without_database(self):
+        """Test the commit path when no database is configured."""
+        imprt_websocket.strike_count = 100
+        imprt_websocket.strike_db = None
 
-    def test_url_formation(self):
-        """Test WebSocket URL formation."""
-        for server_index in [1, 7, 8]:
-            url = f"wss://ws{server_index}.blitzortung.org/"
-            assert url.startswith("wss://ws")
-            assert url.endswith(".blitzortung.org/")
+        imprt_websocket.on_message(Mock(), make_message())
 
-    def test_origin_header(self):
-        """Test origin header for WebSocket."""
-        origin = 'https://www.blitzortung.org'
-        assert origin == 'https://www.blitzortung.org'
+        assert imprt_websocket.strike_count == 0
 
-    def test_initialization_message(self):
-        """Test initialization message format."""
-        initialization = '{"a":111}'
-        data = json.loads(initialization)
-        assert data['a'] == 111
+    def test_reraises_builder_errors(self, strike_builder):
+        """Test that builder errors are re-raised after being logged."""
+        strike_builder.from_json.return_value.build.side_effect = ValueError("invalid strike")
+
+        with pytest.raises(ValueError, match="invalid strike"):
+            imprt_websocket.on_message(Mock(), make_message())
 
 
 class TestCallbacks:
-    """Tests for callback functions."""
+    """Tests for the remaining websocket callbacks."""
 
-    def test_on_error_format(self):
-        """Test error callback format."""
-        error_msg = "test error"
-        log_format = "error '%s'"
-        result = log_format % error_msg
-        assert result == "error 'test error'"
+    def test_on_error_logs_warning(self):
+        """Test that errors are logged as warnings."""
+        with patch.object(imprt_websocket.logger, "warning") as warning:
+            imprt_websocket.on_error(Mock(), ValueError("connection lost"))
 
-    def test_on_close_status_handling_with_code(self):
-        """Test close status handling with status code."""
-        close_status_code = 1000
-        close_msg = "Normal closure"
+        warning.assert_called_once()
 
-        status = close_status_code if close_status_code else 0
-        msg = close_msg if close_msg else 'n/a'
+    @pytest.mark.parametrize(
+        "close_status_code, close_msg",
+        [(1000, "Normal closure"), (None, None)],
+    )
+    def test_on_close_logs_info(self, close_status_code, close_msg):
+        """Test that both populated and empty close reasons are logged."""
+        with patch.object(imprt_websocket.logger, "info") as info:
+            imprt_websocket.on_close(Mock(), close_status_code, close_msg)
 
-        assert status == 1000
-        assert msg == "Normal closure"
+        info.assert_called_once()
 
-    def test_on_close_status_handling_without_code(self):
-        """Test close status handling without status code."""
-        close_status_code = None
-        close_msg = None
+    def test_on_open_sends_initialization_and_starts_refresher(self):
+        """Test the on_open messages and the background refresher thread."""
+        ws = MagicMock()
+        with patch.object(imprt_websocket.threading, "Thread") as thread:
+            imprt_websocket.on_open(ws)
 
-        status = close_status_code if close_status_code else 0
-        msg = close_msg if close_msg else 'n/a'
+        ws.send.assert_called_once_with('{"a":111}')
+        thread.assert_called_once()
 
-        assert status == 0
-        assert msg == 'n/a'
+    def test_on_open_refresher_sends_and_exits_on_close(self):
+        """Test that the refresher sends a message and stops on close."""
+        ws = MagicMock()
+        ws.send.side_effect = [None, None, imprt_websocket.WebSocketConnectionClosedException()]
+        captured = {}
+
+        def capture(target, *args, **kwargs):
+            captured["target"] = target
+            return MagicMock()
+
+        with patch.object(imprt_websocket.threading, "Thread", side_effect=capture):
+            with patch.object(imprt_websocket.time, "sleep"):
+                imprt_websocket.on_open(ws)
+                # Execute the captured thread target: sends "{}" once, then exits.
+                captured["target"]()
+
+        assert ws.send.call_count == 3  # initialization, refresh, failed refresh
 
 
-class TestStatsTracking:
-    """Tests for statistics tracking."""
+class TestMain:
+    """Tests for the main() entry point."""
 
-    def test_statsd_incr_format(self):
-        """Test statsd increment format."""
-        stat_name = "strikes"
-        assert stat_name == "strikes"
+    class StopMain(Exception):
+        """Sentinel used to break out of the endless connect loop."""
 
-    def test_statsd_gauge_format(self):
-        """Test statsd gauge format."""
-        stat_name = "strikes"
-        metric = "delay"
-        expected = f"{stat_name}.{metric}"
-        assert expected == "strikes.delay"
+    def _patch_runtime(self, monkeypatch, options, run_forever_side_effect):
+        parser = Mock()
+        parser.parse_args.return_value = (options, [])
+        monkeypatch.setattr(imprt_websocket, "OptionParser", Mock(return_value=parser))
 
-    def test_statsd_timing_format(self):
-        """Test statsd timing format."""
-        stat_name = "strikes.1"
-        metric_get = "get"
-        metric_insert = "insert"
+        lock = MagicMock()
+        monkeypatch.setattr(imprt_websocket, "LockWithTimeout", Mock(return_value=lock))
 
-        assert f"{stat_name}.{metric_get}" == "strikes.1.get"
-        assert f"{stat_name}.{metric_insert}" == "strikes.1.insert"
+        monkeypatch.setattr(imprt_websocket, "random", Mock(choices=Mock(return_value=[1])))
+
+        ws = Mock()
+        ws.run_forever.side_effect = run_forever_side_effect
+        monkeypatch.setattr(imprt_websocket.websocket, "WebSocketApp", Mock(return_value=ws))
+
+        return lock, ws
+
+    def test_main_connects_and_imports(self, monkeypatch):
+        """Test that main() acquires the lock, opens a DB and connects."""
+        options = Mock(debug=False, verbose=False, test=False)
+        _, ws = self._patch_runtime(monkeypatch, options, self.StopMain())
+        strike_db = MagicMock()
+        monkeypatch.setattr(blitzortung.db, "strike", Mock(return_value=strike_db))
+
+        with pytest.raises(self.StopMain):
+            imprt_websocket.main()
+
+        imprt_websocket.websocket.WebSocketApp.assert_called_once()
+        ws.run_forever.assert_called_once_with(origin='https://www.blitzortung.org', skip_utf8_validation=True)
+
+    def test_main_test_mode_skips_database(self, monkeypatch):
+        """Test that the test flag avoids connecting to the database."""
+        options = Mock(debug=False, verbose=False, test=True)
+        self._patch_runtime(monkeypatch, options, self.StopMain())
+        strike_factory = Mock()
+        monkeypatch.setattr(blitzortung.db, "strike", strike_factory)
+
+        with pytest.raises(self.StopMain):
+            imprt_websocket.main()
+
+        strike_factory.assert_not_called()
+
+    def test_main_debug_enables_trace(self, monkeypatch):
+        """Test that the debug flag enables websocket tracing and log level."""
+        options = Mock(debug=True, verbose=False, test=False)
+        self._patch_runtime(monkeypatch, options, self.StopMain())
+        monkeypatch.setattr(blitzortung.db, "strike", Mock(return_value=MagicMock()))
+
+        with patch.object(blitzortung, "set_log_level") as set_log_level:
+            with patch.object(imprt_websocket.websocket, "enableTrace") as enable_trace:
+                with pytest.raises(self.StopMain):
+                    imprt_websocket.main()
+
+        set_log_level.assert_called_once()
+        enable_trace.assert_called_once_with(True)
+
+    def test_main_verbose_sets_log_level(self, monkeypatch):
+        """Test that the verbose flag only changes the log level."""
+        options = Mock(debug=False, verbose=True, test=False)
+        self._patch_runtime(monkeypatch, options, self.StopMain())
+        monkeypatch.setattr(blitzortung.db, "strike", Mock(return_value=MagicMock()))
+
+        with patch.object(blitzortung, "set_log_level") as set_log_level:
+            with patch.object(imprt_websocket.websocket, "enableTrace") as enable_trace:
+                with pytest.raises(self.StopMain):
+                    imprt_websocket.main()
+
+        set_log_level.assert_called_once()
+        enable_trace.assert_not_called()
+
+    def test_main_logs_finished_after_disconnect(self, monkeypatch):
+        """Test that a normal disconnect is logged before reconnecting."""
+        options = Mock(debug=False, verbose=False, test=True)
+        self._patch_runtime(monkeypatch, options, [None, self.StopMain()])
+
+        with patch.object(imprt_websocket.logger, "info") as info:
+            with pytest.raises(self.StopMain):
+                imprt_websocket.main()
+
+        info.assert_any_call("finished")
+
+    def test_main_logs_failed_lock(self, monkeypatch):
+        """Test that a lock timeout is caught and logged."""
+        options = Mock(debug=False, verbose=False, test=False)
+        lock, _ = self._patch_runtime(monkeypatch, options, self.StopMain())
+        lock.locked.side_effect = FailedToAcquireException()
+
+        with patch.object(imprt_websocket.logger, "warning") as warning:
+            imprt_websocket.main()
+
+        warning.assert_called_once()

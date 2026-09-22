@@ -26,7 +26,7 @@ from assertpy import assert_that
 import blitzortung
 import blitzortung.db.query_builder
 from blitzortung.db.query import TimeInterval
-from blitzortung.geom import Grid
+from blitzortung.geom import Envelope, Grid
 
 
 @pytest.fixture
@@ -93,6 +93,54 @@ class TestStrike:
         assert_that(parameters['start_time']).is_equal_to(start_time)
         assert_that(parameters['end_time']).is_equal_to(end_time)
         assert_that(parameters['srid']).is_equal_to(srid)
+
+    def test_select_query_with_region(self, query_builder, start_time, end_time, srid):
+        query = query_builder.select_query("<table_name>", srid,
+                                           time_interval=TimeInterval(start_time, end_time), region=7)
+
+        assert_that(str(query)).contains("region = %(region)s")
+        assert_that(query.get_parameters()['region']).is_equal_to(7)
+
+    def test_global_grid_query(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, srid)
+        query = query_builder.global_grid_query("<table_name>", grid, count_threshold=0,
+                                                time_interval=TimeInterval(start_time, end_time))
+
+        sql = str(query)
+        assert_that(sql).contains("ROUND(")
+        assert_that(sql).contains("FROM <table_name>")
+        assert_that(sql).contains("GROUP BY rx, ry")
+        assert_that(query.get_parameters()['srid']).is_equal_to(srid)
+
+    def test_global_grid_query_with_count_threshold(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, srid)
+        query = query_builder.global_grid_query("<table_name>", grid, count_threshold=5,
+                                                time_interval=TimeInterval(start_time, end_time))
+
+        assert_that(str(query)).contains("HAVING count(*) > %(count_threshold)s")
+        assert_that(query.get_parameters()['count_threshold']).is_equal_to(5)
+
+    def test_histogram_query(self, query_builder, start_time, end_time):
+        query = query_builder.histogram_query("<table_name>", TimeInterval(start_time, end_time), 5)
+
+        sql = str(query)
+        assert_that(sql).contains("-extract( epoch")
+        assert_that(sql).contains("GROUP BY interval")
+        assert_that(sql).contains("ORDER BY interval")
+        assert_that(query.get_parameters()['binsize']).is_equal_to(5)
+
+    def test_histogram_query_with_region_and_envelope(self, query_builder, start_time, end_time, srid):
+        envelope = Envelope(10.0, 12.0, 50.0, 52.0, srid)
+        query = query_builder.histogram_query("<table_name>", TimeInterval(start_time, end_time), 5,
+                                              region=3, envelope=envelope)
+
+        sql = str(query)
+        assert_that(sql).contains("region = %(region)s")
+        assert_that(sql).contains("ST_SetSRID")
+
+        parameters = query.get_parameters()
+        assert_that(parameters['region']).is_equal_to(3)
+        assert_that(parameters['envelope_srid']).is_equal_to(srid)
 
     def test_grid_query_spanning_equator(self, query_builder, start_time, end_time, srid):
         grid = Grid(11.0, 18.0, -5.0, 5.0, 0.25, 0.5, srid)

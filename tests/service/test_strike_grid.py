@@ -117,6 +117,31 @@ class TestStrikeGridQuery:
         assert_that(response["x0"] + response["xd"] * response["xc"]).is_close_to(grid_parameters.grid.x_max, 0.1)
         assert_that(response["y1"] - response["yd"] * response["yc"]).is_close_to(grid_parameters.grid.y_min, 0.1)
 
+    def test_build_grid_response_local(self, uut, statsd_client, grid_parameters_factory, time_interval):
+        """Test that a missing region logs the local grid gauges."""
+        grid_parameters = grid_parameters_factory(10000, region=None)
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+
+        result = (((7, 102, 3, -65),), [0, 0, 0, 0, 0, 1])
+        uut.build_grid_response(result, state=state)
+
+        statsd_client.gauge.assert_any_call('local_strikes_grid.size', 1)
+        statsd_client.gauge.assert_any_call('local_strikes_grid.size.10000', 1)
+
+    @pytest_twisted.inlineCallbacks
+    def test_combine_result(self, uut, statsd_client, grid_parameters_factory, time_interval):
+        """Test combining grid and histogram deferred results."""
+        grid_parameters = grid_parameters_factory(10000)
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+
+        grid_result = defer.succeed(((7, 102, 3, -65),))
+        histogram_result = defer.succeed([0, 0, 0, 0, 0, 1])
+
+        response = yield uut.combine_result(grid_result, histogram_result, state)
+
+        assert response['r'] == ((7, 102, 3, -65),)
+        assert response['h'] == [0, 0, 0, 0, 0, 1]
+
 
 class TestGlobalStrikeGridQuery:
 
@@ -203,3 +228,17 @@ class TestGlobalStrikeGridQuery:
 
         # assert_that(response["x0"] + response["xd"] * response["xc"]).is_close_to(grid_parameters.grid.x_max, 0.1)
         # assert_that(response["y1"] - response["yd"] * response["yc"]).is_close_to(grid_parameters.grid.y_min, 0.1)
+
+    @pytest_twisted.inlineCallbacks
+    def test_combine_result(self, uut, statsd_client, grid_parameters_factory, time_interval):
+        """Test combining global grid and histogram deferred results."""
+        grid_parameters = grid_parameters_factory(10000)
+        state = StrikeGridState(statsd_client, grid_parameters, time_interval)
+
+        grid_result = defer.succeed(((7, -10, 3, -65),))
+        histogram_result = defer.succeed([0, 0, 0, 0, 0, 1])
+
+        response = yield uut.combine_result(grid_result, histogram_result, state)
+
+        assert response['r'] == ((7, -10, 3, -65),)
+        assert response['h'] == [0, 0, 0, 0, 0, 1]

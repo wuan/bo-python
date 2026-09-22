@@ -181,6 +181,20 @@ class TestStrikeBuilder:
         assert_that(result.stations).is_equal_to([])
         assert_that(result.region).is_equal_to(9)
 
+    def test_from_json_with_missing_field_raises_error(self):
+        """Test that from_json wraps parsing errors in a BuilderError."""
+        strike = blitzortung.builder.strike.Strike()
+
+        with pytest.raises(blitzortung.builder.base.BuilderError):
+            strike.from_json({"lat": 44.283328, "lon": 8.910987})
+
+    def test_build_without_timestamp_raises_error(self):
+        """Test that building without a timestamp raises a BuilderError."""
+        strike = blitzortung.builder.strike.Strike()
+
+        with pytest.raises(blitzortung.builder.base.BuilderError, match="Timestamp not set"):
+            strike.build()
+
     def test_from_line_with_missing_stations(self):
         """Test parsing strike with missing stations in list."""
         strike = blitzortung.builder.strike.Strike()

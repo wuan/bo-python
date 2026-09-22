@@ -67,6 +67,18 @@ class TestGeometry:
         self.geometry = GeometryForTest(1234)
         assert_that(self.geometry.srid).is_equal_to(1234)
 
+    def test_get_and_set_srid(self):
+        """Test the SRID accessor methods."""
+        assert_that(self.geometry.get_srid()).is_equal_to(
+            blitzortung.geom.Geometry.default_srid
+        )
+        self.geometry.set_srid(1234)
+        assert_that(self.geometry.get_srid()).is_equal_to(1234)
+
+    def test_abstract_env_returns_none(self):
+        """Test that the abstract env property body returns None."""
+        assert_that(blitzortung.geom.Geometry.env.fget(self.geometry)).is_none()
+
 
 class TestEnvelope:
     """Test suite for Envelope class."""
@@ -118,6 +130,11 @@ class TestEnvelope:
         assert not self.envelope.contains(blitzortung.base.Point(0, 2.0001))
         assert not self.envelope.contains(blitzortung.base.Point(-5.0001, 0))
         assert not self.envelope.contains(blitzortung.base.Point(4.0001, 0))
+
+    def test_does_not_contain_object_without_coordinates(self):
+        """Test that objects without x/y attributes are not contained."""
+        assert_that(self.envelope.contains("not a point")).is_false()
+        assert_that(self.envelope.contains(None)).is_false()
 
     def test_get_env(self):
         """Test getting shapely polygon."""

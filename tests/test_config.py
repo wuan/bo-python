@@ -20,6 +20,8 @@
 import os
 import sys
 
+import pytest
+
 from assertpy import assert_that
 from mock import Mock, call, patch
 
@@ -102,3 +104,18 @@ class TestConfigModule:
         injector_class_mock.get.return_value = config
 
         assert_that(blitzortung.config.config()).is_equal_to(config)
+
+    def test_provide_config_parser_raises_without_config_file(self):
+        with patch.object(blitzortung.config.ConfigModule, "find_config_file_path", return_value=None):
+            with pytest.raises(ValueError, match="No configuration file found"):
+                self.config_module.provide_config_parser()
+
+    def test_find_config_file_path_returns_none(self):
+        with patch("blitzortung.config.os.path.exists", return_value=False) as exists:
+            assert_that(self.config_module.find_config_file_path()).is_none()
+
+        assert_that(exists.call_count).is_equal_to(2)
+        assert_that(exists.call_args_list).contains(
+            call(os.path.join(".", "blitzortung.conf")),
+            call(os.path.join("/etc/", "blitzortung.conf")),
+        )

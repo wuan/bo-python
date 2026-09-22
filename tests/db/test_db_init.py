@@ -32,6 +32,22 @@ class TestDbModule:
         connection_pool.closeall.assert_called_once()
 
 
+class TestConnectionPoolProvider:
+
+    @patch('blitzortung.db.atexit.register')
+    @patch('blitzortung.db.psycopg2.pool.ThreadedConnectionPool')
+    def test_provide_psycopg2_connection_pool(self, pool_class, register):
+        config = Mock()
+        config.get_db_connection_string.return_value = 'dbname=test'
+        db_module = blitzortung.db.DbModule()
+
+        connection_pool = db_module.provide_psycopg2_connection_pool(config)
+
+        pool_class.assert_called_once_with(4, 50, 'dbname=test')
+        register.assert_called_once_with(db_module.cleanup, connection_pool)
+        assert connection_pool is pool_class.return_value
+
+
 class TestHelperFunctions:
 
     @patch('blitzortung.INJECTOR')

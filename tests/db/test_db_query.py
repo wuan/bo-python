@@ -19,8 +19,10 @@ limitations under the License.
 """
 
 import datetime
+from types import SimpleNamespace
 
 import pytest
+import shapely.geometry
 import shapely.wkb
 from assertpy import assert_that
 
@@ -288,6 +290,41 @@ class TestQuery:
             }
         )
 
+    def test_set_order_twice_raises(self):
+        """Test that setting the order twice raises an error."""
+        self.query.set_order("bar")
+        with pytest.raises(RuntimeError, match="overriding Query.order"):
+            self.query.set_order("baz")
+
+    def test_set_limit_twice_raises(self):
+        """Test that setting the limit twice raises an error."""
+        self.query.set_limit(1)
+        with pytest.raises(RuntimeError, match="overriding Query.limit"):
+            self.query.set_limit(2)
+
+    def test_add_geometry_envelope(self):
+        """Test adding an envelope geometry only adds the bbox condition."""
+        geometry = shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)])
+        self.query.add_geometry(geometry)
+
+        assert_that("ST_GeomFromWKB" in str(self.query)).is_true()
+        assert_that("ST_Intersects" in str(self.query)).is_false()
+        assert_that(self.query.get_parameters()).contains_key("envelope")
+
+    def test_add_geometry_non_envelope(self):
+        """Test adding a non-rectangular geometry adds the intersection condition."""
+        geometry = shapely.geometry.Polygon([(0, 0), (2, 0), (1, 2), (0, 0)])
+        self.query.add_geometry(geometry)
+
+        assert_that("ST_Intersects" in str(self.query)).is_true()
+        assert_that(self.query.get_parameters()).contains_key("geometry")
+
+    def test_add_invalid_geometry_raises(self):
+        """Test adding an invalid geometry raises an error."""
+        geometry = shapely.geometry.Polygon([(0, 0), (1, 1), (1, 0), (0, 1), (0, 0)])
+        with pytest.raises(ValueError, match="invalid geometry"):
+            self.query.add_geometry(geometry)
+
     def test_parse_args_with_order(self):
         """Test default conditions with order."""
         self.query.set_default_conditions(order="test")
@@ -383,3 +420,64 @@ class TestGridQuery:
         wkb = parameters["envelope"].adapted
         envelope = shapely.wkb.loads(wkb)
         assert_that(envelope.bounds).is_equal_to((-10, 15, 20, 35))
+
+    def test_invalid_geometry_raises(self):
+        """Test GridQuery raises for an invalid raster geometry."""
+        invalid_env = shapely.geometry.Polygon([(0, 0), (1, 1), (1, 0), (0, 1), (0, 0)])
+        grid = SimpleNamespace(srid=4326, x_min=0, x_div=1, y_min=0, y_div=1, env=invalid_env)
+
+        with pytest.raises(ValueError, match="invalid Raster geometry"):
+            blitzortung.db.query.GridQuery(grid)
+
+
+class TestGlobalGridQuery:
+    """Test suite for GlobalGridQuery class."""
+
+    def test_with_raster(self):
+        """Test GlobalGridQuery with a raster grid."""
+        raster = blitzortung.geom.Grid(-10, 20, 15, 35, 1.5, 1)
+        query = blitzortung.db.query.GlobalGridQuery(raster)
+        query.set_table_name("strikes")
+
+        sql = str(query)
+        assert_that(sql).starts_with("SELECT ROUND(")
+        assert_that(sql).contains("GROUP BY rx, ry")
+
+        parameters = query.get_parameters()
+        assert_that(parameters["xdiv"]).is_equal_to(1.5)
+        assert_that(parameters["ydiv"]).is_equal_to(1)
+        assert_that(parameters["srid"]).is_equal_to(4326)
+        assert_that(parameters).does_not_contain_key("count_threshold")
+
+    def test_with_count_threshold(self):
+        """Test GlobalGridQuery with a count threshold."""
+        raster = blitzortung.geom.Grid(-10, 20, 15, 35, 1.5, 1)
+        query = blitzortung.db.query.GlobalGridQuery(raster, count_threshold=5)
+
+        assert_that(str(query)).contains("HAVING count(*) > %(count_threshold)s")
+        assert_that(query.get_parameters()["count_threshold"]).is_equal_to(5)
+
+
+class TestOrder:
+    """Test suite for Order class."""
+
+    def test_default(self):
+        """Test a default (ascending) order."""
+        order = blitzortung.db.query.Order("bar")
+        assert_that(order.get_column()).is_equal_to("bar")
+        assert_that(order.is_desc()).is_false()
+
+    def test_desc(self):
+        """Test a descending order."""
+        order = blitzortung.db.query.Order("baz", True)
+        assert_that(order.get_column()).is_equal_to("baz")
+        assert_that(order.is_desc()).is_true()
+
+
+class TestCenter:
+    """Test suite for Center class."""
+
+    def test_get_point(self):
+        """Test retrieving the center point."""
+        center = blitzortung.db.query.Center("point")
+        assert_that(center.get_point()).is_equal_to("point")

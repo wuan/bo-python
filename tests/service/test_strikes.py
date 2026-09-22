@@ -1,7 +1,9 @@
 import datetime
 
 import pytest
+import pytest_twisted
 from mock import Mock, call
+from twisted.internet import defer
 
 from blitzortung import geom, builder
 from blitzortung.data import Timestamp
@@ -93,4 +95,21 @@ class TestStrikeGridQuery:
             'next': 123,
             's': ((60, 123.4, 45.6, 234.1, 3.4, 1.2, 12),),
             't': time_interval.end.strftime("%Y%m%dT%H:%M:%S"),
+        }
+
+    @pytest_twisted.inlineCallbacks
+    def test_combine_result(self, uut, state):
+        """Test combining strike and histogram deferred results."""
+        strikes_result = defer.succeed(
+            {'next': 123, 's': ((60, 123.4, 45.6, 234.1, 3.4, 1.2, 12),)}
+        )
+        histogram_result = defer.succeed([0, 0, 0, 0, 0, 1])
+
+        response = yield uut.combine_result(strikes_result, histogram_result, state)
+
+        assert response == {
+            'h': [0, 0, 0, 0, 0, 1],
+            'next': 123,
+            's': ((60, 123.4, 45.6, 234.1, 3.4, 1.2, 12),),
+            't': state.end_time.strftime("%Y%m%dT%H:%M:%S"),
         }
