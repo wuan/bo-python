@@ -48,8 +48,8 @@ class Blitzortung(jsonrpc.JSONRPC):
 
     # Grid validation constants
     MIN_GRID_BASE_LENGTH = 5000
-    INVALID_GRID_BASE_LENGTH = 1000001
-    GLOBAL_MIN_GRID_BASE_LENGTH = 10000
+    GLOBAL_MIN_GRID_BASE_LENGTH = 25000
+    VALID_GRID_BASE_LENGTHS = frozenset({5000, 10000, 25000, 50000, 100000})
     MAX_REGION = 7
 
     # Time validation constants
@@ -217,11 +217,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
-            log.msg(
-                f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
+        if self.is_forbidden(request, client, user_agent_version, grid_base_length,
+                             self.GLOBAL_MIN_GRID_BASE_LENGTH):
             log.msg('get_global_strikes_grid(%d, %d, %d, >=%d) BLOCKED %.1f%% %s %s' % (
                 minute_length, grid_base_length, minute_offset, count_threshold,
                 0, client, user_agent))
@@ -271,11 +268,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in self.forbidden_ips or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
-            log.msg(
-                f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
+        if self.is_forbidden(request, client, user_agent_version, grid_base_length,
+                             self.MIN_GRID_BASE_LENGTH):
             log.msg('get_local_strikes_grid(%d, %d, %d, %d, %d, >=%d, %d) BLOCKED %.1f%% %s %s' % (
                 x, y, grid_base_length, minute_length, minute_offset, count_threshold, data_area,
                 0, client, user_agent))
@@ -327,11 +321,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         client = self.get_request_client(request)
         user_agent, user_agent_version = self.parse_user_agent(request)
 
-        if client in self.forbidden_ips or user_agent_version == 0 or request.getHeader(
-                'content-type') != JSON_CONTENT_TYPE or request.getHeader(
-            'referer') or grid_base_length < self.MIN_GRID_BASE_LENGTH or grid_base_length == self.INVALID_GRID_BASE_LENGTH:
-            log.msg(
-                f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, content type: {request.getHeader('content-type')}, referer: {request.getHeader('referer')}")
+        if self.is_forbidden(request, client, user_agent_version, grid_base_length,
+                             self.MIN_GRID_BASE_LENGTH):
             log.msg('get_strikes_grid(%d, %d, %d, %d, >=%d) BLOCKED %.1f%% %s %s' % (
                 minute_length, grid_base_length, minute_offset, region, count_threshold,
                 0, client, user_agent))
@@ -364,6 +355,28 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.metrics.for_strikes(minute_length, region, cache.get_ratio())
 
         return response
+
+    def is_forbidden(self, request, client, user_agent_version, grid_base_length, min_grid_base_length):
+        """Return ``True`` when a data request violates the access limits.
+
+        A request is forbidden when the client IP is blocked, the user agent is
+        not a valid ``bo-android-<int>`` client, the content type is not
+        ``text/json``, a referer is set, or the grid baseline is below the
+        endpoint's minimum or not one of the supported sizes.
+        """
+        content_type = request.getHeader('content-type')
+        referer = request.getHeader('referer')
+        if (client in self.forbidden_ips
+                or user_agent_version == 0
+                or content_type != JSON_CONTENT_TYPE
+                or referer
+                or grid_base_length < min_grid_base_length
+                or grid_base_length not in self.VALID_GRID_BASE_LENGTHS):
+            log.msg(
+                f"FORBIDDEN - client: {client}, user agent: {user_agent_version}, "
+                f"content type: {content_type}, referer: {referer}")
+            return True
+        return False
 
     def parse_user_agent(self, request):
         """Parse user agent string to extract version information."""
