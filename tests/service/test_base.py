@@ -8,8 +8,10 @@ from unittest.mock import Mock, MagicMock, patch, call
 
 import pytest
 from assertpy import assert_that
+from twisted.internet.defer import succeed
 from twisted.web.test.requesthelper import DummyRequest
 
+from blitzortung.cache import ObjectCache
 from blitzortung.service.base import Blitzortung, LogObserver
 
 
@@ -191,6 +193,17 @@ class TestBlitzortungClassConstants:
         assert_that(Blitzortung.MEMORY_INFO_INTERVAL).is_equal_to(300)
 
 
+def _render_jsonrpc(blitzortung, payload):
+    """Render *payload* through *blitzortung* and return the parsed response."""
+    request = DummyRequest([''])
+    request.content = BytesIO(json.dumps(payload).encode())
+    request.method = b'POST'
+    request.requestHeaders.setRawHeaders('User-Agent', ['bo-android-190'])
+    request.requestHeaders.setRawHeaders('Content-Type', ['text/json'])
+    blitzortung.render(request)
+    return json.loads(b''.join(request.written))
+
+
 class TestLegacyJsonRpcEnvelope:
     """Verify the rendered JSON-RPC envelope for the legacy Android client.
 
@@ -203,18 +216,8 @@ class TestLegacyJsonRpcEnvelope:
 
     ANDROID_PARAMS = [60, 10000, 0, 1, 0]
 
-    @classmethod
-    def _render(cls, blitzortung, payload):
-        request = DummyRequest([''])
-        request.content = BytesIO(json.dumps(payload).encode())
-        request.method = b'POST'
-        request.requestHeaders.setRawHeaders('User-Agent', ['bo-android-190'])
-        request.requestHeaders.setRawHeaders('Content-Type', ['text/json'])
-        blitzortung.render(request)
-        return json.loads(b''.join(request.written))
-
     def test_legacy_zero_id_yields_bare_array(self, blitzortung):
-        envelope = self._render(blitzortung, {
+        envelope = _render_jsonrpc(blitzortung, {
             'id': 0,
             'method': 'get_strikes_grid',
             'params': self.ANDROID_PARAMS,
@@ -222,7 +225,7 @@ class TestLegacyJsonRpcEnvelope:
         assert_that(envelope).is_instance_of(list)
 
     def test_explicit_version_2_yields_object(self, blitzortung):
-        envelope = self._render(blitzortung, {
+        envelope = _render_jsonrpc(blitzortung, {
             'jsonrpc': '2.0',
             'id': 0,
             'method': 'get_strikes_grid',
@@ -230,6 +233,56 @@ class TestLegacyJsonRpcEnvelope:
         })
         assert_that(envelope).is_instance_of(dict)
         assert_that(envelope['jsonrpc']).is_equal_to('2.0')
+
+
+class TestCacheableResultEnvelopeIsolation:
+    """A cached serialized response must not leak between protocol dialects.
+
+    The service stores one ``CacheableResult`` per cache key and txjsonrpc-ng
+    reuses its serialized form on cache hits.  A legacy pre-1.0 request (id 0)
+    and a versioned request share the same key, so the renderer must re-serialize
+    whenever the JSON-RPC version or the request id differs.
+    """
+
+    ANDROID_PARAMS = [60, 10000, 0, 1, 0]
+
+    @pytest.fixture
+    def cached_blitzortung(self, blitzortung):
+        blitzortung.cache.strikes.return_value = ObjectCache(ttl_seconds=60)
+        blitzortung.strike_grid_query.combine_result.return_value = succeed({'a': 1})
+        return blitzortung
+
+    def test_legacy_request_does_not_poison_versioned_request(self, cached_blitzortung):
+        legacy = _render_jsonrpc(cached_blitzortung, {
+            'id': 0,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(legacy).is_instance_of(list)
+
+        versioned = _render_jsonrpc(cached_blitzortung, {
+            'id': 1,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(versioned).is_instance_of(dict)
+        assert_that(versioned['id']).is_equal_to(1)
+        assert_that(versioned['result']).is_equal_to({'a': 1})
+
+    def test_versioned_request_does_not_poison_legacy_request(self, cached_blitzortung):
+        versioned = _render_jsonrpc(cached_blitzortung, {
+            'id': 1,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(versioned['id']).is_equal_to(1)
+
+        legacy = _render_jsonrpc(cached_blitzortung, {
+            'id': 0,
+            'method': 'get_strikes_grid',
+            'params': self.ANDROID_PARAMS,
+        })
+        assert_that(legacy).is_instance_of(list)
 
 
 class TestBlitzortungInitialization:

@@ -2655,14 +2655,14 @@ windows-platform = ["appdirs (>=1.4.0)", "bcrypt (>=3.2.1)", "cryptography (>=38
 
 [[package]]
 name = "txjsonrpc-ng"
-version = "0.9.1"
+version = "0.9.2"
 description = "Code for creating Twisted JSON-RPC servers and clients."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "txjsonrpc_ng-0.9.1-py3-none-any.whl", hash = "sha256:2778e467f53de6b37f661326cd67b491afb4ef1fec87c3c1cd736cc8da7f3fa5"},
-    {file = "txjsonrpc_ng-0.9.1.tar.gz", hash = "sha256:f94cd1bb93f2482867486765121c709b355f70ebf6d6837aa40f83cd1855acd9"},
+    {file = "txjsonrpc_ng-0.9.2-py3-none-any.whl", hash = "sha256:a4d5983d6ae170cb9fb87a2b65e95ef4c582dcbadcc46e56ebc14e5058c762ec"},
+    {file = "txjsonrpc_ng-0.9.2.tar.gz", hash = "sha256:6446a145877050180a7de047a9aaa18769e67b56f81cb5ead6fa0a057824bf21"},
 ]
 
 [package.dependencies]
@@ -3052,4 +3052,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "32e1b9944da49c83fd07948f8a7e64632e62a49c98071f47f31eecfea646dce9"
+content-hash = "33984f20e6fb1f3207af53675c96522dc97e2f29b8515feefb26f7966977221e"
