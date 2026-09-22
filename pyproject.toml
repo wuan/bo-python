@@ -1,9 +1,9 @@
 [project]
 name = 'blitzortung'
-version = '1.13.1'
+version = '1.13.2'
 description = 'blitzortung.org python modules'
 authors = [
-    {name = "Andreas Würl",email = "andi@tryb.de"}
+    { name = "Andreas Würl", email = "andi@tryb.de" }
 ]
 license = "Apache-2.0"
 homepage = 'https://github.com/wuan/bo-python'
@@ -15,12 +15,12 @@ dependencies = [
     "fasteners (>=0.19)",
     "shapely (>=2.0)",
     "pyproj (>=3.7)",
-    "psycopg2 (>=2.9)",
     "injector (>=0.22)",
     "incremental (>=22.10)",
     "stopit (>=1.1)",
     "websocket-client (>=1.9)",
-    "psycopg2cffi (>=2.9) ; implementation_name == 'pypy'",
+    "psycopg2 (>=2.9) ; platform_python_implementation != 'PyPy'",
+    "psycopg2cffi (>=2.9) ; platform_python_implementation == 'PyPy'",
     "statsd (>=4.0)",
     "geoip2 (>=5.1)",
     "txpostgres (>=1.7)",
@@ -47,7 +47,7 @@ pytest-cov = "^7.1"
 pytest-benchmark = "^5.1"
 mock = "^5.1"
 assertpy = "^1.1"
-testcontainers = {extras = ["postgres"], version = "^4.10"}
+testcontainers = { extras = ["postgres"], version = "^4.10" }
 pytest-twisted = "^1.14.3"
 mypy = "^1.14"
 pylint = "^4.0"

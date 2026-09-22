@@ -25,7 +25,23 @@ import os
 from typing import Optional
 
 from injector import Module, singleton, inject, provider
-from psycopg2.extensions import make_dsn
+
+
+def _quote_conninfo_value(value: str) -> str:
+    """Quote a value for use in a PostgreSQL connection string.
+
+    Mirrors the escaping performed by ``psycopg2.extensions.make_dsn`` so that
+    hosts, usernames or passwords containing spaces, single quotes or
+    backslashes are handled correctly. ``make_dsn`` itself cannot be used here
+    because ``psycopg2cffi`` (the PyPy drop-in replacement) does not provide
+    it, and importing ``psycopg2`` at this point would bypass the
+    ``psycopg2cffi`` compatibility registration.
+    """
+    value = str(value)
+    escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+    if value == "" or any(char.isspace() for char in value):
+        return "'%s'" % escaped
+    return escaped
 
 
 @singleton
@@ -49,9 +65,18 @@ class Config:
         username = self.config_parser.get('db', 'username')
         password = self.config_parser.get('db', 'password')
 
-        # ``make_dsn`` escapes values (quotes, spaces, backslashes) correctly,
+        # Escape values (quotes, spaces, backslashes) like ``make_dsn`` does,
         # unlike naive string interpolation.
-        return str(make_dsn(host=host, port=port, dbname=dbname, user=username, password=password))
+        return " ".join(
+            "%s=%s" % (key, _quote_conninfo_value(value))
+            for key, value in (
+                ("host", host),
+                ("port", port),
+                ("dbname", dbname),
+                ("user", username),
+                ("password", password),
+            )
+        )
 
     def get_webservice_port(self) -> int:
         return int(self.config_parser.get('webservice', 'port'))
