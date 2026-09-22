@@ -160,11 +160,13 @@ class TestBlitzortungClassConstants:
     def test_min_grid_base_length(self):
         assert_that(Blitzortung.MIN_GRID_BASE_LENGTH).is_equal_to(5000)
 
-    def test_invalid_grid_base_length(self):
-        assert_that(Blitzortung.INVALID_GRID_BASE_LENGTH).is_equal_to(1000001)
+    def test_valid_grid_base_lengths(self):
+        assert_that(Blitzortung.VALID_GRID_BASE_LENGTHS).is_equal_to(
+            frozenset({5000, 10000, 25000, 50000, 100000})
+        )
 
     def test_global_min_grid_base_length(self):
-        assert_that(Blitzortung.GLOBAL_MIN_GRID_BASE_LENGTH).is_equal_to(10000)
+        assert_that(Blitzortung.GLOBAL_MIN_GRID_BASE_LENGTH).is_equal_to(25000)
 
     def test_max_minutes_per_day(self):
         assert_that(Blitzortung.MAX_MINUTES_PER_DAY).is_equal_to(1440)
@@ -334,6 +336,65 @@ class TestGetRequestClient:
         request = MockRequest(client_ip='192.168.1.1', x_forwarded_for=None)
         result = blitzortung.get_request_client(request)
         assert_that(result).is_equal_to('192.168.1.1')
+
+
+class TestIsForbidden:
+    """Test the shared is_forbidden access-limit predicate."""
+
+    def test_allows_valid_request(self, blitzortung):
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer=None,
+            user_agent='bo-android-150'
+        )
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 10000, 5000)).is_false()
+
+    def test_blocks_forbidden_ip(self, blitzortung):
+        blitzortung.forbidden_ips['192.168.1.100'] = True
+        request = MockRequest(
+            client_ip='192.168.1.100',
+            content_type='text/json',
+            user_agent='bo-android-150'
+        )
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.100', 150, 10000, 5000)).is_true()
+
+    def test_blocks_zero_user_agent_version(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='invalid')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 0, 10000, 5000)).is_true()
+
+    def test_blocks_invalid_content_type(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/html', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 10000, 5000)).is_true()
+
+    def test_blocks_request_with_referer(self, blitzortung):
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer='http://example.com',
+            user_agent='bo-android-150'
+        )
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 10000, 5000)).is_true()
+
+    def test_blocks_baseline_below_minimum(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 24999, 25000)).is_true()
+
+    def test_allows_baseline_at_minimum(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 25000, 25000)).is_false()
+
+    def test_blocks_invalid_grid_baselength(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 1000001, 5000)).is_true()
+
+    def test_blocks_unsupported_grid_baselength(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 7000, 5000)).is_true()
+
+    def test_allows_supported_grid_baselength(self, blitzortung):
+        request = MockRequest(client_ip='192.168.1.1', content_type='text/json', user_agent='bo-android-150')
+        assert_that(blitzortung.is_forbidden(request, '192.168.1.1', 150, 100000, 5000)).is_false()
 
 
 class TestForceRange:
@@ -764,10 +825,21 @@ class TestJsonRpcGetGlobalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='invalid'
         )
-        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 25000, 0)
+        assert_that(result).is_equal_to({})
+
+    def test_returns_empty_for_small_grid_baselength(self, blitzortung):
+        """Test that the global endpoint blocks baselines below the global minimum."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer=None,
+            user_agent='bo-android-150'
+        )
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 24999, 0)
         assert_that(result).is_equal_to({})
 
     def test_returns_response_for_valid_request(self, blitzortung):
@@ -775,10 +847,10 @@ class TestJsonRpcGetGlobalStrikesGrid:
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com',
+            referer=None,
             user_agent='bo-android-150'
         )
-        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 10000, 0)
+        result = blitzortung.jsonrpc_get_global_strikes_grid(request, 60, 25000, 0)
         assert_that(result).is_equal_to({})
 
 
@@ -805,12 +877,24 @@ class TestJsonRpcGetLocalStrikesGrid:
         result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
         assert_that(result).is_equal_to({})
 
+    def test_returns_empty_for_invalid_user_agent(self, blitzortung):
+        """Test that requests with invalid user agent are blocked."""
+        request = MockRequest(
+            client_ip='192.168.1.1',
+            content_type='text/json',
+            referer=None,
+            user_agent='invalid'
+        )
+        result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
+        assert_that(result).is_equal_to({})
+
     def test_returns_response_for_valid_request(self, blitzortung):
         """Test that valid requests get a response."""
         request = MockRequest(
             client_ip='192.168.1.1',
             content_type='text/json',
-            referer='http://example.com'
+            referer=None,
+            user_agent='bo-android-150'
         )
         result = blitzortung.jsonrpc_get_local_strikes_grid(request, 10, 20, 10000, 60, 0)
         assert_that(result).is_equal_to({})

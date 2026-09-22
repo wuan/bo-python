@@ -1,4 +1,5 @@
 import datetime
+import os
 from typing import Callable
 
 import psycopg2
@@ -74,7 +75,10 @@ def postgres_container(request) -> PostgresContainer:
     return create_postgres_container(request)
 
 def create_postgres_container(request) -> PostgresContainer:
-    image = "postgis/postgis:16-3.5"
+    # The official postgis/postgis image only publishes amd64 manifests, which
+    # breaks the suite on Apple Silicon.  Default to the multi-arch community
+    # build and allow overriding it for other environments.
+    image = os.environ.get("BLITZORTUNG_TEST_POSTGIS_IMAGE", "imresamu/postgis:16-3.5")
     postgres = PostgresContainer(image)
 
     def remove_container():
