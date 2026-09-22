@@ -25,9 +25,13 @@ poetry run pylint blitzortung
 # Build package
 poetry build
 
-# Run pre-commit hooks
+# Run pre-commit hooks (always run after changing the project)
 pre-commit run --all-files
 ```
+
+**Always verify the pre-commit hooks after updating the project.** Run
+`pre-commit run --all-files` (or at least `pre-commit run --files <changed files>`)
+and make sure every hook passes before considering the work complete.
 
 ## Testing Notes
 
@@ -57,4 +61,6 @@ pre-commit run --all-files
 
 **Docstrings**: Required except for `__*__` methods. Use Apache 2.0 header in all source files.
 
-**Pre-commit**: Runs gitleaks, trailing whitespace fixer, and pylint.
+**Pre-commit**: Runs gitleaks, trailing whitespace fixer, and pylint. The hooks
+must be run and pass after every project update; do not treat the task as done
+until `pre-commit run --all-files` succeeds.
