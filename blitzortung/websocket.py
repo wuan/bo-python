@@ -2,6 +2,9 @@ from typing import Any
 
 
 def decode(data):
+    if not data:
+        return ""
+
     h = 256
     e: dict[Any, Any] = {}
 
@@ -9,7 +12,7 @@ def decode(data):
     f = c
     g = c
     o = h
-    for b, char in enumerate(data[1:]):
+    for char in data[1:]:
         a: Any  = ord(char)
         a = char if h > a else e.get(a, f + c)
         g += a

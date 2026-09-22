@@ -179,6 +179,7 @@ class TestStrikeBuilder:
         assert_that(result.lateral_error).is_equal_to(6830)
         assert_that(result.station_count).is_equal_to(0)
         assert_that(result.stations).is_equal_to([])
+        assert_that(result.region).is_equal_to(9)
 
     def test_from_line_with_missing_stations(self):
         """Test parsing strike with missing stations in list."""

@@ -124,7 +124,7 @@ def get_existing_strike_keys(strike_db, time_interval):
     """
     Retrieve keys of strikes already present in the database for a given time interval.
 
-    Strikes are identified by their timestamp, location, and amplitude since
+    Strikes are identified by their timestamp, location, and lateral error since
     strikes from URLs don't have database IDs.
 
     Args:
@@ -132,7 +132,7 @@ def get_existing_strike_keys(strike_db, time_interval):
         time_interval: Time interval to query
 
     Returns:
-        Set of strike keys (tuples of timestamp, x, y, amplitude)
+        Set of strike keys (tuples of timestamp, x, y, lateral error)
     """
     logger.debug("Querying existing strikes for interval %s - %s",
                  time_interval.start, time_interval.end)
@@ -155,7 +155,6 @@ def update_strikes(hours=1):
     4. Inserts only strikes that are not already in the database
 
     Args:
-        url: URL to fetch strike data from (if None, uses default config URL)
         hours: Number of hours to look back (default: 1)
 
     Returns:
@@ -183,71 +182,71 @@ def update_strikes(hours=1):
 
     # Get database connection
     strike_db = blitzortung.db.strike()
-
-    # Get existing strikes from database (identified by timestamp/location/amplitude)
-    existing_strike_keys = get_existing_strike_keys(strike_db, time_interval)
-    for existing_strike_key in existing_strike_keys:
-        logger.debug("Existing strike key: %s", existing_strike_key)
-
-    # Fetch strikes from URL
     try:
-        url_strikes = list(fetch_strikes_from_url(url, auth=auth))
-    except requests.RequestException as e:
-        logger.error("Failed to fetch strikes from URL: %s", e)
-        return 0
+        # Get existing strikes from database (identified by timestamp/location/lateral error)
+        existing_strike_keys = get_existing_strike_keys(strike_db, time_interval)
+        for existing_strike_key in existing_strike_keys:
+            logger.debug("Existing strike key: %s", existing_strike_key)
 
-    # Filter strikes: only those within time interval and not in database
-    new_strikes = []
-    for strike in url_strikes:
-        # Check if strike is within the time interval
-        if not (time_interval.start <= strike.timestamp <= time_interval.end):
-            logger.debug("Strike at %s outside time interval, skipping", strike.timestamp)
-            continue
-
-        # Check if strike already exists in database (by timestamp/location/amplitude)
-        strike_key = create_strike_key(strike)
-        if strike_key in existing_strike_keys:
-            logger.debug("Strike %s at %s (%.4f, %.4f) already exists, skipping", str(strike_key),
-                         strike.timestamp, strike.x, strike.y)
-            continue
-
-        if strike.timestamp < now - datetime.timedelta(minutes=1):
-            logger.debug("Strike %s at %s (%.4f, %.4f) new", str(strike_key),
-                     strike.timestamp, strike.x, strike.y)
-            new_strikes.append(strike)
-        else:
-            logger.debug("Strike %s at %s (%.4f, %.4f) too new", str(strike_key),
-                         strike.timestamp, strike.x, strike.y)
-
-
-    logger.info("Found %d new strikes to insert (out of %d from URL)",
-                len(new_strikes), len(url_strikes))
-
-    # Insert new strikes
-    insert_count = 0
-    for strike in new_strikes:
+        # Fetch strikes from URL
         try:
-            strike_db.insert(strike)
-            insert_count += 1
+            url_strikes = list(fetch_strikes_from_url(url, auth=auth))
+        except requests.RequestException as e:
+            logger.error("Failed to fetch strikes from URL: %s", e)
+            return 0
 
-        except Exception as e:
-            logger.error("Failed to insert strike %s: %s", strike.id, e)
-            strike_db.rollback()
-            raise
+        # Filter strikes: only those within time interval and not in database
+        new_strikes = []
+        for strike in url_strikes:
+            # Check if strike is within the time interval
+            if not (time_interval.start <= strike.timestamp <= time_interval.end):
+                logger.debug("Strike at %s outside time interval, skipping", strike.timestamp)
+                continue
 
-    # Final commit
-    if insert_count > 0:
-        strike_db.commit()
-        logger.info("Successfully inserted %d new strikes", insert_count)
-    else:
-        logger.info("No new strikes to insert")
+            # Check if strike already exists in database (by timestamp/location/lateral error)
+            strike_key = create_strike_key(strike)
+            if strike_key in existing_strike_keys:
+                logger.debug("Strike %s at %s (%.4f, %.4f) already exists, skipping", str(strike_key),
+                             strike.timestamp, strike.x, strike.y)
+                continue
 
-    strike_db.close()
+            if strike.timestamp < now - datetime.timedelta(minutes=1):
+                logger.debug("Strike %s at %s (%.4f, %.4f) new", str(strike_key),
+                         strike.timestamp, strike.x, strike.y)
+                new_strikes.append(strike)
+            else:
+                logger.debug("Strike %s at %s (%.4f, %.4f) too new", str(strike_key),
+                             strike.timestamp, strike.x, strike.y)
 
-    # Update statistics
-    statsd_client.gauge("strikes.imported", insert_count)
 
-    return insert_count
+        logger.info("Found %d new strikes to insert (out of %d from URL)",
+                    len(new_strikes), len(url_strikes))
+
+        # Insert new strikes
+        insert_count = 0
+        for strike in new_strikes:
+            try:
+                strike_db.insert(strike, strike.region if strike.region is not None else 1)
+                insert_count += 1
+
+            except Exception as e:
+                logger.error("Failed to insert strike %s: %s", strike.id, e)
+                strike_db.rollback()
+                raise
+
+        # Final commit
+        if insert_count > 0:
+            strike_db.commit()
+            logger.info("Successfully inserted %d new strikes", insert_count)
+        else:
+            logger.info("No new strikes to insert")
+
+        # Update statistics
+        statsd_client.gauge("strikes.imported", insert_count)
+
+        return insert_count
+    finally:
+        strike_db.close()
 
 
 def main():

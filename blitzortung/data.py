@@ -145,6 +145,17 @@ class Timestamp(base.EqualityAndHash):
     def is_valid(self) -> bool:
         return self.datetime is not None and self.datetime.year > 1900
 
+    def __eq__(self, other: object) -> bool:
+        # ``Timestamp`` defines ``__slots__`` but its ``EqualityAndHash`` base
+        # compares ``__dict__`` (which is always empty), so equality must be
+        # implemented explicitly here.
+        if not isinstance(other, Timestamp):
+            return NotImplemented
+        return self.datetime == other.datetime and self.nanosecond == other.nanosecond
+
+    def __hash__(self) -> int:
+        return hash((self.datetime, self.nanosecond))
+
     def __ne__(self, other: object) -> bool:
         if not isinstance(other, Timestamp):
             return True
@@ -235,6 +246,10 @@ class Timedelta(base.EqualityAndHash):
     def seconds(self) -> int:
         return self.timedelta.seconds
 
+    def total_seconds(self) -> float:
+        """Return the full duration in seconds (including whole days)."""
+        return self.timedelta.total_seconds()
+
     def __repr__(self) -> str:
         return "Timedelta({}, {})".format(self.timedelta, self.nanodelta)
 
@@ -312,7 +327,7 @@ class Strike(Event):
     class for strike objects
     """
 
-    __slots__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations']
+    __slots__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations', 'region']
 
     id: int | None
     altitude: float | None
@@ -320,6 +335,7 @@ class Strike(Event):
     lateral_error: int | None
     station_count: int | None
     stations: list[int]
+    region: int | None
 
     def __init__(
         self,
@@ -332,6 +348,7 @@ class Strike(Event):
         lateral_error: int | None,
         station_count: int | None,
         stations: list[int] | None = None,
+        region: int | None = None,
     ) -> None:
         super().__init__(timestamp, x_coord, y_coord)
         self.id = strike_id
@@ -340,6 +357,7 @@ class Strike(Event):
         self.lateral_error = lateral_error
         self.station_count = station_count
         self.stations = [] if stations is None else stations
+        self.region = region
 
     def has_participant(self, participant: int) -> bool:
         """
@@ -496,7 +514,7 @@ class GridData:
                                 column_index,
                                 row_index,
                                 int(cell.count),
-                                -time_diff.seconds,
+                                int(-time_diff.total_seconds()),
                             ))
 
-        return tuple(reduced_array)  # type: ignore[return-value]
+        return tuple(reduced_array)

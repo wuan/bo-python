@@ -88,7 +88,7 @@ def main():
 
     try:
         tz = ZoneInfo(options.tz)
-    except:
+    except Exception:
         print('parse error in timezone "' + options.tz + '"')
         sys.exit(1)
 
@@ -209,7 +209,7 @@ def fetch_strikes(area: BaseGeometry | None, options: Values, order: str, strike
 def fetch_strikes_grid(grid: Grid, options: Values, strike_db, time_interval: TimeInterval):
     timer = blitzortung.util.Timer()
 
-    grid_result = strike_db.select_grid(grid, time_interval=time_interval)
+    grid_result = strike_db.select_grid(grid, count_threshold=0, time_interval=time_interval)
 
     select_time = timer.lap()
 

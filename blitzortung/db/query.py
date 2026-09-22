@@ -45,7 +45,8 @@ class BaseInterval:
         return self.__end
 
     def __str__(self):
-        return '[' + (str(self.start) if self.start else '') + ' : ' + (str(self.end) if self.end else '') + ']'
+        return '[' + (str(self.start) if self.start is not None else '') + ' : ' + (
+            str(self.end) if self.end is not None else '') + ']'
 
 
 class IdInterval(BaseInterval):
@@ -125,14 +126,14 @@ class Query:
 
     def set_order(self, *order_items):
         if len(self.order) > 0:
-            raise RuntimeError("overriding Query.limit")
+            raise RuntimeError("overriding Query.order")
 
         self.order = [(order_item if isinstance(order_item, Order) else Order(order_item)) for order_item in
                       order_items]
         return self
 
     def set_limit(self, limit):
-        if self.limit:
+        if self.limit is not None:
             raise RuntimeError("overriding Query.limit")
         self.limit = limit
         return self
@@ -169,7 +170,7 @@ class Query:
             order_query_elements = map(build_order_query, self.order)
             sql += 'ORDER BY ' + ', '.join(order_query_elements) + ' '
 
-        if self.limit:
+        if self.limit is not None:
             sql += 'LIMIT ' + str(self.limit) + ' '
 
         return sql.strip()
@@ -178,6 +179,11 @@ class Query:
         return self.parameters
 
     def set_default_conditions(self, **kwargs):
+        """Apply known default conditions from keyword arguments.
+
+        Unknown keyword arguments are ignored and falsy values are skipped
+        (e.g. an unset ``order`` or ``limit``).
+        """
         for keyword, value in kwargs.items():
             if keyword in self.default_conditions and value:
                 self.default_conditions[keyword](value)

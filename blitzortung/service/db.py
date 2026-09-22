@@ -37,15 +37,15 @@ class LoggingDetector(reconnection.DeadConnectionDetector):
     """Database connection detector that logs reconnection events."""
 
     def startReconnecting(self, f):
-        print('[*] database connection is down (error: %r)' % f.value)
+        log.msg('[*] database connection is down (error: %r)' % f.value)
         return reconnection.DeadConnectionDetector.startReconnecting(self, f)
 
     def reconnect(self):
-        print('[*] reconnecting...')
+        log.msg('[*] reconnecting...')
         return reconnection.DeadConnectionDetector.reconnect(self)
 
     def connectionRecovered(self):
-        print('[*] connection recovered')
+        log.msg('[*] connection recovered')
         return reconnection.DeadConnectionDetector.connectionRecovered(self)
 
 

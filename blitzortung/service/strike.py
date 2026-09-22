@@ -65,7 +65,7 @@ class StrikeQuery:
         end_time = state.end_time
         strikes = tuple(
             (
-                (end_time - strike.timestamp).seconds,
+                int((end_time - strike.timestamp).total_seconds()),
                 strike.x,
                 strike.y,
                 strike.altitude,

@@ -18,7 +18,10 @@
 
 """
 
+import logging
 import time
+
+logger = logging.getLogger(__name__)
 
 
 class CacheEntry:
@@ -38,7 +41,7 @@ class CacheEntry:
         return self.__hit_count
 
     def __repr__(self):
-        valid = "+" if self.is_valid(self.__hit_count) else "-"
+        valid = "+" if self.is_valid(time.time()) else "-"
 
         return f"cached<{valid} {self.get_hit_count()}>:{self.__payload}"
 
@@ -64,7 +67,7 @@ class ObjectCache:
                 before = self.get_size()
                 self.clean_expired()
                 after = self.get_size()
-                print(f"{cached_object_creator.__name__}: cache cleanup {before} -> {after}")
+                logger.debug("%s: cache cleanup %s -> %s", cached_object_creator.__name__, before, after)
                 self.last_cleanup = now
 
         self.total_count += 1
@@ -106,6 +109,8 @@ class ObjectCache:
         self.total_count = 0
         self.total_hit_count = 0
         self.cache.clear()
+        self.keys.clear()
+        self.last_cleanup = 0.0
 
     def clean_expired(self):
         now = time.time()
@@ -124,7 +129,6 @@ class ObjectCache:
 
     def get_size(self):
         return len(self.cache)
-
 
     def generate_cache_key(self, cached_object_creator, args, kwargs):
         """

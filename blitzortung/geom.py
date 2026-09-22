@@ -31,12 +31,10 @@ if TYPE_CHECKING:
     from blitzortung.data import Timestamp
 
 
-class Geometry:
+class Geometry(metaclass=ABCMeta):
     """
     abstract base class for geometries
     """
-
-    __metaclass__ = ABCMeta
 
     __slots__ = ('srid',)
 
@@ -199,8 +197,8 @@ class GridFactory:
 
     def get_for(self, base_length: float) -> Grid:
         if base_length not in self.grid_data:
-            ref_lon = self.ref_lon if self.ref_lon else (self.min_lon + self.max_lon) / 2.0
-            ref_lat = self.ref_lat if self.ref_lat else (self.min_lat + self.max_lat) / 2.0
+            ref_lon = self.ref_lon if self.ref_lon is not None else (self.min_lon + self.max_lon) / 2.0
+            ref_lat = self.ref_lat if self.ref_lat is not None else (self.min_lat + self.max_lat) / 2.0
 
             utm_x, utm_y = pyproj.Transformer.from_crs(self.WGS84, self.coord_sys) \
                 .transform(ref_lat, ref_lon)

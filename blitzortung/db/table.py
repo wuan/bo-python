@@ -38,7 +38,7 @@ from .. import geom
 from ..logger import get_logger_name
 
 
-class Base:
+class Base(metaclass=ABCMeta):
     """
     abstract base class for database access objects
 
@@ -61,7 +61,6 @@ class Base:
     CREATE EXTENSION "btree_gist";
 
     """
-    __metaclass__ = ABCMeta
 
     default_timezone = datetime.timezone.utc
 
@@ -79,7 +78,7 @@ class Base:
             try:
                 self.conn.reset()
             except psycopg2.OperationalError:
-                print("reconnect to db")
+                self.logger.warning("reconnect to db")
                 self.db_connection_pool.putconn(self.conn, close=True)
                 continue
             break
@@ -135,7 +134,7 @@ class Base:
     def set_timezone(self, tz):
         self.tz = tz
         with self.conn.cursor() as cur:
-            cur.execute('SET TIME ZONE \'%s\'' % str(self.tz))
+            cur.execute("SET TIME ZONE %s", (str(self.tz),))
 
     def fix_timezone(self, timestamp):
         return timestamp.astimezone(self.tz) if timestamp else None
@@ -266,20 +265,20 @@ class Strike(Base):
         return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object,
                                  timezone=self.tz)
 
-    def select_grid(self, grid, count_threshold, **kwargs):
+    def select_grid(self, grid, count_threshold=0, **kwargs):
         """ build up raster query """
 
-        query = self.query_builder.grid_query(self.table_name, grid, count_threshold, **kwargs)
+        query = self.query_builder.grid_query(self.full_table_name, grid, count_threshold, **kwargs)
         data = self.execute_many(str(query), query.get_parameters())
 
         grid_result = build_grid_result(data, grid.x_bin_count, grid.y_bin_count, kwargs['time_interval'].end)
 
         return grid_result
 
-    def select_global_grid(self, grid, count_threshold, **kwargs):
+    def select_global_grid(self, grid, count_threshold=0, **kwargs):
         """ build up raster query """
 
-        query = self.query_builder.global_grid_query(self.table_name, grid, count_threshold, **kwargs)
+        query = self.query_builder.global_grid_query(self.full_table_name, grid, count_threshold, **kwargs)
 
         data = self.execute_many(str(query), query.get_parameters())
 

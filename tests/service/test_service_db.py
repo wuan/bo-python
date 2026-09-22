@@ -33,33 +33,33 @@ class TestLoggingDetector:
         mock_failure = Mock()
         mock_failure.value = Exception("Connection lost")
 
-        with patch('builtins.print') as mock_print:
+        with patch('blitzortung.service.db.log.msg') as mock_log:
             with patch.object(detector.__class__.__bases__[0], 'startReconnecting', return_value=None):
                 detector.startReconnecting(mock_failure)
 
-                mock_print.assert_called_once()
-                assert_that(str(mock_print.call_args[0][0])).contains("database connection is down")
-                assert_that(str(mock_print.call_args[0][0])).contains("Connection lost")
+                mock_log.assert_called_once()
+                assert_that(str(mock_log.call_args[0][0])).contains("database connection is down")
+                assert_that(str(mock_log.call_args[0][0])).contains("Connection lost")
 
     def test_reconnect_logs_message(self):
         detector = blitzortung.service.db.LoggingDetector()
 
-        with patch('builtins.print') as mock_print:
+        with patch('blitzortung.service.db.log.msg') as mock_log:
             with patch.object(detector.__class__.__bases__[0], 'reconnect', return_value=None):
                 detector.reconnect()
 
-                mock_print.assert_called_once()
-                assert_that(str(mock_print.call_args[0][0])).contains("reconnecting")
+                mock_log.assert_called_once()
+                assert_that(str(mock_log.call_args[0][0])).contains("reconnecting")
 
     def test_connection_recovered_logs_message(self):
         detector = blitzortung.service.db.LoggingDetector()
 
-        with patch('builtins.print') as mock_print:
+        with patch('blitzortung.service.db.log.msg') as mock_log:
             with patch.object(detector.__class__.__bases__[0], 'connectionRecovered', return_value=None):
                 detector.connectionRecovered()
 
-                mock_print.assert_called_once()
-                assert_that(str(mock_print.call_args[0][0])).contains("connection recovered")
+                mock_log.assert_called_once()
+                assert_that(str(mock_log.call_args[0][0])).contains("connection recovered")
 
 
 @pytest.fixture

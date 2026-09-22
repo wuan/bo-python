@@ -25,6 +25,7 @@ import os
 from typing import Optional
 
 from injector import Module, singleton, inject, provider
+from psycopg2.extensions import make_dsn
 
 
 @singleton
@@ -48,7 +49,9 @@ class Config:
         username = self.config_parser.get('db', 'username')
         password = self.config_parser.get('db', 'password')
 
-        return "host='%s' port=%s dbname='%s' user='%s' password='%s'" % (host, port, dbname, username, password)
+        # ``make_dsn`` escapes values (quotes, spaces, backslashes) correctly,
+        # unlike naive string interpolation.
+        return str(make_dsn(host=host, port=port, dbname=dbname, user=username, password=password))
 
     def get_webservice_port(self) -> int:
         return int(self.config_parser.get('webservice', 'port'))

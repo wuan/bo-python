@@ -25,7 +25,7 @@ import blitzortung.config
 
 application = service.Application("Blitzortung.org JSON-RPC Server")
 
-log_directory = "/var/log/blitzortung"
+log_directory: str | None = "/var/log/blitzortung"
 try:
     if log_directory and os.path.exists(log_directory):
         logfile = DailyLogFile("webservice.log", log_directory)
@@ -39,7 +39,7 @@ except OSError as exc:
 
 def start_server(connection_pool):
     """Start the JSON-RPC server with the given connection pool."""
-    print("Connection pool is ready")
+    log.msg("Connection pool is ready")
     config = blitzortung.config.config()
     port = config.get_webservice_port()
     root = Blitzortung(connection_pool, log_directory)

@@ -292,7 +292,7 @@ class TestUpdateStrikes:
         # Verify - only the strike within interval should be inserted
         assert_that(result).is_equal_to(1)
         assert_that(strike_db.insert.call_count).is_equal_to(1)
-        strike_db.insert.assert_called_with(strike_in_interval)
+        strike_db.insert.assert_called_with(strike_in_interval, 1)
 
     def test_failure_at_fetch(self, config, fetch, strike_db):
         """Test that database errors are properly handled."""

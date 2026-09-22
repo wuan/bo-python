@@ -78,16 +78,15 @@ class TestFileTransport:
             os.unlink(tmp_path)
 
     def test_read_lines_with_post_process(self):
-        """Test that post_process parameter is accepted."""
+        """Test that post_process is applied to the file content."""
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as tmp:
             tmp.write("line 1\n")
             tmp_path = tmp.name
 
         try:
             transport = blitzortung.dataimport.base.FileTransport()
-            result = list(transport.read_lines(tmp_path, post_process=lambda x: x))
-            # FileTransport ignores post_process
-            assert_that(result).is_length(1)
+            result = list(transport.read_lines(tmp_path, post_process=lambda content: content + b"line 2\n"))
+            assert_that(result).is_equal_to(["line 1", "line 2"])
         finally:
             os.unlink(tmp_path)
 

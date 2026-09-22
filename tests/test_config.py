@@ -52,7 +52,7 @@ class TestConfig:
             ('db', 'password'): '<password>'}[args]
 
         assert_that(self.config.get_db_connection_string()) \
-            .is_equal_to("host='<host>' port=<port> dbname='<dbname>' user='<username>' password='<password>'")
+            .is_equal_to("host=<host> port=<port> dbname=<dbname> user=<username> password=<password>")
 
         assert_that(self.config_parser.mock_calls).contains(
             call.get('db', 'host'),

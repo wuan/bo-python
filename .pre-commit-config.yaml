@@ -8,10 +8,19 @@ repos:
   hooks:
   - id: end-of-file-fixer
   - id: trailing-whitespace
-- repo: https://github.com/pylint-dev/pylint
-  rev: v4.0.5
+- repo: local
   hooks:
   - id: pylint
+    name: pylint
+    description: Run pylint in the project Poetry environment.
+    # Use the project's own pylint/dependencies (via Poetry) so imports
+    # resolve, apply the project rcfile, and gate on the same score as CI.
+    # ``pass_filenames: false`` lints the whole package instead of only the
+    # changed files, whose per-file scores are not meaningful.
+    entry: poetry run pylint --rcfile=pylint.rc --fail-under=7.5 blitzortung
+    language: system
+    pass_filenames: false
+    files: ^blitzortung/
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v1.20.1
   hooks:

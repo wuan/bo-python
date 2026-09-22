@@ -42,6 +42,23 @@ class TestTimestamp:
 
         assert_that(later - now).is_equal_to(Timedelta(nanodelta=1234567))
 
+    def test_equality(self):
+        ts1 = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+        ts2 = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+        ts3 = Timestamp(datetime.datetime(2021, 1, 1, tzinfo=datetime.timezone.utc))
+
+        assert_that(ts1 == ts2).is_true()
+        assert_that(ts1 == ts3).is_false()
+        assert_that(ts1 != ts3).is_true()
+        assert_that(len({ts1, ts2, ts3})).is_equal_to(2)
+
+    def test_equality_considers_nanoseconds(self):
+        ts1 = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc), 100)
+        ts2 = Timestamp(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc), 200)
+
+        assert_that(ts1 == ts2).is_false()
+        assert_that(hash(ts1)).is_not_equal_to(hash(ts2))
+
     def test_from_nanoseconds(self):
         timestamp = Timestamp(1540935833552753700)
 
@@ -184,6 +201,10 @@ class TestTimedelta:
         td = Timedelta(datetime.timedelta(days=5, seconds=3661), 500)
         assert_that(td.days).is_equal_to(5)
         assert_that(td.seconds).is_equal_to(3661)
+
+    def test_total_seconds_includes_days(self):
+        td = Timedelta(datetime.timedelta(days=1), 0)
+        assert_that(td.total_seconds()).is_equal_to(86400.0)
 
     def test_repr(self):
         td = Timedelta(datetime.timedelta(hours=2), 500)

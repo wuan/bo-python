@@ -50,3 +50,4 @@ assertpy = "^1.1"
 testcontainers = {extras = ["postgres"], version = "^4.10"}
 pytest-twisted = "^1.14.3"
 mypy = "^1.14"
+pylint = "^4.0"
