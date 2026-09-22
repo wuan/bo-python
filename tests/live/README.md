@@ -10,6 +10,7 @@ The suite is split into three modules:
 | --- | --- |
 | `test_endpoint_limits.py` | Access limits (user agent, content type, global baseline). |
 | `test_endpoint_format.py` | Response format / data consistency, using valid requests. |
+| `test_endpoint_compression.py` | gzip negotiation and legacy-client compatibility. |
 | `test_client.py` | Offline regression tests for JSON-RPC response normalization. |
 | `endpoints.py` | Shared endpoint definitions, constants and helpers. |
 
@@ -42,6 +43,18 @@ limits. For every grid endpoint it checks that:
 * `t` matches `%Y%m%dT%H:%M:%S` and is recent, `dt` equals the requested
   duration, and `h` is a non-negative integer list of the expected length;
 * the `check` endpoint returns an increasing integer `count`.
+
+## Payload compression
+
+The compression suite sends raw requests (bypassing the transparent
+decompression that `requests` performs) and checks the `Content-Encoding`
+header. The service compresses a response with gzip only when the request
+advertises `Accept-Encoding: gzip`, the uncompressed body is at least `1000`
+bytes, and the Android client version is greater than
+`MAX_COMPATIBLE_ANDROID_VERSION` (`177`). Older clients have the
+`Accept-Encoding` header stripped before rendering and must always receive
+plain, parseable JSON. The suite verifies all of these, including the
+version boundary (`177` vs `178`).
 
 ## Endpoints exercised
 
