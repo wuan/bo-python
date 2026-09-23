@@ -1,4 +1,6 @@
 import datetime
+import re
+from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -9,6 +11,35 @@ from mock import Mock
 
 import blitzortung
 from blitzortung.service.general import create_time_interval
+
+
+# The index set that is actually deployed on the production ``strikes`` table.
+# Keep this in sync with the live database (``\di``): the canonical schema in
+# docs/schema/strikes.sql and the ``db_strikes`` fixture must create exactly
+# these indexes.  The tests below fail if the schema drifts from this list, so
+# a schema change cannot silently diverge from what production runs.  Proposed
+# but not-yet-deployed indexes live in docs/schema/proposed-indexes.sql and
+# must not be added here until they have been validated in production.
+PRODUCTION_INDEXES = frozenset({
+    "strikes_pkey",
+    "strikes_region_timestamp",
+    "strikes_timestamp",
+    "strikes_timestamp_geog",
+})
+
+SCHEMA_PATH = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
+
+
+def _schema_index_names(ddl: str) -> set:
+    """Index names created by the canonical schema DDL.
+
+    Explicit ``CREATE INDEX`` statements plus the primary key index that
+    PostgreSQL creates implicitly for the table.
+    """
+    names = set(re.findall(r"CREATE INDEX IF NOT EXISTS\s+(\w+)", ddl))
+    if re.search(r"PRIMARY KEY", ddl):
+        names.add("strikes_pkey")
+    return names
 
 
 
@@ -222,6 +253,31 @@ def test_select_strike_keys_with_empty_table(db_strikes, time_interval):
     assert list(db_strikes.select_strike_keys(time_interval=time_interval)) == []
 
 
+def test_select_returns_all_rows(db_strikes, seed_strikes):
+    """Selecting a time interval returns every matching strike."""
+    time_interval = seed_strikes(2500)
+
+    result = list(db_strikes.select(time_interval=time_interval))
+
+    assert len(result) == 2500
+
+
+def test_select_stream_can_be_abandoned(db_strikes, seed_strikes):
+    """Closing a partially consumed stream must release the cursor.
+
+    Otherwise the cursor would keep the connection busy and the next query on
+    the same pooled connection would fail.
+    """
+    time_interval = seed_strikes(2500)
+
+    iterator = db_strikes.select(time_interval=time_interval)
+    first = next(iterator)
+    iterator.close()
+
+    assert first is not None
+    assert len(list(db_strikes.select_strike_keys(time_interval=time_interval))) == 2500
+
+
 def test_get_latest_time(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
     db_strikes.insert(strike)
@@ -307,6 +363,57 @@ def test_grid_query_with_count_threshold(db_strikes, strike_factory, grid_factor
     result = db_strikes.select_grid(grid, 1, time_interval=time_interval)
 
     assert result == ((19, 6, 2, 0),)
+
+
+def test_grid_query_region_filter(db_strikes, strike_factory, grid_factory, time_interval):
+    """Strikes are counted only for the requested region."""
+    db_strikes.insert(strike_factory(11.5, 49.5), region=1)
+    db_strikes.insert(strike_factory(11.6, 49.5), region=6)
+    db_strikes.commit()
+
+    grid = grid_factory.get_for(10000)
+
+    region_1 = db_strikes.select_grid(grid, 0, time_interval=time_interval, region=1)
+    region_6 = db_strikes.select_grid(grid, 0, time_interval=time_interval, region=6)
+    unfiltered = db_strikes.select_grid(grid, 0, time_interval=time_interval)
+
+    assert sum(entry[2] for entry in region_1) == 1
+    assert sum(entry[2] for entry in region_6) == 1
+    assert sum(entry[2] for entry in unfiltered) == 2
+
+
+def test_schema_ddl_is_idempotent(db_strikes, connection_pool):
+    """The canonical schema file applies cleanly and repeatedly to a live table."""
+    ddl = SCHEMA_PATH.read_text(encoding="utf-8")
+
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(ddl)
+            cur.execute(ddl)
+        conn.commit()
+    finally:
+        connection_pool.putconn(conn)
+
+
+def test_schema_file_matches_production_indexes():
+    """The canonical schema file creates exactly the production index set."""
+    ddl = SCHEMA_PATH.read_text(encoding="utf-8")
+
+    assert _schema_index_names(ddl) == set(PRODUCTION_INDEXES)
+
+
+def test_applied_schema_matches_production_indexes(db_strikes, connection_pool):
+    """The schema applied by the test fixture has exactly the production index set."""
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'strikes'")
+            index_names = {row[0] for row in cur.fetchall()}
+    finally:
+        connection_pool.putconn(conn)
+
+    assert index_names == set(PRODUCTION_INDEXES)
 
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (8, 139, 1, 0)),

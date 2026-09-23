@@ -1,6 +1,17 @@
 import datetime
 import os
+from pathlib import Path
 from typing import Callable
+
+# On PyPy psycopg2cffi provides the psycopg2 API, but only once it has been
+# registered.  Register it before importing psycopg2 so the tests work under
+# both CPython and PyPy.
+try:
+    from psycopg2cffi import compat as _psycopg2cffi_compat
+except ImportError:  # pragma: no cover - CPython without psycopg2cffi
+    pass
+else:
+    _psycopg2cffi_compat.register()
 
 import psycopg2
 import pyproj
@@ -8,6 +19,12 @@ import pytest
 from testcontainers.community.postgres import PostgresContainer
 
 import blitzortung.db
+
+
+# The canonical schema that is also deployed in production.  The fixture below
+# applies it verbatim so the tests (and benchmarks) run against the same table
+# and index set as production instead of a reduced hand-written approximation.
+SCHEMA_PATH = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
 
 
 @pytest.fixture
@@ -109,28 +126,7 @@ def db_strikes(connection_pool):
     conn = connection_pool.getconn()
 
     with conn.cursor() as cur:
-        cur.execute("""
-                    CREATE TABLE strikes
-                    (
-                        id          bigserial,
-                        "timestamp" timestamptz,
-                        nanoseconds SMALLINT,
-                        geog        GEOGRAPHY(Point),
-                        PRIMARY KEY (id)
-                    );
-                    ALTER TABLE strikes
-                        ADD COLUMN altitude SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN region SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN amplitude REAL;
-                    ALTER TABLE strikes
-                        ADD COLUMN error2d SMALLINT;
-                    ALTER TABLE strikes
-                        ADD COLUMN stationcount SMALLINT;
-                    CREATE INDEX strikes_geog ON strikes USING gist(geog);
-                    CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
-                    """)
+        cur.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
     conn.commit()
 
     query_builder = blitzortung.db.query_builder.Strike()

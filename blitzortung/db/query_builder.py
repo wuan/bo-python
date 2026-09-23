@@ -60,9 +60,18 @@ class Strike:
 
     @staticmethod
     def grid_query(table_name, grid, count_threshold=0, **kwargs):
-        return GridQuery(grid, count_threshold) \
+        query = GridQuery(grid, count_threshold) \
             .set_table_name(table_name) \
             .set_default_conditions(**kwargs)
+
+        # A grid is defined for a specific region, but the bounding boxes of
+        # adjacent regions can overlap (e.g. Europe and Africa), so filter by
+        # region when one is given to avoid counting strikes twice across
+        # regional grids.
+        if kwargs.get('region') is not None:
+            query.add_condition("region = %(region)s", region=kwargs['region'])
+
+        return query
 
     @staticmethod
     def global_grid_query(table_name, grid, count_threshold=0, **kwargs):

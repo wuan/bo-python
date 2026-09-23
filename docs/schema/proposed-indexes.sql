@@ -1,0 +1,55 @@
+-- -*- coding: utf8 -*-
+--
+--   Copyright 2025 Andreas Würl
+--
+--   Licensed under the Apache License, Version 2.0 (the "License");
+--   you may not use this file except in compliance with the License.
+--   You may obtain a copy of the License at
+--
+--       http://www.apache.org/licenses/LICENSE-2.0
+--
+--   Unless required by applicable law or agreed to in writing, software
+--   distributed under the License is distributed on an "AS IS" BASIS,
+--   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--   See the License for the specific language governing permissions and
+--   limitations under the License.
+--
+-- PROPOSED, NOT DEPLOYED.
+--
+-- These statements are performance experiments that are deliberately kept out
+-- of the canonical ``docs/schema/strikes.sql`` because they do NOT match the
+-- production index set.  None of them has been validated against a production
+-- query plan, and the extra indexes carry a write cost on the append-only
+-- ``strikes`` table.  Before moving any statement into the canonical schema:
+--
+--   1. Apply it to a copy of production (or a snapshot) and capture
+--      ``EXPLAIN (ANALYZE, BUFFERS)`` for the affected queries.
+--   2. Show a measurable improvement over the existing btree/gist indexes.
+--   3. Record the before/after numbers in the branch and update
+--      ``PRODUCTION_INDEXES`` in ``tests/db/test_db.py`` plus this file.
+--
+-- The statements are idempotent.
+
+-- Plain geography GiST index.  Production currently relies on the composite
+-- ``strikes_timestamp_geog`` GiST index for spatial predicates; a dedicated
+-- geog index may or may not be selected instead.
+-- CREATE INDEX IF NOT EXISTS strikes_geog ON strikes USING gist(geog);
+
+-- Wider region/time btree that also covers ``nanoseconds``.
+-- CREATE INDEX IF NOT EXISTS strikes_region_timestamp_nanoseconds
+--     ON strikes USING btree(region, "timestamp", nanoseconds);
+
+-- Id-prefixed indexes.  No query in the code base was shown to need these.
+-- CREATE INDEX IF NOT EXISTS strikes_id_timestamp ON strikes USING btree(id, "timestamp");
+-- CREATE INDEX IF NOT EXISTS strikes_id_timestamp_geog ON strikes USING gist(id, "timestamp", geog);
+
+-- BRIN index on the append-only timestamp column.  Range scans are already
+-- served by the btree ``strikes_timestamp`` index, so the benefit is unproven.
+-- CREATE INDEX IF NOT EXISTS strikes_timestamp_brin
+--     ON strikes USING brin("timestamp") WITH (pages_per_range = 32);
+
+-- Autovacuum tuning to keep planner statistics fresh on a fast-growing table.
+-- ALTER TABLE strikes SET (
+--     autovacuum_analyze_scale_factor = 0.01,
+--     autovacuum_analyze_threshold = 1000
+-- );

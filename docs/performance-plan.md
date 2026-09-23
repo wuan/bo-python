@@ -34,10 +34,13 @@ Legend for status: `[ ]` = todo, `[~]` = in progress, `[x]` = done.
   used to select whole strikes and build full `Strike` objects only to compute
   `(timestamp, x, y, lateral_error)`. It now uses
   `Strike.select_strike_keys` with a narrow projection.
-- [x] **1.3 Dense grid query computes the transform once**: `GridQuery` /
-  `GlobalGridQuery` previously called `ST_Transform(geog::geometry, srid)`
-  twice per row (once for X, once for Y). The grid queries now use a
-  `LATERAL` sub-select so the geometry is transformed once per row.
+- [~] **1.3 Dense grid query computes the transform once**: `GridQuery` /
+  `GlobalGridQuery` called `ST_Transform(geog::geometry, srid)` twice per row
+  (once for X, once for Y).  A `LATERAL` sub-select was tried so the geometry
+  would be transformed once per row, but it was **reverted: no measurable
+  improvement**.  `EXPLAIN (ANALYZE, BUFFERS)` showed the planner inlines the
+  `LATERAL` and the resulting plan still evaluates `ST_Transform` twice; the
+  timings were equal within noise (see [Measurements](#measurements)).
 - [x] **1.4 Conditional connection cancel/reset**: `Base.__init__` only calls
   `conn.cancel()` when the borrowed connection is actually executing a query.
 - [x] **1.5 Configurable pool sizes**: `db/min_connections` and
@@ -47,19 +50,83 @@ Legend for status: `[ ]` = todo, `[~]` = in progress, `[x]` = done.
 
 ## Phase 2 - Deeper changes
 
-- [ ] **2.1 Server-side/named cursor** for large `select` result sets so the
-  client does not buffer every row.
-- [ ] **2.2 Prepared statements / statement caching** for the webservice query
-  path.
-- [ ] **2.3 Index & maintenance review** (BRIN on `timestamp`, autovacuum /
-  `ANALYZE`).
-- [ ] **2.4 Grid query region handling**: verify whether the region filter is
-  intentionally omitted from grid queries; add it if the product requires it.
+- [~] **2.1 Server-side/named cursor**: tried and **reverted — a latency
+  regression with no measured benefit**.  `Base.execute_many` was given a
+  `server_side` flag and `select`/`select_strike_keys` streamed through a named
+  cursor (`itersize = fetch_size`, 5000 rows per round trip).  Full selects
+  were ~10% slower at 20k rows and ~24% slower at 100k rows than the
+  client-side baseline (see [Measurements](#measurements)); the intended
+  benefit — bounded client memory — was never measured, and the result sets did
+  not justify the cost.  The flag, `fetch_size`, the cursor-id counter and the
+  related benchmark/test were removed.
+- [~] **2.2 Prepared statements / statement caching**: investigated and
+  deferred.  The webservice path runs through `txpostgres`, which exposes only
+  `runQuery`/`runOperation` and has no prepared-statement API; psycopg2 (unlike
+  psycopg3) also lacks a server-side `PREPARE` API.  The queries are simple and
+  plan-parse cost is negligible versus I/O, while plan caching across pooled,
+  reconnecting connections adds real risk, so no change was made.
+- [~] **2.3 Index & maintenance review**: investigated but **not deployed**.  The
+  production `strikes` table only has `strikes_pkey`, `strikes_timestamp`,
+  `strikes_region_timestamp` and `strikes_timestamp_geog`.  Candidate additions
+  (a BRIN index on `timestamp`, extra composite indexes and autovacuum tuning)
+  are recorded but commented out in `docs/schema/proposed-indexes.sql`.  They
+  are unproven (range scans are already served by the btree `strikes_timestamp`
+  index) and untested against a production plan, so they must be validated with
+  `EXPLAIN (ANALYZE, BUFFERS)` before being promoted to the canonical
+  `docs/schema/strikes.sql`.  The canonical schema now mirrors production and
+  the test suite fails if it drifts (`PRODUCTION_INDEXES` in
+  `tests/db/test_db.py`).
+- [x] **2.4 Grid query region handling**: local grid queries previously omitted
+  the region filter, but the bounding boxes of adjacent regions overlap (e.g.
+  Europe and Africa), so a strike on a border was counted in both regional
+  grids.  `Strike.grid_query` now applies `region = %(region)s` when a region is
+  given, and `StrikeGridQuery.create` passes `grid_parameters.region`.  Global
+  and local (region-less) grids are unchanged.
 
 ## Phase 3 - Structural
 
 - [ ] **3.1 Push dedup into the database** via a unique constraint and
   `INSERT ... ON CONFLICT DO NOTHING` (schema change + backfill required).
+
+## Measurements
+
+All numbers below were collected with `pytest-benchmark` via
+`tests/db/test_db_benchmark.py`, against the production table/index set (the
+`db_strikes` fixture applies `docs/schema/strikes.sql`).  Host timings, so the
+absolute numbers are not meaningful on their own; they are only comparable
+within one run.
+
+Batch insert, 2000 rows (`BLITZORTUNG_BENCHMARK_STRIKES=20000`):
+
+| Benchmark | Mean |
+| --- | ---: |
+| `insert_many` (batched) | ~55 ms |
+| per-row `insert` | ~616 ms |
+
+Narrow projection, 20k rows: `select_strike_keys` ~102 ms vs full
+`select` ~130 ms (large part of it is avoiding full `Strike` object
+construction).
+
+Server-side cursor trade-off (reverted feature; full `select`, same result
+set, only the cursor type differs):
+
+| Rows | server-side | client-side | delta |
+| ---: | ---: | ---: | ---: |
+| 20k | ~143 ms | ~130 ms | +10% |
+| 100k | ~730 ms | ~588 ms | +24% |
+
+Grid query before/after the now-reverted `LATERAL` change, 50k rows, 25 rounds:
+
+| Query | Mean | Median |
+| --- | ---: | ---: |
+| grid, pre-change (double `ST_Transform`) | ~36.3 ms | ~36.2 ms |
+| grid, `LATERAL` (reverted) | ~37.2 ms | ~36.7 ms |
+
+`EXPLAIN (ANALYZE, BUFFERS)` confirmed the two plans are the same shape and
+both still evaluate `ST_Transform` twice per row, so the `LATERAL` wrapper
+added overhead without reducing the transform work.  The histogram query was
+never changed by this work and measured flat (~13.7 ms before vs ~14.3 ms
+after at 50k rows, within noise).
 
 ## How to measure / compare
 
@@ -75,8 +142,11 @@ BLITZORTUNG_BENCHMARK_STRIKES=20000 BLITZORTUNG_BENCHMARK_ROUNDS=10 \
 ```
 
 The DB benchmark file compares the optimised and unoptimised paths directly
-(`insert_many` vs per-row `insert`, `select_strike_keys` vs `select`).  To
-track a change over time, save a baseline and diff against it:
+(`insert_many` vs per-row `insert`, `select_strike_keys` vs `select`).  The
+`db_strikes` fixture applies `docs/schema/strikes.sql` verbatim, so benchmarks
+run against the production table and index set; keep that file in sync with the
+live database.  To track a change over time, save a baseline and diff against
+it:
 
 ```bash
 poetry run pytest -m benchmark tests/db/test_db_benchmark.py --benchmark-save=before
