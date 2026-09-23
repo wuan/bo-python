@@ -61,6 +61,7 @@ class StrikeGridQuery:
 
         query = self.strike_query_builder.grid_query(db.table.Strike.table_name, grid_parameters.grid,
                                                      time_interval=time_interval,
+                                                     region=grid_parameters.region,
                                                      count_threshold=grid_parameters.count_threshold)
 
         result = execute(connection_pool, query)

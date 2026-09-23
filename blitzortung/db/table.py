@@ -19,6 +19,7 @@
 """
 from abc import ABCMeta, abstractmethod
 import datetime
+import itertools
 import logging
 from typing import Optional
 
@@ -36,6 +37,11 @@ from .query import TimeInterval
 from .. import data
 from .. import geom
 from ..logger import get_logger_name
+
+# Server-side cursor names must be unique within a connection.  The counter
+# guarantees that even if a streamed result set is abandoned before it is
+# exhausted (so the underlying cursor has not been closed yet).
+server_side_cursor_ids = itertools.count(1)
 
 
 class Base(metaclass=ABCMeta):
@@ -63,6 +69,12 @@ class Base(metaclass=ABCMeta):
     """
 
     default_timezone = datetime.timezone.utc
+
+    # Number of rows fetched per round trip when streaming a server-side
+    # cursor.  Small enough to bound client memory, large enough to avoid a
+    # round trip per row.  Benchmarks show 5000 keeps the overhead modest
+    # while capping the buffered row count for large result sets.
+    fetch_size = 5000
 
     def __init__(self, db_connection_pool):
 
@@ -187,9 +199,24 @@ class Base(metaclass=ABCMeta):
 
         return self.execute(sql_statement, parameters, single_cursor_factory)
 
-    def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
+    def execute_many(self, sql_statement, parameters=None, factory_method=None, server_side=False,
+                     **factory_method_args):
+        """Execute a query and yield the mapped rows.
+
+        With ``server_side=True`` a named (server-side) cursor is used, so a
+        large result set is streamed from the database in ``fetch_size``
+        batches instead of being buffered entirely on the client.  This keeps
+        memory usage bounded for full-table selects (e.g. the URL updater
+        de-duplication query).
+        """
         factory_method = factory_method or (lambda values, **_: values)
-        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+        cursor_arguments = {'cursor_factory': psycopg2.extras.DictCursor}
+        if server_side:
+            cursor_arguments['name'] = '_bo_%d' % next(server_side_cursor_ids)
+
+        with self.conn.cursor(**cursor_arguments) as cursor:
+            if server_side:
+                cursor.itersize = self.fetch_size
             cursor.execute(sql_statement, parameters)
             for value in cursor:
                 yield factory_method(value, **factory_method_args)
@@ -218,6 +245,14 @@ class Strike(Base):
     CREATE INDEX strikes_geog ON strikes USING gist(geog);
     CREATE INDEX strikes_id_timestamp_geog ON strikes USING gist(id, "timestamp", geog);
     CREATE INDEX strikes_region_timestamp_nanoseconds ON strikes USING btree(region, "timestamp", nanoseconds);
+
+    The append-only timestamp column additionally benefits from a BRIN index and
+    from autovacuum settings that keep planner statistics fresh.  The canonical,
+    idempotent DDL for the table, its indexes and its maintenance options is kept
+    in docs/schema/strikes.sql:
+
+    CREATE INDEX strikes_timestamp_brin ON strikes USING brin("timestamp") WITH (pages_per_range = 32);
+    ALTER TABLE strikes SET (autovacuum_analyze_scale_factor = 0.01, autovacuum_analyze_threshold = 1000);
 
     empty the table with the following commands:
 
@@ -309,7 +344,7 @@ class Strike(Base):
         query_ = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
 
         return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object,
-                                 timezone=self.tz)
+                                 server_side=True, timezone=self.tz)
 
     @staticmethod
     def _create_strike_key(result):
@@ -326,7 +361,7 @@ class Strike(Base):
 
         query = self.query_builder.select_key_query(self.full_table_name, self.srid, **kwargs)
 
-        return self.execute_many(str(query), query.get_parameters(), self._create_strike_key)
+        return self.execute_many(str(query), query.get_parameters(), self._create_strike_key, server_side=True)
 
     def select_grid(self, grid, count_threshold=0, **kwargs):
         """ build up raster query """

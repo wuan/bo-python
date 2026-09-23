@@ -95,6 +95,14 @@ class TestStrike:
         assert_that(parameters['end_time']).is_equal_to(end_time)
         assert_that(parameters['srid']).is_equal_to(srid)
 
+    def test_grid_query_with_region(self, query_builder, start_time, end_time, srid):
+        grid = Grid(11.0, 12.0, 51.0, 52.0, 0.1, 0.2, srid)
+        query = query_builder.grid_query("<table_name>", grid, count_threshold=0,
+                                         time_interval=TimeInterval(start_time, end_time), region=3)
+
+        assert_that(str(query)).contains("region = %(region)s")
+        assert_that(query.get_parameters()['region']).is_equal_to(3)
+
     def test_select_key_query(self, query_builder, start_time, end_time, srid):
         query = query_builder.select_key_query("<table_name>", srid,
                                                time_interval=TimeInterval(start_time, end_time))

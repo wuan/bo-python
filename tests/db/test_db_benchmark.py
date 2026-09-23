@@ -62,11 +62,26 @@ def test_bench_select_strike_keys(db_strikes, seed_strikes, benchmark):
 
 
 def test_bench_select(db_strikes, seed_strikes, benchmark):
-    """Full strike select (builds complete Strike objects)."""
+    """Full strike select (builds complete Strike objects, server-side)."""
     time_interval = seed_strikes(SEED_COUNT)
 
     benchmark.pedantic(
         lambda: list(db_strikes.select(time_interval=time_interval)),
+        rounds=ROUNDS,
+        iterations=1,
+    )
+
+
+def test_bench_select_client_side(db_strikes, seed_strikes, benchmark):
+    """Full strike select buffering every row on the client (baseline)."""
+    time_interval = seed_strikes(SEED_COUNT)
+    query = db_strikes.query_builder.select_query(
+        db_strikes.full_table_name, db_strikes.srid, time_interval=time_interval)
+
+    benchmark.pedantic(
+        lambda: list(db_strikes.execute_many(
+            str(query), query.get_parameters(), db_strikes.strike_mapper.create_object,
+            server_side=False, timezone=db_strikes.tz)),
         rounds=ROUNDS,
         iterations=1,
     )

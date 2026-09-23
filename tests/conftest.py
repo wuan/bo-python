@@ -2,6 +2,16 @@ import datetime
 import os
 from typing import Callable
 
+# On PyPy psycopg2cffi provides the psycopg2 API, but only once it has been
+# registered.  Register it before importing psycopg2 so the tests work under
+# both CPython and PyPy.
+try:
+    from psycopg2cffi import compat as _psycopg2cffi_compat
+except ImportError:  # pragma: no cover - CPython without psycopg2cffi
+    pass
+else:
+    _psycopg2cffi_compat.register()
+
 import psycopg2
 import pyproj
 import pytest

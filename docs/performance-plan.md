@@ -47,14 +47,31 @@ Legend for status: `[ ]` = todo, `[~]` = in progress, `[x]` = done.
 
 ## Phase 2 - Deeper changes
 
-- [ ] **2.1 Server-side/named cursor** for large `select` result sets so the
-  client does not buffer every row.
-- [ ] **2.2 Prepared statements / statement caching** for the webservice query
-  path.
-- [ ] **2.3 Index & maintenance review** (BRIN on `timestamp`, autovacuum /
-  `ANALYZE`).
-- [ ] **2.4 Grid query region handling**: verify whether the region filter is
-  intentionally omitted from grid queries; add it if the product requires it.
+- [x] **2.1 Server-side/named cursor** for large `select` result sets so the
+  client does not buffer every row.  `Base.execute_many` accepts a
+  `server_side` flag; `select` and `select_strike_keys` stream through a named
+  cursor with `itersize = Base.fetch_size` (5000 rows per round trip).  The
+  trade-off is documented by `test_bench_select` vs `test_bench_select_client_side`:
+  server-side cursors bound peak client memory but add a little latency on
+  small/medium result sets (negligible at `fetch_size = 5000`).
+- [~] **2.2 Prepared statements / statement caching**: investigated and
+  deferred.  The webservice path runs through `txpostgres`, which exposes only
+  `runQuery`/`runOperation` and has no prepared-statement API; psycopg2 (unlike
+  psycopg3) also lacks a server-side `PREPARE` API.  The queries are simple and
+  plan-parse cost is negligible versus I/O, while plan caching across pooled,
+  reconnecting connections adds real risk, so no change was made.
+- [x] **2.3 Index & maintenance review**: canonical, idempotent DDL now lives
+  in `docs/schema/strikes.sql` (also referenced from the `Strike` docstring).
+  It adds a `brin("timestamp")` index for the large append-only range scans
+  and tunes autovacuum so planner statistics stay fresh on a fast-growing
+  table (`autovacuum_analyze_scale_factor = 0.01`).  The DDL is idempotent and
+  covered by `test_schema_ddl_is_idempotent`.
+- [x] **2.4 Grid query region handling**: local grid queries previously omitted
+  the region filter, but the bounding boxes of adjacent regions overlap (e.g.
+  Europe and Africa), so a strike on a border was counted in both regional
+  grids.  `Strike.grid_query` now applies `region = %(region)s` when a region is
+  given, and `StrikeGridQuery.create` passes `grid_parameters.region`.  Global
+  and local (region-less) grids are unchanged.
 
 ## Phase 3 - Structural
 

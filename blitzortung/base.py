@@ -50,7 +50,7 @@ class Point:
 
     __geod = pyproj.Geod(ellps='WGS84', units='m')
 
-    __slots__ = ('x', 'y')
+    __slots__: tuple[str, str] = "x", "y"
 
     x: float
     y: float

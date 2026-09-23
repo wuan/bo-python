@@ -62,6 +62,7 @@ class TestStrikeGridQuery:
         assert result == ((7, 102, 3, -66),)
 
         query_builder.grid_query.assert_called_once_with("strikes", grid_parameters.grid, time_interval=time_interval,
+                                                         region=grid_parameters.region,
                                                          count_threshold=grid_parameters.count_threshold)
 
         query = query_builder.grid_query.return_value

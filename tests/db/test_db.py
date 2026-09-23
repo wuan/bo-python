@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -222,6 +223,40 @@ def test_select_strike_keys_with_empty_table(db_strikes, time_interval):
     assert list(db_strikes.select_strike_keys(time_interval=time_interval)) == []
 
 
+def test_select_server_side_streams_all_rows(db_strikes, seed_strikes):
+    """A server-side cursor must return every row across multiple fetch batches."""
+    time_interval = seed_strikes(2500)
+
+    result = list(db_strikes.select(time_interval=time_interval))
+
+    assert len(result) == 2500
+
+
+def test_select_strike_keys_server_side_streams_all_rows(db_strikes, seed_strikes):
+    """The narrow de-duplication query also streams across fetch batches."""
+    time_interval = seed_strikes(2500)
+
+    keys = list(db_strikes.select_strike_keys(time_interval=time_interval))
+
+    assert len(keys) == 2500
+
+
+def test_server_side_cursor_can_be_abandoned(db_strikes, seed_strikes):
+    """Closing a partially consumed stream must release the cursor.
+
+    Otherwise the named cursor would keep the connection busy and the next
+    query on the same pooled connection would fail.
+    """
+    time_interval = seed_strikes(2500)
+
+    iterator = db_strikes.select(time_interval=time_interval)
+    first = next(iterator)
+    iterator.close()
+
+    assert first is not None
+    assert len(list(db_strikes.select_strike_keys(time_interval=time_interval))) == 2500
+
+
 def test_get_latest_time(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
     db_strikes.insert(strike)
@@ -307,6 +342,45 @@ def test_grid_query_with_count_threshold(db_strikes, strike_factory, grid_factor
     result = db_strikes.select_grid(grid, 1, time_interval=time_interval)
 
     assert result == ((19, 6, 2, 0),)
+
+
+def test_grid_query_region_filter(db_strikes, strike_factory, grid_factory, time_interval):
+    """Strikes are counted only for the requested region."""
+    db_strikes.insert(strike_factory(11.5, 49.5), region=1)
+    db_strikes.insert(strike_factory(11.6, 49.5), region=6)
+    db_strikes.commit()
+
+    grid = grid_factory.get_for(10000)
+
+    region_1 = db_strikes.select_grid(grid, 0, time_interval=time_interval, region=1)
+    region_6 = db_strikes.select_grid(grid, 0, time_interval=time_interval, region=6)
+    unfiltered = db_strikes.select_grid(grid, 0, time_interval=time_interval)
+
+    assert sum(entry[2] for entry in region_1) == 1
+    assert sum(entry[2] for entry in region_6) == 1
+    assert sum(entry[2] for entry in unfiltered) == 2
+
+
+def test_schema_ddl_is_idempotent(db_strikes, connection_pool):
+    """The canonical schema file applies cleanly and repeatedly to a live table."""
+    schema_path = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
+    ddl = schema_path.read_text(encoding="utf-8")
+
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(ddl)
+            cur.execute(ddl)
+            cur.execute(
+                "SELECT 1 FROM pg_indexes WHERE tablename = 'strikes' AND indexname = 'strikes_timestamp_brin'")
+            assert cur.fetchone() is not None
+            cur.execute("SELECT reloptions FROM pg_class WHERE relname = 'strikes'")
+            reloptions = cur.fetchone()[0]
+        conn.commit()
+    finally:
+        connection_pool.putconn(conn)
+
+    assert any(option.startswith("autovacuum_analyze_scale_factor") for option in reloptions)
 
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (8, 139, 1, 0)),
