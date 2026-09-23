@@ -188,6 +188,20 @@ class TestStrikeBuilder:
         with pytest.raises(blitzortung.builder.base.BuilderError):
             strike.from_json({"lat": 44.283328, "lon": 8.910987})
 
+    def test_from_json_with_non_numeric_coordinate_raises_error(self):
+        """Non-numeric coordinates must be wrapped in a BuilderError."""
+        strike = blitzortung.builder.strike.Strike()
+
+        with pytest.raises(blitzortung.builder.base.BuilderError):
+            strike.from_json({"lon": "not-a-number", "lat": 44.283328, "time": 0})
+
+    def test_from_json_with_out_of_range_timestamp_raises_error(self):
+        """Out-of-range integer timestamps must be wrapped in a BuilderError."""
+        strike = blitzortung.builder.strike.Strike()
+
+        with pytest.raises(blitzortung.builder.base.BuilderError):
+            strike.from_json({"lon": 8.910987, "lat": 44.283328, "time": 10 ** 30})
+
     def test_build_without_timestamp_raises_error(self):
         """Test that building without a timestamp raises a BuilderError."""
         strike = blitzortung.builder.strike.Strike()

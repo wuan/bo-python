@@ -41,3 +41,28 @@ Scipy and fastcluster are required for the (optional) clustering functionality. 
 ```bash
 pip install scipy fastcluster
 ```
+
+# Testing and Fuzzing
+
+Run the test suite (including the property-based fuzz tests):
+
+```bash
+poetry run pytest tests
+```
+
+The tests under `tests/fuzz/` use [Hypothesis](https://hypothesis.readthedocs.io/)
+to fuzz the parsers that consume untrusted data (websocket payloads and the
+strike text feed). They run as part of the normal suite and can be extended:
+
+```bash
+# increase the number of generated examples
+BLITZORTUNG_FUZZ_EXAMPLES=20000 poetry run pytest tests/fuzz
+
+# skip them during a normal run
+poetry run pytest -m "not fuzz"
+```
+
+For coverage-guided fuzzing, `fuzz/` contains
+[Atheris](https://github.com/google/atheris) drivers for the same targets.
+Atheris provides Linux wheels only and runs in the scheduled `Fuzz` GitHub
+Actions workflow. See [`fuzz/README.md`](fuzz/README.md) for details.

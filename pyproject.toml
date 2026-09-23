@@ -46,6 +46,7 @@ build-backend = "poetry.core.masonry.api"
 addopts = "-m 'not benchmark'"
 markers = [
     "live: verifies a live Blitzortung JSON-RPC endpoint (skipped unless --live-url or BLITZORTUNG_LIVE_URL is set)",
+    "fuzz: property-based fuzzing tests (deselect with -m 'not fuzz')",
 ]
 
 [tool.poetry.group.dev.dependencies]
@@ -58,6 +59,7 @@ testcontainers = { extras = ["postgres"], version = "^4.10" }
 pytest-twisted = "^1.14.3"
 basedpyright = "^1.40"
 pylint = "^4.0"
+hypothesis = "^6.168.1"
 
 [tool.basedpyright]
 include = ["blitzortung"]

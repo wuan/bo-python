@@ -55,10 +55,15 @@ class Timestamp(base.EqualityAndHash):
                 dt = None  # type: ignore[assignment]
             nanosecond += date_time_nanosecond
         elif isinstance(date_time, int):
-            dt, date_time_nanosecond = Timestamp.from_nanoseconds(date_time)
+            try:
+                dt, date_time_nanosecond = Timestamp.from_nanoseconds(date_time)
+            except OverflowError as error:
+                raise ValueError(f"timestamp out of range: {date_time}") from error
             nanosecond += date_time_nanosecond
-        else:
+        elif isinstance(date_time, dt_module.datetime):
             dt = date_time
+        else:
+            raise ValueError(f"unsupported timestamp type: {type(date_time).__name__}")
 
         if dt is not None and (nanosecond < 0 or nanosecond > 999):
             microdelta = nanosecond // 1000

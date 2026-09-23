@@ -90,7 +90,7 @@ class Strike(Event):
             stations = self.stations_parser.findall(line)[0]
             self.set_station_count(int(stations[0]))
             self.set_stations([int(station) for station in stations[2].split(',') if station])
-        except (KeyError, ValueError, IndexError) as e:
+        except (KeyError, ValueError, IndexError, TypeError, OverflowError) as e:
             raise BuilderError(e) from e
 
         return self
@@ -106,7 +106,7 @@ class Strike(Event):
             self.set_lateral_error(json_data.get('mds', 0))
             self.set_station_count(0)
             self.set_region(json_data.get('region'))
-        except (KeyError, ValueError, IndexError) as e:
+        except (KeyError, ValueError, IndexError, TypeError, OverflowError) as e:
             raise BuilderError(e) from e
 
         return self

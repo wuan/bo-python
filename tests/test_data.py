@@ -68,6 +68,14 @@ class TestTimestamp:
             datetime.datetime(2018, 10, 30, 21, 43, 53, 552753, datetime.timezone.utc))
         assert_that(timestamp.nanosecond).is_equal_to(700)
 
+    def test_out_of_range_integer_raises_value_error(self):
+        with pytest.raises(ValueError):
+            Timestamp(10 ** 30)
+
+    def test_unsupported_type_raises_value_error(self):
+        with pytest.raises(ValueError):
+            Timestamp(1.5)
+
     def test_comparison_with_datetime(self):
         ts = Timestamp(datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc))
         dt_before = datetime.datetime(2019, 12, 31, 12, 0, 0, tzinfo=datetime.timezone.utc)

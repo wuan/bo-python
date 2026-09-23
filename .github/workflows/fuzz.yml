@@ -1,0 +1,65 @@
+name: Fuzz
+
+on:
+  schedule:
+    # Weekly, Monday 03:00 UTC.
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  atheris:
+    name: Atheris (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: websocket
+            driver: fuzz/fuzz_websocket.py
+          - target: strike-from-line
+            driver: fuzz/fuzz_strike_from_line.py
+          - target: strike-from-json
+            driver: fuzz/fuzz_strike_from_json.py
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Set poetry
+        uses: abatilo/actions-poetry@0dd19c9498c3dc8728967849d0d2eae428a8a3d8 # v4
+        with:
+          poetry-version: '2.1.2'
+
+      - name: Install dependencies
+        run: |
+          poetry install --only main
+          poetry run pip install atheris
+
+      - name: Run ${{ matrix.target }} fuzzer
+        run: |
+          mkdir -p fuzz/corpus/${{ matrix.target }}
+          poetry run python ${{ matrix.driver }} fuzz/corpus/${{ matrix.target }} \
+            -max_total_time=120 -print_final_stats=1
+
+      - name: Upload crashing input
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: crash-${{ matrix.target }}
+          path: |
+            crash-*
+            leak-*
+            timeout-*
+            oom-*
+          if-no-files-found: ignore
