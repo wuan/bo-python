@@ -1,4 +1,5 @@
 import datetime
+import re
 from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -10,6 +11,35 @@ from mock import Mock
 
 import blitzortung
 from blitzortung.service.general import create_time_interval
+
+
+# The index set that is actually deployed on the production ``strikes`` table.
+# Keep this in sync with the live database (``\di``): the canonical schema in
+# docs/schema/strikes.sql and the ``db_strikes`` fixture must create exactly
+# these indexes.  The tests below fail if the schema drifts from this list, so
+# a schema change cannot silently diverge from what production runs.  Proposed
+# but not-yet-deployed indexes live in docs/schema/proposed-indexes.sql and
+# must not be added here until they have been validated in production.
+PRODUCTION_INDEXES = frozenset({
+    "strikes_pkey",
+    "strikes_region_timestamp",
+    "strikes_timestamp",
+    "strikes_timestamp_geog",
+})
+
+SCHEMA_PATH = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
+
+
+def _schema_index_names(ddl: str) -> set:
+    """Index names created by the canonical schema DDL.
+
+    Explicit ``CREATE INDEX`` statements plus the primary key index that
+    PostgreSQL creates implicitly for the table.
+    """
+    names = set(re.findall(r"CREATE INDEX IF NOT EXISTS\s+(\w+)", ddl))
+    if re.search(r"PRIMARY KEY", ddl):
+        names.add("strikes_pkey")
+    return names
 
 
 
@@ -363,24 +393,36 @@ def test_grid_query_region_filter(db_strikes, strike_factory, grid_factory, time
 
 def test_schema_ddl_is_idempotent(db_strikes, connection_pool):
     """The canonical schema file applies cleanly and repeatedly to a live table."""
-    schema_path = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
-    ddl = schema_path.read_text(encoding="utf-8")
+    ddl = SCHEMA_PATH.read_text(encoding="utf-8")
 
     conn = connection_pool.getconn()
     try:
         with conn.cursor() as cur:
             cur.execute(ddl)
             cur.execute(ddl)
-            cur.execute(
-                "SELECT 1 FROM pg_indexes WHERE tablename = 'strikes' AND indexname = 'strikes_timestamp_brin'")
-            assert cur.fetchone() is not None
-            cur.execute("SELECT reloptions FROM pg_class WHERE relname = 'strikes'")
-            reloptions = cur.fetchone()[0]
         conn.commit()
     finally:
         connection_pool.putconn(conn)
 
-    assert any(option.startswith("autovacuum_analyze_scale_factor") for option in reloptions)
+
+def test_schema_file_matches_production_indexes():
+    """The canonical schema file creates exactly the production index set."""
+    ddl = SCHEMA_PATH.read_text(encoding="utf-8")
+
+    assert _schema_index_names(ddl) == set(PRODUCTION_INDEXES)
+
+
+def test_applied_schema_matches_production_indexes(db_strikes, connection_pool):
+    """The schema applied by the test fixture has exactly the production index set."""
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'strikes'")
+            index_names = {row[0] for row in cur.fetchall()}
+    finally:
+        connection_pool.putconn(conn)
+
+    assert index_names == set(PRODUCTION_INDEXES)
 
 @pytest.mark.parametrize("raster_size,expected", [
     (100000, (8, 139, 1, 0)),

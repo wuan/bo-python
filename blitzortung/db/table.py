@@ -238,21 +238,17 @@ class Strike(Base):
     ALTER TABLE strikes ADD COLUMN error2d SMALLINT;
     ALTER TABLE strikes ADD COLUMN stationcount SMALLINT;
 
+    The canonical, idempotent DDL for the table and its indexes is kept in
+    docs/schema/strikes.sql and mirrors the production schema:
+
     CREATE INDEX strikes_timestamp ON strikes USING btree("timestamp");
     CREATE INDEX strikes_timestamp_geog ON strikes USING gist("timestamp", geog);
     CREATE INDEX strikes_region_timestamp ON strikes USING btree(region, "timestamp");
-    CREATE INDEX strikes_id_timestamp ON strikes USING btree(id, "timestamp");
-    CREATE INDEX strikes_geog ON strikes USING gist(geog);
-    CREATE INDEX strikes_id_timestamp_geog ON strikes USING gist(id, "timestamp", geog);
-    CREATE INDEX strikes_region_timestamp_nanoseconds ON strikes USING btree(region, "timestamp", nanoseconds);
 
-    The append-only timestamp column additionally benefits from a BRIN index and
-    from autovacuum settings that keep planner statistics fresh.  The canonical,
-    idempotent DDL for the table, its indexes and its maintenance options is kept
-    in docs/schema/strikes.sql:
-
-    CREATE INDEX strikes_timestamp_brin ON strikes USING brin("timestamp") WITH (pages_per_range = 32);
-    ALTER TABLE strikes SET (autovacuum_analyze_scale_factor = 0.01, autovacuum_analyze_threshold = 1000);
+    Proposed (but not yet deployed or validated) indexes and autovacuum tuning
+    are tracked in docs/schema/proposed-indexes.sql.  The test suite asserts
+    that the canonical schema matches the deployed production index set, see
+    PRODUCTION_INDEXES in tests/db/test_db.py.
 
     empty the table with the following commands:
 
