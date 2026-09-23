@@ -42,6 +42,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 
 [tool.pytest.ini_options]
+# Benchmarks are opt-in: run them with `-m benchmark` (or `--benchmark-only`).
+addopts = "-m 'not benchmark'"
 markers = [
     "live: verifies a live Blitzortung JSON-RPC endpoint (skipped unless --live-url or BLITZORTUNG_LIVE_URL is set)",
 ]

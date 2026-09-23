@@ -288,6 +288,7 @@ class TestObjectCacheWithSize:
         assert_that(self.cache.get_size()).is_equal_to(1)
 
 
+@pytest.mark.benchmark
 def test_bench_object_cache_get(benchmark):
     """Benchmark cache.get() performance."""
     cache = ObjectCache()
@@ -296,6 +297,7 @@ def test_bench_object_cache_get(benchmark):
     )
 
 
+@pytest.mark.benchmark
 def test_bench_object_cache_with_size_get(benchmark):
     """Benchmark cache.get() with size limit."""
     cache = ObjectCache(size=2)
@@ -304,6 +306,7 @@ def test_bench_object_cache_with_size_get(benchmark):
     )
 
 
+@pytest.mark.benchmark
 def test_bench_object_cache_generate_cache_key(benchmark):
     """Benchmark cache key generation."""
     cache = ObjectCache()

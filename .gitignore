@@ -15,3 +15,6 @@ __pycache__
 /debian/files
 /debian/python3-blitzortung*
 /.pybuild
+
+# pytest-benchmark saved runs
+/.benchmarks/

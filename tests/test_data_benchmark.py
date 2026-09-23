@@ -4,6 +4,8 @@ from blitzortung.data import Timestamp, Event
 from blitzortung.geom import Envelope
 from blitzortung.base import Point
 
+pytestmark = pytest.mark.benchmark
+
 
 @pytest.fixture
 def timestamp() -> Timestamp:
