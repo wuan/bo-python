@@ -114,7 +114,7 @@ class Base(metaclass=ABCMeta):
         when the connection is actually executing a query.  Idle connections
         are simply reset.
         """
-        if conn.info.transaction_status == psycopg2.extensions.TRANSACTION_STATUS_ACTIVE:
+        if conn.get_transaction_status() == psycopg2.extensions.TRANSACTION_STATUS_ACTIVE:
             conn.cancel()
 
     def close(self):

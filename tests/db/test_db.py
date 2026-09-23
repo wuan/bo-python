@@ -88,7 +88,7 @@ class TestCancelIfActive:
 
     def test_does_not_cancel_idle_connection(self):
         conn = Mock()
-        conn.info.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_IDLE
+        conn.get_transaction_status.return_value = psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
         blitzortung.db.table.Base._cancel_if_active(conn)
 
@@ -96,7 +96,7 @@ class TestCancelIfActive:
 
     def test_cancels_active_connection(self):
         conn = Mock()
-        conn.info.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_ACTIVE
+        conn.get_transaction_status.return_value = psycopg2.extensions.TRANSACTION_STATUS_ACTIVE
 
         blitzortung.db.table.Base._cancel_if_active(conn)
 
