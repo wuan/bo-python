@@ -18,7 +18,12 @@
 
 """
 
+from typing import Generic, TypeVar, cast
+
 from .. import data, Error
+
+
+BuiltType = TypeVar("BuiltType")
 
 
 class BuilderError(Error):
@@ -29,10 +34,10 @@ class Base:
     pass
 
 
-class Timestamp(Base):
+class Timestamp(Base, Generic[BuiltType]):
     def __init__(self):
         super().__init__()
-        self.timestamp = None
+        self.timestamp: data.Timestamp | None = None
 
     def set_timestamp(self, timestamp, nanosecond=0):
         if not timestamp:
@@ -43,11 +48,11 @@ class Timestamp(Base):
             self.timestamp = data.Timestamp(timestamp, nanosecond=nanosecond)
         return self
 
-    def build(self):
-        return self.timestamp
+    def build(self) -> BuiltType:
+        return cast(BuiltType, self.timestamp)
 
 
-class Event(Timestamp):
+class Event(Timestamp[data.Event]):
     def __init__(self):
         super().__init__()
         self.x_coord = 0
@@ -61,7 +66,7 @@ class Event(Timestamp):
         self.y_coord = y_coord
         return self
 
-    def build(self):
+    def build(self) -> data.Event:
         if self.timestamp is None:
             raise BuilderError("Timestamp not set")
         return data.Event(self.timestamp, self.x_coord, self.y_coord)

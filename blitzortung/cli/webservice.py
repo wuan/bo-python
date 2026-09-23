@@ -11,11 +11,11 @@ from twisted.web import server
 
 # Install epoll/kqueue reactor for better performance (if not already installed)
 try:
-    from twisted.internet import epollreactor  # type: ignore[attr-defined, no-redef]
+    from twisted.internet import epollreactor
     epollreactor.install()
 except (ImportError, ReactorAlreadyInstalledError):
     try:
-        from twisted.internet import kqreactor  # type: ignore[assignment, no-redef]
+        from twisted.internet import kqreactor
         kqreactor.install()
     except (ImportError, ReactorAlreadyInstalledError):
         pass

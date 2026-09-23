@@ -19,16 +19,20 @@
 """
 import datetime
 from abc import ABCMeta, abstractmethod
+from typing import Generic, TypeVar
 
 from injector import inject
 
-from .. import builder
+from .. import builder, data
 
 
-class ObjectMapper(metaclass=ABCMeta):
+ObjectType = TypeVar("ObjectType")
+
+
+class ObjectMapper(Generic[ObjectType], metaclass=ABCMeta):
     @abstractmethod
-    def create_object(self, result, **kwargs):
-        pass
+    def create_object(self, result, **kwargs) -> ObjectType:
+        ...
 
     @staticmethod
     def convert_to_timezone(timestamp, target_timezone=None):
@@ -40,12 +44,12 @@ class ObjectMapper(metaclass=ABCMeta):
         return timestamp
 
 
-class Strike(ObjectMapper):
+class Strike(ObjectMapper[data.Strike]):
     @inject
     def __init__(self, strike_builder: builder.Strike):
         self.strike_builder = strike_builder
 
-    def create_object(self, result, **kwargs):
+    def create_object(self, result, **kwargs) -> data.Strike:
         timezone = kwargs['timezone'] if 'timezone' in kwargs else datetime.timezone.utc
 
         self.strike_builder.set_id(result['id'])

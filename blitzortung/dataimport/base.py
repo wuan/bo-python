@@ -22,6 +22,7 @@ import datetime
 import logging
 import os
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterable
 from html.parser import HTMLParser
 
 from injector import inject
@@ -32,19 +33,19 @@ from .. import config, util
 
 class TransportAbstract(metaclass=ABCMeta):
     @abstractmethod
-    def read_lines(self, source_path, post_process=None):
-        pass
+    def read_lines(self, source, post_process=None) -> Iterable[str]:
+        ...
 
 
 class FileTransport(TransportAbstract):
-    def read_lines(self, source_path, post_process=None):
-        if os.path.isfile(source_path):
+    def read_lines(self, source, post_process=None) -> Iterable[str]:
+        if os.path.isfile(source):
             if post_process:
-                with open(source_path, 'rb') as data_file:
+                with open(source, 'rb') as data_file:
                     for line in post_process(data_file.read()).splitlines():
                         yield line.decode('utf-8')
             else:
-                with open(source_path, encoding='utf-8') as data_file:
+                with open(source, encoding='utf-8') as data_file:
                     yield from data_file
 
 
@@ -59,27 +60,27 @@ class HttpFileTransport(FileTransport):
         self.config = configuration
         self.session = session if session else Session()
 
-    def read_lines(self, source_url, post_process=None):
+    def read_lines(self, source, post_process=None) -> Iterable[str]:
         timer = util.Timer()
         response = self.session.get(
-            source_url,
+            source,
             auth=(self.config.get_username(), self.config.get_password()),
             stream=True,
             timeout=self.TIMEOUT_SECONDS)
 
         if response.status_code != 200:
-            self.logger.debug("http status %d for get '%s' (%.03fs)" % (response.status_code, source_url, timer.lap()))
+            self.logger.debug("http status %d for get '%s' (%.03fs)" % (response.status_code, source, timer.lap()))
             return []
         else:
-            self.logger.debug("get '%s' (%.03fs)" % (source_url, timer.lap()))
+            self.logger.debug("get '%s' (%.03fs)" % (source, timer.lap()))
 
         return self.split_lines(post_process(response.content).splitlines() if post_process else response.iter_lines())
 
-    def split_lines(self, lines):
+    def split_lines(self, lines) -> Iterable[str]:
         return (self.process_line(html_line) for html_line in lines)
 
     @staticmethod
-    def process_line(line):
+    def process_line(line) -> str:
         return line.decode('utf8')
 
 

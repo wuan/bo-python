@@ -443,7 +443,7 @@ class Blitzortung(jsonrpc.JSONRPC):
             if is_pypy:
                 log.msg(gc.get_stats(True))  # type: ignore[call-arg]
             else:
-                log.msg(gc.get_stats())  # type: ignore[call-arg]
+                log.msg(gc.get_stats())
             self.next_memory_info = now + self.MEMORY_INFO_INTERVAL
 
 

@@ -440,11 +440,11 @@ class GridData:
         return self.data[y_index][x_index]
 
     def to_arcgrid(self) -> str:
-        result = 'NCOLS %d\n' % self.grid.x_bin_count  # type: ignore[attr-defined]
-        result += 'NROWS %d\n' % self.grid.y_bin_count  # type: ignore[attr-defined]
-        result += 'XLLCORNER %.4f\n' % self.grid.x_min  # type: ignore[attr-defined]
-        result += 'YLLCORNER %.4f\n' % self.grid.y_min  # type: ignore[attr-defined]
-        result += 'CELLSIZE %.4f\n' % self.grid.x_div  # type: ignore[attr-defined]
+        result = 'NCOLS %d\n' % self.grid.x_bin_count
+        result += 'NROWS %d\n' % self.grid.y_bin_count
+        result += 'XLLCORNER %.4f\n' % self.grid.x_min
+        result += 'YLLCORNER %.4f\n' % self.grid.y_min
+        result += 'CELLSIZE %.4f\n' % self.grid.x_div
         result += 'NODATA_VALUE %s\n' % str(self.no_data.count)
 
         result += '\n'.join([' '.join([self.cell_to_multiplicity(cell) for cell in row]) for row in self.data[::-1]])

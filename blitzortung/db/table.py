@@ -18,9 +18,10 @@
 
 """
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterator
 import datetime
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import psycopg2
 import psycopg2.extensions
@@ -166,12 +167,12 @@ class Base(metaclass=ABCMeta):
         self.conn.rollback()
 
     @abstractmethod
-    def insert(self, *args):
-        pass
+    def insert(self, *args, **kwargs) -> None:
+        ...
 
     @abstractmethod
-    def select(self, **kwargs):
-        pass
+    def select(self, **kwargs) -> Iterator[Any]:
+        ...
 
     def execute(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -309,7 +310,7 @@ class Strike(Base):
         parameters = {'region': region}
         return self.execute_single(sql, parameters, prepare_result)
 
-    def select(self, **kwargs):
+    def select(self, **kwargs) -> Iterator[Any]:
         """ build up query """
 
         query_ = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)

@@ -111,7 +111,7 @@ class Strike(Event):
 
         return self
 
-    def build(self):
+    def build(self) -> data.Strike:
         if self.timestamp is None:
             raise BuilderError("Timestamp not set")
         return data.Strike(self.id_value, self.timestamp, self.x_coord, self.y_coord, self.altitude,
