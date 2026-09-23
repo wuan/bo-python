@@ -36,6 +36,23 @@ pre-commit run --all-files
 `pre-commit run --all-files` (or at least `pre-commit run --files <changed files>`)
 and make sure every hook passes before considering the work complete.
 
+## SonarCloud
+
+Static-analysis findings are tracked on SonarCloud:
+
+- Dashboard: <https://sonarcloud.io/project/overview?id=wuan_bo-python>
+- Open issues: <https://sonarcloud.io/project/issues?id=wuan_bo-python&resolved=false>
+- Project config: `sonar-project.properties` (`sonar.projectKey=wuan_bo-python`, organization `wuan`)
+
+The current open-issue list can be fetched without authentication via the public API:
+
+```bash
+curl -s "https://sonarcloud.io/api/issues/search?componentKeys=wuan_bo-python&resolved=false&ps=100" \
+  | jq -r '.issues[] | "\(.rule) | \(.component | sub("wuan_bo-python:";"")):\(.line) | \(.message)"'
+```
+
+Sonar re-analyzes the project on CI; local fixes only clear the issues after the next analysis run.
+
 ## Testing Notes
 
 **Framework**: Pure pytest-based with fixtures. All tests use pytest idioms and fixtures in conftest.py.

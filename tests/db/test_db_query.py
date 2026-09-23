@@ -147,9 +147,9 @@ class TestTimeInterval:
 
     def test_exception_when_end_is_not_datetime(self):
         """Test raising exception for non-datetime end."""
+        start = datetime.datetime(2010, 11, 20, 11, 30, 15)
         with pytest.raises(ValueError):
-            blitzortung.db.query.TimeInterval(
-                datetime.datetime(2010, 11, 20, 11, 30, 15), "asdf")
+            blitzortung.db.query.TimeInterval(start, "asdf")
 
     def test_contains_timestamp_within_interval(self):
         """Test contains returns True for timestamp within interval."""

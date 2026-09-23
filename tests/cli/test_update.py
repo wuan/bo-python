@@ -318,11 +318,9 @@ class TestUpdateStrikes:
         fetch.return_value = [strike]
 
         # Simulate database error on insert
-        strike_db.insert_many.side_effect = Exception("Database error")
+        strike_db.insert_many.side_effect = RuntimeError("Database error")
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(RuntimeError, match="Database error"):
             update.update_strikes(hours=1)
-
-        assert exc_info.value.args[0] == "Database error"
 
         strike_db.rollback.assert_called()

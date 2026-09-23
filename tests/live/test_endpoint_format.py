@@ -169,10 +169,7 @@ class TestGridResponseFormat:
     def test_timestamp_matches_documented_format(self, grid_response_for, endpoint):
         timestamp = grid_response_for(endpoint)["t"]
         assert isinstance(timestamp, str), f"{endpoint.method}: t must be a string"
-        try:
-            parsed = datetime.datetime.strptime(timestamp, TIMESTAMP_FORMAT)
-        except ValueError as error:
-            pytest.fail(f"{endpoint.method}: t={timestamp!r} has wrong format: {error}")
+        parsed = datetime.datetime.strptime(timestamp, TIMESTAMP_FORMAT)
         now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
         assert abs((now - parsed).total_seconds()) < 24 * 3600, (
             f"{endpoint.method}: timestamp {timestamp} is not recent"

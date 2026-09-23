@@ -111,7 +111,7 @@ def create_postgres_container(request) -> PostgresContainer:
 
 @pytest.fixture(scope="session")
 def connection_string(postgres_container: PostgresContainer):
-    yield f"host={postgres_container.get_container_host_ip()} dbname={postgres_container.dbname} user={postgres_container.username} password={postgres_container.password} port={postgres_container.get_exposed_port(5432)}"
+    return f"host={postgres_container.get_container_host_ip()} dbname={postgres_container.dbname} user={postgres_container.username} password={postgres_container.password} port={postgres_container.get_exposed_port(5432)}"
 
 
 @pytest.fixture

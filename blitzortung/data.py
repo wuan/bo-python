@@ -306,6 +306,16 @@ class Event(base.Point):
             return NotImplemented
         return self.timestamp.value <= other.timestamp.value
 
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, Event):
+            return NotImplemented
+        return self.timestamp.value > other.timestamp.value
+
+    def __ge__(self, other: object) -> bool:
+        if not isinstance(other, Event):
+            return NotImplemented
+        return self.timestamp.value >= other.timestamp.value
+
     def __str__(self) -> str:
         if self.has_valid_timestamp:
             timestamp_string = self.timestamp.strftime(self.time_format_fractional_seconds + 'XXX')
@@ -494,27 +504,43 @@ class GridData:
                         maximum = cell.count
         return maximum, total
 
-    def to_reduced_array(self, reference_time: Timestamp) -> tuple[tuple[int, int, int, int], ...]:
+    @staticmethod
+    def __as_timestamp(value: Timestamp | dt_module.datetime) -> Timestamp:
+        """Coerce a ``datetime`` or ``Timestamp`` into a ``Timestamp``."""
+        return value if isinstance(value, Timestamp) else Timestamp(value)
 
+    @staticmethod
+    def __reduced_entry(
+        column_index: int,
+        row_index: int,
+        cell: GridElement | None,
+        ref_ts: Timestamp,
+    ) -> tuple[int, int, int, int] | None:
+        """Build the reduced-array entry for a single grid cell, if any."""
+        if cell is None or cell.timestamp is None:
+            return None
+
+        # check if cell.timestamp is a Timestamp object or a datetime.datetime object
+        # in some tests, it might be a datetime.datetime object
+        ts = GridData.__as_timestamp(cell.timestamp)
+        if not ts.is_valid:
+            return None
+
+        time_diff = ref_ts - ts
+        if not isinstance(time_diff, Timedelta):
+            return None
+
+        return column_index, row_index, int(cell.count), int(-time_diff.total_seconds())
+
+    def to_reduced_array(self, reference_time: Timestamp) -> tuple[tuple[int, int, int, int], ...]:
         reduced_array: list[tuple[int, int, int, int]] = []
 
-        ref_ts = reference_time if isinstance(reference_time, Timestamp) else Timestamp(reference_time)
+        ref_ts = self.__as_timestamp(reference_time)
 
         for row_index, row in enumerate(self.data[::-1]):
             for column_index, cell in enumerate(row):
-                if cell and cell.timestamp is not None:
-                    # check if cell.timestamp is a Timestamp object or a datetime.datetime object
-                    # in some tests, it might be a datetime.datetime object
-                    ts = cell.timestamp if isinstance(cell.timestamp, Timestamp) else Timestamp(cell.timestamp)
-
-                    if ts.is_valid:
-                        time_diff = ref_ts - ts
-                        if isinstance(time_diff, Timedelta):
-                            reduced_array.append((
-                                column_index,
-                                row_index,
-                                int(cell.count),
-                                int(-time_diff.total_seconds()),
-                            ))
+                entry = self.__reduced_entry(column_index, row_index, cell, ref_ts)
+                if entry is not None:
+                    reduced_array.append(entry)
 
         return tuple(reduced_array)

@@ -92,8 +92,8 @@ def fetch_strikes_from_url(url, auth=None):
 
         logger.info("Fetched %d strikes from URL", strike_count)
 
-    except requests.RequestException as e:
-        logger.error("Failed to fetch data from URL %s: %s", url, e)
+    except requests.RequestException:
+        logger.exception("Failed to fetch data from URL %s", url)
         raise
 
 
@@ -190,8 +190,8 @@ def update_strikes(hours=1):
         # Fetch strikes from URL
         try:
             url_strikes = list(fetch_strikes_from_url(url, auth=auth))
-        except requests.RequestException as e:
-            logger.error("Failed to fetch strikes from URL: %s", e)
+        except requests.RequestException:
+            logger.exception("Failed to fetch strikes from URL")
             return 0
 
         # Filter strikes: only those within time interval and not in database
@@ -226,8 +226,8 @@ def update_strikes(hours=1):
         if insert_count > 0:
             try:
                 strike_db.insert_many(new_strikes)
-            except Exception as e:
-                logger.error("Failed to insert %d strikes: %s", insert_count, e)
+            except Exception:
+                logger.exception("Failed to insert %d strikes", insert_count)
                 strike_db.rollback()
                 raise
 
@@ -281,8 +281,8 @@ def main():
     except FailedToAcquireException:
         logger.warning("Could not acquire lock - another import may be running")
         return 1
-    except Exception as e:
-        logger.error("Import failed: %s", e, exc_info=options.debug)
+    except Exception:
+        logger.exception("Import failed")
         return 1
 
 

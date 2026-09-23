@@ -187,7 +187,7 @@ class TestStrikesBlitzortungDataProvider:
         strike_data = {'one': 1}
         self.data_provider.read_lines.side_effect = [[strike_data], []]
         self.builder.from_data.return_value = self.builder
-        self.builder.build.side_effect = Exception("foo")
+        self.builder.build.side_effect = ValueError("foo")
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError, match="foo"):
             list(self.provider.get_strikes_since(latest_strike_timestamp))

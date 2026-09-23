@@ -454,11 +454,14 @@ class LogObserver(FileLogObserver):
         self.prefix = prefix
         FileLogObserver.__init__(self, f)
 
-    def emit(self, eventDict):
-        text = textFromEventDict(eventDict)
+    def emit(self, event_dict):  # pyright: ignore[reportIncompatibleMethodOverride]
+        # The parent class uses the camelCase name ``eventDict``; the override
+        # keeps the snake_case name Sonar expects while remaining compatible.
+        # pylint: disable=arguments-renamed
+        text = textFromEventDict(event_dict)
         if text is None:
             return
-        time_str = self.formatTime(eventDict["time"])
+        time_str = self.formatTime(event_dict["time"])
         msg_str = _safeFormat("[%(prefix)s] %(text)s\n", {
             "prefix": self.prefix,
             "text": text.replace("\n", "\n\t")

@@ -190,8 +190,9 @@ class TestTimedelta:
     def test_normalizing(self):
         assert_that(Timedelta(nanodelta=1500)).is_equal_to(
             Timedelta(datetime.timedelta(microseconds=1), 500))
-        assert_that(Timedelta(nanodelta=500)).is_equal_to(
-            Timedelta(nanodelta=500))
+        normalized = Timedelta(nanodelta=500)
+        assert_that(normalized.timedelta).is_equal_to(datetime.timedelta())
+        assert_that(normalized.nanodelta).is_equal_to(500)
         assert_that(Timedelta(nanodelta=-500)).is_equal_to(
             Timedelta(datetime.timedelta(microseconds=-1), nanodelta=500))
         assert_that(Timedelta(nanodelta=-1500)).is_equal_to(

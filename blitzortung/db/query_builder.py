@@ -26,6 +26,9 @@ import shapely.wkb
 from .query import SelectQuery, GridQuery, GlobalGridQuery, TimeInterval
 
 
+REGION_CONDITION = "region = %(region)s"
+
+
 class Strike:
     @staticmethod
     def select_query(table_name, srid, **kwargs):
@@ -38,7 +41,7 @@ class Strike:
             .set_default_conditions(**kwargs)
 
         if 'region' in kwargs:
-            query.add_condition("region = %(region)s", region=kwargs['region'])
+            query.add_condition(REGION_CONDITION, region=kwargs['region'])
 
         return query
 
@@ -54,7 +57,7 @@ class Strike:
             .set_default_conditions(**kwargs)
 
         if 'region' in kwargs:
-            query.add_condition("region = %(region)s", region=kwargs['region'])
+            query.add_condition(REGION_CONDITION, region=kwargs['region'])
 
         return query
 
@@ -69,7 +72,7 @@ class Strike:
         # region when one is given to avoid counting strikes twice across
         # regional grids.
         if kwargs.get('region') is not None:
-            query.add_condition("region = %(region)s", region=kwargs['region'])
+            query.add_condition(REGION_CONDITION, region=kwargs['region'])
 
         return query
 
@@ -92,7 +95,7 @@ class Strike:
             .add_parameters(binsize=binsize)
 
         if region:
-            query.add_condition("region = %(region)s", region=region)
+            query.add_condition(REGION_CONDITION, region=region)
 
         if envelope and envelope.env.is_valid:
             query.add_condition('ST_SetSRID(CAST(%(envelope)s AS geometry), %(envelope_srid)s) && geog',

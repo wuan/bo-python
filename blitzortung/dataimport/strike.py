@@ -57,8 +57,8 @@ class StrikesBlitzortungDataProvider:
                 except builder.BuilderError as e:
                     logger.warning("%s: %s (%s)" % (e.__class__, e.args, strike_line))
                     continue
-                except Exception as e:
-                    logger.error("%s: %s (%s)" % (e.__class__, e.args, strike_line))
+                except Exception:
+                    logger.exception("Failed to build strike from line: %s", strike_line)
                     raise
                 if strike.timestamp.is_valid and strike.timestamp > latest_strike:
                     strike_count += 1

@@ -248,5 +248,14 @@ class GridElement:
     def __gt__(self, other: GridElement) -> bool:
         return self.count > other.count
 
+    def __lt__(self, other: GridElement) -> bool:
+        return self.count < other.count
+
+    def __le__(self, other: GridElement) -> bool:
+        return self.count <= other.count
+
+    def __ge__(self, other: GridElement) -> bool:
+        return self.count >= other.count
+
     def __repr__(self) -> str:
         return "GridElement(%d, %s)" % (self.count, str(self.timestamp))

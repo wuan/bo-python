@@ -67,10 +67,10 @@ class TestOnMessage:
         imprt_websocket.statsd_client.gauge.assert_called_once()
         assert imprt_websocket.strike_count == 1
 
-    def test_inserts_into_database_when_available(self, strike):
+    def test_inserts_into_database_when_available(self, monkeypatch, strike):
         """Test that strikes are inserted into the database."""
         db = MagicMock()
-        imprt_websocket.strike_db = db
+        monkeypatch.setattr(imprt_websocket, "strike_db", db)
 
         imprt_websocket.on_message(Mock(), make_message(region=5))
 
@@ -82,33 +82,33 @@ class TestOnMessage:
 
         assert imprt_websocket.strike_count == 1
 
-    def test_commits_after_count_threshold(self):
+    def test_commits_after_count_threshold(self, monkeypatch):
         """Test that a commit happens once more than 100 strikes arrived."""
         db = MagicMock()
-        imprt_websocket.strike_db = db
-        imprt_websocket.strike_count = 100
+        monkeypatch.setattr(imprt_websocket, "strike_db", db)
+        monkeypatch.setattr(imprt_websocket, "strike_count", 100)
 
         imprt_websocket.on_message(Mock(), make_message())
 
         db.commit.assert_called_once_with()
         assert imprt_websocket.strike_count == 0
 
-    def test_commits_after_time_threshold(self):
+    def test_commits_after_time_threshold(self, monkeypatch):
         """Test that a commit happens when the last one is older than 5s."""
         db = MagicMock()
-        imprt_websocket.strike_db = db
-        imprt_websocket.strike_count = 1
-        imprt_websocket.last_commit_time = time.time() - 10
+        monkeypatch.setattr(imprt_websocket, "strike_db", db)
+        monkeypatch.setattr(imprt_websocket, "strike_count", 1)
+        monkeypatch.setattr(imprt_websocket, "last_commit_time", time.time() - 10)
 
         imprt_websocket.on_message(Mock(), make_message())
 
         db.commit.assert_called_once_with()
         assert imprt_websocket.strike_count == 0
 
-    def test_commits_after_count_threshold_without_database(self):
+    def test_commits_after_count_threshold_without_database(self, monkeypatch):
         """Test the commit path when no database is configured."""
-        imprt_websocket.strike_count = 100
-        imprt_websocket.strike_db = None
+        monkeypatch.setattr(imprt_websocket, "strike_count", 100)
+        monkeypatch.setattr(imprt_websocket, "strike_db", None)
 
         imprt_websocket.on_message(Mock(), make_message())
 
@@ -117,9 +117,11 @@ class TestOnMessage:
     def test_reraises_builder_errors(self, strike_builder):
         """Test that builder errors are re-raised after being logged."""
         strike_builder.from_json.return_value.build.side_effect = ValueError("invalid strike")
+        message = make_message()
+        websocket = Mock()
 
         with pytest.raises(ValueError, match="invalid strike"):
-            imprt_websocket.on_message(Mock(), make_message())
+            imprt_websocket.on_message(websocket, message)
 
 
 class TestCallbacks:
