@@ -137,11 +137,10 @@ def get_existing_strike_keys(strike_db, time_interval):
     logger.debug("Querying existing strikes for interval %s - %s",
                  time_interval.start, time_interval.end)
 
-    existing_strikes = strike_db.select(time_interval=time_interval, order="timestamp")
-    strike_keys = {create_strike_key(strike) for strike in existing_strikes}
+    existing_strike_keys = set(strike_db.select_strike_keys(time_interval=time_interval))
 
-    logger.info("Found %d existing strikes in database", len(strike_keys))
-    return strike_keys
+    logger.info("Found %d existing strikes in database", len(existing_strike_keys))
+    return existing_strike_keys
 
 
 def update_strikes(hours=1):

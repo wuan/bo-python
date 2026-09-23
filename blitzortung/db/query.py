@@ -227,15 +227,25 @@ class Query:
 
 
 class SelectQuery(Query):
-    __slots__ = ['table_name', 'columns']
+    __slots__ = ['table_name', 'columns', 'from_expression']
 
     def __init__(self):
         super().__init__()
         self.table_name = ""
+        self.from_expression = None
         self.columns: list[str] = []
 
     def set_table_name(self, table_name):
         self.table_name = table_name
+        return self
+
+    def set_from_expression(self, from_expression):
+        """Override the expression following ``FROM``.
+
+        Allows a query to select from a ``LATERAL`` sub-select (or any other
+        derived table) instead of a bare table name.
+        """
+        self.from_expression = from_expression
         return self
 
     def set_columns(self, *columns):
@@ -252,14 +262,28 @@ class SelectQuery(Query):
         if self.columns:
             sql += ', '.join(self.columns) + ' '
 
-        sql += 'FROM ' + self.table_name + ' '
+        sql += 'FROM ' + (self.from_expression if self.from_expression else self.table_name) + ' '
 
         sql += super().__str__()
 
         return sql.strip()
 
 
-class GridQuery(SelectQuery):
+class _TransformedGridQuery(SelectQuery):
+    """Base for grid queries that transform a geography into a geometry once."""
+
+    __slots__ = []
+
+    def set_table_name(self, table_name):
+        super().set_table_name(table_name)
+        # ``ST_Transform`` is expensive; compute it once per row in a LATERAL
+        # sub-select and reuse ``transformed.geom`` for both X and Y.
+        self.set_from_expression(
+            table_name + ', LATERAL (SELECT ST_Transform(geog::geometry, %(srid)s) AS geom) AS transformed')
+        return self
+
+
+class GridQuery(_TransformedGridQuery):
     __slots__ = ['grid']
 
     def __init__(self, grid, count_threshold=0):
@@ -276,8 +300,8 @@ class GridQuery(SelectQuery):
         )
 
         self.set_columns(
-            'TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx',
-            'TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry',
+            'TRUNC((ST_X(transformed.geom) - %(xmin)s) / %(xdiv)s)::integer AS rx',
+            'TRUNC((ST_Y(transformed.geom) - %(ymin)s) / %(ydiv)s)::integer AS ry',
             'count(*) AS strike_count',
             'max("timestamp") as "timestamp"'
         )
@@ -298,7 +322,7 @@ class GridQuery(SelectQuery):
             self.add_group_having("count(*) > %(count_threshold)s", count_threshold=count_threshold)
 
 
-class GlobalGridQuery(SelectQuery):
+class GlobalGridQuery(_TransformedGridQuery):
     __slots__ = ['grid']
 
     def __init__(self, grid, count_threshold=0):
@@ -313,8 +337,8 @@ class GlobalGridQuery(SelectQuery):
         )
 
         self.set_columns(
-            'ROUND((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xdiv)s * 0.5) / %(xdiv)s)::integer AS rx',
-            'ROUND((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ydiv)s * 0.5) / %(ydiv)s)::integer AS ry',
+            'ROUND((ST_X(transformed.geom) - %(xdiv)s * 0.5) / %(xdiv)s)::integer AS rx',
+            'ROUND((ST_Y(transformed.geom) - %(ydiv)s * 0.5) / %(ydiv)s)::integer AS ry',
             'count(*) AS strike_count',
             'max("timestamp") as "timestamp"'
         )

@@ -60,6 +60,7 @@ class StrikeQuery:
     def build_result(self, query_result, state):
         state.add_info_text("query %.03fs #%d" % (state.get_seconds(), len(query_result)))
         state.log_timing('strikes.query')
+        state.log_query_rows('strikes.query', len(query_result))
 
         reference_time = time.time()
         end_time = state.end_time

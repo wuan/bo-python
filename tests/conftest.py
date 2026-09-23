@@ -146,3 +146,35 @@ def db_strikes(connection_pool):
     conn.commit()
 
     connection_pool.putconn(conn)
+
+
+@pytest.fixture
+def seed_strikes(db_strikes):
+    """Insert synthetic strikes for performance tests.
+
+    Returns a callable ``seed(count=..., region=...) -> TimeInterval`` that
+    inserts ``count`` evenly spaced strikes and returns the interval covering
+    them.  Using ``insert_many`` keeps seeding itself off the measured path.
+    """
+
+    def _seed(count: int = 1000, region: int = 1) -> blitzortung.db.query.TimeInterval:
+        end_time = datetime.datetime.now(datetime.UTC).replace(microsecond=0)
+        start_time = end_time - datetime.timedelta(minutes=30)
+        step = (end_time - start_time) / max(count, 1)
+
+        strikes = []
+        for index in range(count):
+            builder = blitzortung.builder.strike.Strike()
+            builder.set_timestamp(start_time + step * index)
+            builder.set_x(10.0 + (index % 100) * 0.01)
+            builder.set_y(45.0 + (index % 100) * 0.01)
+            builder.set_lateral_error(index % 10)
+            builder.set_station_count(index % 50)
+            strikes.append(builder.build())
+
+        db_strikes.insert_many(strikes, region=region)
+        db_strikes.commit()
+
+        return blitzortung.db.query.TimeInterval(start_time, end_time)
+
+    return _seed

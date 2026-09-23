@@ -39,6 +39,8 @@ class TestConnectionPoolProvider:
     def test_provide_psycopg2_connection_pool(self, pool_class, register):
         config = Mock()
         config.get_db_connection_string.return_value = 'dbname=test'
+        config.get_db_min_connection_count.return_value = 4
+        config.get_db_max_connection_count.return_value = 50
         db_module = blitzortung.db.DbModule()
 
         connection_pool = db_module.provide_psycopg2_connection_pool(config)
@@ -46,6 +48,19 @@ class TestConnectionPoolProvider:
         pool_class.assert_called_once_with(4, 50, 'dbname=test')
         register.assert_called_once_with(db_module.cleanup, connection_pool)
         assert connection_pool is pool_class.return_value
+
+    @patch('blitzortung.db.atexit.register')
+    @patch('blitzortung.db.psycopg2.pool.ThreadedConnectionPool')
+    def test_provide_psycopg2_connection_pool_uses_configured_sizes(self, pool_class, _register):
+        config = Mock()
+        config.get_db_connection_string.return_value = 'dbname=test'
+        config.get_db_min_connection_count.return_value = 2
+        config.get_db_max_connection_count.return_value = 7
+        db_module = blitzortung.db.DbModule()
+
+        db_module.provide_psycopg2_connection_pool(config)
+
+        pool_class.assert_called_once_with(2, 7, 'dbname=test')
 
 
 class TestHelperFunctions:

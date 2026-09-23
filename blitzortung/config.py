@@ -82,7 +82,7 @@ class Config:
         return int(self.config_parser.get('webservice', 'port'))
 
     def get_db_connection_count(self) -> int:
-        """Return the number of pooled database connections to open.
+        """Return the minimum number of pooled service connections to open.
 
         Each grid request issues a grid and a histogram query concurrently, so
         the pool size directly caps the number of requests that can be served
@@ -90,6 +90,14 @@ class Config:
         previous behaviour when the option is absent.
         """
         return int(self.config_parser.get('db', 'connection_count', fallback='3'))
+
+    def get_db_min_connection_count(self) -> int:
+        """Return the minimum size of the psycopg2 connection pool used by the CLI tools."""
+        return int(self.config_parser.get('db', 'min_connections', fallback='4'))
+
+    def get_db_max_connection_count(self) -> int:
+        """Return the maximum size of the psycopg2 connection pool used by the CLI tools."""
+        return int(self.config_parser.get('db', 'max_connections', fallback='50'))
 
     def __str__(self) -> str:
         return "Config(user: %s, pass: %s)" % (self.get_username(), len(self.get_password()) * '*')

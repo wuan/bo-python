@@ -80,6 +80,25 @@ class TestConfig:
         assert_that(self.config_parser.mock_calls).contains(
             call.get('db', 'connection_count', fallback='3'))
 
+    def test_get_db_min_connection_count_default(self):
+        self.config_parser.get.side_effect = lambda *args, **kwargs: kwargs.get('fallback')
+        assert_that(self.config.get_db_min_connection_count()).is_equal_to(4)
+        assert_that(self.config_parser.mock_calls).contains(
+            call.get('db', 'min_connections', fallback='4'))
+
+    def test_get_db_max_connection_count_default(self):
+        self.config_parser.get.side_effect = lambda *args, **kwargs: kwargs.get('fallback')
+        assert_that(self.config.get_db_max_connection_count()).is_equal_to(50)
+        assert_that(self.config_parser.mock_calls).contains(
+            call.get('db', 'max_connections', fallback='50'))
+
+    def test_get_db_pool_sizes_configured(self):
+        self.config_parser.get.side_effect = lambda *args, **kwargs: {
+            ('db', 'min_connections'): '2',
+            ('db', 'max_connections'): '7'}[args]
+        assert_that(self.config.get_db_min_connection_count()).is_equal_to(2)
+        assert_that(self.config.get_db_max_connection_count()).is_equal_to(7)
+
     def test_string_representation(self):
         self.config_parser.get.side_effect = lambda *x: {
             ('auth', 'username'): '<username>',

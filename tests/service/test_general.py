@@ -168,6 +168,11 @@ class TestTimingState:
         timing_state.log_gauge("test.gauge", 42)
         mock_statsd.gauge.assert_called_once_with("test.gauge", 42)
 
+    def test_log_query_rows_calls_statsd_gauge(self, timing_state, mock_statsd):
+        """Test that log_query_rows reports a .rows gauge."""
+        timing_state.log_query_rows("strikes.query", 17)
+        mock_statsd.gauge.assert_called_once_with("strikes.query.rows", 17)
+
     def test_log_incr_calls_statsd_incr(self, timing_state, mock_statsd):
         """Test that log_incr calls statsd incr method."""
         timing_state.log_incr("test.counter")

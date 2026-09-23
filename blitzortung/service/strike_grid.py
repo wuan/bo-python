@@ -72,6 +72,7 @@ class StrikeGridQuery:
     def build_result(results, state: StrikeGridState):
         state.add_info_text("grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('strikes_grid.query')
+        state.log_query_rows('strikes_grid.query', len(results))
 
         reference_time = time.time()
 
@@ -145,6 +146,7 @@ class GlobalStrikeGridQuery:
         state.add_info_text(
             "global grid query %.03fs #%d %s" % (state.get_seconds(), len(results), state.grid_parameters))
         state.log_timing('global_strikes_grid.query')
+        state.log_query_rows('global_strikes_grid.query', len(results))
 
         reference_time = time.time()
         end_time = state.time_interval.end

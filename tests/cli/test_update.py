@@ -69,6 +69,7 @@ def strike_db():
         """Create a mock strike database."""
         db = Mock()
         db.select = Mock(return_value=[])
+        db.select_strike_keys = Mock(return_value=[])
         db.insert_many = Mock()
         db.commit = Mock()
         db.rollback = Mock()
@@ -173,7 +174,7 @@ class TestGetExistingStrikeKeys:
 
     def test_get_existing_strikes_empty_result(self, strike_db):
         """Test with no existing strikes."""
-        strike_db.select.return_value = []
+        strike_db.select_strike_keys.return_value = []
 
         start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
         end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
@@ -182,15 +183,14 @@ class TestGetExistingStrikeKeys:
         result = update.get_existing_strike_keys(strike_db, time_interval)
 
         assert_that(result).is_empty()
-        strike_db.select.assert_called_once()
+        strike_db.select_strike_keys.assert_called_once()
 
     def test_get_existing_strikes_with_results(self, strike_db):
         """Test with existing strikes."""
-        # Create mock strikes with unique characteristics
-        strike1 = create_strike(1000000000000000001, 10.5, 20.5, 100)
-        strike2 = create_strike(1000000000000000002, 11.5, 21.5, 200)
-
-        strike_db.select.return_value = [strike1, strike2]
+        strike_db.select_strike_keys.return_value = [
+            (1000000000000000001, 10.5, 20.5, 100),
+            (1000000000000000002, 11.5, 21.5, 200),
+        ]
 
         start = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
         end = datetime.datetime(2025, 1, 1, 13, 0, 0, tzinfo=datetime.timezone.utc)
@@ -262,7 +262,7 @@ class TestUpdateStrikes:
         existing_strike = create_strike(delayed, 10.5, 20.5)
 
         # Setup mock database with existing strike
-        strike_db.select.return_value = [existing_strike]
+        strike_db.select_strike_keys.return_value = [update.create_strike_key(existing_strike)]
 
         # Strike from URL (same timestamp/location/amplitude as existing)
         strike_from_url = create_strike(delayed, 10.5, 20.5)

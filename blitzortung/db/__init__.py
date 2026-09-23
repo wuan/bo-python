@@ -42,7 +42,10 @@ class DbModule(Module):
     @provider
     @inject
     def provide_psycopg2_connection_pool(self, config: config.Config) -> psycopg2.pool.ThreadedConnectionPool:
-        connection_pool = psycopg2.pool.ThreadedConnectionPool(4, 50, config.get_db_connection_string())
+        connection_pool = psycopg2.pool.ThreadedConnectionPool(
+            config.get_db_min_connection_count(),
+            config.get_db_max_connection_count(),
+            config.get_db_connection_string())
         atexit.register(self.cleanup, connection_pool)
         return connection_pool
 

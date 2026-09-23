@@ -43,6 +43,22 @@ class Strike:
         return query
 
     @staticmethod
+    def select_key_query(table_name, srid, **kwargs):
+        """Build a query selecting only the fields used to identify a strike."""
+        query = SelectQuery() \
+            .set_table_name(table_name) \
+            .set_columns('"timestamp"', 'nanoseconds',
+                         'ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x',
+                         'ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y', 'error2d') \
+            .add_parameters(srid=srid) \
+            .set_default_conditions(**kwargs)
+
+        if 'region' in kwargs:
+            query.add_condition("region = %(region)s", region=kwargs['region'])
+
+        return query
+
+    @staticmethod
     def grid_query(table_name, grid, count_threshold=0, **kwargs):
         return GridQuery(grid, count_threshold) \
             .set_table_name(table_name) \

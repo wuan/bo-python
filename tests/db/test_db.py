@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import pytest
 from assertpy import assert_that
+from mock import Mock
 
 import blitzortung
 from blitzortung.service.general import create_time_interval
@@ -80,6 +81,26 @@ class TestBase:
         utc_time = datetime.datetime(2013, 1, 1, 11, 0, 0)
 
         assert_that(base.from_timezone_to_bare_utc(time)).is_equal_to(utc_time)
+
+
+class TestCancelIfActive:
+    """Unit tests for the conditional connection cancel helper."""
+
+    def test_does_not_cancel_idle_connection(self):
+        conn = Mock()
+        conn.info.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_IDLE
+
+        blitzortung.db.table.Base._cancel_if_active(conn)
+
+        conn.cancel.assert_not_called()
+
+    def test_cancels_active_connection(self):
+        conn = Mock()
+        conn.info.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_ACTIVE
+
+        blitzortung.db.table.Base._cancel_if_active(conn)
+
+        conn.cancel.assert_called_once()
 
 
 def test_db_version(connection_string):
@@ -182,6 +203,23 @@ def test_insert_many_uses_per_strike_region(db_strikes, strike_factory, time_int
 
     assert len(list(db_strikes.select(time_interval=time_interval, region=4))) == 1
     assert len(list(db_strikes.select(time_interval=time_interval, region=5))) == 1
+
+
+def test_select_strike_keys_matches_full_select(db_strikes, strike_factory, time_interval):
+    strikes = [strike_factory(11 + index, 49) for index in range(5)]
+    db_strikes.insert_many(strikes, region=2)
+    db_strikes.commit()
+
+    keys = set(db_strikes.select_strike_keys(time_interval=time_interval, region=2))
+    expected = set()
+    for strike in db_strikes.select(time_interval=time_interval, region=2):
+        expected.add((strike.timestamp.value, round(strike.x, 4), round(strike.y, 4), strike.lateral_error))
+
+    assert keys == expected
+
+
+def test_select_strike_keys_with_empty_table(db_strikes, time_interval):
+    assert list(db_strikes.select_strike_keys(time_interval=time_interval)) == []
 
 
 def test_get_latest_time(db_strikes, strike_factory, time_interval):

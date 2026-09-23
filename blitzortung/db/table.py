@@ -74,7 +74,7 @@ class Base(metaclass=ABCMeta):
 
         while True:
             self.conn = self.db_connection_pool.getconn()
-            self.conn.cancel()
+            self._cancel_if_active(self.conn)
             try:
                 self.conn.reset()
             except psycopg2.OperationalError:
@@ -105,6 +105,17 @@ class Base(metaclass=ABCMeta):
         finally:
             if cur:
                 cur.close()
+
+    @staticmethod
+    def _cancel_if_active(conn):
+        """Cancel a query still running on a borrowed connection.
+
+        ``cancel`` opens a second server connection, so it is only worth doing
+        when the connection is actually executing a query.  Idle connections
+        are simply reset.
+        """
+        if conn.info.transaction_status == psycopg2.extensions.TRANSACTION_STATUS_ACTIVE:
+            conn.cancel()
 
     def close(self):
         self.db_connection_pool.putconn(self.conn)
@@ -299,6 +310,23 @@ class Strike(Base):
 
         return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object,
                                  timezone=self.tz)
+
+    @staticmethod
+    def _create_strike_key(result):
+        timestamp = data.Timestamp(result['timestamp'], result['nanoseconds'])
+        return (timestamp.value, round(result['x'], 4), round(result['y'], 4), result['error2d'])
+
+    def select_strike_keys(self, **kwargs):
+        """Select only the fields needed to identify a strike.
+
+        Returns an iterator over ``(timestamp, x, y, lateral_error)`` tuples,
+        avoiding the cost of building full :class:`~blitzortung.data.Strike`
+        objects (used by the URL updater for de-duplication).
+        """
+
+        query = self.query_builder.select_key_query(self.full_table_name, self.srid, **kwargs)
+
+        return self.execute_many(str(query), query.get_parameters(), self._create_strike_key)
 
     def select_grid(self, grid, count_threshold=0, **kwargs):
         """ build up raster query """

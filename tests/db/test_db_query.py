@@ -408,6 +408,16 @@ class TestSelectQuery:
             {"foo": "bar", "baz": "qux"}
         )
 
+    def test_set_from_expression(self):
+        """Test overriding the FROM clause."""
+        self.query.set_columns("bar")
+        self.query.set_from_expression("foo, LATERAL (SELECT 1) AS qux")
+
+        assert_that(str(self.query)).is_equal_to(
+            "SELECT bar FROM foo, LATERAL (SELECT 1) AS qux"
+        )
+        assert_that(self.query.from_expression).is_equal_to("foo, LATERAL (SELECT 1) AS qux")
+
 
 class TestGridQuery:
     """Test suite for GridQuery class."""
@@ -421,13 +431,14 @@ class TestGridQuery:
 
         expected_query = (
             "SELECT "
-            "TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) "
+            "TRUNC((ST_X(transformed.geom) - %(xmin)s) "
             "/ %(xdiv)s)::integer AS rx, "
-            "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) "
+            "TRUNC((ST_Y(transformed.geom) - %(ymin)s) "
             "/ %(ydiv)s)::integer AS ry, "
             "count(*) AS strike_count, "
             'max("timestamp") as "timestamp" '
-            "FROM strikes "
+            "FROM strikes, "
+            "LATERAL (SELECT ST_Transform(geog::geometry, %(srid)s) AS geom) AS transformed "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog "
             "GROUP BY rx, ry"
         )

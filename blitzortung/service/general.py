@@ -57,6 +57,14 @@ class TimingState:
     def log_gauge(self, key, value):
         self.statsd_client.gauge(key, value)
 
+    def log_query_rows(self, key, row_count):
+        """Record how many rows a query returned.
+
+        Row counts help identify expensive query shapes when correlated with
+        the query timings.
+        """
+        self.statsd_client.gauge(key + '.rows', row_count)
+
     def log_incr(self, key):
         self.statsd_client.incr(key)
 

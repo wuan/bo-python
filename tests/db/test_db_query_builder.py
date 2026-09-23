@@ -75,9 +75,10 @@ class TestStrike:
                                               time_interval=TimeInterval(start_time, end_time))
 
         assert_that(str(query)).is_equal_to(
-            "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
-            "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
-            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
+            "SELECT TRUNC((ST_X(transformed.geom) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
+            "TRUNC((ST_Y(transformed.geom) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
+            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name>, "
+            "LATERAL (SELECT ST_Transform(geog::geometry, %(srid)s) AS geom) AS transformed "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
             "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s GROUP BY rx, ry")
         parameters = query.get_parameters()
@@ -93,6 +94,26 @@ class TestStrike:
         assert_that(parameters['start_time']).is_equal_to(start_time)
         assert_that(parameters['end_time']).is_equal_to(end_time)
         assert_that(parameters['srid']).is_equal_to(srid)
+
+    def test_select_key_query(self, query_builder, start_time, end_time, srid):
+        query = query_builder.select_key_query("<table_name>", srid,
+                                               time_interval=TimeInterval(start_time, end_time))
+
+        assert_that(str(query)).is_equal_to(
+            "SELECT \"timestamp\", nanoseconds, "
+            "ST_X(ST_Transform(geog::geometry, %(srid)s)) AS x, "
+            "ST_Y(ST_Transform(geog::geometry, %(srid)s)) AS y, error2d "
+            "FROM <table_name> WHERE \"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s")
+        parameters = query.get_parameters()
+        assert_that(parameters['srid']).is_equal_to(srid)
+        assert_that(parameters).does_not_contain_key('region')
+
+    def test_select_key_query_with_region(self, query_builder, start_time, end_time, srid):
+        query = query_builder.select_key_query("<table_name>", srid,
+                                               time_interval=TimeInterval(start_time, end_time), region=7)
+
+        assert_that(str(query)).contains("region = %(region)s")
+        assert_that(query.get_parameters()['region']).is_equal_to(7)
 
     def test_select_query_with_region(self, query_builder, start_time, end_time, srid):
         query = query_builder.select_query("<table_name>", srid,
@@ -159,9 +180,10 @@ class TestStrike:
         assert_that(parameters['count_threshold']).is_equal_to(5)
 
         assert_that(str(query)).is_equal_to(
-            "SELECT TRUNC((ST_X(ST_Transform(geog::geometry, %(srid)s)) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
-            "TRUNC((ST_Y(ST_Transform(geog::geometry, %(srid)s)) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
-            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name> "
+            "SELECT TRUNC((ST_X(transformed.geom) - %(xmin)s) / %(xdiv)s)::integer AS rx, "
+            "TRUNC((ST_Y(transformed.geom) - %(ymin)s) / %(ydiv)s)::integer AS ry, "
+            "count(*) AS strike_count, max(\"timestamp\") as \"timestamp\" FROM <table_name>, "
+            "LATERAL (SELECT ST_Transform(geog::geometry, %(srid)s) AS geom) AS transformed "
             "WHERE ST_GeomFromWKB(%(envelope)s, %(envelope_srid)s) && geog AND "
             "\"timestamp\" >= %(start_time)s AND \"timestamp\" < %(end_time)s "
             "GROUP BY rx, ry HAVING count(*) > %(count_threshold)s")
