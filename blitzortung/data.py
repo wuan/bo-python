@@ -32,7 +32,7 @@ class Timestamp(base.EqualityAndHash):
     timestamp_string_minimal_fractional_seconds_length = 20
     timestamp_string_microseconds_length = 26
 
-    __slots__ = ['_datetime', 'nanosecond']
+    __slots__ = ('_datetime', 'nanosecond')
 
     _datetime: dt_module.datetime
     nanosecond: int
@@ -258,7 +258,7 @@ class Event(base.Point):
     time_format = '%Y-%m-%d %H:%M:%S'
     time_format_fractional_seconds = time_format + '.%f'
 
-    __slots__ = ['_timestamp']
+    __slots__ = ('_timestamp',)
 
     _timestamp: Timestamp
 
@@ -327,7 +327,7 @@ class Strike(Event):
     class for strike objects
     """
 
-    __slots__ = ['id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations', 'region']
+    __slots__ = ('id', 'altitude', 'amplitude', 'lateral_error', 'station_count', 'stations', 'region')
 
     id: int | None
     altitude: float | None

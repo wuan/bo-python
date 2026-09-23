@@ -22,6 +22,9 @@ poetry run pytest tests/test_base.py::TestPoint::test_get_coordinate_components
 # Run linter (pylint)
 poetry run pylint blitzortung
 
+# Run type checker (basedpyright)
+poetry run basedpyright blitzortung
+
 # Build package
 poetry build
 

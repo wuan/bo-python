@@ -108,6 +108,8 @@ class StrikeGridQuery:
 
         grid_parameters = state.grid_parameters.grid
         end_time = state.time_interval.end
+        if end_time is None:
+            raise ValueError("incomplete time interval")
         duration = state.time_interval.duration
         response = {'r': grid_data, 'xd': round(grid_parameters.x_div, 6),
                     'yd': round(grid_parameters.y_div, 6),

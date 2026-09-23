@@ -17,6 +17,7 @@
 """
 
 import time
+from collections.abc import Callable
 
 import psycopg2
 import psycopg2.extras
@@ -72,7 +73,7 @@ class DictConnectionPool(ConnectionPool):
 
     def __init__(self, _ignored, *connargs, **connkw):
         super(DictConnectionPool, self).__init__(_ignored, *connargs, **connkw)
-        self.wait_observer = None
+        self.wait_observer: Callable[[float], None] | None = None
 
     def observe_wait(self, wait_seconds: float) -> None:
         """Forward a measured pool wait to the observer, if one is attached."""

@@ -15,6 +15,7 @@ from optparse import OptionParser
 from typing import Any
 
 import geoip2.database
+import geoip2.errors
 import statsd
 from geoip2.database import Reader
 

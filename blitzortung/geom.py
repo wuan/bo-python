@@ -88,8 +88,10 @@ class Envelope(Geometry):
     def contains(self, point: object) -> bool:
         if not hasattr(point, 'x') or not hasattr(point, 'y'):
             return False
-        return bool((self.x_min <= point.x <= self.x_max) and \
-                    (self.y_min <= point.y <= self.y_max))
+        point_x = getattr(point, 'x')
+        point_y = getattr(point, 'y')
+        return bool((self.x_min <= point_x <= self.x_max) and \
+                    (self.y_min <= point_y <= self.y_max))
 
     @property
     def env(self) -> shapely.geometry.Polygon:

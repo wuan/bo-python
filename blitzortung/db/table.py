@@ -183,6 +183,8 @@ class Base(metaclass=ABCMeta):
     def execute_single(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         def single_cursor_factory(cursor):
             if cursor.rowcount == 1:
+                if factory_method is None:
+                    raise ValueError("factory_method is required")
                 return factory_method(cursor.fetchone(), **factory_method_args)
 
         return self.execute(sql_statement, parameters, single_cursor_factory)

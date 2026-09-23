@@ -85,7 +85,7 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.check_count = 0
         self.cache = cache if cache is not None else ServiceCache()
         self.current_period = self.__current_period()
-        self.current_data = collections.defaultdict(list)
+        self.current_data: dict[str, Any] = collections.defaultdict(list)
         self.next_memory_info = 0.0
         self.minute_constraints = TimeConstraint(self.DEFAULT_MINUTE_LENGTH, self.MAX_MINUTES_PER_DAY)
         self.metrics = metrics if metrics is not None else StatsDMetrics()
@@ -223,7 +223,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         grid_base_length = self.__to_int(grid_base_length)
         minute_offset = self.__to_int(minute_offset)
         count_threshold = self.__to_int(count_threshold)
-        if None in (minute_length, grid_base_length, minute_offset, count_threshold):
+        if (minute_length is None or grid_base_length is None or minute_offset is None
+                or count_threshold is None):
             log.msg('get_global_strikes_grid: invalid request arguments')
             return {}
 
@@ -274,7 +275,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         minute_offset = self.__to_int(minute_offset)
         count_threshold = self.__to_int(count_threshold)
         data_area = self.__to_int(data_area)
-        if None in (x, y, grid_base_length, minute_length, minute_offset, count_threshold, data_area):
+        if (x is None or y is None or grid_base_length is None or minute_length is None
+                or minute_offset is None or count_threshold is None or data_area is None):
             log.msg('get_local_strikes_grid: invalid request arguments')
             return {}
 
@@ -327,7 +329,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         minute_offset = self.__to_int(minute_offset)
         region = self.__to_int(region)
         count_threshold = self.__to_int(count_threshold)
-        if None in (minute_length, grid_base_length, minute_offset, region, count_threshold):
+        if (minute_length is None or grid_base_length is None or minute_offset is None
+                or region is None or count_threshold is None):
             log.msg('get_strikes_grid: invalid request arguments')
             return {}
 

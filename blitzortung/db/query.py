@@ -90,6 +90,8 @@ class TimeInterval(BaseInterval):
 
     @property
     def duration(self):
+        if self.start is None or self.end is None:
+            raise ValueError("incomplete time interval")
         return self.end - self.start
 
     def contains(self, timestamp):

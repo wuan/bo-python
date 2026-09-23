@@ -56,5 +56,11 @@ mock = "^5.1"
 assertpy = "^1.1"
 testcontainers = { extras = ["postgres"], version = "^4.10" }
 pytest-twisted = "^1.14.3"
-mypy = "^1.14"
+basedpyright = "^1.40"
 pylint = "^4.0"
+
+[tool.basedpyright]
+include = ["blitzortung"]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportMissingImports = "none"
