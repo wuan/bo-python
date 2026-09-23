@@ -48,6 +48,11 @@ class CacheEntry:
 
 class ObjectCache:
     kwargs_separator = object()
+    #: Reserved keyword argument that lets a caller provide an explicit, stable
+    #: cache key instead of deriving one from the arguments.  The supplied
+    #: value is still combined with the creator so different cached objects
+    #: cannot collide.
+    cache_key_argument = 'cache_key'
 
     def __init__(self, ttl_seconds=30, size=None, cleanup_period=None):
         self.__ttl_seconds = int(ttl_seconds)
@@ -61,20 +66,24 @@ class ObjectCache:
         self.cleanup_period = cleanup_period
 
     def get(self, cached_object_creator, *args, **kwargs):
-        if self.cleanup_period is not None:
-            now = time.time()
-            if now > self.last_cleanup + self.cleanup_period:
-                before = self.get_size()
-                self.clean_expired()
-                after = self.get_size()
-                logger.debug("%s: cache cleanup %s -> %s", cached_object_creator.__name__, before, after)
-                self.last_cleanup = now
+        now = time.time()
+
+        if self.cleanup_period is not None and now > self.last_cleanup + self.cleanup_period:
+            before = self.get_size()
+            self.clean_expired()
+            after = self.get_size()
+            logger.debug("%s: cache cleanup %s -> %s", cached_object_creator.__name__, before, after)
+            self.last_cleanup = now
 
         self.total_count += 1
 
-        cache_key = self.generate_cache_key(cached_object_creator, args, kwargs)
+        explicit_key = kwargs.pop(self.cache_key_argument, None)
+        if explicit_key is None:
+            cache_key = self.generate_cache_key(cached_object_creator, args, kwargs)
+        else:
+            cache_key = (cached_object_creator, explicit_key)
 
-        current_time = int(time.time())
+        current_time = int(now)
 
         if cache_key in self.cache:
             entry = self.cache[cache_key]

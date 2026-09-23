@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 from abc import ABCMeta, abstractmethod
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import pyproj
@@ -157,6 +158,17 @@ class Grid(Envelope):
             self.y_min, self.y_max, self.y_div, self.y_bin_count)
 
 
+@lru_cache(maxsize=32)
+def get_transformer(from_crs: pyproj.CRS, to_crs: pyproj.CRS) -> pyproj.Transformer:
+    """Return a cached coordinate transformer for the given CRS pair.
+
+    Building a :class:`pyproj.Transformer` is comparatively expensive (tens of
+    microseconds).  The webservice recreates local grid factories per request,
+    so caching the transformers avoids repeating that work for every query.
+    """
+    return pyproj.Transformer.from_crs(from_crs, to_crs)
+
+
 class GridFactory:
     WGS84 = pyproj.CRS(f"epsg:{Geometry.default_srid}")
 
@@ -200,9 +212,8 @@ class GridFactory:
             ref_lon = self.ref_lon if self.ref_lon is not None else (self.min_lon + self.max_lon) / 2.0
             ref_lat = self.ref_lat if self.ref_lat is not None else (self.min_lat + self.max_lat) / 2.0
 
-            utm_x, utm_y = pyproj.Transformer.from_crs(self.WGS84, self.coord_sys) \
-                .transform(ref_lat, ref_lon)
-            lat_d, lon_d = pyproj.Transformer.from_crs(self.coord_sys, self.WGS84) \
+            utm_x, utm_y = get_transformer(self.WGS84, self.coord_sys).transform(ref_lat, ref_lon)
+            lat_d, lon_d = get_transformer(self.coord_sys, self.WGS84) \
                 .transform(utm_x + base_length, utm_y + base_length)
 
             delta_lon = lon_d - ref_lon

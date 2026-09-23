@@ -11,6 +11,7 @@ def mock_statsd():
     statsd = Mock()
     statsd.incr = Mock()
     statsd.gauge = Mock()
+    statsd.timing = Mock()
     return statsd
 
 
@@ -93,3 +94,23 @@ class TestStatsDMetrics:
             mock_statsd.incr.assert_any_call(f'strikes_grid.bg_count.{region}')
 
         mock_statsd.gauge.assert_called_once_with('strikes_grid.cache_hits', cache_ratio)
+
+    def test_for_histogram(self, metrics, mock_statsd):
+        """Histogram cache efficiency is reported as ratio and entry count."""
+        metrics.for_histogram(cache_ratio=0.75, cache_size=4)
+
+        mock_statsd.gauge.assert_any_call('histogram.cache_hits', 0.75)
+        mock_statsd.gauge.assert_any_call('histogram.size', 4)
+        assert mock_statsd.gauge.call_count == 2
+
+    def test_for_db_pool_wait_reports_milliseconds(self, metrics, mock_statsd):
+        """Pool wait is reported as a timing in milliseconds."""
+        metrics.for_db_pool_wait(wait_seconds=0.0123)
+
+        mock_statsd.timing.assert_called_once_with('db.pool_wait', 12)
+
+    def test_for_db_pool_wait_never_reports_zero(self, metrics, mock_statsd):
+        """Statsd timing must be at least 1ms so sub-millisecond waits are visible."""
+        metrics.for_db_pool_wait(wait_seconds=0.0)
+
+        mock_statsd.timing.assert_called_once_with('db.pool_wait', 1)

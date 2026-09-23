@@ -207,6 +207,29 @@ class TestObjectCache:
         self.cache.get(CachedObject)
         assert_that(self.cache.get_ratio()).is_equal_to(0.5)
 
+    def test_explicit_cache_key_reuses_entry_for_different_args(self):
+        """An explicit key decouples the cache key from the creator arguments."""
+        first = self.cache.get(CachedObject, "a", cache_key=("stable",))
+        second = self.cache.get(CachedObject, "b", cache_key=("stable",))
+
+        assert_that(second).is_same_as(first)
+        assert_that(first.get_args()).is_equal_to(("a",))
+
+    def test_explicit_cache_key_not_passed_to_creator(self):
+        """The reserved key argument must not leak into the creator call."""
+        cached_object = self.cache.get(CachedObject, "a", cache_key=("stable",))
+
+        assert_that(cached_object.get_kwargs()).is_empty()
+
+    def test_explicit_cache_key_none_falls_back_to_argument_key(self):
+        """Passing ``cache_key=None`` keeps the argument based key."""
+        first = self.cache.get(CachedObject, "a", cache_key=None)
+        second = self.cache.get(CachedObject, "a", cache_key=None)
+        third = self.cache.get(CachedObject, "b", cache_key=None)
+
+        assert_that(second).is_same_as(first)
+        assert_that(third).is_not_same_as(first)
+
 
 class TestObjectCacheWithSize:
     """Test suite for ObjectCache with size limit."""

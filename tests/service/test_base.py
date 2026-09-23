@@ -12,7 +12,10 @@ from twisted.internet.defer import succeed
 from twisted.web.test.requesthelper import DummyRequest
 
 from blitzortung.cache import ObjectCache
+from blitzortung.db.query import TimeInterval
 from blitzortung.service.base import Blitzortung, LogObserver
+from blitzortung.service.cache import ServiceCache
+from blitzortung.service.db import DictConnectionPool
 
 
 class MockRequest:
@@ -311,6 +314,36 @@ class TestBlitzortungInitialization:
 
     def test_sets_metrics(self, blitzortung, mock_metrics):
         assert_that(blitzortung.metrics).is_same_as(mock_metrics)
+
+    def test_attaches_pool_wait_observer_to_real_pool(
+            self, mock_metrics, mock_strike_query, mock_strike_grid_query,
+            mock_global_strike_grid_query, mock_histogram_query, mock_forbidden_ips):
+        """A real connection pool reports query waits through the metrics."""
+        pool = DictConnectionPool(None, 'dummy')
+        Blitzortung(pool, None,
+                    strike_query=mock_strike_query,
+                    strike_grid_query=mock_strike_grid_query,
+                    global_strike_grid_query=mock_global_strike_grid_query,
+                    histogram_query=mock_histogram_query,
+                    metrics=mock_metrics,
+                    forbidden_ips=mock_forbidden_ips)
+
+        assert_that(pool.wait_observer).is_same_as(mock_metrics.for_db_pool_wait)
+
+    def test_leaves_non_pool_connection_pool_untouched(
+            self, mock_metrics, mock_strike_query, mock_strike_grid_query,
+            mock_global_strike_grid_query, mock_histogram_query, mock_forbidden_ips):
+        """Foreign pool types are not instrumented."""
+        pool = object()
+        Blitzortung(pool, None,
+                    strike_query=mock_strike_query,
+                    strike_grid_query=mock_strike_grid_query,
+                    global_strike_grid_query=mock_global_strike_grid_query,
+                    histogram_query=mock_histogram_query,
+                    metrics=mock_metrics,
+                    forbidden_ips=mock_forbidden_ips)
+
+        assert_that(hasattr(pool, 'wait_observer')).is_false()
 
     def test_sets_forbidden_ips(self, blitzortung, mock_forbidden_ips):
         assert_that(blitzortung.forbidden_ips).is_same_as(mock_forbidden_ips)
@@ -764,7 +797,44 @@ class TestGetHistogram:
         result = blitzortung.get_histogram(mock_time_interval)
 
         mock_cache.histogram.get.assert_called()
+        blitzortung.metrics.for_histogram.assert_called_with(
+            mock_cache.histogram.get_ratio.return_value,
+            mock_cache.histogram.get_size.return_value)
         assert_that(result).is_same_as(mock_histogram)
+
+    def test_stable_cache_key_reuses_histogram_across_intervals(
+            self, mock_connection_pool, mock_strike_query, mock_strike_grid_query,
+            mock_global_strike_grid_query, mock_histogram_query, mock_metrics,
+            mock_forbidden_ips, grid_factory):
+        """A stable key must reuse a histogram even when the interval object differs."""
+        mock_histogram_query.create = Mock(
+            side_effect=lambda *args, **kwargs: Mock(), name='create')
+        mock_histogram_query.create.__name__ = 'create'
+        service = Blitzortung(
+            mock_connection_pool,
+            None,
+            strike_query=mock_strike_query,
+            strike_grid_query=mock_strike_grid_query,
+            global_strike_grid_query=mock_global_strike_grid_query,
+            histogram_query=mock_histogram_query,
+            cache=ServiceCache(),
+            metrics=mock_metrics,
+            forbidden_ips=mock_forbidden_ips,
+        )
+        grid_instance = grid_factory.get_for(10000)
+        interval1 = TimeInterval(datetime.datetime(2024, 1, 1, 12, 0),
+                                 datetime.datetime(2024, 1, 1, 13, 0))
+        interval2 = TimeInterval(datetime.datetime(2024, 1, 1, 12, 0, 30),
+                                 datetime.datetime(2024, 1, 1, 13, 0, 30))
+
+        first = service.get_histogram(interval1, envelope=grid_instance,
+                                      cache_key=(60, 0, grid_instance))
+        second = service.get_histogram(interval2, envelope=grid_instance,
+                                       cache_key=(60, 0, grid_instance))
+
+        assert_that(mock_histogram_query.create.call_count).is_equal_to(1)
+        assert_that(second).is_same_as(first)
+        assert_that(mock_metrics.for_histogram.call_args[0]).is_equal_to((0.5, 1))
 
 
 class TestJsonRpcGetStrikesRaster:

@@ -48,6 +48,14 @@ class BaseInterval:
         return '[' + (str(self.start) if self.start is not None else '') + ' : ' + (
             str(self.end) if self.end is not None else '') + ']'
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        return self.start == other.start and self.end == other.end
+
+    def __hash__(self):
+        return hash((type(self), self.start, self.end))
+
 
 class IdInterval(BaseInterval):
     """

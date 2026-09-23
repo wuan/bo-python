@@ -181,6 +181,29 @@ class TestTimeInterval:
 
         assert interval.contains(ts) is False
 
+    def test_equal_intervals_compare_equal_and_hash_equal(self):
+        """Intervals with the same bounds must be usable as cache keys."""
+        start = datetime.datetime(2010, 11, 20, 11, 30, 15)
+        end = datetime.datetime(2010, 11, 20, 12, 30, 15)
+
+        interval1 = blitzortung.db.query.TimeInterval(start, end)
+        interval2 = blitzortung.db.query.TimeInterval(start, end)
+
+        assert interval1 == interval2
+        assert hash(interval1) == hash(interval2)
+        assert len({interval1, interval2}) == 1
+
+    def test_intervals_with_different_bounds_are_not_equal(self):
+        """Different bounds must not collide in a cache."""
+        start = datetime.datetime(2010, 11, 20, 11, 30, 15)
+
+        interval1 = blitzortung.db.query.TimeInterval(start, start + datetime.timedelta(minutes=10))
+        interval2 = blitzortung.db.query.TimeInterval(start, start + datetime.timedelta(minutes=20))
+        id_interval = blitzortung.db.query.IdInterval(1, 2)
+
+        assert interval1 != interval2
+        assert interval1 != id_interval
+
 
 class TestQuery:
     """Test suite for Query class."""

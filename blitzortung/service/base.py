@@ -25,6 +25,7 @@ from blitzortung.service.metrics import StatsDMetrics
 from blitzortung.util import TimeConstraint
 import blitzortung.service
 from blitzortung.db.query import TimeInterval
+from blitzortung.service.db import DictConnectionPool
 from blitzortung.service.general import create_time_interval
 from blitzortung.service.strike_grid import GridParameters
 
@@ -88,6 +89,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         self.next_memory_info = 0.0
         self.minute_constraints = TimeConstraint(self.DEFAULT_MINUTE_LENGTH, self.MAX_MINUTES_PER_DAY)
         self.metrics = metrics if metrics is not None else StatsDMetrics()
+        if isinstance(self.connection_pool, DictConnectionPool):
+            self.connection_pool.wait_observer = self.metrics.for_db_pool_wait
         self.forbidden_ips = forbidden_ips if forbidden_ips is not None else FORBIDDEN_IPS
 
     addSlash = True
@@ -156,7 +159,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
                                                            self.metrics.statsd)
 
-        histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
+        histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid,
+                                              cache_key=(minute_length, minute_offset, grid_parameters.grid)) \
             if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
 
         combined_result = self.strike_grid_query.combine_result(grid_result, histogram_result, state)
@@ -174,7 +178,8 @@ class Blitzortung(jsonrpc.JSONRPC):
                                                                   self.metrics.statsd)
 
         histogram_result = self.get_histogram(
-            time_interval) if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
+            time_interval, cache_key=(minute_length, minute_offset)) \
+            if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
 
         combined_result = self.global_strike_grid_query.combine_result(grid_result, histogram_result, state)
 
@@ -192,7 +197,8 @@ class Blitzortung(jsonrpc.JSONRPC):
         grid_result, state = self.strike_grid_query.create(grid_parameters, time_interval, self.connection_pool,
                                                            self.metrics.statsd)
 
-        histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid) \
+        histogram_result = self.get_histogram(time_interval, envelope=grid_parameters.grid,
+                                              cache_key=(minute_length, minute_offset, grid_parameters.grid)) \
             if minute_length > self.HISTOGRAM_MINUTE_THRESHOLD else succeed([])
 
         combined_result = self.strike_grid_query.combine_result(grid_result, histogram_result, state)
@@ -410,12 +416,15 @@ class Blitzortung(jsonrpc.JSONRPC):
                 except ValueError:
                     pass
 
-    def get_histogram(self, time_interval: TimeInterval, region=None, envelope=None):
-        return self.cache.histogram.get(self.histogram_query.create,
-                                        time_interval=time_interval,
-                                        connection_pool=self.connection_pool,
-                                        region=region,
-                                        envelope=envelope)
+    def get_histogram(self, time_interval: TimeInterval, region=None, envelope=None, cache_key=None):
+        result = self.cache.histogram.get(self.histogram_query.create,
+                                          time_interval=time_interval,
+                                          connection_pool=self.connection_pool,
+                                          region=region,
+                                          envelope=envelope,
+                                          cache_key=cache_key)
+        self.metrics.for_histogram(self.cache.histogram.get_ratio(), self.cache.histogram.get_size())
+        return result
 
     def get_request_client(self, request):
         forward = request.getHeader("X-Forwarded-For")

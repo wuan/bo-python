@@ -68,6 +68,18 @@ class TestConfig:
         assert_that(self.config.get_webservice_port()).is_equal_to(1234)
         assert_that(self.config_parser.mock_calls).contains(call.get('webservice', 'port'))
 
+    def test_get_db_connection_count_default(self):
+        self.config_parser.get.side_effect = lambda *args, **kwargs: kwargs.get('fallback')
+        assert_that(self.config.get_db_connection_count()).is_equal_to(3)
+        assert_that(self.config_parser.mock_calls).contains(
+            call.get('db', 'connection_count', fallback='3'))
+
+    def test_get_db_connection_count_configured(self):
+        self.config_parser.get.return_value = '12'
+        assert_that(self.config.get_db_connection_count()).is_equal_to(12)
+        assert_that(self.config_parser.mock_calls).contains(
+            call.get('db', 'connection_count', fallback='3'))
+
     def test_string_representation(self):
         self.config_parser.get.side_effect = lambda *x: {
             ('auth', 'username'): '<username>',

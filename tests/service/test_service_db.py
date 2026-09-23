@@ -66,7 +66,52 @@ class TestLoggingDetector:
 def config(connection_string: str):
     with patch('blitzortung.config.config') as mock_config:
         mock_config.return_value.get_db_connection_string.return_value = connection_string
+        mock_config.return_value.get_db_connection_count.return_value = 3
         yield mock_config
+
+
+class FakeSemaphore:
+    """Immediately runs the scheduled callable, simulating a free token."""
+
+    def run(self, func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+
+class TestDictConnectionPoolInstrumentation:
+    """Test that query pool wait time is measured and reported."""
+
+    @staticmethod
+    def _pool():
+        pool = blitzortung.service.db.DictConnectionPool(None, 'dummy')
+        pool._semaphore = FakeSemaphore()
+        return pool
+
+    def test_observe_wait_without_observer_is_noop(self):
+        pool = self._pool()
+        pool.observe_wait(0.5)
+        assert_that(pool.wait_observer).is_none()
+
+    def test_run_query_without_observer_executes_query(self):
+        pool = self._pool()
+        executed = []
+        pool._runQuery = lambda *args, **kwargs: executed.append((args, kwargs))
+
+        pool.runQuery('select 1', ())
+
+        assert_that(executed).is_equal_to([(('select 1', ()), {})])
+
+    def test_run_query_reports_wait_to_observer(self):
+        pool = self._pool()
+        waits = []
+        pool.wait_observer = waits.append
+        executed = []
+        pool._runQuery = lambda *args, **kwargs: executed.append((args, kwargs))
+
+        pool.runQuery('select 1', ())
+
+        assert_that(waits).is_length(1)
+        assert_that(waits[0]).is_greater_than_or_equal_to(0)
+        assert_that(executed).is_equal_to([(('select 1', ()), {})])
 
 
 @pytest_twisted.inlineCallbacks

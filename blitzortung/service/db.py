@@ -16,6 +16,8 @@
 
 """
 
+import time
+
 import psycopg2
 import psycopg2.extras
 from twisted.internet.defer import Deferred
@@ -60,11 +62,33 @@ class DictConnection(Connection):
 
 
 class DictConnectionPool(ConnectionPool):
-    """Connection pool using DictConnection instances."""
+    """Connection pool using DictConnection instances.
+
+    When a ``wait_observer`` callable is attached, every query reports how
+    long it waited for a free pooled connection, which makes pool exhaustion
+    visible in the service metrics.
+    """
     connectionFactory = DictConnection
 
     def __init__(self, _ignored, *connargs, **connkw):
         super(DictConnectionPool, self).__init__(_ignored, *connargs, **connkw)
+        self.wait_observer = None
+
+    def observe_wait(self, wait_seconds: float) -> None:
+        """Forward a measured pool wait to the observer, if one is attached."""
+        if self.wait_observer is not None:
+            self.wait_observer(wait_seconds)
+
+    def runQuery(self, *args, **kwargs):
+        if self.wait_observer is None:
+            return super().runQuery(*args, **kwargs)
+
+        started = time.monotonic()
+        return self._semaphore.run(self._run_query_observed, started, *args, **kwargs)
+
+    def _run_query_observed(self, started, *args, **kwargs):
+        self.observe_wait(time.monotonic() - started)
+        return self._runQuery(*args, **kwargs)
 
 
 def create_connection_pool() -> Deferred:
@@ -72,7 +96,8 @@ def create_connection_pool() -> Deferred:
     config = blitzortung.config.config()
     db_connection_string = config.get_db_connection_string()
 
-    connection_pool = DictConnectionPool(None, db_connection_string)
+    connection_pool = DictConnectionPool(None, db_connection_string,
+                                         min=config.get_db_connection_count())
 
     d: Deferred = connection_pool.start()
     d.addErrback(log.err)

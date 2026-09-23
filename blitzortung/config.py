@@ -81,6 +81,16 @@ class Config:
     def get_webservice_port(self) -> int:
         return int(self.config_parser.get('webservice', 'port'))
 
+    def get_db_connection_count(self) -> int:
+        """Return the number of pooled database connections to open.
+
+        Each grid request issues a grid and a histogram query concurrently, so
+        the pool size directly caps the number of requests that can be served
+        in parallel.  Defaults to the txpostgres default of 3 to preserve the
+        previous behaviour when the option is absent.
+        """
+        return int(self.config_parser.get('db', 'connection_count', fallback='3'))
+
     def __str__(self) -> str:
         return "Config(user: %s, pass: %s)" % (self.get_username(), len(self.get_password()) * '*')
 
