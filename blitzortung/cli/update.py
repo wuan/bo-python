@@ -222,20 +222,17 @@ def update_strikes(hours=1):
         logger.info("Found %d new strikes to insert (out of %d from URL)",
                     len(new_strikes), len(url_strikes))
 
-        # Insert new strikes
-        insert_count = 0
-        for strike in new_strikes:
+        # Insert new strikes in a single batched round trip
+        insert_count = len(new_strikes)
+        if insert_count > 0:
             try:
-                strike_db.insert(strike, strike.region if strike.region is not None else 1)
-                insert_count += 1
-
+                strike_db.insert_many(new_strikes)
             except Exception as e:
-                logger.error("Failed to insert strike %s: %s", strike.id, e)
+                logger.error("Failed to insert %d strikes: %s", insert_count, e)
                 strike_db.rollback()
                 raise
 
-        # Final commit
-        if insert_count > 0:
+            # Final commit
             strike_db.commit()
             logger.info("Successfully inserted %d new strikes", insert_count)
         else:

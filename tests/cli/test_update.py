@@ -69,7 +69,7 @@ def strike_db():
         """Create a mock strike database."""
         db = Mock()
         db.select = Mock(return_value=[])
-        db.insert = Mock()
+        db.insert_many = Mock()
         db.commit = Mock()
         db.rollback = Mock()
         db.close = Mock()
@@ -232,7 +232,8 @@ class TestUpdateStrikes:
 
         # Verify
         assert_that(result).is_equal_to(2)
-        assert_that(strike_db.insert.call_count).is_equal_to(2)
+        assert_that(strike_db.insert_many.call_count).is_equal_to(1)
+        strike_db.insert_many.assert_called_once_with([strike1, strike2])
         strike_db.commit.assert_called()
         strike_db.close.assert_called_once()
 
@@ -250,7 +251,7 @@ class TestUpdateStrikes:
 
         # Verify
         assert_that(result).is_equal_to(0)
-        assert_that(strike_db.insert.call_count).is_equal_to(0)
+        assert_that(strike_db.insert_many.call_count).is_equal_to(0)
         strike_db.commit.assert_not_called()
         strike_db.close.assert_called_once()
 
@@ -272,7 +273,7 @@ class TestUpdateStrikes:
 
         # Verify - no inserts should happen
         assert_that(result).is_equal_to(0)
-        strike_db.insert.assert_not_called()
+        strike_db.insert_many.assert_not_called()
         strike_db.close.assert_called_once()
 
     def test_update_strikes_filters_by_time_interval(self, config, fetch, strike_db):
@@ -291,8 +292,8 @@ class TestUpdateStrikes:
 
         # Verify - only the strike within interval should be inserted
         assert_that(result).is_equal_to(1)
-        assert_that(strike_db.insert.call_count).is_equal_to(1)
-        strike_db.insert.assert_called_with(strike_in_interval, 1)
+        assert_that(strike_db.insert_many.call_count).is_equal_to(1)
+        strike_db.insert_many.assert_called_with([strike_in_interval])
 
     def test_failure_at_fetch(self, config, fetch, strike_db):
         """Test that database errors are properly handled."""
@@ -303,7 +304,7 @@ class TestUpdateStrikes:
 
         assert result == 0
 
-        strike_db.insert.assert_not_called()
+        strike_db.insert_many.assert_not_called()
         strike_db.commit.assert_not_called()
         strike_db.rollback.assert_not_called()
 
@@ -317,7 +318,7 @@ class TestUpdateStrikes:
         fetch.return_value = [strike]
 
         # Simulate database error on insert
-        strike_db.insert.side_effect = Exception("Database error")
+        strike_db.insert_many.side_effect = Exception("Database error")
 
         with pytest.raises(Exception) as exc_info:
             update.update_strikes(hours=1)

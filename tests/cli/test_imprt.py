@@ -119,7 +119,7 @@ class TestImportStrikesFor:
 
         mock_strike_db = Mock()
         mock_strike_db.get_latest_time.return_value = None
-        mock_strike_db.insert = Mock()
+        mock_strike_db.insert_many = Mock()
         mock_strike_db.commit = Mock()
 
         mock_strike_source = Mock()
@@ -152,7 +152,7 @@ class TestImportStrikesFor:
 
         mock_strike_db = Mock()
         mock_strike_db.get_latest_time.return_value = None
-        mock_strike_db.insert = Mock()
+        mock_strike_db.insert_many = Mock()
         mock_strike_db.commit = Mock()
 
         mock_strike_source = Mock()
@@ -173,7 +173,7 @@ class TestImportStrikesFor:
             import_strikes_for(1, start_time, is_update=False)
 
         # Verify insert was called
-        mock_strike_db.insert.assert_called_once_with(mock_strike, 1)
+        mock_strike_db.insert_many.assert_called_once_with([mock_strike], 1)
         mock_strike_db.commit.assert_called()
 
 

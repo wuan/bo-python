@@ -154,6 +154,36 @@ def test_insert_and_select_strike(db_strikes, strike_factory, time_interval):
     assert len(list(result)) == 1
 
 
+def test_insert_many_inserts_all_strikes(db_strikes, strike_factory, time_interval):
+    strikes = [strike_factory(11 + index, 49) for index in range(5)]
+
+    inserted = db_strikes.insert_many(strikes, region=3)
+    db_strikes.commit()
+
+    assert inserted == 5
+
+    result = list(db_strikes.select(time_interval=time_interval, region=3))
+
+    assert len(result) == 5
+
+
+def test_insert_many_with_empty_list_returns_zero(db_strikes):
+    assert db_strikes.insert_many([]) == 0
+
+
+def test_insert_many_uses_per_strike_region(db_strikes, strike_factory, time_interval):
+    strike_a = strike_factory(11, 49)
+    strike_a.region = 4
+    strike_b = strike_factory(12, 49)
+    strike_b.region = 5
+
+    db_strikes.insert_many([strike_a, strike_b])
+    db_strikes.commit()
+
+    assert len(list(db_strikes.select(time_interval=time_interval, region=4))) == 1
+    assert len(list(db_strikes.select(time_interval=time_interval, region=5))) == 1
+
+
 def test_get_latest_time(db_strikes, strike_factory, time_interval):
     strike = strike_factory(11, 49)
     db_strikes.insert(strike)

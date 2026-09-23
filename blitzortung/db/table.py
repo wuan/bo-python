@@ -246,6 +246,41 @@ class Strike(Base):
 
         self.execute(sql, parameters)
 
+    def insert_many(self, strikes, region=None):
+        """Insert multiple strikes using a single round trip per page.
+
+        ``region`` may pin every inserted strike to the same region.  When it
+        is ``None`` the region stored on each strike is used, falling back to
+        region 1.  Returns the number of inserted strikes.
+        """
+        sql = 'INSERT INTO ' + self.full_table_name + \
+              ' ("timestamp", nanoseconds, geog, altitude, region, amplitude, error2d, stationcount) ' + \
+              'VALUES %s'
+        template = '(%s, %s, ST_MakePoint(%s, %s), %s, %s, %s, %s, %s)'
+
+        values = [
+            (
+                strike.timestamp.datetime,
+                strike.timestamp.nanosecond,
+                strike.x,
+                strike.y,
+                strike.altitude,
+                region if region is not None else (strike.region if strike.region is not None else 1),
+                strike.amplitude,
+                strike.lateral_error,
+                strike.station_count
+            )
+            for strike in strikes
+        ]
+
+        if not values:
+            return 0
+
+        with self.conn.cursor() as cursor:
+            psycopg2.extras.execute_values(cursor, sql, values, template=template)
+
+        return len(values)
+
     def get_latest_time(self, region=None):
         sql = 'SELECT "timestamp", nanoseconds FROM ' + self.full_table_name + \
               (' WHERE region=%(region)s' if region else '') + \

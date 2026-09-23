@@ -67,17 +67,26 @@ def import_strikes_for(region, start_time, is_update=False):
     query_time = time.time()
 
     strike_group_size = 10000
+    strike_batch_size = 1000
     strike_count = 0
+    strike_batch = []
     global_start_time = start_time = time.time()
     for strike in strikes:
-        strike_db.insert(strike, region)
-
+        strike_batch.append(strike)
         strike_count += 1
-        if strike_count % strike_group_size == 0:
-            strike_db.commit()
-            logger.info("commit #{} ({:.1f}/s) @{} for region {}".format(
-                strike_count, strike_group_size / (time.time() - start_time), strike.timestamp, region))
-            start_time = time.time()
+
+        if len(strike_batch) >= strike_batch_size:
+            strike_db.insert_many(strike_batch, region)
+            strike_batch = []
+
+            if strike_count % strike_group_size == 0:
+                strike_db.commit()
+                logger.info("commit #{} ({:.1f}/s) @{} for region {}".format(
+                    strike_count, strike_group_size / (time.time() - start_time), strike.timestamp, region))
+                start_time = time.time()
+
+    if strike_batch:
+        strike_db.insert_many(strike_batch, region)
 
     if strike_count > 0:
         strike_db.commit()
