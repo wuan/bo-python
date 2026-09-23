@@ -50,16 +50,15 @@ Legend for status: `[ ]` = todo, `[~]` = in progress, `[x]` = done.
 
 ## Phase 2 - Deeper changes
 
-- [x] **2.1 Server-side/named cursor** for large `select` result sets so the
-  client does not buffer every row.  `Base.execute_many` accepts a
-  `server_side` flag; `select` and `select_strike_keys` stream through a named
-  cursor with `itersize = Base.fetch_size` (5000 rows per round trip).  The
-  trade-off is documented by `test_bench_select` vs `test_bench_select_client_side`:
-  server-side cursors bound peak client memory but add latency.  Measurements
-  show this is **not** negligible at `fetch_size = 5000`: ~10% slower at 20k
-  rows and ~24% slower at 100k rows (see [Measurements](#measurements)).  The
-  memory benefit has not been measured, so this is a trade-off, not a
-  confirmed win.
+- [~] **2.1 Server-side/named cursor**: tried and **reverted — a latency
+  regression with no measured benefit**.  `Base.execute_many` was given a
+  `server_side` flag and `select`/`select_strike_keys` streamed through a named
+  cursor (`itersize = fetch_size`, 5000 rows per round trip).  Full selects
+  were ~10% slower at 20k rows and ~24% slower at 100k rows than the
+  client-side baseline (see [Measurements](#measurements)); the intended
+  benefit — bounded client memory — was never measured, and the result sets did
+  not justify the cost.  The flag, `fetch_size`, the cursor-id counter and the
+  related benchmark/test were removed.
 - [~] **2.2 Prepared statements / statement caching**: investigated and
   deferred.  The webservice path runs through `txpostgres`, which exposes only
   `runQuery`/`runOperation` and has no prepared-statement API; psycopg2 (unlike
@@ -105,11 +104,11 @@ Batch insert, 2000 rows (`BLITZORTUNG_BENCHMARK_STRIKES=20000`):
 | per-row `insert` | ~616 ms |
 
 Narrow projection, 20k rows: `select_strike_keys` ~102 ms vs full
-`select_client_side` ~130 ms (large part of it is avoiding full `Strike`
-object construction).
+`select` ~130 ms (large part of it is avoiding full `Strike` object
+construction).
 
-Server-side cursor trade-off (full `select`, same result set, only the cursor
-type differs):
+Server-side cursor trade-off (reverted feature; full `select`, same result
+set, only the cursor type differs):
 
 | Rows | server-side | client-side | delta |
 | ---: | ---: | ---: | ---: |

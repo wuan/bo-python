@@ -253,8 +253,8 @@ def test_select_strike_keys_with_empty_table(db_strikes, time_interval):
     assert list(db_strikes.select_strike_keys(time_interval=time_interval)) == []
 
 
-def test_select_server_side_streams_all_rows(db_strikes, seed_strikes):
-    """A server-side cursor must return every row across multiple fetch batches."""
+def test_select_returns_all_rows(db_strikes, seed_strikes):
+    """Selecting a time interval returns every matching strike."""
     time_interval = seed_strikes(2500)
 
     result = list(db_strikes.select(time_interval=time_interval))
@@ -262,20 +262,11 @@ def test_select_server_side_streams_all_rows(db_strikes, seed_strikes):
     assert len(result) == 2500
 
 
-def test_select_strike_keys_server_side_streams_all_rows(db_strikes, seed_strikes):
-    """The narrow de-duplication query also streams across fetch batches."""
-    time_interval = seed_strikes(2500)
-
-    keys = list(db_strikes.select_strike_keys(time_interval=time_interval))
-
-    assert len(keys) == 2500
-
-
-def test_server_side_cursor_can_be_abandoned(db_strikes, seed_strikes):
+def test_select_stream_can_be_abandoned(db_strikes, seed_strikes):
     """Closing a partially consumed stream must release the cursor.
 
-    Otherwise the named cursor would keep the connection busy and the next
-    query on the same pooled connection would fail.
+    Otherwise the cursor would keep the connection busy and the next query on
+    the same pooled connection would fail.
     """
     time_interval = seed_strikes(2500)
 

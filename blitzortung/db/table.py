@@ -19,7 +19,6 @@
 """
 from abc import ABCMeta, abstractmethod
 import datetime
-import itertools
 import logging
 from typing import Optional
 
@@ -37,11 +36,6 @@ from .query import TimeInterval
 from .. import data
 from .. import geom
 from ..logger import get_logger_name
-
-# Server-side cursor names must be unique within a connection.  The counter
-# guarantees that even if a streamed result set is abandoned before it is
-# exhausted (so the underlying cursor has not been closed yet).
-server_side_cursor_ids = itertools.count(1)
 
 
 class Base(metaclass=ABCMeta):
@@ -69,12 +63,6 @@ class Base(metaclass=ABCMeta):
     """
 
     default_timezone = datetime.timezone.utc
-
-    # Number of rows fetched per round trip when streaming a server-side
-    # cursor.  Small enough to bound client memory, large enough to avoid a
-    # round trip per row.  Benchmarks show 5000 keeps the overhead modest
-    # while capping the buffered row count for large result sets.
-    fetch_size = 5000
 
     def __init__(self, db_connection_pool):
 
@@ -199,24 +187,9 @@ class Base(metaclass=ABCMeta):
 
         return self.execute(sql_statement, parameters, single_cursor_factory)
 
-    def execute_many(self, sql_statement, parameters=None, factory_method=None, server_side=False,
-                     **factory_method_args):
-        """Execute a query and yield the mapped rows.
-
-        With ``server_side=True`` a named (server-side) cursor is used, so a
-        large result set is streamed from the database in ``fetch_size``
-        batches instead of being buffered entirely on the client.  This keeps
-        memory usage bounded for full-table selects (e.g. the URL updater
-        de-duplication query).
-        """
+    def execute_many(self, sql_statement, parameters=None, factory_method=None, **factory_method_args):
         factory_method = factory_method or (lambda values, **_: values)
-        cursor_arguments = {'cursor_factory': psycopg2.extras.DictCursor}
-        if server_side:
-            cursor_arguments['name'] = '_bo_%d' % next(server_side_cursor_ids)
-
-        with self.conn.cursor(**cursor_arguments) as cursor:
-            if server_side:
-                cursor.itersize = self.fetch_size
+        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute(sql_statement, parameters)
             for value in cursor:
                 yield factory_method(value, **factory_method_args)
@@ -340,7 +313,7 @@ class Strike(Base):
         query_ = self.query_builder.select_query(self.full_table_name, self.srid, **kwargs)
 
         return self.execute_many(str(query_), query_.get_parameters(), self.strike_mapper.create_object,
-                                 server_side=True, timezone=self.tz)
+                                 timezone=self.tz)
 
     @staticmethod
     def _create_strike_key(result):
@@ -357,7 +330,7 @@ class Strike(Base):
 
         query = self.query_builder.select_key_query(self.full_table_name, self.srid, **kwargs)
 
-        return self.execute_many(str(query), query.get_parameters(), self._create_strike_key, server_side=True)
+        return self.execute_many(str(query), query.get_parameters(), self._create_strike_key)
 
     def select_grid(self, grid, count_threshold=0, **kwargs):
         """ build up raster query """
