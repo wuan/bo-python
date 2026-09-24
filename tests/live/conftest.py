@@ -17,6 +17,11 @@ Enable it with either::
 The endpoint also enforces a request ``Content-Type`` of ``text/json`` and a
 ``User-Agent`` matching ``bo-android-<int>``; the suite can therefore only
 observe the public behaviour of the service.
+
+Because the service caches responses by method and parameters, an unmodified
+run may be answered entirely from its cache.  Pass ``--live-cache-bust`` (or
+set ``BLITZORTUNG_LIVE_CACHE_BUST``) to walk distinct ``get_local_strikes_grid``
+positions so every request targets a cold cache entry.
 """
 
 import os
@@ -41,6 +46,12 @@ def pytest_addoption(parser):
         default=15.0,
         help="Timeout in seconds for live endpoint requests (default: 15).",
     )
+    parser.addoption(
+        "--live-cache-bust",
+        action="store_true",
+        default=None,
+        help="Walk distinct local-grid positions so requests bypass the server-side cache.",
+    )
 
 
 def pytest_configure(config):
@@ -55,6 +66,14 @@ def _resolve_live_url(config):
     """Return the configured live endpoint URL, or ``None``."""
     url = config.getoption("--live-url") or os.environ.get("BLITZORTUNG_LIVE_URL")
     return url.rstrip("/") + "/" if url else None
+
+
+def _resolve_cache_bust(config):
+    """Return whether local-grid cache busting is enabled."""
+    if config.getoption("--live-cache-bust"):
+        return True
+    value = os.environ.get("BLITZORTUNG_LIVE_CACHE_BUST", "")
+    return value.strip().lower() not in ("", "0", "false", "no")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -89,6 +108,10 @@ def live_timeout(request):
 
 
 @pytest.fixture(scope="session")
-def rpc_client(live_url, live_timeout):
+def rpc_client(live_url, live_timeout, request):
     """A JSON-RPC client bound to the live endpoint."""
-    return JsonRpcClient(live_url, timeout=live_timeout)
+    return JsonRpcClient(
+        live_url,
+        timeout=live_timeout,
+        cache_bust=_resolve_cache_bust(request.config),
+    )

@@ -20,6 +20,8 @@ from dataclasses import dataclass
 
 import requests
 
+from .endpoints import CACHE_BUST_METHOD, cache_bust_params
+
 
 def normalize_jsonrpc_response(payload, request_id):
     """Normalize any JSON-RPC response shape to a dict with a ``result`` key.
@@ -71,11 +73,13 @@ class JsonRpcClient:
     behavior matrix can be exercised without duplicating request construction.
     """
 
-    def __init__(self, url: str, timeout: float = 15.0):
+    def __init__(self, url: str, timeout: float = 15.0, cache_bust: bool = False):
         self.url = url
         self.timeout = timeout
+        self.cache_bust = cache_bust
         self._session = requests.Session()
         self._request_id = 0
+        self._cache_bust_index = 0
 
     def _build_request(
         self,
@@ -98,6 +102,10 @@ class JsonRpcClient:
             request_headers["Content-Type"] = content_type
         if headers:
             request_headers.update(headers)
+
+        if self.cache_bust and method == CACHE_BUST_METHOD:
+            params = cache_bust_params(self._cache_bust_index)
+            self._cache_bust_index += 1
 
         payload = {
             "method": method,

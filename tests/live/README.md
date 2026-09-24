@@ -83,12 +83,66 @@ poetry run pytest tests/live --live-url=http://127.0.0.1:8080/ -v
 Optional settings:
 
 * `--live-timeout=<seconds>` — per-request timeout (default `15`).
+* `--live-cache-bust` — walk distinct local-grid positions so requests bypass
+  the server-side cache (also enabled by `BLITZORTUNG_LIVE_CACHE_BUST`).
+
+By default a valid request is answered from the service's result cache when it
+has been seen before (the cache key is the method plus its parameters), so a run
+may never reach the database. With `--live-cache-bust` every
+`get_local_strikes_grid` request uses the next position of a globe-spanning
+5-degree grid (36 latitude x 72 longitude = 2592 positions, wrapping around)
+with a `5000` m baseline, giving each request a cold cache key while keeping
+the response shape and all format assertions intact.
 
 Only the `live` marker is used, so the suite can also be selected explicitly:
 
 ```bash
 poetry run pytest -m live --live-url=http://127.0.0.1:8080/
 ```
+
+## Load testing
+
+`load_test.py` is a standalone concurrent load driver that reuses the same
+`JsonRpcClient`, endpoint definitions and valid headers. It sends requests from
+a configurable number of workers and reports throughput plus latency
+percentiles. It is not collected by pytest (the file is not named `test_*`).
+
+```bash
+# timed run: 20 workers for 30 seconds
+poetry run python tests/live/load_test.py \
+    --url http://127.0.0.1:8080/ \
+    --method get_local_strikes_grid \
+    --concurrency 20 --duration 30
+
+# fixed request budget with machine-readable output
+poetry run python tests/live/load_test.py \
+    --url http://127.0.0.1:8080/ --requests 5000 --json
+
+# cold-cache run: rotate the local-grid position on every request
+poetry run python tests/live/load_test.py \
+    --url http://127.0.0.1:8080/ \
+    --method get_local_strikes_grid --cache-bust \
+    --concurrency 20 --duration 30
+```
+
+Without `--cache-bust` every worker sends the same method and parameters, so
+after the first request the service answers all of them from its result cache.
+`--cache-bust` (only valid for `get_local_strikes_grid`) hands each request the
+next position of the same 36 x 72 grid, so every call is a cache miss and
+exercises the real query path.
+
+The target URL can instead be provided through `BLITZORTUNG_LIVE_URL`. By
+default the script calls `get_local_strikes_grid` with the live-suite params,
+sends a valid `bo-android-*` user agent and `text/json` content type, and warms
+up before measuring. `--method` accepts any endpoint known to `endpoints.py`
+(or `check`, or any method together with an explicit `--params` JSON array).
+A quick smoke test for local use would be `--concurrency 5 --requests 100
+--warmup 1`.
+
+Responses are classified as valid, unexpected (a reachable but
+unexpectedly-shaped answer, e.g. a blocked request) and failed (transport
+errors). The process exits non-zero when any request fails at the transport
+level.
 
 ## Protocol dialects
 

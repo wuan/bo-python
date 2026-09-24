@@ -48,6 +48,24 @@ LOCAL_BASELINE = 10000
 # histogram bucket count are derived from it.
 REQUESTED_MINUTE_LENGTH = 60
 
+# ---------------------------------------------------------------------------
+# Cache-busting local-grid positions.
+# ---------------------------------------------------------------------------
+#
+# The service caches a grid result under ``(creator, args..., kwargs...)``, so
+# an identical request is answered from the cache and never recomputed.  To
+# exercise a genuinely cold path a run can walk distinct ``get_local_strikes_grid``
+# positions instead: every position is a separate cache key.  The position grid
+# spans the globe in ``data_area``-degree steps, giving 180 / data_area latitude
+# steps and 360 / data_area longitude steps; with the default 5-degree data area
+# that is 36 x 72 = 2592 distinct positions.
+CACHE_BUST_METHOD = "get_local_strikes_grid"
+CACHE_BUST_BASELINE = 5000
+CACHE_BUST_DATA_AREA = 5
+CACHE_BUST_LATITUDE_STEPS = 180 // CACHE_BUST_DATA_AREA
+CACHE_BUST_LONGITUDE_STEPS = 360 // CACHE_BUST_DATA_AREA
+CACHE_BUST_POSITIONS = CACHE_BUST_LATITUDE_STEPS * CACHE_BUST_LONGITUDE_STEPS
+
 ENDPOINTS = (
     Endpoint("get_strikes", (60, 0), always_blocked=True),
     Endpoint("get_strikes_grid", (REQUESTED_MINUTE_LENGTH, LOCAL_BASELINE, 0, 1, 0)),
@@ -79,6 +97,28 @@ REGION_DATA_ENDPOINTS = tuple(
 def endpoint_params(endpoints):
     """Build readable pytest parameters for an iterable of endpoints."""
     return [pytest.param(endpoint, id=endpoint.method) for endpoint in endpoints]
+
+
+def cache_bust_position(index):
+    """Map a running ``index`` onto a distinct local-grid position.
+
+    ``get_local_strikes_grid`` addresses its center as 1-based ``x``/``y``
+    cells of ``data_area`` degrees (see ``LocalGrid``).  The positions tile the
+    globe from -180/+90 degrees onwards so that consecutive indices move by one
+    cell and cycle after :data:`CACHE_BUST_POSITIONS` calls.
+    """
+    index %= CACHE_BUST_POSITIONS
+    longitude_index = index % CACHE_BUST_LONGITUDE_STEPS
+    latitude_index = index // CACHE_BUST_LONGITUDE_STEPS
+    x = longitude_index - CACHE_BUST_LONGITUDE_STEPS // 2 + 1
+    y = latitude_index - CACHE_BUST_LATITUDE_STEPS // 2 + 1
+    return x, y
+
+
+def cache_bust_params(index, minute_length=REQUESTED_MINUTE_LENGTH, minute_offset=0, count_threshold=0):
+    """Build ``get_local_strikes_grid`` params for the ``index``-th position."""
+    x, y = cache_bust_position(index)
+    return (x, y, CACHE_BUST_BASELINE, minute_length, minute_offset, count_threshold)
 
 
 def get_result(payload):
