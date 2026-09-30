@@ -4,7 +4,7 @@ This suite verifies a **running** Blitzortung JSON-RPC webservice. It is not
 part of the regular unit test run: when no endpoint is configured the network
 tests are skipped, while the offline tests still run.
 
-The suite is split into three modules:
+The suite is split into these modules:
 
 | Module | Purpose |
 | --- | --- |

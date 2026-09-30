@@ -31,29 +31,6 @@ import pytest
 from .client import JsonRpcClient
 
 
-def pytest_addoption(parser):
-    """Register live-endpoint specific command line options."""
-    parser.addoption(
-        "--live-url",
-        action="store",
-        default=None,
-        help="Base URL of a live Blitzortung JSON-RPC endpoint to verify.",
-    )
-    parser.addoption(
-        "--live-timeout",
-        action="store",
-        type=float,
-        default=15.0,
-        help="Timeout in seconds for live endpoint requests (default: 15).",
-    )
-    parser.addoption(
-        "--live-cache-bust",
-        action="store_true",
-        default=None,
-        help="Walk distinct local-grid positions so requests bypass the server-side cache.",
-    )
-
-
 def pytest_configure(config):
     """Register the ``live`` marker."""
     config.addinivalue_line(

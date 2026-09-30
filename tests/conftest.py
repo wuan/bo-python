@@ -27,6 +27,35 @@ import blitzortung.db
 SCHEMA_PATH = Path(blitzortung.__file__).parent.parent / "docs" / "schema" / "strikes.sql"
 
 
+def pytest_addoption(parser):
+    """Register the live-endpoint options at a level pytest parses early.
+
+    They live here rather than in ``tests/live/conftest.py`` so that
+    ``pytest -m live --live-url=...`` works without passing a path: a nested
+    conftest is only loaded once its directory is collected, which is after
+    command line argument parsing.
+    """
+    parser.addoption(
+        "--live-url",
+        action="store",
+        default=None,
+        help="Base URL of a live Blitzortung JSON-RPC endpoint to verify.",
+    )
+    parser.addoption(
+        "--live-timeout",
+        action="store",
+        type=float,
+        default=15.0,
+        help="Timeout in seconds for live endpoint requests (default: 15).",
+    )
+    parser.addoption(
+        "--live-cache-bust",
+        action="store_true",
+        default=None,
+        help="Walk distinct local-grid positions so requests bypass the server-side cache.",
+    )
+
+
 @pytest.fixture
 def now() -> datetime.datetime:
     return datetime.datetime.now(datetime.UTC)
